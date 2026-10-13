@@ -65,7 +65,7 @@ Le fichier reçu est sauvegardé et reste accessible après relancement.
 
 ## Réactions aux replays du niveau 1
 
-`src/config/replay-reactions.json` définit le délai de réception (5 secondes), la
+`src/config/replay-reactions.json` définit le délai de réception (2 secondes), la
 première réaction et la rotation des cinq variantes. Les textes, les trois choix
 et leurs branches se trouvent dans `src/dialogues/pixelgirl-replay-*.json` et
 utilisent le moteur de dialogue existant. La conversation d'introduction reste
@@ -82,8 +82,12 @@ en pause ; le joueur peut ouvrir Messenger pour discuter à son rythme.
 PixelGirl possède une seule discussion, sans sélecteur de scénarios. Les fichiers
 JSON représentent des événements injectés automatiquement dans ce fil. Le
 gestionnaire `src/story/conversation-thread.js` ajoute les messages à l'historique
-chronologique du contact et attend la fin de l'événement actif avant d'injecter
-le suivant. Un choix ou un transfert en attente n'est jamais remplacé.
+chronologique du contact dès leur échéance, indépendamment des réponses en
+attente. Les choix les plus récents nécessitant une réponse apparaissent sous
+l'historique ; les anciens choix restent accessibles auprès de leurs messages.
+Chaque réponse est liée à son propre événement, sans sélecteur de scénarios.
+Un choix ou un transfert en attente n'est jamais perdu. Les anciennes échéances
+de cinq secondes encore en attente sont migrées vers le délai de deux secondes.
 
 La sauvegarde `conversations.pixelgirl` conserve l'historique unique, les messages
 non lus, l'événement actif et la file des événements prêts. Les états des scripts

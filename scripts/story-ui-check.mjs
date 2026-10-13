@@ -268,13 +268,16 @@ export async function verifyStoryUI({
     () => evaluate("window.chaosDebug.snapshot().phase==='playing'"),
     'replay sans reponse',
   );
-  await wait(5300);
+  await wait(2300);
   assert.equal((await saved()).level1Launches, beforeReplay.level1Launches + 2);
   assert.deepEqual(
-    (await saved()).conversations.pixelgirl.history,
+    (await saved()).conversations.pixelgirl.history.slice(
+      0,
+      pendingReply.conversations.pixelgirl.history.length,
+    ),
     pendingReply.conversations.pixelgirl.history,
   );
-  assert.equal((await saved()).conversations.pixelgirl.pendingEvents.length, 1);
+  assert.ok((await saved()).conversations.pixelgirl.history.at(-1).text.includes('ENCORE ???'));
   await evaluate(
     "document.querySelector('#windows-start').click();document.querySelector('#menu-messenger').click()",
   );

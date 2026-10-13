@@ -52,6 +52,15 @@ export class ConversationWindow {
     this.thread =
       thread ??
       new ConversationThread(dialogue.contact.name.toLowerCase(), progression, () => [dialogue]);
+    this.sessions = new Map();
+  }
+  sessionFor(definition) {
+    const existing = this.sessions.get(definition.id);
+    if (existing && existing.state === this.progression.data.dialogues[definition.id])
+      return existing;
+    const session = new DialogueSession(definition, this.progression);
+    this.sessions.set(definition.id, session);
+    return session;
   }
   open() {
     if (this.element?.isConnected) {
@@ -65,7 +74,7 @@ export class ConversationWindow {
     }
     if (!this.isUnlocked()) return this.openContacts();
     this.dialogue = this.thread.activeDefinition;
-    this.session = new DialogueSession(this.dialogue, this.progression);
+    this.session = this.sessionFor(this.dialogue);
     const id = this.manager.spawn('narrative', {
       preview: true,
       x: 0.35,
@@ -198,18 +207,26 @@ export class ConversationWindow {
   }
   refresh() {
     if (!this.element?.isConnected || !this.log) return;
+    this.appendHistory();
+    this.renderResponses();
     const definition = this.thread.activeDefinition;
     if (this.dialogue.id === definition.id) {
-      this.appendHistory();
       return;
     }
     // Only completed events yield control; pending choices and transfers stay intact.
-    if (!this.session.state.finished || this.transfer || this.ghost) return;
+    if (
+      (!this.session.state.finished &&
+        !this.session.choices.length &&
+        !this.session.node.transfer) ||
+      this.transfer ||
+      this.ghost
+    )
+      return;
     this.dialogue = definition;
     this.element.classList.remove('contact-away');
     this.element.querySelector('.contact-status').textContent =
       `${definition.contact.status} · ${definition.contact.personalMessage ?? ''}`;
-    this.session = new DialogueSession(definition, this.progression);
+    this.session = this.sessionFor(definition);
     this.pending = null;
     this.ghost?.remove();
     this.ghost = null;
@@ -221,6 +238,7 @@ export class ConversationWindow {
   appendMessage(message) {
     const row = document.createElement('div');
     row.className = `conversation-message ${message.speaker === 'player' ? 'from-player' : 'from-contact'}`;
+    if (message.key) row.dataset.messageKey = message.key;
     const author = document.createElement('small');
     author.textContent = `${message.speaker === 'player' ? this.dialogue.player.nickname : this.dialogue.contact.nickname} dit :`;
     const copy = document.createElement('p');
@@ -237,6 +255,8 @@ export class ConversationWindow {
   renderTransfer(row, key) {
     const file = this.progression.data.files[key];
     if (!file) return;
+    const owner = this.thread.getEvents().find((event) => event.id === file.dialogue);
+    const session = owner ? this.sessionFor(owner) : this.session;
     const card = document.createElement('div');
     card.className = 'msn-transfer';
     card.dataset.fileKey = key;
@@ -263,7 +283,7 @@ export class ConversationWindow {
     refuse.textContent = 'Refuser';
     refuse.hidden = file.status !== 'pending' || file.direction === 'send';
     refuse.addEventListener('click', () => {
-      if (this.transfer?.key === key || !this.session.declineTransfer(key)) return;
+      if (this.transfer?.key === key || !session.declineTransfer(key)) return;
       status.textContent = 'Transfert refusé';
       button.hidden = true;
       refuse.hidden = true;
@@ -281,7 +301,7 @@ export class ConversationWindow {
     row.append(card);
   }
   pump() {
-    this.choices.replaceChildren();
+    this.renderResponses();
     for (let transitions = 0; transitions < 100; transitions++) {
       const message = this.session.nextMessage();
       if (message) {
@@ -300,6 +320,7 @@ export class ConversationWindow {
           'Partie choisir une image perso';
         const button = document.createElement('button');
         button.className = 'xp-button';
+        button.classList.add('conversation-return');
         button.textContent = 'Retour au bureau';
         const pendingFile = this.session.state.transcript.some(
           (entry) =>
@@ -313,7 +334,13 @@ export class ConversationWindow {
           const id = Number(this.element.dataset.windowId);
           this.manager.close(id);
         });
-        this.choices.append(button);
+        if (!this.thread.pendingResponses.length) {
+          this.choices.replaceChildren(button);
+          this.responseSignature = JSON.stringify([]);
+        } else {
+          this.element.classList.remove('contact-away');
+          this.typing.textContent = 'À toi de répondre :)';
+        }
         this.scrollLatest();
         return;
       }
@@ -322,18 +349,60 @@ export class ConversationWindow {
         this.typing.textContent = 'Tu peux accepter ou refuser le fichier quand tu veux.';
         return;
       }
-      this.session.offerChoices();
-      for (const choice of this.session.choices) {
+      this.renderResponses();
+      this.scrollLatest();
+      return;
+    }
+    throw new Error('Le dialogue contient une boucle automatique.');
+  }
+  renderResponses() {
+    if (!this.choices || this.ghost) return;
+    const groups = this.thread.pendingResponses;
+    const signature = JSON.stringify(
+      groups.map((group) => [
+        group.definition.id,
+        this.progression.data.dialogues[group.definition.id].node,
+        group.choices.map((choice) => choice.id),
+        group.position,
+      ]),
+    );
+    if (signature === this.responseSignature) return;
+    this.responseSignature = signature;
+    this.choices.replaceChildren();
+    this.log.querySelectorAll('.dialogue-history-choices').forEach((panel) => panel.remove());
+    for (const [index, group] of groups.entries()) {
+      const { definition } = group;
+      const session = this.sessionFor(definition);
+      session.offerChoices();
+      const panel = index === groups.length - 1 ? this.choices : document.createElement('div');
+      panel.dataset.eventId = definition.id;
+      if (panel !== this.choices) {
+        panel.className = 'dialogue-history-choices';
+        const label = document.createElement('small');
+        label.textContent = 'Tu peux encore répondre à ce message :';
+        panel.append(label);
+        const anchor = this.thread.state.history[group.position];
+        const row = [...this.log.querySelectorAll('[data-message-key]')].find(
+          (element) => element.dataset.messageKey === anchor?.key,
+        );
+        (row ?? this.log).append(panel);
+      }
+      for (const choice of group.choices) {
         const button = document.createElement('button');
         button.className = 'xp-button dialogue-choice';
         button.dataset.choiceId = choice.id;
         appendMessageText(button, choice.text);
         button.addEventListener('click', () => {
           if (!button.isConnected || button.disabled) return;
-          this.choices.querySelectorAll('button').forEach((item) => {
+          panel.querySelectorAll('button').forEach((item) => {
             item.disabled = true;
           });
-          this.session.choose(choice.id);
+          session.choose(choice.id);
+          this.dialogue = definition;
+          this.session = session;
+          this.pending = null;
+          this.lastFrame = null;
+          this.element.classList.remove('contact-away');
           this.sounds.play('send');
           this.appendHistory();
           const echo = this.session.takeEcho();
@@ -348,12 +417,10 @@ export class ConversationWindow {
           this.pump();
           this.choices.querySelector('button')?.focus();
         });
-        this.choices.append(button);
+        panel.append(button);
       }
-      this.scrollLatest();
-      return;
     }
-    throw new Error('Le dialogue contient une boucle automatique.');
+    if (groups.length) this.element.classList.remove('contact-away');
   }
   tick(time) {
     if (!this.element?.isConnected) return;
@@ -420,6 +487,8 @@ export class ConversationWindow {
     this.choices = null;
     this.session = null;
     this.renderedKeys = null;
+    this.responseSignature = null;
+    this.sessions.clear();
     this.onWindowState({ open: false, minimized: false });
   }
   openContacts() {

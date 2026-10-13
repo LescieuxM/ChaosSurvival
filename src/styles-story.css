@@ -1,4 +1,19 @@
 /* MSN story desktop */
+.dialogue-history-choices {
+  display: grid;
+  gap: 5px;
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid #b5c8dc;
+  background: #f2f8ff;
+}
+.dialogue-history-choices small {
+  color: #536582;
+}
+.dialogue-history-choices button {
+  text-align: left;
+  white-space: normal;
+}
 .story-desktop #playfield {
   bottom: 64px;
 }

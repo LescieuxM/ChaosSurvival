@@ -134,19 +134,7 @@ export class Progression {
           (this.data.completed.includes(sequence.id) || this.data.current === sequence.id),
       )
       .map((sequence) => sequence.dialogue);
-    for (const sequence of story.sequences) {
-      if (
-        sequence.type === 'conversation' &&
-        sequence.revision &&
-        this.data.completed.includes(sequence.id) &&
-        this.data.dialogues[sequence.dialogue]?.revision !== sequence.revision
-      ) {
-        this.data.completed = this.data.completed.filter((id) => id !== sequence.id);
-        this.data.current = sequence.id;
-        this.save();
-        break;
-      }
-    }
+    // A JSON revision must not unlock an already completed introduction again.
   }
   save() {
     try {

@@ -158,7 +158,7 @@ test('a new app session resumes partial messages, choices, offered alternatives 
   assert.throws(() => restored.choose('greeting-3'));
 });
 
-test('old saves keep their choices and transcript while gaining the new conversation', () => {
+test('old completed introductions keep their history and never replay after a JSON revision', () => {
   const storage = memory();
   storage.setItem(
     'chaos-survival-story-v1',
@@ -181,9 +181,12 @@ test('old saves keep their choices and transcript while gaining the new conversa
     }),
   );
   const progression = new Progression(story, storage);
-  assert.equal(progression.current.id, 'pixelgirl-hello');
+  assert.equal(progression.current, null);
   const session = new DialogueSession(dialogue, progression);
-  assert.equal(session.state.node, 'first-contact');
+  assert.equal(session.state.node, 'hello');
+  assert.equal(session.state.finished, true);
+  assert.equal(session.nextMessage(), null);
+  assert.equal(session.state.transcript[0].text, 'heyyy !!');
   assert.equal(progression.data.choices.length, 1);
   assert.equal(progression.data.dialogueArchives['pixelgirl-intro:1'].transcript.length, 1);
 });

@@ -19,6 +19,7 @@ import { promisify } from 'node:util';
 import { projectRoot, verifyArchive } from './verify-package.mjs';
 import { verifyStoryUI } from './story-ui-check.mjs';
 import { verifyMenuUI } from './menu-ui-check.mjs';
+import { verifyReplayUI } from './replay-ui-check.mjs';
 
 assert.equal(process.platform, 'win32', 'Cette vérification doit être exécutée sur Windows.');
 const run = promisify(execFile);
@@ -54,6 +55,7 @@ const verifyMusic = process.argv.includes('--music') || process.argv.includes('-
 let musicalChecks;
 let storyChecks;
 let menuChecks;
+let replayChecks;
 
 async function freePort() {
   const listener = createServer();
@@ -505,6 +507,21 @@ try {
   }
 
   const qaDirectory = path.join(projectRoot, '.qa');
+  if (process.argv.includes('--story'))
+    replayChecks = await verifyReplayUI({
+      evaluate,
+      command,
+      until,
+      wait,
+      outputDirectory: qaDirectory,
+      restart: async () => {
+        await evaluate('window.close()');
+        await waitForExit();
+        socket.close();
+        await wait(200);
+        await launchPortable();
+      },
+    });
   assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
   await mkdir(qaDirectory, { recursive: true });
   const screenshot = await command('Page.captureScreenshot');
@@ -537,6 +554,7 @@ try {
         musicalChecks,
         storyChecks,
         menuChecks,
+        replayChecks,
         checks: {
           exeOnly: true,
           outsideProject: true,

@@ -1,4 +1,4 @@
-import { DialogueSession } from './dialogue.js';
+import { DialogueSession, pendingChoices } from './dialogue.js';
 
 // JSON dialogues are event scripts. A contact owns one durable discussion.
 export class ConversationThread {
@@ -45,12 +45,32 @@ export class ConversationThread {
   }
   get activeDefinition() {
     const events = this.getEvents();
-    return (
-      events.find(
-        (event) =>
-          !this.progression.data.dialogues[event.id]?.finished || this.hasPendingFile(event.id),
-      ) ?? events.at(-1)
+    const pending = events.filter(
+      (event) =>
+        !this.progression.data.dialogues[event.id]?.finished || this.hasPendingFile(event.id),
     );
+    return (
+      pending.find((event) => {
+        const saved = this.progression.data.dialogues[event.id];
+        return !saved || saved.cursor < event.nodes[saved.node]?.messages.length;
+      }) ??
+      pending[0] ??
+      events.at(-1)
+    );
+  }
+  get pendingResponses() {
+    return this.getEvents()
+      .map((definition) => ({
+        definition,
+        choices: pendingChoices(
+          definition,
+          this.progression.data.dialogues[definition.id],
+          this.progression,
+        ),
+        position: this.state.history.findLastIndex((entry) => entry.eventId === definition.id),
+      }))
+      .filter((group) => group.choices.length)
+      .sort((a, b) => a.position - b.position);
   }
   sync() {
     const state = this.state;
@@ -90,23 +110,21 @@ export class ConversationThread {
     for (const event of this.getEvents().slice(1)) {
       if (this.progression.data.dialogues[event.id]?.finished && !this.hasPendingFile(event.id))
         continue;
-      if (this.activeDefinition?.id !== event.id) break;
-      // An existing session can be waiting for a choice, a transfer or a reply.
+      // Receive independently of other pending choices; only replies need the UI.
       const saved = this.progression.data.dialogues[event.id];
       if (saved) {
         const node = event.nodes[saved.node];
         if (node?.end && saved.cursor >= node.messages.length && !this.hasPendingFile(event.id)) {
           new DialogueSession(event, this.progression).advance();
-          continue;
         }
-        break;
+        if (saved.node !== event.start || saved.cursor >= event.nodes[event.start].messages.length)
+          continue;
       }
       const session = new DialogueSession(event, this.progression);
       while (session.nextMessage()) session.deliver();
       session.offerChoices();
       session.advance();
       incoming.push(event);
-      if (!session.state.finished) break;
     }
     this.sync();
     return incoming;

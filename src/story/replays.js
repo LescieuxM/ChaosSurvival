@@ -4,6 +4,15 @@ export class ReplayReactions {
     Object.assign(this, { progression, definitions, config });
     progression.data.level1Launches ??= progression.data.completed.includes('arcade-1') ? 1 : 0;
     progression.data.replayReactions ??= [];
+    let migrated = false;
+    for (const event of progression.data.replayReactions) {
+      if (event.ready || Number.isFinite(event.launchedAt)) continue;
+      // Saves from the previous scheduler used a five-second deadline.
+      event.launchedAt = event.dueAt - 5000;
+      event.dueAt = event.launchedAt + config.delayMs;
+      migrated = true;
+    }
+    if (migrated) progression.save();
     this.thread = new ConversationThread('pixelgirl', progression, () => [
       definitions['pixelgirl-intro'],
       ...this.dialogues,
@@ -29,6 +38,7 @@ export class ReplayReactions {
         attempt: data.level1Launches,
         template,
         id: `pixelgirl-level1-attempt-${data.level1Launches}`,
+        launchedAt: now,
         dueAt: now + this.config.delayMs,
         ready: false,
       });

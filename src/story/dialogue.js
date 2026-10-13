@@ -129,6 +129,14 @@ export function validateDialogue(dialogue) {
   for (const id of Object.keys(dialogue.nodes)) visit(id);
 }
 
+export function pendingChoices(dialogue, state, progression) {
+  const node = state && dialogue.nodes[state.node];
+  if (!node || state.finished || state.cursor < node.messages.length) return [];
+  return (node.choices ?? []).filter((choice) =>
+    matches(choice.when, progression.data.flags, progression.data.choices),
+  );
+}
+
 export class DialogueSession {
   constructor(dialogue, progression) {
     validateDialogue(dialogue);
@@ -161,6 +169,17 @@ export class DialogueSession {
             finished: false,
             revision: dialogue.revision ?? 1,
           };
+    if (
+      saved?.finished === true &&
+      Array.isArray(saved.transcript) &&
+      saved.transcript.every(
+        (message) =>
+          ['contact', 'player'].includes(message.speaker) &&
+          typeof message.text === 'string' &&
+          (message.type !== 'file' || typeof message.fileKey === 'string'),
+      )
+    )
+      this.state = saved;
     this.persist();
   }
   persist() {
@@ -206,10 +225,7 @@ export class DialogueSession {
     return message;
   }
   get choices() {
-    if (this.state.finished || this.state.cursor < this.node.messages.length) return [];
-    return (this.node.choices ?? []).filter((choice) =>
-      matches(choice.when, this.progression.data.flags, this.progression.data.choices),
-    );
+    return pendingChoices(this.dialogue, this.state, this.progression);
   }
   offerChoices() {
     return this.progression.offer(this.dialogue.id, this.state.node, this.choices);
