@@ -49,7 +49,7 @@ export function mountDesktop(root, best) {
     <div class="intro-layer" id="intro-layer">
       <section class="xp-window launcher" aria-labelledby="launcher-title">
         <header class="titlebar">
-          <span class="window-title">${icon('computer')} chaos_survival.exe</span>
+          <span class="window-title">${icon('menu-computer')} chaos_survival.exe</span>
           <div class="launcher-controls">
             <span class="titlebar-decoration" aria-hidden="true">− &nbsp; ▢</span>
             <button class="close-button" id="close-launcher" aria-label="Fermer le menu principal">

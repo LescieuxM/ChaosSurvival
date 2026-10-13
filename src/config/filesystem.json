@@ -1,0 +1,401 @@
+{
+  "c-root": {
+    "address": "C:\\",
+    "parent": "computer",
+    "description": "Disque local · 32 Go",
+    "items": [
+      {
+        "name": "Program Files",
+        "icon": "folder",
+        "detail": "Dossier",
+        "location": "programs"
+      },
+      {
+        "name": "WINDOWS",
+        "icon": "folder",
+        "detail": "Dossier",
+        "location": "windows"
+      },
+      {
+        "name": "Documents and Settings",
+        "icon": "folder",
+        "detail": "Dossier",
+        "location": "profiles"
+      },
+      {
+        "name": "Games",
+        "icon": "folder",
+        "detail": "Dossier",
+        "location": "games"
+      },
+      {
+        "name": "Downloads",
+        "icon": "folder",
+        "detail": "Dossier",
+        "location": "downloads"
+      }
+    ]
+  },
+  "programs": {
+    "address": "C:\\Program Files",
+    "parent": "c-root",
+    "description": "C:\\Program Files",
+    "items": [
+      {
+        "name": "Windows Love Messenger",
+        "icon": "folder",
+        "detail": "Dossier",
+        "location": "messenger-files"
+      },
+      {
+        "name": "Internet Adventurer",
+        "icon": "folder",
+        "detail": "Dossier",
+        "location": "browser-files"
+      },
+      {
+        "name": "Windows Media Play",
+        "icon": "folder",
+        "detail": "Dossier",
+        "location": "media-files"
+      }
+    ]
+  },
+  "messenger-files": {
+    "address": "C:\\Program Files\\Windows Love Messenger",
+    "parent": "programs",
+    "description": "C:\\Program Files\\Windows Love Messenger",
+    "items": [
+      {
+        "name": "love-messenger.exe",
+        "icon": "document",
+        "detail": "Application",
+        "text": "Cette application ne peut pas démarrer ici.\nRetrouvez les applications disponibles dans le menu Démarrer."
+      },
+      {
+        "name": "readme.txt",
+        "icon": "document",
+        "detail": "Document texte",
+        "text": "Choisissez un pseudo beaucoup trop long. Et des smileys :3"
+      }
+    ]
+  },
+  "browser-files": {
+    "address": "C:\\Program Files\\Internet Adventurer",
+    "parent": "programs",
+    "description": "C:\\Program Files\\Internet Adventurer",
+    "items": [
+      {
+        "name": "adventurer.exe",
+        "icon": "document",
+        "detail": "Application",
+        "text": "Cette application ne peut pas démarrer ici.\nRetrouvez les applications disponibles dans le menu Démarrer."
+      },
+      {
+        "name": "readme.txt",
+        "icon": "document",
+        "detail": "Document texte",
+        "text": "La connexion est occupée. Réessayez après le dîner."
+      }
+    ]
+  },
+  "media-files": {
+    "address": "C:\\Program Files\\Windows Media Play",
+    "parent": "programs",
+    "description": "C:\\Program Files\\Windows Media Play",
+    "items": [
+      {
+        "name": "media-play.exe",
+        "icon": "document",
+        "detail": "Application",
+        "text": "Cette application ne peut pas démarrer ici.\nRetrouvez les applications disponibles dans le menu Démarrer."
+      },
+      {
+        "name": "readme.txt",
+        "icon": "document",
+        "detail": "Document texte",
+        "text": "La musique du jeu se lance depuis le fichier MP3 du bureau."
+      }
+    ]
+  },
+  "windows": {
+    "address": "C:\\WINDOWS",
+    "parent": "c-root",
+    "description": "C:\\WINDOWS",
+    "items": [
+      {
+        "name": "System32",
+        "icon": "folder",
+        "detail": "Dossier",
+        "location": "system32"
+      },
+      {
+        "name": "Temp",
+        "icon": "folder",
+        "detail": "Dossier",
+        "location": "temp"
+      },
+      {
+        "name": "Fonts",
+        "icon": "folder",
+        "detail": "Dossier",
+        "location": "fonts"
+      },
+      {
+        "name": "win.ini",
+        "icon": "document",
+        "detail": "Document texte",
+        "text": "[Windows XD]\nsmileys=on\nsparkles=maximum"
+      }
+    ]
+  },
+  "system32": {
+    "address": "C:\\WINDOWS\\System32",
+    "parent": "windows",
+    "description": "C:\\WINDOWS\\System32",
+    "items": [
+      {
+        "name": "desktop.dll",
+        "icon": "document",
+        "detail": "Bibliothèque",
+        "text": "Windows XD ne peut pas ouvrir cette bibliothèque système."
+      },
+      {
+        "name": "smiley32.dll",
+        "icon": "document",
+        "detail": "Bibliothèque",
+        "text": "Tous les smileys fonctionnent correctement :)"
+      }
+    ]
+  },
+  "temp": {
+    "address": "C:\\WINDOWS\\Temp",
+    "parent": "windows",
+    "description": "C:\\WINDOWS\\Temp",
+    "items": [
+      {
+        "name": "setup_2009.log",
+        "icon": "document",
+        "detail": "Journal",
+        "text": "Installation terminée.\nVeuillez redémarrer.\nEncore ?"
+      }
+    ]
+  },
+  "fonts": {
+    "address": "C:\\WINDOWS\\Fonts",
+    "parent": "windows",
+    "description": "C:\\WINDOWS\\Fonts",
+    "items": [
+      {
+        "name": "PixelSans.ttf",
+        "icon": "document",
+        "detail": "Police TrueType",
+        "text": "PixelSans\nABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789 ★ ♪"
+      }
+    ]
+  },
+  "profiles": {
+    "address": "C:\\Documents and Settings",
+    "parent": "c-root",
+    "description": "C:\\Documents and Settings",
+    "items": [
+      {
+        "name": "Joueur",
+        "icon": "folder",
+        "detail": "Dossier",
+        "location": "user-profile"
+      },
+      {
+        "name": "All Users",
+        "icon": "folder",
+        "detail": "Dossier",
+        "location": "shared-profile"
+      }
+    ]
+  },
+  "user-profile": {
+    "address": "C:\\Documents and Settings\\Joueur",
+    "parent": "profiles",
+    "description": "C:\\Documents and Settings\\Joueur",
+    "items": [
+      {
+        "name": "Mes documents",
+        "icon": "folder",
+        "detail": "Dossier",
+        "location": "folder"
+      },
+      {
+        "name": "Bureau",
+        "icon": "folder",
+        "detail": "Dossier",
+        "location": "user-desktop"
+      }
+    ]
+  },
+  "shared-profile": {
+    "address": "C:\\Documents and Settings\\All Users",
+    "parent": "profiles",
+    "description": "C:\\Documents and Settings\\All Users",
+    "items": [
+      {
+        "name": "bienvenue.txt",
+        "icon": "document",
+        "detail": "Document texte",
+        "text": "Merci de ne pas changer le fond d'écran toutes les cinq minutes.\n— Tout le monde"
+      }
+    ]
+  },
+  "user-desktop": {
+    "address": "C:\\Documents and Settings\\Joueur\\Bureau",
+    "parent": "user-profile",
+    "description": "C:\\Documents and Settings\\Joueur\\Bureau",
+    "items": [
+      {
+        "name": "a_faire.txt",
+        "icon": "document",
+        "detail": "Document texte",
+        "text": "Ranger les dossiers.\nChanger de pseudo.\nFinir une partie avant de dîner."
+      }
+    ]
+  },
+  "images": {
+    "address": "C:\\Documents and Settings\\Joueur\\Mes documents\\Mes images",
+    "parent": "folder",
+    "description": "C:\\Documents and Settings\\Joueur\\Mes documents\\Mes images",
+    "items": [
+      {
+        "name": "fond_arcade.jpg",
+        "icon": "document",
+        "detail": "Image · arcade 8-bit",
+        "image": "./covers/best-game-console.svg"
+      },
+      {
+        "name": "fond_bureau.jpg",
+        "icon": "document",
+        "detail": "Image · collines et ciel bleu",
+        "image": "./wallpaper.svg"
+      }
+    ]
+  },
+  "music": {
+    "address": "C:\\Documents and Settings\\Joueur\\Mes documents\\Mes musiques",
+    "parent": "folder",
+    "description": "C:\\Documents and Settings\\Joueur\\Mes documents\\Mes musiques",
+    "items": [
+      {
+        "name": "playlist_ete_2009.txt",
+        "icon": "document",
+        "detail": "Document texte",
+        "text": "Chiptune, bandes originales de jeux et tubes improbables.\nNe pas mélanger avec la playlist de Noël."
+      }
+    ]
+  },
+  "games": {
+    "address": "C:\\Games",
+    "parent": "c-root",
+    "description": "C:\\Games",
+    "items": [
+      {
+        "name": "Bubble Party 2009",
+        "icon": "folder",
+        "detail": "Dossier",
+        "location": "bubble-game"
+      },
+      {
+        "name": "Minefield.exe",
+        "icon": "document",
+        "detail": "Jeu",
+        "text": "Minefield ne peut pas démarrer.\nLe disque original est introuvable."
+      }
+    ]
+  },
+  "bubble-game": {
+    "address": "C:\\Games\\Bubble Party 2009",
+    "parent": "games",
+    "description": "C:\\Games\\Bubble Party 2009",
+    "items": [
+      {
+        "name": "bubble.exe",
+        "icon": "document",
+        "detail": "Jeu",
+        "text": "Veuillez insérer le CD-ROM original pour continuer."
+      },
+      {
+        "name": "scores.txt",
+        "icon": "document",
+        "detail": "Document texte",
+        "text": "1. AAA : 9000\n2. BOB : 4200\n3. MOI : 15\n\nOn progresse."
+      }
+    ]
+  },
+  "downloads": {
+    "address": "C:\\Downloads",
+    "parent": "c-root",
+    "description": "C:\\Downloads",
+    "items": [
+      {
+        "name": "smileys_pack_2009.zip",
+        "icon": "document",
+        "detail": "Archive ZIP",
+        "text": "Archive de smileys :\ncontent.gif\nencore_plus_content.gif\nbeaucoup_trop_content.gif"
+      },
+      {
+        "name": "wallpaper_arcade.jpg",
+        "icon": "document",
+        "detail": "Image",
+        "image": "./covers/best-game-console.svg"
+      },
+      {
+        "name": "installation_a_lire.txt",
+        "icon": "document",
+        "detail": "Document texte",
+        "text": "Lire les instructions.\nNe pas cliquer sur toutes les barres d'outils proposées."
+      },
+      {
+        "name": "toolbar_setup.exe",
+        "icon": "document",
+        "detail": "Programme",
+        "text": "Installation impossible.\nVotre navigateur possède déjà suffisamment de barres d'outils."
+      }
+    ]
+  },
+  "empty-cd": {
+    "address": "D:\\",
+    "parent": "computer",
+    "description": "Lecteur CD/DVD vide",
+    "items": [],
+    "emptyText": "Insérez un disque dans le lecteur D:."
+  },
+  "usb": {
+    "address": "E:\\",
+    "parent": "computer",
+    "description": "Clé USB · 256 Mo",
+    "items": [
+      {
+        "name": "Documents",
+        "icon": "folder",
+        "detail": "Dossier",
+        "location": "usb-documents"
+      },
+      {
+        "name": "ne_pas_oublier.txt",
+        "icon": "document",
+        "detail": "Document texte",
+        "text": "Ne pas oublier la clé USB dans la salle informatique. Encore."
+      }
+    ]
+  },
+  "usb-documents": {
+    "address": "E:\\Documents",
+    "parent": "usb",
+    "description": "E:\\Documents",
+    "items": [
+      {
+        "name": "expose_groupe_final.txt",
+        "icon": "document",
+        "detail": "Document texte",
+        "text": "Quelqu'un devait préparer les diapositives.\nQui déjà ?"
+      }
+    ]
+  }
+}

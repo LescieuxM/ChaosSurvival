@@ -20,7 +20,7 @@ export class MainMenu {
       <div class="menu-orbit orbit-three" aria-hidden="true">✦</div>
       <div class="menu-shell">
         <header class="menu-titlebar">
-          <span>${icon('system')} ${applicationName('system')} · chaos_survival.exe</span
+          <span>${icon('menu-computer')} ${applicationName('system')} · chaos_survival.exe</span
           ><span aria-hidden="true">− ▢ <b>×</b></span>
         </header>
         <div class="menu-toolbar">

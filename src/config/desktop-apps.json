@@ -8,10 +8,21 @@
       {
         "name": "Disque local (C:)",
         "icon": "drive",
-        "detail": "Disque dur · 32 Go · 12 Go libres"
+        "detail": "Disque dur · 32 Go · 12 Go libres",
+        "location": "c-root"
       },
-      { "name": "Lecteur CD/DVD (D:)", "icon": "disc", "detail": "Aucun disque dans le lecteur" },
-      { "name": "Clé USB (E:)", "icon": "drive", "detail": "256 Mo · pas mal pour l'époque !" }
+      {
+        "name": "Lecteur CD/DVD (D:)",
+        "icon": "disc",
+        "detail": "Aucun disque dans le lecteur",
+        "location": "empty-cd"
+      },
+      {
+        "name": "Clé USB (E:)",
+        "icon": "drive",
+        "detail": "256 Mo",
+        "location": "usb"
+      }
     ]
   },
   "folder": {
@@ -23,14 +34,20 @@
       {
         "name": "Mes images",
         "icon": "folder",
-        "detail": "Fonds d'écran, smileys et photos de vacances"
+        "detail": "Fonds d'écran, smileys et photos de vacances",
+        "location": "images"
       },
-      { "name": "Mes musiques", "icon": "folder", "detail": "La playlist attend le prochain tube" },
+      {
+        "name": "Mes musiques",
+        "icon": "folder",
+        "detail": "La playlist attend le prochain tube",
+        "location": "music"
+      },
       {
         "name": "devoir_final_v7_VRAIMENT_FINAL.txt",
         "icon": "document",
         "detail": "Penser à sauvegarder avant de tout fermer :)",
-        "text": "Devoir pour lundi\n\n1. Faire le devoir.\n2. Ne pas passer la soirée sur Messenger.\n3. Bon, juste cinq minutes alors."
+        "text": "Devoir pour lundi\n\n1. Faire le devoir.\n2. Ne pas passer la soirée sur MSN.\n3. Bon, juste cinq minutes alors."
       },
       {
         "name": "liens_trop_biens.txt",
@@ -38,7 +55,8 @@
         "detail": "Les découvertes du mercredi après-midi",
         "text": "Des smileys, des jeux Flash et des fonds d'écran à paillettes.\n\nLa connexion 56k a demandé une pause café."
       }
-    ]
+    ],
+    "parent": "user-profile"
   },
   "bin": {
     "title": "Corbeille",

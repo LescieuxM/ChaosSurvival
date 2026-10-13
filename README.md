@@ -120,6 +120,20 @@ est vide. Les contenus fictifs se configurent dans `src/config/desktop-apps.json
 `npm run verify:desktop` effectue une vérification ciblée de ces interfaces dans
 Electron avec un profil isolé, après `npm run build`, sans produire de portable.
 
+Les disques du Poste de travail utilisent l'arborescence fictive de
+`src/config/filesystem.json`. Les boutons **Précédente**, **Remonter** et
+**Poste de travail** naviguent entre les dossiers ; le chemin courant reste
+affiché. Les `.txt` s'ouvrent dans un Bloc-notes en lecture seule et les `.jpg`
+dans une visionneuse avec image ajustée sans déformation. Chaque fichier a sa
+fenêtre et son bouton dans la barre des tâches ; l'explorateur reste ouvert.
+Le lecteur CD vide demande un disque.
+Cette navigation n'accède jamais aux fichiers réels de l'ordinateur.
+
+Après une victoire, les résultats restent affichés jusqu'au clic sur
+**Retour au bureau** ou sur leur croix. Ils sont sauvegardés en attente et
+réapparaissent avec CONTINUE après un redémarrage. La première connexion de
+PixelGirl attend ce retour au bureau ; les victoires en replay ne la rejouent pas.
+
 Le scénario de PixelGirl, ses quatre choix, l'anomalie de 500 ms et le transfert
 de SUPER_MEGA_GAME.exe sont intégrés. Les choix attendent une action du joueur
 et toutes les alternatives sont sauvegardées. Le fichier fictif ouvre Smiley

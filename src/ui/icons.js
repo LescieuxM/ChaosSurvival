@@ -1,10 +1,13 @@
 import { brandIcons, applicationLogo } from './identity.js';
 const desktopIcons = {
+  'menu-computer': './icons/menu-computer.svg',
   computer: './icons/computer.svg',
   folder: './icons/folder.svg',
   bin: './icons/recycle-empty.svg',
 };
 const paths = {
+  picture:
+    '<rect x="4" y="5" width="40" height="37" rx="2" fill="#f5f8fa" stroke="#648398" stroke-width="2"/><path d="M8 9h32v27H8z" fill="#94d8f2"/><circle cx="31" cy="16" r="5" fill="#fff28b"/><path d="m8 32 10-14 10 10 5-7 7 10v5H8z" fill="#75b554"/><path d="M10 39h28" stroke="#cad7df" stroke-width="2"/>',
   drive:
     '<path d="M6 17 13 7h23l7 10v24H6z" fill="#acbac8" stroke="#506176" stroke-width="2"/><path d="M8 19h33v10H8z" fill="#e8f2fa"/><path d="M11 34h22" stroke="#566c82" stroke-width="3"/><circle cx="37" cy="35" r="2" fill="#88d55a"/>',
   disc: '<circle cx="24" cy="24" r="20" fill="#d0def4" stroke="#7189a3" stroke-width="2"/><path d="m24 5 6 14 12-5M7 31l12-4 5 16" fill="#b3efd5"/><circle cx="24" cy="24" r="6" fill="#fff" stroke="#7189a3"/><path d="M11 14a17 17 0 0 1 9-6" fill="none" stroke="#fff" stroke-width="3"/>',

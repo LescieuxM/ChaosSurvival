@@ -5,12 +5,227 @@ import { DialogueSession } from '../src/story/dialogue.js';
 import { ConversationThread } from '../src/story/conversation-thread.js';
 import { Progression } from '../src/story/progression.js';
 import { visibleContacts } from '../src/ui/contacts.js';
-import { desktopApps } from '../src/ui/desktop-apps.js';
+import {
+  desktopApps,
+  explorerLocation,
+  explorerItem,
+  DesktopApplications,
+  fileViewer,
+  localPicture,
+} from '../src/ui/desktop-apps.js';
 import { icon } from '../src/ui/icons.js';
 import { ConversationWindow } from '../src/ui/conversation.js';
 
 const read = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url)));
 const intro = read('../src/dialogues/pixelgirl-intro.json');
+
+test('text and picture viewers have independent windows and task controls without replacing the explorer', (t) => {
+  const previous = globalThis.document;
+  const create = () => ({
+    children: [],
+    handlers: {},
+    dataset: {},
+    style: {},
+    attrs: {},
+    isConnected: true,
+    classList: { add() {} },
+    append(...nodes) {
+      this.children.push(...nodes);
+    },
+    insertBefore(node) {
+      this.children.push(node);
+    },
+    replaceChildren() {
+      this.children = [];
+    },
+    addEventListener(type, callback) {
+      this.handlers[type] = callback;
+    },
+    setAttribute(key, value) {
+      this.attrs[key] = value;
+    },
+    remove() {
+      this.isConnected = false;
+    },
+    querySelector(key) {
+      this.fields ??= new Map();
+      if (!this.fields.has(key)) this.fields.set(key, create());
+      return this.fields.get(key);
+    },
+    querySelectorAll() {
+      return [];
+    },
+  });
+  globalThis.document = { createElement: create };
+  t.after(() => {
+    if (previous === undefined) delete globalThis.document;
+    else globalThis.document = previous;
+  });
+  const manager = {
+    z: 10,
+    windows: new Map(),
+    calls: [],
+    spawn(type, options) {
+      const id = this.calls.length + 1;
+      this.calls.push({ type, ...options });
+      this.windows.set(id, { element: create(), onDismiss: options.onDismiss });
+      return id;
+    },
+    close(id) {
+      const entry = this.windows.get(id);
+      entry.element.remove();
+      this.windows.delete(id);
+      entry.onDismiss();
+    },
+  };
+  const app = new DesktopApplications(manager, create());
+  const explorer = app.open('folder');
+  const location = explorer.current;
+  const txt = location.items.find((item) => item.name.endsWith('.txt'));
+  const notepad = app.openFile(location, txt);
+  assert.equal(explorer.current, location);
+  assert.equal(explorer.element.isConnected, true);
+  assert.equal(notepad.element.querySelector('.notepad-content').value, txt.text);
+  assert.match(manager.calls[1].content.body, /readonly/);
+  assert.ok(notepad.element.querySelector('.window-title > span').textContent.includes(txt.name));
+  assert.equal(app.openFile(location, txt), notepad);
+  const images = explorerLocation('images');
+  const picture = app.openFile(images, images.items[0]);
+  assert.equal(picture.element.querySelector('.picture-content').src, images.items[0].image);
+  assert.equal(manager.windows.size, 3);
+  notepad.element.querySelector('.titlebar').children[0].handlers.click();
+  assert.equal(notepad.element.hidden, true);
+  const previousZ = manager.z;
+  notepad.task.handlers.click();
+  assert.equal(notepad.element.hidden, false);
+  assert.ok(manager.z > previousZ);
+  const sameNameElsewhere = app.openFile(explorerLocation('downloads'), txt);
+  assert.notEqual(sameNameElsewhere, notepad);
+  manager.close(notepad.id);
+  assert.equal(notepad.task.isConnected, false);
+  assert.equal(explorer.element.isConnected, true);
+  assert.equal(picture.element.isConnected, true);
+  const unsafe = app.openFile(images, {
+    name: 'private.jpg',
+    image: 'file:///C:/Users/private.jpg',
+  });
+  assert.equal(unsafe.element.querySelector('.picture-content').src, undefined);
+  assert.equal(unsafe.element.querySelector('.picture-content').hidden, true);
+  assert.equal(unsafe.element.querySelector('.picture-error').hidden, false);
+  assert.ok(manager.calls.every((call) => call.type === 'desktopapp' && call.preview));
+});
+
+test('every JPG has a bundled illustration and viewers reject host paths and remote images', () => {
+  const filesystem = read('../src/config/filesystem.json');
+  for (const location of Object.values(filesystem))
+    for (const item of location.items) {
+      if (!/\.jpg$/i.test(item.name)) continue;
+      assert.equal(fileViewer(item), 'image');
+      assert.equal(localPicture(item.image), true);
+      assert.ok(readFileSync(new URL(`../public/${item.image.slice(2)}`, import.meta.url)).length);
+    }
+  assert.equal(fileViewer({ name: 'notes.txt' }), 'notepad');
+  assert.equal(fileViewer({ name: 'folder.txt', location: 'images' }), null);
+  assert.equal(fileViewer({ name: 'toolbar.exe' }), null);
+  for (const unsafe of [
+    'file:///C:/Users/private.jpg',
+    'https://example.com/image.jpg',
+    '../secret.svg',
+    './covers/../../secret.svg',
+  ])
+    assert.equal(localPicture(unsafe), false);
+});
+
+test('explorer double-click, back, up and home preserve path and content', (t) => {
+  const previous = globalThis.document;
+  const element = () => ({
+    children: [],
+    handlers: {},
+    append(...nodes) {
+      this.children.push(...nodes);
+    },
+    replaceChildren() {
+      this.children = [];
+    },
+    addEventListener(name, callback) {
+      this.handlers[name] = callback;
+    },
+  });
+  globalThis.document = { createElement: element };
+  t.after(() => {
+    if (previous === undefined) delete globalThis.document;
+    else globalThis.document = previous;
+  });
+  const fields = new Map();
+  const instance = {
+    kind: 'computer',
+    history: [],
+    element: {
+      querySelector(selector) {
+        if (!fields.has(selector)) fields.set(selector, element());
+        return fields.get(selector);
+      },
+    },
+  };
+  const app = new DesktopApplications(null, null);
+  app.home(instance);
+  fields.get('.explorer-items').children[0].handlers.dblclick();
+  assert.equal(instance.current.address, 'C:\\');
+  assert.equal(fields.get('.explorer-items').children.length, 5);
+  fields.get('.explorer-items').children[0].handlers.dblclick();
+  assert.equal(instance.current.address, 'C:\\Program Files');
+  app.back(instance);
+  assert.equal(instance.current.address, 'C:\\');
+  app.up(instance);
+  assert.equal(instance.current.id, 'computer');
+  assert.equal(fields.get('.explorer-up').disabled, true);
+  fields.get('.explorer-items').children[2].handlers.dblclick();
+  assert.equal(instance.current.address, 'E:\\');
+  app.home(instance);
+  assert.equal(instance.current.id, 'computer');
+  assert.equal(fields.get('.explorer-address strong').textContent, 'Poste de travail');
+});
+
+test('disks contain navigable folders, valid parents, safe previews and an empty CD', () => {
+  const computer = explorerLocation('computer');
+  assert.equal(computer.items.length, 3);
+  const disk = explorerItem(computer, computer.items[0]);
+  assert.equal(disk.address, 'C:\\');
+  assert.deepEqual(
+    disk.items.map((item) => item.name),
+    ['Program Files', 'WINDOWS', 'Documents and Settings', 'Games', 'Downloads'],
+  );
+  const seen = new Set();
+  function explore(location) {
+    if (seen.has(location.id)) return;
+    seen.add(location.id);
+    if (location.parent) assert.ok(explorerLocation(location.parent));
+    for (const item of location.items) {
+      const target = explorerItem(location, item);
+      if (item.icon === 'folder') assert.ok(item.location);
+      if (item.location) explore(target);
+      else {
+        assert.equal(target.parent, location.id);
+        assert.ok(target.text || target.image);
+      }
+    }
+  }
+  explore(computer);
+  assert.ok(seen.size > 15);
+  const cd = explorerItem(computer, computer.items[1]);
+  assert.equal(cd.items.length, 0);
+  assert.match(cd.emptyText, /Insérez un disque/);
+  assert.ok(explorerItem(computer, computer.items[2]).items.length > 0);
+  assert.throws(() => explorerLocation('C:\\Users\\real-user'));
+  assert.throws(() => explorerLocation('__proto__'));
+});
+
+test('the menu CRT is original and distinct from the desktop computer', () => {
+  assert.notEqual(icon('menu-computer'), icon('computer'));
+  const svg = readFileSync(new URL('../public/icons/menu-computer.svg', import.meta.url), 'utf8');
+  assert.match(svg, /crtGradient/);
+  assert.doesNotMatch(svg, /<image|<script|href=/);
+});
 
 test('decorative contacts are offline and PixelGirl stays hidden until unlocked', () => {
   const locked = visibleContacts({ [intro.id]: intro }, []);

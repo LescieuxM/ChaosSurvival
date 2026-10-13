@@ -25,7 +25,11 @@ import { miniGames, createMiniGame } from './ui/minigame.js';
 import { MainMenu } from './ui/main-menu.js';
 import { MenuMusic } from './audio/menu-music.js';
 import { UserSettings, deleteUserData } from './settings.js';
-import { recordArcadeCompletion } from './story/arcade.js';
+import {
+  queueArcadeVictory,
+  pendingArcadeVictory,
+  acknowledgeArcadeVictory,
+} from './story/arcade.js';
 import replayConfig from './config/replay-reactions.json';
 import { ReplayReactions } from './story/replays.js';
 import { applicationName, trackIdentity } from './ui/identity.js';
@@ -239,7 +243,7 @@ const menu = new MainMenu(document.getElementById('app'), progression, settings,
 });
 const returnMenu = ui.menuPlay;
 returnMenu.id = 'return-main-menu';
-returnMenu.innerHTML = `${icon('computer')}<span>Menu principal<small>Continuer / nouvelle partie / options</small></span>`;
+returnMenu.innerHTML = `${icon('menu-computer')}<span>Menu principal<small>Continuer / nouvelle partie / options</small></span>`;
 async function setFullscreen(value) {
   try {
     if (window.chaosWindow) await window.chaosWindow.setFullscreen(value);
@@ -272,6 +276,11 @@ async function continueFromMenu() {
   menuMusic.stop();
   returnMenu.hidden = false;
   progression.begin();
+  const pendingVictory = pendingArcadeVictory(progression);
+  if (pendingVictory) {
+    showArcadeVictory(pendingVictory);
+    return;
+  }
   if (progression.current?.type === 'arcade') {
     phase = 'idle';
     await startGame();
@@ -521,22 +530,12 @@ function finishGame(won) {
   ui.best.textContent = String(best).padStart(6, '0');
   ui.sessionLabel.textContent = won ? 'BUREAU SAUVÉ' : 'LE SYSTÈME A CRAQUÉ';
   if (won) {
-    const firstCompletion = recordArcadeCompletion(progression, arcadeSequenceId, {
+    const result = queueArcadeVictory(progression, arcadeSequenceId, {
       score: state.score,
       closed: state.closed,
+      newRecord,
     });
-    ui.modalLayer.hidden = true;
-    ui.dialogTitle.textContent = 'Tu as survécu !';
-    cancelVictory = celebrateVictory(
-      ui.desktop,
-      { score: state.score, closed: state.closed, newRecord },
-      sounds,
-      () => {
-        if (firstCompletion && progression.current)
-          progression.enterCurrent().catch(showStoryError);
-        else showStoryDesktop(false);
-      },
-    );
+    showArcadeVictory(result);
     return;
   }
   showDialog(
@@ -550,6 +549,26 @@ function finishGame(won) {
       callback: arcadeReplay ? () => showStoryDesktop(false) : restartDesktop,
     },
   );
+}
+function showArcadeVictory(result) {
+  phase = 'ended';
+  ui.playfield.inert = true;
+  ui.pauseButton.disabled = true;
+  ui.modalLayer.hidden = true;
+  ui.dialogTitle.textContent = 'Tu as survécu !';
+  state.score = result.score;
+  state.closed = result.closed;
+  renderStats();
+  cancelVictory = celebrateVictory(ui.desktop, result, sounds, () => {
+    try {
+      const acknowledged = acknowledgeArcadeVictory(progression);
+      if (acknowledged?.firstCompletion && progression.current)
+        progression.enterCurrent().catch(showStoryError);
+      else showStoryDesktop(false);
+    } catch (error) {
+      showStoryError(error);
+    }
+  });
 }
 function restartDesktop() {
   returnToMenu();

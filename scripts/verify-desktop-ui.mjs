@@ -143,28 +143,48 @@ try {
       await evaluate(`document.querySelectorAll('.desktop-app-task[data-app=${kind}]').length`),
       1,
     );
-    if (kind === 'computer' || kind === 'folder') {
-      const item = kind === 'computer' ? 1 : 3;
-      await doubleClick(`.popup-desktopapp:last-of-type .explorer-item:nth-child(${item})`);
+    if (kind === 'computer') {
+      await doubleClick('.popup-desktopapp:last-of-type .explorer-item:first-child');
       assert.ok(
         await evaluate(
-          "document.querySelector('.popup-desktopapp:last-of-type .explorer-address strong').textContent.includes('/')",
+          "document.querySelector('.popup-desktopapp:last-of-type .explorer-address strong').textContent.startsWith('C:')",
         ),
       );
-      if (kind === 'folder')
-        assert.ok(
-          await evaluate(
-            "document.querySelector('.popup-desktopapp:last-of-type .explorer-empty').textContent.includes('Devoir pour lundi')",
-          ),
-        );
       await click('.popup-desktopapp:last-of-type .explorer-back');
+    }
+    if (kind === 'folder') {
+      const folderId = await evaluate(
+        "document.querySelector('.popup-desktopapp:last-of-type').dataset.windowId",
+      );
+      await doubleClick('.popup-desktopapp:last-of-type .explorer-item:nth-child(3)');
       assert.ok(
         await evaluate(
-          "document.querySelectorAll('.popup-desktopapp:last-of-type .explorer-item').length>0",
+          "document.querySelector('.notepad-content').value.includes('Devoir pour lundi')",
         ),
       );
+      await click('.file-notepad .msn-minimize');
+      await evaluate(
+        "[...document.querySelectorAll('.desktop-app-task')].find(task=>task.title.includes('Bloc-notes')).click()",
+      );
+      assert.equal(await evaluate("document.querySelector('.file-notepad').hidden"), false);
+      await click('.file-notepad .close-button');
+      assert.ok(
+        await evaluate(
+          `!!document.querySelector('[data-window-id="${folderId}"] .explorer-items')`,
+        ),
+      );
+      await doubleClick('.popup-desktopapp:last-of-type .explorer-item:first-child');
+      await doubleClick('.popup-desktopapp:last-of-type .explorer-item:first-child');
+      await until(
+        () => evaluate("document.querySelector('.picture-content')?.naturalWidth>0"),
+        'image',
+      );
+      await capture('desktop-picture-viewer.png');
+      await click('.file-image .close-button');
+      await click('.popup-desktopapp:last-of-type .explorer-back');
     }
   }
+
   assert.equal(await evaluate("document.querySelectorAll('.popup-desktopapp').length"), 3);
   assert.ok(
     await evaluate(

@@ -3,9 +3,18 @@ export function celebrateVictory(desktop, result, sounds, onReturn) {
   layer.className = 'victory-layer';
   layer.id = 'victory-layer';
   layer.setAttribute('aria-label', 'Victoire du premier niveau');
+  layer.setAttribute('role', 'dialog');
+  layer.setAttribute('aria-modal', 'true');
   layer.innerHTML = /* HTML */ ` <div class="victory-rays" aria-hidden="true"></div>
     <div class="victory-confetti" aria-hidden="true"></div>
     <div class="victory-card">
+      <button
+        class="close-button victory-close"
+        id="victory-close"
+        aria-label="Fermer les résultats et revenir au bureau"
+      >
+        ×
+      </button>
       <span class="victory-sticker">BUREAU SAUVÉ !!</span>
       <div class="victory-stars" aria-hidden="true">★ ✦ ★</div>
       <h2>LEVEL COMPLETE !!!<span>YOU SURVIVED ! ★★★★★</span></h2>
@@ -28,21 +37,22 @@ export function celebrateVictory(desktop, result, sounds, onReturn) {
     confetti.append(piece);
   }
   desktop.append(layer);
+  const background = [...desktop.children]
+    .filter((child) => child !== layer)
+    .map((child) => ({ child, inert: child.inert }));
+  for (const { child } of background) child.inert = true;
   sounds.play('victory');
-  let frame,
-    elapsed = 0,
-    previous = null,
-    finished = false;
+  let finished = false;
   const onVisibility = () => {
-    previous = null;
     layer.classList.toggle('is-suspended', document.hidden);
   };
   document.addEventListener('visibilitychange', onVisibility);
   const cleanup = () => {
+    if (finished) return;
     finished = true;
-    cancelAnimationFrame(frame);
     document.removeEventListener('visibilitychange', onVisibility);
     layer.remove();
+    for (const { child, inert } of background) child.inert = inert;
   };
   const finish = () => {
     if (finished) return;
@@ -50,14 +60,7 @@ export function celebrateVictory(desktop, result, sounds, onReturn) {
     onReturn();
   };
   layer.querySelector('#victory-continue').addEventListener('click', finish);
+  layer.querySelector('#victory-close').addEventListener('click', finish);
   layer.querySelector('#victory-continue').focus();
-  function tick(time) {
-    if (finished) return;
-    if (previous !== null && !document.hidden) elapsed += time - previous;
-    previous = time;
-    if (elapsed >= 5000) return finish();
-    frame = requestAnimationFrame(tick);
-  }
-  frame = requestAnimationFrame(tick);
   return cleanup;
 }
