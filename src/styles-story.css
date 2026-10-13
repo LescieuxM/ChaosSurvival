@@ -31,14 +31,6 @@
   padding: 4px 10px;
   flex-shrink: 0;
 }
-.conversation-channel {
-  min-width: 0;
-  max-width: 170px;
-  font: 11px Tahoma;
-  padding: 3px;
-  border: 1px solid #a4b9d4;
-  border-radius: 3px;
-}
 .msn-minimize {
   width: 24px;
   height: 23px;

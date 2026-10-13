@@ -25,10 +25,28 @@ function setup() {
   progression.begin();
   return { storage, progression, reactions: new ReplayReactions(progression, definitions, config) };
 }
-function meet(progression) {
+function meet(progression, complete = true) {
   progression.complete('arcade-1');
   const session = new DialogueSession(definitions['pixelgirl-intro'], progression);
   session.deliver();
+  if (complete) finish(session, progression);
+  return session;
+}
+function finish(session, progression) {
+  for (let step = 0; step < 150 && !session.state.finished; step++) {
+    if (session.nextMessage()) {
+      session.deliver();
+      continue;
+    }
+    if (session.advance()) continue;
+    if (session.choices.length) {
+      session.choose(session.choices[0].id);
+      continue;
+    }
+    if (session.activeTransfer?.status === 'pending')
+      progression.finishTransfer(session.activeTransfer.key);
+  }
+  assert.ok(session.state.finished);
 }
 test('attempts are counted immediately, including abandonments, without reactions before the first meeting', () => {
   const { progression, reactions } = setup();
@@ -115,4 +133,81 @@ test('all replay response branches finish independently of the original narrativ
     assert.equal(progression.data.choices.at(-1).unselected.length, 2);
     assert.equal(progression.current.id, 'pixelgirl-hello');
   }
+});
+
+test('events wait behind the original choice and its transfer, then join the same history', () => {
+  const { progression, reactions } = setup();
+  reactions.launch(0);
+  const intro = meet(progression, false);
+  while (intro.nextMessage()) intro.deliver();
+  intro.offerChoices();
+  const choices = structuredClone(intro.choices);
+  reactions.launch(1000);
+  assert.deepEqual(reactions.flush(6000), []);
+  assert.deepEqual(intro.choices, choices);
+  assert.equal(reactions.thread.state.activeEvent, 'pixelgirl-intro');
+  assert.equal(reactions.thread.state.pendingEvents.length, 1);
+  assert.equal(Object.keys(progression.data.dialogues).length, 1);
+  finish(intro, progression);
+  const [incoming] = reactions.flush(7000);
+  assert.ok(incoming);
+  const history = reactions.thread.state.history;
+  assert.equal(history[0].text, 'heyyyy :DDD');
+  assert.equal(
+    history.at(-1).text,
+    "t'as décidé de devenir champion du monde de fermeture de fenêtres ou quoi xD",
+  );
+  assert.equal(history.length, intro.state.transcript.length + 3);
+});
+
+test('an unanswered replay survives restart and holds later reactions in the durable queue', () => {
+  const { storage, progression, reactions } = setup();
+  reactions.launch(0);
+  meet(progression);
+  reactions.launch(1000);
+  const [first] = reactions.flush(6000);
+  const previousHistory = structuredClone(reactions.thread.state.history);
+  const previousOffers = structuredClone(progression.data.choiceOffers[`${first.id}:hello`]);
+  reactions.launch(7000);
+  assert.deepEqual(reactions.flush(12000), []);
+  assert.deepEqual(reactions.thread.state.history, previousHistory);
+  const restored = new ReplayReactions(new Progression(story, storage), definitions, config);
+  assert.equal(restored.thread.activeDefinition.id, first.id);
+  assert.deepEqual(restored.progression.data.choiceOffers[`${first.id}:hello`], previousOffers);
+  assert.deepEqual(restored.flush(14000), []);
+  finish(new DialogueSession(first, restored.progression), restored.progression);
+  const [second] = restored.flush(15000);
+  assert.ok(second);
+  assert.equal(restored.thread.state.history.at(-1).text, 'ENCORE ??? MDRRR');
+  assert.equal(restored.progression.data.level1Launches, 3);
+  assert.deepEqual(restored.flush(99999), []);
+  restored.thread.markRead();
+  assert.deepEqual(restored.thread.state.unread, []);
+});
+
+test('legacy selectable scenarios migrate once into a chronological history without losing pending replies', () => {
+  const { storage, progression, reactions } = setup();
+  const intro = meet(progression, false);
+  reactions.launch(0);
+  const event = progression.data.replayReactions[0];
+  event.ready = true;
+  const replay = new DialogueSession(reactions.definition(event), progression);
+  while (replay.nextMessage()) replay.deliver();
+  replay.offerChoices();
+  intro.state.transcript[0].receivedAt = 100;
+  replay.state.transcript.forEach((entry, index) => (entry.receivedAt = 200 + index));
+  const before = structuredClone(progression.data.dialogues);
+  delete progression.data.conversations;
+  progression.save();
+  const restored = new ReplayReactions(new Progression(story, storage), definitions, config);
+  assert.deepEqual(restored.progression.data.dialogues, before);
+  assert.equal(restored.thread.state.history.length, 4);
+  assert.equal(restored.thread.state.history[0].text, 'heyyyy :DDD');
+  assert.equal(restored.thread.activeDefinition.id, 'pixelgirl-intro');
+  assert.deepEqual(restored.flush(99999), []);
+  const again = new ReplayReactions(new Progression(story, storage), definitions, config);
+  assert.deepEqual(again.thread.state.history, restored.thread.state.history);
+  finish(new DialogueSession(definitions['pixelgirl-intro'], again.progression), again.progression);
+  assert.equal(again.thread.activeDefinition.id, event.id);
+  assert.equal(new DialogueSession(again.definition(event), again.progression).choices.length, 3);
 });

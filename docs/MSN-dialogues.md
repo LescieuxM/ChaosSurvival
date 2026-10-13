@@ -79,11 +79,21 @@ répétée après un redémarrage. Les messages restent disponibles avec Messeng
 fermé ou réduit. Recevoir un message n'ouvre pas Messenger et ne met pas le jeu
 en pause ; le joueur peut ouvrir Messenger pour discuter à son rythme.
 
-Le sélecteur de conversation permet de retrouver les choix en attente d'une
-tentative précédente ou le transfert de l'introduction. L'historique commun
-conserve tous les messages ; les réponses proposées mais non choisies restent
-enregistrées dans la sauvegarde. NEW GAME archive cette partie puis remet son
-compteur à zéro. Effacer les données utilisateur supprime également les archives.
+PixelGirl possède une seule discussion, sans sélecteur de scénarios. Les fichiers
+JSON représentent des événements injectés automatiquement dans ce fil. Le
+gestionnaire `src/story/conversation-thread.js` ajoute les messages à l'historique
+chronologique du contact et attend la fin de l'événement actif avant d'injecter
+le suivant. Un choix ou un transfert en attente n'est jamais remplacé.
+
+La sauvegarde `conversations.pixelgirl` conserve l'historique unique, les messages
+non lus, l'événement actif et la file des événements prêts. Les états des scripts
+restent dans `dialogues` pour reprendre leurs branches, choix et transferts. Les
+anciennes sauvegardes sont fusionnées automatiquement, sans modifier les textes
+ni les choix. Cette migration est idempotente : relancer le jeu ne duplique pas
+les messages. Messenger fermé ou réduit conserve les messages et les réponses
+en attente ; les événements sont déclenchés par le jeu et jamais choisis dans
+l'interface. NEW GAME archive la partie puis réinitialise ce fil et le compteur.
+Effacer les données utilisateur supprime également les archives.
 
 ## Remplacer le mini-jeu
 

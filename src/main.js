@@ -126,7 +126,7 @@ function createConversation(dialogue) {
       }
     },
     {
-      getDialogues: () => [dialogue, ...replayReactions.dialogues],
+      thread: replayReactions.thread,
       isUnlocked: () => progression.data.unlockedConversations.includes(dialogue.id),
       onWindowState: ({ open, minimized }) => {
         ui.msnTask.hidden = !open;
@@ -676,8 +676,6 @@ async function openConversation() {
   ui.toast.hidden = true;
   sounds.unlock();
   conversation.open();
-  if (replayReactions.pendingDialogue)
-    conversation.activateDialogue(replayReactions.pendingDialogue);
 }
 function replayLevelOne() {
   if (!['desktop', 'idle', 'ended', 'playing', 'paused'].includes(phase)) return;
@@ -836,20 +834,32 @@ function updateClock() {
   menu.clock.textContent = ui.clock.textContent;
 }
 updateClock();
+let notifiedMessages = '';
 function receiveReplayReactions() {
-  for (const definition of replayReactions.flush()) {
-    const visible = conversation.element?.isConnected && !conversation.element.hidden;
-    if (conversation.element?.isConnected) conversation.activateDialogue(definition);
-    sounds.unlock().then(() => sounds.play('message'));
-    if (!visible) {
-      ui.toastContact.textContent = definition.contact.nickname;
-      ui.toastMessage.textContent = 't’a envoyé un nouveau message.';
-      ui.toast.hidden = false;
-      ui.toastOpen.hidden = false;
-      ui.toast.classList.add('story-toast');
-      storyToastAction = openConversation;
-      toastUntil = audio.time + 6;
-    }
+  const incoming = replayReactions.flush();
+  conversation.refresh();
+  const visible = conversation.element?.isConnected && !conversation.element.hidden;
+  if (visible && conversation.followLatest) replayReactions.thread.markRead();
+  const unread = replayReactions.thread.state.unread;
+  ui.msnTask.title = unread.length
+    ? `${unread.length} message(s) non lu(s)`
+    : applicationName('messenger');
+  const notificationKey = `${progression.data.runId}:${unread.join(',')}`;
+  if (incoming.length) sounds.unlock().then(() => sounds.play('message'));
+  if (
+    !visible &&
+    unread.length &&
+    ['playing', 'desktop', 'paused'].includes(phase) &&
+    notificationKey !== notifiedMessages
+  ) {
+    notifiedMessages = notificationKey;
+    ui.toastContact.textContent = pixelgirlDialogue.contact.nickname;
+    ui.toastMessage.textContent = 't’a envoyé un nouveau message.';
+    ui.toast.hidden = false;
+    ui.toastOpen.hidden = false;
+    ui.toast.classList.add('story-toast');
+    storyToastAction = openConversation;
+    toastUntil = audio.time + 6;
   }
   requestAnimationFrame(receiveReplayReactions);
 }

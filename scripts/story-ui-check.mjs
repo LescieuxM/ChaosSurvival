@@ -41,6 +41,10 @@ export async function verifyStoryUI({
   );
   await evaluate("document.querySelector('#toast-open').click()");
   await until(() => evaluate("!!document.querySelector('.popup-narrative')"), 'MSN window');
+  assert.equal(
+    await evaluate("!!document.querySelector('.conversation-channel, .popup-narrative select')"),
+    false,
+  );
   await evaluate("document.querySelector('#pause-messages').click()");
   const count = await evaluate("document.querySelectorAll('.conversation-message').length");
   await wait(1100);
@@ -256,6 +260,31 @@ export async function verifyStoryUI({
     ),
   );
   assert.equal((await evaluate('window.chaosDebug.snapshot()')).phase, 'paused');
+  const pendingReply = await saved();
+  await evaluate(
+    "document.querySelector('.popup-narrative .close-button').click();document.querySelector('[data-shortcut=music]').dispatchEvent(new MouseEvent('dblclick',{bubbles:true}))",
+  );
+  await until(
+    () => evaluate("window.chaosDebug.snapshot().phase==='playing'"),
+    'replay sans reponse',
+  );
+  await wait(5300);
+  assert.equal((await saved()).level1Launches, beforeReplay.level1Launches + 2);
+  assert.deepEqual(
+    (await saved()).conversations.pixelgirl.history,
+    pendingReply.conversations.pixelgirl.history,
+  );
+  assert.equal((await saved()).conversations.pixelgirl.pendingEvents.length, 1);
+  await evaluate(
+    "document.querySelector('#windows-start').click();document.querySelector('#menu-messenger').click()",
+  );
+  await until(
+    () => evaluate("!!document.querySelector('[data-choice-id=replay-olympics]:not(:disabled)')"),
+    'reponse preservee',
+  );
+  const persistentWindow = await evaluate(
+    "document.querySelector('.popup-narrative').dataset.windowId",
+  );
   await evaluate("document.querySelector('[data-choice-id=replay-olympics]').click()");
   await until(
     () => evaluate("document.querySelector('.conversation-log').textContent.includes('médaille')"),
@@ -263,6 +292,19 @@ export async function verifyStoryUI({
     8000,
   );
   await wait(300);
+  await until(
+    () =>
+      evaluate("document.querySelector('.conversation-log').textContent.includes('ENCORE ???')"),
+    'evenement injecte apres la reponse',
+  );
+  assert.equal(
+    await evaluate("document.querySelector('.popup-narrative').dataset.windowId"),
+    persistentWindow,
+  );
+  assert.equal(
+    await evaluate("document.querySelectorAll('.conversation-message').length"),
+    (await saved()).conversations.pixelgirl.history.length,
+  );
   assert.equal((await saved()).current, null);
   await evaluate(
     "document.querySelector('.popup-narrative .close-button').click();document.querySelector('#dialog-action').click()",
@@ -314,7 +356,9 @@ export async function verifyStoryUI({
   );
   await until(
     () =>
-      evaluate("document.querySelector('.conversation-log').textContent.includes('ENCORE ???')"),
+      evaluate(
+        "document.querySelector('.conversation-log').textContent.includes('tu dors des fois')",
+      ),
     'reaction Messenger reduit',
     8000,
   );
@@ -346,6 +390,10 @@ export async function verifyStoryUI({
   );
   assert.equal((await saved()).level1Launches, beforeAbandon.level1Launches);
   assert.deepEqual((await saved()).replayReactions, beforeAbandon.replayReactions);
+  assert.deepEqual(
+    (await saved()).conversations.pixelgirl.history,
+    beforeAbandon.conversations.pixelgirl.history,
+  );
   const archivedRun = await saved();
   await evaluate(
     "document.querySelector('#return-main-menu').click();document.querySelector('#menu-new-game').click();document.querySelector('#menu-confirm-yes').click()",
@@ -364,6 +412,7 @@ export async function verifyStoryUI({
   assert.deepEqual((await saved()).choices, []);
   assert.equal((await saved()).level1Launches, 1);
   assert.deepEqual((await saved()).replayReactions, []);
+  assert.deepEqual((await saved()).conversations.pixelgirl.history, []);
   console.log(
     'OK : quatre choix, branches communes, refus puis transfert, fichier fictif, Smiley Catcher 30 s et retour au bureau.',
   );
@@ -385,5 +434,7 @@ export async function verifyStoryUI({
     replayReactions: true,
     replayCountPersists: true,
     minimizedMessengerKeepsMessages: true,
+    singlePersistentConversation: true,
+    queuedNarrativeEvents: true,
   };
 }

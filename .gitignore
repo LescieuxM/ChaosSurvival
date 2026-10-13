@@ -1,10 +1,19 @@
 node_modules/
 dist/
 release/
+out/
+build/
 .tools/
 .qa/
 Microsoft/
 *.log
+
+# Artefacts Electron et installateurs generes
+*.exe
+*.msi
+*.msix
+*.appx
+*.blockmap
 
 # Caches et environnements locaux de développement
 __pycache__/
@@ -13,8 +22,19 @@ __pycache__/
 venv/
 .pytest_cache/
 .cache/
+.npm/
+.pnpm-store/
+.electron-builder-cache/
 .vite/
 coverage/
+.coverage
+.coverage.*
+.eslintcache
+*.tsbuildinfo
+*.tmp
+*.temp
+*.dmp
+*.stackdump
 .DS_Store
 Thumbs.db
 

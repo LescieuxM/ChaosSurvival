@@ -13,6 +13,7 @@ function freshData(story) {
     flags: {},
     choices: [],
     dialogues: {},
+    conversations: {},
     results: {},
     choiceOffers: {},
     files: {},

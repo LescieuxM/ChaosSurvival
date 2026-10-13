@@ -1,9 +1,13 @@
-import { DialogueSession } from './dialogue.js';
+import { ConversationThread } from './conversation-thread.js';
 export class ReplayReactions {
   constructor(progression, definitions, config) {
     Object.assign(this, { progression, definitions, config });
     progression.data.level1Launches ??= progression.data.completed.includes('arcade-1') ? 1 : 0;
     progression.data.replayReactions ??= [];
+    this.thread = new ConversationThread('pixelgirl', progression, () => [
+      definitions['pixelgirl-intro'],
+      ...this.dialogues,
+    ]);
   }
   get metPixelGirl() {
     return (
@@ -38,29 +42,17 @@ export class ReplayReactions {
     return { ...template, id: event.id };
   }
   flush(now = Date.now()) {
-    const incoming = [];
     for (const event of this.progression.data.replayReactions) {
       if (event.ready || event.dueAt > now) continue;
       if (!this.definitions[event.template]) continue;
-      const definition = this.definition(event);
-      const session = new DialogueSession(definition, this.progression);
-      // Incoming messages are durably received even while Messenger is closed.
-      while (session.nextMessage()) session.deliver();
-      session.offerChoices();
       event.ready = true;
       this.progression.save();
-      incoming.push(definition);
     }
-    return incoming;
+    return this.thread.receive();
   }
   get dialogues() {
     return this.progression.data.replayReactions
       .filter((event) => event.ready && this.definitions[event.template])
       .map((event) => this.definition(event));
-  }
-  get pendingDialogue() {
-    return this.dialogues.find(
-      (definition) => !this.progression.data.dialogues[definition.id]?.finished,
-    );
   }
 }
