@@ -184,7 +184,11 @@ export class DialogueSession {
   deliver() {
     const message = this.nextMessage();
     if (!message) return null;
-    const entry = { speaker: message.speaker, text: message.text ?? message.file.name };
+    const entry = {
+      speaker: message.speaker,
+      text: message.text ?? message.file.name,
+      receivedAt: Date.now(),
+    };
     if (message.type === 'file') {
       const file = this.progression.receiveFile(
         message.file,
@@ -247,7 +251,7 @@ export class DialogueSession {
         text: alternative.text,
       };
     }
-    this.state.transcript.push({ speaker: 'player', text: choice.text });
+    this.state.transcript.push({ speaker: 'player', text: choice.text, receivedAt: Date.now() });
     this.state.node = choice.next;
     this.state.cursor = 0;
     this.persist();

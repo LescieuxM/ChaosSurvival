@@ -405,7 +405,7 @@
         },
         {
           "id": "game-3",
-          "text": "je viens de passer 3 minutes à fermer des fenêtres, à ton avis ?",
+          "text": "je viens de passer 2 minutes à fermer des fenêtres, à ton avis ?",
           "next": "not-wrong",
           "set": {
             "gameInvitationReply": "3"

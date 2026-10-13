@@ -1,4 +1,5 @@
 import { icon } from './icons.js';
+import { applicationName, trackIdentity } from './identity.js';
 
 export function mountDesktop(root, best) {
   root.innerHTML = /* HTML */ ` <main class="desktop" id="desktop">
@@ -33,12 +34,16 @@ export function mountDesktop(root, best) {
     <nav class="desktop-icons" aria-label="Raccourcis du bureau">
       <button data-shortcut="computer">${icon('computer')}<span>Poste de travail</span></button>
       <button data-shortcut="folder">${icon('folder')}<span>Mes documents</span></button>
-      <button data-shortcut="msn">${icon('msn')}<span>MSN Messenger</span></button>
-      <button data-shortcut="music">${icon('music')}<span>music-lvl1.mp3</span></button>
+      <button data-shortcut="msn">
+        ${icon('msn')}<span>${applicationName('messenger')}</span>
+      </button>
+      <button data-shortcut="music">
+        ${icon('music')}<span>${trackIdentity.displayName}</span>
+      </button>
       <button data-shortcut="bin">${icon('bin')}<span>Corbeille</span></button>
     </nav>
     <div class="desktop-note">
-      <span>internet was a mistake.</span><small>mais la musique est bien.</small>
+      <span>internet was a mistake.</span><small>mais la musique est bonne.</small>
     </div>
     <section id="playfield" aria-label="Fenêtres à fermer"></section>
     <div class="intro-layer" id="intro-layer">
@@ -94,7 +99,9 @@ export function mountDesktop(root, best) {
       </div>
       <div class="track">
         <small>LECTURE EN COURS</small
-        ><strong id="track-title">music-lvl1.mp3 <span>· HYPERPOP MIX</span></strong>
+        ><strong id="track-title"
+          >${trackIdentity.displayName} <span>· ${trackIdentity.source}</span></strong
+        >
         <div class="track-progress"><div id="track-fill"></div></div>
         <div class="track-meta">
           <span id="track-time">00:00 / 01:30</span><span id="bpm-label">160 BPM</span>
@@ -118,7 +125,7 @@ export function mountDesktop(root, best) {
     </div>
     <div class="toast" id="toast" hidden>
       <header>
-        ${icon('msn')} MSN Messenger
+        ${icon('msn')} ${applicationName('messenger')}
         <button id="dismiss-toast" aria-label="Fermer la notification">×</button>
       </header>
       <div>
@@ -153,7 +160,8 @@ export function mountDesktop(root, best) {
       <button id="desktop-menu-play">
         ${icon('music')}
         <span>Chaos Survival<small>Démarrer / reprendre la partie</small></span></button
-      ><button id="menu-help">${icon('help')} Comment jouer</button>
+      ><button id="menu-messenger">${icon('msn')} ${applicationName('messenger')}</button>
+      <button id="menu-help">${icon('help')} Comment jouer</button>
       <footer>Bienvenue en 2005. Reste un peu.</footer>
     </div>
     <footer class="taskbar">
@@ -161,7 +169,9 @@ export function mountDesktop(root, best) {
         ${icon('flag')} démarrer
       </button>
       <div class="task-tab">${icon('computer')} Chaos Survival</div>
-      <button class="task-tab task-msn" id="msn-task">${icon('msn')} Windows Live Messenger</button>
+      <button class="task-tab task-msn" id="msn-task" hidden>
+        ${icon('msn')} ${applicationName('messenger')}
+      </button>
       <div class="tray">
         <span class="tray-online" title="Connecté">●</span
         ><button id="mute-button" aria-label="Couper le son">♫</button><span>FR</span
@@ -214,6 +224,7 @@ export function mountDesktop(root, best) {
     windowsStart: select('#windows-start'),
     menuPlay: select('#desktop-menu-play'),
     menuHelp: select('#menu-help'),
+    menuMessenger: select('#menu-messenger'),
     clock: select('#clock'),
     shortcuts: root.querySelectorAll('[data-shortcut]'),
   };

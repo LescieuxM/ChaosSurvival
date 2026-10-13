@@ -102,6 +102,22 @@ export async function verifyStoryUI({
     () => evaluate("!!document.querySelector('[data-choice-id=nickname-3]')"),
     'restored choices',
   );
+  const restored = await saved();
+  await evaluate("document.querySelector('.msn-minimize').click()");
+  assert.equal(await evaluate("document.querySelector('#msn-task').hidden"), false);
+  await evaluate(
+    "document.querySelector('#msn-task').click();document.querySelector('.popup-narrative .close-button').click()",
+  );
+  assert.equal(await evaluate("document.querySelector('#msn-task').hidden"), true);
+  assert.deepEqual((await saved()).choices, restored.choices);
+  await evaluate(
+    "document.querySelector('#windows-start').click();document.querySelector('#menu-messenger').click()",
+  );
+  await until(
+    () => evaluate("!!document.querySelector('[data-choice-id=nickname-3]')"),
+    'historique MSN après fermeture réelle',
+  );
+  assert.deepEqual((await saved()).dialogues, restored.dialogues);
   await command('Emulation.setDeviceMetricsOverride', {
     width: 800,
     height: 600,
@@ -205,12 +221,132 @@ export async function verifyStoryUI({
   assert.deepEqual((await saved()).completed, completedRun.completed);
   assert.equal(await evaluate("document.querySelector('#toast').hidden"), true);
   assert.equal(await evaluate("!!document.querySelector('.popup-minigame')"), false);
-  await evaluate("document.querySelector('#msn-task').click()");
+  await evaluate(
+    "document.querySelector('#windows-start').click();document.querySelector('#menu-messenger').click()",
+  );
   assert.equal(
     await evaluate("document.querySelectorAll('.conversation-message').length"),
     completedRun.dialogues['pixelgirl-intro'].transcript.length,
   );
   assert.equal(await evaluate("!!document.querySelector('.dialogue-choice')"), false);
+  await evaluate("document.querySelector('.popup-narrative .close-button').click()");
+  const beforeReplay = await saved();
+  await evaluate(
+    "document.querySelector('[data-shortcut=music]').dispatchEvent(new MouseEvent('dblclick',{bubbles:true}))",
+  );
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'double clic MP3');
+  assert.equal(Number(await evaluate("document.querySelector('#score').textContent")), 0);
+  assert.equal((await evaluate('window.chaosDebug.snapshot()')).open, 0);
+  assert.equal((await saved()).level1Launches, beforeReplay.level1Launches + 1);
+  await until(
+    () => evaluate("!document.querySelector('#toast-open').hidden"),
+    'reaction de replay',
+    8000,
+  );
+  assert.equal((await evaluate('window.chaosDebug.snapshot()')).phase, 'playing');
+  assert.equal(await evaluate("!!document.querySelector('.popup-narrative')"), false);
+  await evaluate("document.querySelector('#toast-open').click()");
+  await until(
+    () => evaluate("!!document.querySelector('[data-choice-id=replay-olympics]')"),
+    'choix de replay',
+  );
+  assert.ok(
+    (await evaluate("document.querySelector('.conversation-log').textContent")).includes(
+      'champion du monde',
+    ),
+  );
+  assert.equal((await evaluate('window.chaosDebug.snapshot()')).phase, 'paused');
+  await evaluate("document.querySelector('[data-choice-id=replay-olympics]').click()");
+  await until(
+    () => evaluate("document.querySelector('.conversation-log').textContent.includes('médaille')"),
+    'branche de replay',
+    8000,
+  );
+  await wait(300);
+  assert.equal((await saved()).current, null);
+  await evaluate(
+    "document.querySelector('.popup-narrative .close-button').click();document.querySelector('#dialog-action').click()",
+  );
+  await until(
+    () => evaluate("window.chaosDebug.snapshot().phase==='playing'"),
+    'reprise apres MSN',
+  );
+  const replayDeadline = Date.now() + 105000;
+  while (Date.now() < replayDeadline) {
+    const snapshot = await evaluate('window.chaosDebug.snapshot()');
+    if (snapshot.phase === 'ended') break;
+    await evaluate("document.querySelector('.popup:not(.preview-window) .close-button')?.click()");
+    await wait(250);
+  }
+  await until(
+    () => evaluate("!!document.querySelector('#victory-continue')"),
+    'victoire en rejouant',
+  );
+  await evaluate("document.querySelector('#victory-continue').click()");
+  await until(
+    () => evaluate("window.chaosDebug.snapshot().phase==='desktop'"),
+    'bureau après replay',
+  );
+  assert.equal(await evaluate("document.querySelector('#toast').hidden"), true);
+  const afterReplay = await saved();
+  assert.deepEqual(afterReplay.completed, beforeReplay.completed);
+  assert.deepEqual(afterReplay.files, beforeReplay.files);
+  assert.deepEqual(
+    afterReplay.dialogues['pixelgirl-intro'],
+    beforeReplay.dialogues['pixelgirl-intro'],
+  );
+  assert.deepEqual(afterReplay.choices.slice(0, 4), beforeReplay.choices);
+  await evaluate(
+    "document.querySelector('[data-shortcut=music]').dispatchEvent(new MouseEvent('dblclick',{bubbles:true}))",
+  );
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'second replay');
+  assert.ok((await evaluate('window.chaosDebug.snapshot()')).audioTime < 1);
+  await evaluate(
+    "document.querySelector('#windows-start').click();document.querySelector('#menu-messenger').click()",
+  );
+  await until(
+    () => evaluate("!!document.querySelector('.popup-narrative')"),
+    'Messenger pendant le replay',
+  );
+  const messengerId = await evaluate("document.querySelector('.popup-narrative').dataset.windowId");
+  await evaluate(
+    "document.querySelector('.msn-minimize').click();document.querySelector('#dialog-action').click()",
+  );
+  await until(
+    () =>
+      evaluate("document.querySelector('.conversation-log').textContent.includes('ENCORE ???')"),
+    'reaction Messenger reduit',
+    8000,
+  );
+  assert.ok(await evaluate("document.querySelector('.popup-narrative').hidden"));
+  assert.equal(
+    await evaluate("document.querySelector('.popup-narrative').dataset.windowId"),
+    messengerId,
+  );
+  assert.equal(await evaluate("document.querySelectorAll('.popup-narrative').length"), 1);
+  assert.equal((await evaluate('window.chaosDebug.snapshot()')).phase, 'playing');
+  assert.equal(await evaluate("document.querySelector('#msn-task').hidden"), false);
+  await evaluate("document.querySelector('#msn-task').click()");
+  assert.ok(
+    (await evaluate("document.querySelector('.conversation-log').textContent")).includes(
+      'médaille',
+    ),
+  );
+  await wait(200);
+  const beforeAbandon = await saved();
+  await evaluate("document.querySelector('#return-main-menu').click()");
+  await evaluate('window.__storyReload=true');
+  await command('Page.reload');
+  await until(
+    () =>
+      evaluate("window.__storyReload!==true&&window.chaosDebug?.snapshot().phase==='menu'").catch(
+        () => false,
+      ),
+    'replay abandonne conserve',
+  );
+  assert.equal((await saved()).level1Launches, beforeAbandon.level1Launches);
+  assert.deepEqual((await saved()).replayReactions, beforeAbandon.replayReactions);
+  const archivedRun = await saved();
   await evaluate(
     "document.querySelector('#return-main-menu').click();document.querySelector('#menu-new-game').click();document.querySelector('#menu-confirm-yes').click()",
   );
@@ -222,10 +358,12 @@ export async function verifyStoryUI({
     "JSON.parse(localStorage.getItem('chaos-survival-history-v1')).runs.at(-1)",
   );
   assert.equal(archive.runId, completedRun.runId);
-  assert.deepEqual(archive.choices, completedRun.choices);
-  assert.deepEqual(archive.dialogues, completedRun.dialogues);
+  assert.deepEqual(archive.choices, archivedRun.choices);
+  assert.deepEqual(archive.dialogues, archivedRun.dialogues);
   assert.deepEqual(archive.files, completedRun.files);
   assert.deepEqual((await saved()).choices, []);
+  assert.equal((await saved()).level1Launches, 1);
+  assert.deepEqual((await saved()).replayReactions, []);
   console.log(
     'OK : quatre choix, branches communes, refus puis transfert, fichier fictif, Smiley Catcher 30 s et retour au bureau.',
   );
@@ -241,6 +379,11 @@ export async function verifyStoryUI({
     minigame: true,
     returnToDesktop: true,
     completedStoryResume: true,
+    replayLevelWithoutNarrativeReset: true,
+    messengerCloseRestore: true,
     newGamePreservesFullHistory: true,
+    replayReactions: true,
+    replayCountPersists: true,
+    minimizedMessengerKeepsMessages: true,
   };
 }

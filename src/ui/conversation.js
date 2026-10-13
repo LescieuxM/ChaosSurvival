@@ -1,4 +1,5 @@
 import { DialogueSession } from '../story/dialogue.js';
+import { applicationName } from './identity.js';
 
 const emoticons = {
   ':)': '☺',
@@ -36,6 +37,7 @@ export class ConversationWindow {
     onComplete,
     onFilesChanged = () => {},
     onCheckpoint = () => {},
+    { isUnlocked = () => true, onWindowState = () => {}, getDialogues = () => [dialogue] } = {},
   ) {
     this.manager = manager;
     this.dialogue = dialogue;
@@ -44,6 +46,9 @@ export class ConversationWindow {
     this.onComplete = onComplete;
     this.onFilesChanged = onFilesChanged;
     this.onCheckpoint = onCheckpoint;
+    this.isUnlocked = isUnlocked;
+    this.onWindowState = onWindowState;
+    this.getDialogues = getDialogues;
   }
   open() {
     if (this.element?.isConnected) {
@@ -51,8 +56,10 @@ export class ConversationWindow {
       this.lastFrame = null;
       this.element.style.zIndex = ++this.manager.z;
       this.element.querySelector('.dialogue-choices button')?.focus();
+      this.onWindowState({ open: true, minimized: false });
       return;
     }
+    if (!this.isUnlocked()) return this.openContacts();
     this.session = new DialogueSession(this.dialogue, this.progression);
     const id = this.manager.spawn('narrative', {
       preview: true,
@@ -91,6 +98,7 @@ export class ConversationWindow {
             <span>☺</span><span>♥</span><span>♫</span><small>Choisis une réponse ci-dessous</small>
           </div>
           <div class="conversation-reader">
+            <select class="conversation-channel" aria-label="Conversations avec PixelGirl"></select>
             <button class="xp-button" id="pause-messages">Pause messages</button
             ><button class="text-button" id="read-latest">Derniers messages ↓</button>
           </div>
@@ -112,6 +120,7 @@ export class ConversationWindow {
     minimize.addEventListener('click', () => {
       this.element.hidden = true;
       this.lastFrame = null;
+      this.onWindowState({ open: true, minimized: true });
       if (this.ghost) {
         this.ghost.remove();
         this.ghost = null;
@@ -125,7 +134,7 @@ export class ConversationWindow {
       `${this.dialogue.contact.nickname} — Conversation`;
     this.element
       .querySelector('.close-button')
-      .setAttribute('aria-label', 'Masquer la conversation MSN');
+      .setAttribute('aria-label', `Fermer ${applicationName('messenger')}`);
     this.element.querySelector('.contact-name').textContent = this.dialogue.contact.nickname;
     this.element.querySelector('.contact-avatar').alt = `Avatar de ${this.dialogue.contact.name}`;
     this.element.querySelector('.contact-status').textContent =
@@ -145,6 +154,11 @@ export class ConversationWindow {
     this.paused = false;
     this.followLatest = true;
     this.reader = this.element.querySelector('#pause-messages');
+    this.channel = this.element.querySelector('.conversation-channel');
+    this.channel.addEventListener('change', () => {
+      const definition = this.getDialogues().find((item) => item.id === this.channel.value);
+      if (definition) this.activateDialogue(definition);
+    });
     this.reader.addEventListener('click', () => {
       this.paused = !this.paused;
       this.reader.textContent = this.paused ? 'Reprendre les messages' : 'Pause messages';
@@ -167,12 +181,48 @@ export class ConversationWindow {
     };
     document.addEventListener('visibilitychange', this.onVisibility);
     this.sounds.unlock();
+    this.onWindowState({ open: true, minimized: false });
     this.pump();
     this.frame = requestAnimationFrame((time) => this.tick(time));
   }
   renderTranscript() {
     this.log.replaceChildren();
-    for (const message of this.session.state.transcript) this.appendMessage(message);
+    this.channel.replaceChildren();
+    const history = [];
+    for (const [index, definition] of this.getDialogues().entries()) {
+      const option = document.createElement('option');
+      option.value = definition.id;
+      option.textContent = index === 0 ? 'Première conversation' : `Replay ${index}`;
+      this.channel.append(option);
+      const saved = this.progression.data.dialogues[definition.id];
+      for (const message of saved?.transcript ?? [])
+        history.push({ ...message, origin: definition.id });
+    }
+    history.sort((a, b) => (a.receivedAt ?? 0) - (b.receivedAt ?? 0));
+    for (const message of history) {
+      this.renderingOrigin = message.origin;
+      this.appendMessage(message);
+    }
+    this.renderingOrigin = this.dialogue.id;
+    this.channel.value = this.dialogue.id;
+  }
+  activateDialogue(definition) {
+    if (!this.element?.isConnected || !this.log || this.dialogue.id === definition.id) {
+      if (this.log && this.element?.isConnected) this.renderTranscript();
+      return;
+    }
+    this.dialogue = definition;
+    this.element.classList.remove('contact-away');
+    this.element.querySelector('.contact-status').textContent =
+      `${definition.contact.status} · ${definition.contact.personalMessage ?? ''}`;
+    this.session = new DialogueSession(definition, this.progression);
+    this.pending = null;
+    this.ghost?.remove();
+    this.ghost = null;
+    this.transfer = null;
+    this.lastFrame = null;
+    this.renderTranscript();
+    this.pump();
   }
   appendMessage(message) {
     const row = document.createElement('div');
@@ -218,6 +268,11 @@ export class ConversationWindow {
     refuse.className = 'xp-button transfer-refuse';
     refuse.textContent = 'Refuser';
     refuse.hidden = file.status !== 'pending' || file.direction === 'send';
+    if (this.renderingOrigin && this.renderingOrigin !== this.dialogue.id) {
+      button.disabled = true;
+      refuse.disabled = true;
+      card.title = 'Sélectionne la première conversation pour répondre à ce transfert.';
+    }
     refuse.addEventListener('click', () => {
       if (this.transfer?.key === key || !this.session.declineTransfer(key)) return;
       status.textContent = 'Transfert refusé';
@@ -263,7 +318,7 @@ export class ConversationWindow {
             this.progression.data.files[entry.fileKey]?.status === 'pending',
         );
         button.disabled = pendingFile;
-        if (!pendingFile) this.onCheckpoint();
+        if (!pendingFile) this.onCheckpoint(this.dialogue.id);
         if (pendingFile) this.typing.textContent = 'Termine le transfert quand tu le souhaites.';
         button.addEventListener('click', () => {
           const id = Number(this.element.dataset.windowId);
@@ -372,5 +427,35 @@ export class ConversationWindow {
     this.transfer = null;
     this.lastFrame = null;
     this.element = null;
+    this.onWindowState({ open: false, minimized: false });
+  }
+  openContacts() {
+    const id = this.manager.spawn('narrative', {
+      preview: true,
+      x: 0.35,
+      y: 0.15,
+      content: {
+        title: applicationName('messenger'),
+        iconName: 'msn',
+        body: `<div class="msn-contact"><div><strong>${applicationName('messenger')}</strong><small><i class="online-dot"></i> En ligne</small></div></div><div class="msn-contacts-empty"><h3>Mes contacts</h3><p>Aucun contact connecté pour le moment.</p><p>Tes conversations apparaîtront ici quand tes amis se connecteront :)</p></div>`,
+      },
+      onDismiss: () => this.dispose(),
+    });
+    this.element = this.manager.windows.get(id).element;
+    this.element
+      .querySelector('.close-button')
+      .setAttribute('aria-label', `Fermer ${applicationName('messenger')}`);
+    const minimize = document.createElement('button');
+    minimize.className = 'msn-minimize';
+    minimize.textContent = '−';
+    minimize.setAttribute('aria-label', 'Réduire MSN');
+    minimize.addEventListener('click', () => {
+      this.element.hidden = true;
+      this.onWindowState({ open: true, minimized: true });
+    });
+    this.element
+      .querySelector('.titlebar')
+      .insertBefore(minimize, this.element.querySelector('.close-button'));
+    this.onWindowState({ open: true, minimized: false });
   }
 }

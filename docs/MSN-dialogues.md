@@ -63,6 +63,28 @@ affiche une barre et un son, puis ajoute l'icône. Son double-clic lance Smiley
 Catcher dans une fenêtre XP. Aucun programme externe n'est créé ni exécuté.
 Le fichier reçu est sauvegardé et reste accessible après relancement.
 
+## Réactions aux replays du niveau 1
+
+`src/config/replay-reactions.json` définit le délai de réception (5 secondes), la
+première réaction et la rotation des cinq variantes. Les textes, les trois choix
+et leurs branches se trouvent dans `src/dialogues/pixelgirl-replay-*.json` et
+utilisent le moteur de dialogue existant. La conversation d'introduction reste
+inchangée.
+
+`src/story/replays.js` enregistre chaque lancement réussi de la musique dans
+`level1Launches`, même si le niveau est abandonné. Les réactions restent désactivées
+tant qu'aucun message de la première rencontre n'a été reçu. Chaque tentative
+possède un identifiant et une échéance persistants : une réception ne peut être
+répétée après un redémarrage. Les messages restent disponibles avec Messenger
+fermé ou réduit. Recevoir un message n'ouvre pas Messenger et ne met pas le jeu
+en pause ; le joueur peut ouvrir Messenger pour discuter à son rythme.
+
+Le sélecteur de conversation permet de retrouver les choix en attente d'une
+tentative précédente ou le transfert de l'introduction. L'historique commun
+conserve tous les messages ; les réponses proposées mais non choisies restent
+enregistrées dans la sauvegarde. NEW GAME archive cette partie puis remet son
+compteur à zéro. Effacer les données utilisateur supprime également les archives.
+
 ## Remplacer le mini-jeu
 
 `src/config/story.json` enchaîne arcade, conversation et mini-jeu. Le descripteur

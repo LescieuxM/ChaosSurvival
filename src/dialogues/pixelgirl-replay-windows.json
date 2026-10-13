@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "revision": 1,
+  "id": "pixelgirl-replay-windows",
+  "contact": {
+    "id": "PixelGirl",
+    "name": "PixelGirl",
+    "nickname": "xX_PixelGirl_Xx",
+    "status": "En ligne",
+    "personalMessage": "☆ don't forget me ☆",
+    "avatar": "./avatars/pixelgirl.svg"
+  },
+  "player": {
+    "nickname": "Moi",
+    "avatar": "./avatars/player.svg"
+  },
+  "start": "hello",
+  "nodes": {
+    "hello": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "je crois que tu connais les fenêtres mieux que moi maintenant",
+          "delayMs": 0,
+          "typingMs": 500
+        }
+      ],
+      "end": true
+    }
+  }
+}

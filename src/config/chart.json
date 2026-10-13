@@ -12,14 +12,24 @@
     "chaosRelief": 3,
     "maxWindows": 3,
     "pressurePerWindow": 0.5,
-    "minSpawnSeconds": 0.55,
-    "maxEventLatenessSeconds": 0.18
+    "minSpawnSeconds": 0.28,
+    "maxEventLatenessSeconds": 0.18,
+    "singleWindowRecovery": 0.25,
+    "crowdedRecovery": 0.45,
+    "peakWindows": 4
   },
   "rhythm": {
     "introUntilBeat": 32,
     "introEveryBeats": 8,
-    "calmEveryBeats": 8,
-    "intenseEveryBeats": 2
+    "calmEveryBeats": 6,
+    "intenseEveryBeats": 2,
+    "normalEveryBeats": 3,
+    "mediumEveryBeats": 3,
+    "buildEveryBeats": 3,
+    "intenseThreshold": 0.58,
+    "buildLateEveryBeats": 2,
+    "dropBurstPeriodBeats": 16,
+    "dropBurstLengthBeats": 4
   },
   "introductions": [
     {

@@ -46,12 +46,38 @@ test('level one introduces mechanics slowly and breathes during musical breaks',
     [8, 16, 24],
   );
   assert.ok(intro.every((event) => event.type === 'msn'));
-  assert.ok(windows.every((event) => event.everyBeats >= 2));
+  assert.ok(windows.every((event) => event.everyBeats >= 1));
   assert.ok(windows.some((event) => event.everyBeats === 2));
   for (const event of windows) {
-    if (musicAt(event.time, music).section.kind === 'break') assert.equal(event.everyBeats, 8);
+    if (musicAt(event.time, music).section.kind === 'break')
+      assert.equal(event.everyBeats, chart.rhythm.calmEveryBeats);
+    if (event.everyBeats === 1) {
+      assert.equal(musicAt(event.time, music).section.kind, 'drop');
+      assert.equal(event.maxWindows, 4);
+    }
     if (event.type === 'virus') assert.ok(event.beat >= 120);
   }
+});
+test('level one is busier with short drop bursts and preserves the gentle introduction', () => {
+  const earlier = {
+    ...chart,
+    rhythm: {
+      ...chart.rhythm,
+      normalEveryBeats: 6,
+      mediumEveryBeats: 4,
+      calmEveryBeats: 8,
+      buildEveryBeats: 4,
+      intenseThreshold: 0.62,
+      buildLateEveryBeats: undefined,
+      dropBurstPeriodBeats: undefined,
+    },
+  };
+  const previous = compileChart(earlier, music).filter((event) =>
+    WINDOW_TYPES.includes(event.type),
+  );
+  assert.ok(windows.length > previous.length);
+  assert.ok(windows.length <= previous.length * 1.7);
+  assert.equal(chart.gameplay.maxWindows, 3);
 });
 
 test('invalid music timestamps and introductions are rejected', () => {
@@ -90,7 +116,7 @@ test('director suppresses stale/congested beats, retains chaos, and adapts to sl
   state.spawn();
   director.closed(9, 5);
   assert.ok(director.closeSeconds > 1.8);
-  assert.equal(director.allow({ time: 5.7 }, 5.7, state), false);
+  assert.equal(director.allow({ time: 5.4 }, 5.4, state), false);
   while (state.open < chart.gameplay.maxWindows) state.spawn();
   assert.equal(director.allow({ time: 10 }, 10, state), false);
   assert.equal(state.chaos, 0); // Skips never punish a beginner.
@@ -100,10 +126,10 @@ test('director suppresses stale/congested beats, retains chaos, and adapts to sl
   assert.equal(director.skipped, 0);
 });
 
-function simulate(secondsPerClick, stall = false) {
-  const state = new GameState(chart.gameplay);
-  const director = new BeginnerDirector(chart.gameplay);
-  const timeline = new Timeline(events);
+function simulate(secondsPerClick, stall = false, configuration = chart) {
+  const state = new GameState(configuration.gameplay);
+  const director = new BeginnerDirector(configuration.gameplay);
+  const timeline = new Timeline(compileChart(configuration, music));
   const opened = [];
   let time = 0;
   let nextClose = Infinity;
@@ -128,7 +154,7 @@ function simulate(secondsPerClick, stall = false) {
       actualWindows++;
       if (!Number.isFinite(nextClose)) nextClose = time + secondsPerClick;
     });
-    assert.ok(state.open <= chart.gameplay.maxWindows);
+    assert.ok(state.open <= chart.gameplay.peakWindows);
     maxChaos = Math.max(maxChaos, state.chaos);
   }
   return { maxChaos, actualWindows, skipped: director.skipped, peak: state.peak };
@@ -141,6 +167,34 @@ test('a beginner closing one window every 2.5–4 seconds survives the entire le
   assert.ok(slow.maxChaos < 80);
   assert.ok(slow.skipped > comfortable.skipped);
   assert.ok(slow.actualWindows < windows.length);
+});
+
+test('the actual click load increases for an attentive player while a fourth window is reserved for drops', () => {
+  const earlier = structuredClone(chart);
+  Object.assign(earlier.gameplay, {
+    minSpawnSeconds: 0.55,
+    singleWindowRecovery: 0.55,
+    crowdedRecovery: 1.2,
+  });
+  Object.assign(earlier.rhythm, {
+    normalEveryBeats: 6,
+    mediumEveryBeats: 4,
+    buildEveryBeats: 4,
+    calmEveryBeats: 8,
+    intenseThreshold: 0.62,
+    buildLateEveryBeats: undefined,
+    dropBurstPeriodBeats: undefined,
+  });
+  const previous = simulate(1.5, false, earlier).actualWindows;
+  const current = simulate(1.5).actualWindows;
+  assert.ok(current >= previous * 1.12, `${previous} -> ${current}`);
+  const director = new BeginnerDirector(chart.gameplay);
+  const state = new GameState(chart.gameplay);
+  while (state.open < 3) state.spawn();
+  assert.equal(director.allow({ time: 10 }, 10, state), false);
+  assert.equal(director.allow({ time: 10, maxWindows: 4 }, 10, state), true);
+  state.spawn();
+  assert.equal(director.allow({ time: 20, maxWindows: 4 }, 20, state), false);
 });
 
 test('ignoring all windows still fills the chaos gauge and causes defeat', () => {
@@ -166,13 +220,13 @@ test('successive isolated windows vary across the desktop instead of always spaw
   assert.equal(new Set(positions.map(({ x, y }) => `${x}:${y}`)).size, positions.length);
 });
 
-test('window placement staggers all three titlebars without hiding existing close buttons', () => {
+test('window placement staggers all four titlebars without hiding existing close buttons', () => {
   for (const [width, height, w, h] of [
     [1136, 524, 330, 340],
     [656, 324, 350, 244],
   ]) {
     const occupied = [];
-    for (let i = 1; i <= 3; i++) {
+    for (let i = 1; i <= 4; i++) {
       const position = chooseWindowPosition(width, height, w, h, occupied, i);
       assert.ok(position.x >= 0 && position.x + w <= width);
       assert.ok(position.y >= 0 && position.y + h <= height);

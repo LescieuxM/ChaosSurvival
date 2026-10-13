@@ -452,7 +452,7 @@ try {
           ),
         ),
       );
-      assert.ok(data.open <= 3);
+      assert.ok(data.open <= 4);
       assert.ok(data.maxLateness <= 0.18, JSON.stringify(data));
       if (data.phase === 'ended') break;
       assert.equal(data.phase, 'playing');
@@ -505,6 +505,7 @@ try {
   }
 
   const qaDirectory = path.join(projectRoot, '.qa');
+  assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
   await mkdir(qaDirectory, { recursive: true });
   const screenshot = await command('Page.captureScreenshot');
   await writeFile(

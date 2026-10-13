@@ -1,0 +1,104 @@
+{
+  "version": 1,
+  "revision": 1,
+  "id": "pixelgirl-replay-second",
+  "contact": {
+    "id": "PixelGirl",
+    "name": "PixelGirl",
+    "nickname": "xX_PixelGirl_Xx",
+    "status": "En ligne",
+    "personalMessage": "☆ don't forget me ☆",
+    "avatar": "./avatars/pixelgirl.svg"
+  },
+  "player": {
+    "nickname": "Moi",
+    "avatar": "./avatars/player.svg"
+  },
+  "start": "hello",
+  "nodes": {
+    "hello": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "et bah !!!",
+          "delayMs": 0,
+          "typingMs": 500
+        },
+        {
+          "speaker": "contact",
+          "text": "tu l'aimes ce jeu lol",
+          "delayMs": 250,
+          "typingMs": 500
+        },
+        {
+          "speaker": "contact",
+          "text": "t'as décidé de devenir champion du monde de fermeture de fenêtres ou quoi xD",
+          "delayMs": 250,
+          "typingMs": 500
+        }
+      ],
+      "choices": [
+        {
+          "id": "replay-olympics",
+          "text": "je m'entraîne pour les JO",
+          "next": "olympics"
+        },
+        {
+          "id": "replay-music",
+          "text": "la musique est trop bien",
+          "next": "music"
+        },
+        {
+          "id": "replay-score",
+          "text": "j'avais envie de battre mon score",
+          "next": "score"
+        }
+      ]
+    },
+    "olympics": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "MDRRR",
+          "delayMs": 250,
+          "typingMs": 500
+        },
+        {
+          "speaker": "contact",
+          "text": "médaille d'or du clic gauche",
+          "delayMs": 250,
+          "typingMs": 500
+        }
+      ],
+      "end": true
+    },
+    "music": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "j'avoue elle reste dans la tête :3",
+          "delayMs": 250,
+          "typingMs": 500
+        }
+      ],
+      "end": true
+    },
+    "score": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "ah ouais monsieur est compétitif",
+          "delayMs": 250,
+          "typingMs": 500
+        },
+        {
+          "speaker": "contact",
+          "text": "bon courage alors xD",
+          "delayMs": 250,
+          "typingMs": 500
+        }
+      ],
+      "end": true
+    }
+  }
+}

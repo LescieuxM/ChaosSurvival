@@ -1,4 +1,6 @@
 import config from '../config/menu.json';
+import { applications, applicationName, trackIdentity } from './identity.js';
+import { icon } from './icons.js';
 export function menuPresentation(data, definition = config) {
   const variant = definition.variants.find(
     (item) => item.whenCompleted && data.completed.includes(item.whenCompleted),
@@ -18,7 +20,8 @@ export class MainMenu {
       <div class="menu-orbit orbit-three" aria-hidden="true">✦</div>
       <div class="menu-shell">
         <header class="menu-titlebar">
-          <span>☺ chaos_survival.exe</span><span aria-hidden="true">− ▢ <b>×</b></span>
+          <span>${icon('system')} ${applicationName('system')} · chaos_survival.exe</span
+          ><span aria-hidden="true">− ▢ <b>×</b></span>
         </header>
         <div class="menu-toolbar">
           <span>Fichier &nbsp; Amis &nbsp; Bonne humeur</span><span>100 % hors ligne</span>
@@ -70,6 +73,7 @@ export class MainMenu {
           <span>✉ CONNECTÉ À LA BONNE HUMEUR</span><span>★ ★ ★ ★ ★</span>
         </footer>
       </div>
+      <p class="menu-music-credit"></p>
       <p class="menu-bottom">NO LOADING SCREENS WERE HARMED IN THE MAKING OF THIS GAME ☺</p>
       <div class="menu-confirm-layer" hidden>
         <section
@@ -88,6 +92,36 @@ export class MainMenu {
       </div>
     `;
     root.append(this.element);
+    const desktopBackdrop = document.createElement('div');
+    desktopBackdrop.className = 'menu-desktop-background';
+    desktopBackdrop.inert = true;
+    desktopBackdrop.setAttribute('aria-hidden', 'true');
+    for (const selector of ['.desktop-icons', '.taskbar']) {
+      const component = root.querySelector(`#desktop ${selector}`).cloneNode(true);
+      component.removeAttribute('id');
+      component.querySelectorAll('[id]').forEach((node) => node.removeAttribute('id'));
+      component.querySelectorAll('button').forEach((button) => {
+        button.disabled = true;
+        button.tabIndex = -1;
+      });
+      if (selector === '.taskbar') component.classList.add('menu-desktop-taskbar');
+      desktopBackdrop.append(component);
+    }
+    this.element.prepend(desktopBackdrop);
+    this.clock = desktopBackdrop.querySelector('time');
+    const catalog = document.createElement('div');
+    catalog.className = 'menu-application-logos';
+    catalog.setAttribute('aria-label', 'Logiciels du bureau');
+    for (const key of Object.keys(applications)) {
+      const item = document.createElement('span');
+      item.innerHTML = icon(key);
+      item.title = applicationName(key);
+      item.setAttribute('aria-label', applicationName(key));
+      catalog.append(item);
+    }
+    this.element.querySelector('.menu-options-panel').append(catalog);
+    this.element.querySelector('.menu-music-credit').textContent =
+      `Musique niveau 1 : ${trackIdentity.artist} — ${trackIdentity.title} · Source : ${trackIdentity.source}`;
     this.find = (selector) => this.element.querySelector(selector);
     this.find('#menu-play').addEventListener('click', () =>
       this.run(() => this.actions.play(this.progression.hasSave)),
@@ -95,7 +129,7 @@ export class MainMenu {
     this.find('#menu-new-game').addEventListener('click', () =>
       this.confirm(
         'Nouvelle partie ?',
-        'Recommencer depuis le niveau 1 ? La progression active sera remplacée. La partie précédente restera dans ton historique.',
+        'Recommencer depuis le début ? La progression active sera remplacée.',
         () => this.actions.newGame(),
       ),
     );
@@ -192,9 +226,9 @@ export class MainMenu {
       : current?.type === 'arcade'
         ? 'Niveau 1 · reprise au début du niveau'
         : current?.type === 'conversation'
-          ? 'Bureau XP · conversation MSN en cours'
+          ? `Bureau ${applicationName('system')} · conversation MSN en cours`
           : current?.type === 'minigame'
-            ? 'Bureau XP · mini-jeu débloqué'
+            ? `Bureau ${applicationName('system')} · mini-jeu débloqué`
             : 'Aventure terminée · retrouver ton bureau';
     this.find('.menu-status').textContent = this.progression.corrupt
       ? 'La sauvegarde est illisible. Tu peux commencer une nouvelle partie.'

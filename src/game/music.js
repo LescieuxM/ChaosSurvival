@@ -68,9 +68,22 @@ export function musicAt(time, music) {
 export function windowCadence(index, beat, section, settings) {
   if (index < settings.introUntilBeat) return settings.introEveryBeats;
   if (['intro', 'break', 'outro'].includes(section?.kind)) return settings.calmEveryBeats;
-  if (beat.intensity >= 0.7 || section?.kind === 'drop') return settings.intenseEveryBeats;
-  if (beat.intensity >= 0.4) return 4;
-  return section?.kind === 'build' ? 6 : settings.calmEveryBeats;
+  if (
+    section?.kind === 'drop' &&
+    settings.dropBurstPeriodBeats &&
+    index % settings.dropBurstPeriodBeats < settings.dropBurstLengthBeats
+  )
+    return 1;
+  if (section?.kind === 'build' && settings.buildLateEveryBeats) {
+    const progress = (beat.time - section.time) / Math.max(0.01, section.endTime - section.time);
+    return progress >= 0.65 ? settings.buildLateEveryBeats : settings.buildEveryBeats;
+  }
+  if (beat.intensity >= (settings.intenseThreshold ?? 0.7) || section?.kind === 'drop')
+    return settings.intenseEveryBeats;
+  if (beat.intensity >= 0.4) return settings.mediumEveryBeats ?? 4;
+  return section?.kind === 'build'
+    ? (settings.buildEveryBeats ?? 6)
+    : (settings.normalEveryBeats ?? settings.calmEveryBeats);
 }
 
 export function compileMusicalEvents(chart, music) {
@@ -85,6 +98,38 @@ export function compileMusicalEvents(chart, music) {
     )
   )
     throw new Error('La cadence du niveau est invalide.');
+  for (const key of [
+    'normalEveryBeats',
+    'mediumEveryBeats',
+    'buildEveryBeats',
+    'buildLateEveryBeats',
+  ])
+    if (settings[key] !== undefined && (!Number.isInteger(settings[key]) || settings[key] < 2))
+      throw new Error('La cadence du niveau est invalide.');
+  if (
+    settings.dropBurstPeriodBeats !== undefined &&
+    (!Number.isInteger(settings.dropBurstPeriodBeats) ||
+      !Number.isInteger(settings.dropBurstLengthBeats) ||
+      settings.dropBurstPeriodBeats < 8 ||
+      settings.dropBurstLengthBeats < 1 ||
+      settings.dropBurstLengthBeats > 4 ||
+      settings.dropBurstLengthBeats >= settings.dropBurstPeriodBeats)
+  )
+    throw new Error('La séquence de drop est invalide.');
+  if (
+    chart.gameplay.peakWindows !== undefined &&
+    (!Number.isInteger(chart.gameplay.peakWindows) ||
+      chart.gameplay.peakWindows < chart.gameplay.maxWindows ||
+      chart.gameplay.peakWindows > 4)
+  )
+    throw new Error('La limite de pic est invalide.');
+  if (
+    settings.intenseThreshold !== undefined &&
+    (!Number.isFinite(settings.intenseThreshold) ||
+      settings.intenseThreshold < 0.4 ||
+      settings.intenseThreshold > 1)
+  )
+    throw new Error('Le seuil musical est invalide.');
   if (
     !chart.introductions?.length ||
     chart.introductions[0].beat !== 0 ||
@@ -112,6 +157,9 @@ export function compileMusicalEvents(chart, music) {
       beat: index,
       type: introduction.types[sequence++ % introduction.types.length],
       everyBeats,
+      ...(everyBeats === 1
+        ? { maxWindows: chart.gameplay.peakWindows ?? chart.gameplay.maxWindows }
+        : {}),
     });
     nextWindowBeat = index + everyBeats;
   });

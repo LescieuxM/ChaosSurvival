@@ -7,14 +7,50 @@
   align-items: center;
   justify-content: center;
   overflow: auto;
-  padding: 24px;
+  padding: 20px 24px 56px;
   color: #153468;
-  background:
-    radial-gradient(ellipse at 15% 15%, #ffdcfc 0%, transparent 45%),
-    radial-gradient(ellipse at 90% 90%, #71fff1 0%, transparent 45%),
-    linear-gradient(135deg, #ab83ff, #72cfff 55%, #ffa4e1);
+  background: #75c7f2 url('/wallpaper.svg') center/cover no-repeat;
   font-family: Tahoma, sans-serif;
   isolation: isolate;
+}
+.menu-desktop-background {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+.menu-desktop-taskbar {
+  position: fixed;
+  bottom: 0;
+}
+.menu-desktop-background button:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.menu-titlebar .icon {
+  width: 19px;
+  height: 19px;
+  vertical-align: middle;
+  margin-right: 5px;
+}
+.menu-music-credit {
+  margin: 12px 0 0;
+  padding: 5px 10px;
+  background: #fffdf0e6;
+  border-radius: 4px;
+  color: #35446b;
+  font: 10px Tahoma;
+  text-align: center;
+}
+.menu-application-logos {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 13px;
+}
+.menu-application-logos .icon {
+  width: 28px;
+  height: 28px;
 }
 .main-menu[hidden],
 .main-menu [hidden] {
@@ -379,7 +415,7 @@
 }
 @media (max-height: 690px) {
   .main-menu {
-    padding: 12px;
+    padding: 12px 12px 48px;
   }
   .menu-content {
     padding: 18px 36px 14px;

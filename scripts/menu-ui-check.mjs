@@ -32,6 +32,40 @@ export async function verifyMenuUI({ evaluate, command, until, wait, restart, ou
     await writeFile(path.join(outputDirectory, name), Buffer.from(shot.data, 'base64'));
   };
   await ready();
+  assert.ok(await evaluate("document.querySelector('#desktop').inert"));
+  assert.ok(await evaluate("document.querySelector('.menu-desktop-background').inert"));
+  assert.equal(await evaluate("document.querySelector('.menu-desktop-background [id]')"), null);
+  assert.ok(
+    await evaluate(
+      "[...document.querySelectorAll('.menu-desktop-background button')].every(button=>button.disabled)",
+    ),
+  );
+  assert.ok(
+    await evaluate(
+      "document.querySelector('.menu-desktop-background time').textContent.length > 0",
+    ),
+  );
+  assert.ok(
+    await evaluate(
+      "(()=>{const r=document.querySelector('.menu-desktop-taskbar').getBoundingClientRect();return r.bottom===innerHeight && r.height>20;})()",
+    ),
+  );
+  assert.doesNotMatch(
+    await evaluate('document.body.innerText'),
+    /Windows Live Messenger|Windows XP|Internet Explorer|Windows Media Player|Windows Update/,
+  );
+  assert.ok(
+    await evaluate("document.querySelector('.menu-titlebar').textContent.includes('Windows XD')"),
+  );
+  assert.equal(
+    await evaluate("document.querySelector('[data-shortcut=music] span').textContent"),
+    'DJARTMUSIC - Best Game Console.mp3',
+  );
+  assert.ok(
+    await evaluate(
+      "getComputedStyle(document.querySelector('#main-menu')).backgroundImage.includes('wallpaper.svg')",
+    ),
+  );
   assert.equal(await saved(), null);
   assert.equal(await evaluate("document.querySelector('#menu-play').textContent"), '★ PLAY ! ★');
   assert.equal(await evaluate("document.querySelector('#menu-new-game').hidden"), true);
@@ -51,6 +85,16 @@ export async function verifyMenuUI({ evaluate, command, until, wait, restart, ou
   await capture('main-menu-small.png');
   await command('Emulation.clearDeviceMetricsOverride');
   await click('#menu-options');
+  assert.ok(
+    await evaluate(
+      "Promise.all([...document.querySelectorAll('.menu-application-logos img')].map(img=>img.decode().then(()=>img.naturalWidth>0))).then(values=>values.length===5&&values.every(Boolean))",
+    ),
+  );
+  await capture('identity-options.png');
+  assert.equal(
+    await evaluate("document.querySelector('#menu-messenger').textContent.trim()"),
+    'Windows Love Messenger',
+  );
   await evaluate(
     "for(const [id,value] of [['option-music',23],['option-effects',81]]){const e=document.getElementById(id);e.value=value;e.dispatchEvent(new Event('input',{bubbles:true}));}",
   );
@@ -63,14 +107,65 @@ export async function verifyMenuUI({ evaluate, command, until, wait, restart, ou
     'PLAY vers niveau rythmique',
   );
   const first = await saved();
+  assert.equal(first.level1Launches, 1);
+  assert.ok(await evaluate("!document.querySelector('#desktop').inert"));
   assert.equal(first.started, true);
   assert.equal(first.current, 'arcade-1');
+  await evaluate(
+    "document.querySelector('#windows-start').click();document.querySelector('#menu-messenger').click()",
+  );
+  await until(
+    () => evaluate("!!document.querySelector('.msn-contacts-empty')"),
+    'Messenger avant PixelGirl',
+  );
+  const frozenMusic = (await evaluate('window.chaosDebug.snapshot()')).audioTime;
+  await wait(500);
+  assert.equal((await evaluate('window.chaosDebug.snapshot()')).audioTime, frozenMusic);
+  assert.equal(Object.keys((await saved()).dialogues).length, 0);
+  assert.equal(await evaluate("document.querySelector('#msn-task').hidden"), false);
+  const messengerId = await evaluate("document.querySelector('.popup-narrative').dataset.windowId");
+  await evaluate("document.querySelector('.msn-minimize').click()");
+  assert.equal(await evaluate("document.querySelector('.popup-narrative').hidden"), true);
+  assert.equal(await evaluate("document.querySelector('#msn-task').hidden"), false);
+  await click('#msn-task');
+  await evaluate(
+    "document.querySelector('#windows-start').click();document.querySelector('#menu-messenger').click()",
+  );
+  assert.equal(await evaluate("document.querySelectorAll('.popup-narrative').length"), 1);
+  assert.equal(
+    await evaluate("document.querySelector('.popup-narrative').dataset.windowId"),
+    messengerId,
+  );
+  await evaluate("document.querySelector('.popup-narrative .close-button').click()");
+  assert.equal(await evaluate("!!document.querySelector('.popup-narrative')"), false);
+  assert.equal(
+    await evaluate("getComputedStyle(document.querySelector('#msn-task')).display"),
+    'none',
+  );
+  await evaluate(
+    "document.querySelector('#windows-start').click();document.querySelector('#menu-messenger').click()",
+  );
+  await until(
+    () => evaluate("!!document.querySelector('.msn-contacts-empty')"),
+    'relance Messenger',
+  );
+  await evaluate(
+    "document.querySelector('.popup-narrative .close-button').click();document.querySelector('#dialog-action').click()",
+  );
+  await until(
+    () => evaluate("window.chaosDebug.snapshot().phase==='playing'"),
+    'reprise après Messenger',
+  );
   await restart();
   await ready();
   assert.equal((await saved()).runId, first.runId);
+  assert.equal((await saved()).level1Launches, first.level1Launches);
   assert.equal(await evaluate("document.querySelector('#menu-play').textContent"), '▶ CONTINUE !');
   assert.equal(await evaluate("document.querySelector('#menu-new-game').hidden"), false);
-  assert.equal(await evaluate('window.chaosWindow.getFullscreen()'), true);
+  await until(
+    () => evaluate('window.chaosWindow.getFullscreen()'),
+    'restauration du plein écran après relancement',
+  );
   await capture('main-menu-continue.png');
   await click('#menu-options');
   assert.equal(await evaluate("document.querySelector('#option-music').value"), '23');
@@ -147,6 +242,8 @@ export async function verifyMenuUI({ evaluate, command, until, wait, restart, ou
     'OK : premier lancement, PLAY, fermeture et relancement réels, CONTINUE, NEW GAME avec confirmation, historique, préférences et plein écran, corruption et effacement.',
   );
   return {
+    messengerLifecycle: true,
+    xpWallpaper: true,
     firstLaunch: true,
     firstGame: true,
     realRelaunch: true,

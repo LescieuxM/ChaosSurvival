@@ -1,0 +1,11 @@
+{
+  "delayMs": 5000,
+  "first": "pixelgirl-replay-second",
+  "variants": [
+    "pixelgirl-replay-encore",
+    "pixelgirl-replay-sleep",
+    "pixelgirl-replay-windows",
+    "pixelgirl-replay-love",
+    "pixelgirl-replay-screen"
+  ]
+}

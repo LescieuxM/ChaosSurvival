@@ -62,6 +62,16 @@ Node.js ou système de fichiers n'est donné à l'interface.
 
 ## Vérification
 
+Le menu affiche aussi les icônes, la barre des tâches, Démarrer, la zone de
+notification et l'horloge du bureau Windows XD. Ces éléments reprennent le DOM
+du bureau existant et restent décoratifs : aucun raccourci ne contourne PLAY ou
+CONTINUE. Le bureau réel est inerte tant que le menu est affiché.
+
+Les lancements du niveau 1 et les réactions de PixelGirl sont enregistrés avec
+la partie active, séparément des victoires. Les tentatives abandonnées comptent
+également. Une nouvelle partie archive ces données avec l'historique puis
+recommence son propre compteur. Voir `MSN-dialogues.md` pour les réactions JSON.
+
 ```powershell
 npm test
 npm run dist

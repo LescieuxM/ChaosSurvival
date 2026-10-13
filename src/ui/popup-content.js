@@ -1,9 +1,10 @@
 import { popupContent } from '../config/popups.js';
 import { icon } from './icons.js';
+import { applicationName, brandedText } from './identity.js';
 
 function escapeHtml(value) {
   const entities = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-  return String(value).replace(/[&<>"']/g, (character) => entities[character]);
+  return brandedText(value).replace(/[&<>"']/g, (character) => entities[character]);
 }
 
 const renderers = {
@@ -43,7 +44,7 @@ const renderers = {
   },
   error(error) {
     return {
-      title: error.title,
+      title: brandedText(error.title),
       iconName: 'error',
       body: /* HTML */ `
         <div class="error-content">
@@ -59,7 +60,7 @@ const renderers = {
   },
   ad(ad) {
     return {
-      title: 'Internet Explorer — Offre exclusive !',
+      title: `${applicationName('browser')} — Offre exclusive !`,
       iconName: 'globe',
       body: /* HTML */ `
         <div class="ad-address">${icon('globe')} http://${escapeHtml(ad.address)}</div>

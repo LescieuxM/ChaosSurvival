@@ -19,6 +19,8 @@ function freshData(story) {
     anomalies: {},
     dialogueArchives: {},
     unlockedConversations: [],
+    level1Launches: 0,
+    replayReactions: [],
   };
 }
 function validSaved(saved, story) {
@@ -26,6 +28,19 @@ function validSaved(saved, story) {
   return (
     record(saved) &&
     saved.version === 1 &&
+    (saved.level1Launches === undefined ||
+      (Number.isInteger(saved.level1Launches) && saved.level1Launches >= 0)) &&
+    (saved.replayReactions === undefined ||
+      (Array.isArray(saved.replayReactions) &&
+        saved.replayReactions.every(
+          (event) =>
+            record(event) &&
+            Number.isInteger(event.attempt) &&
+            typeof event.id === 'string' &&
+            typeof event.template === 'string' &&
+            Number.isFinite(event.dueAt) &&
+            typeof event.ready === 'boolean',
+        ))) &&
     (saved.started === undefined || typeof saved.started === 'boolean') &&
     (saved.current === null || ids.has(saved.current)) &&
     Array.isArray(saved.completed) &&

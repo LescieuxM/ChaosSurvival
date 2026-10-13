@@ -24,6 +24,10 @@ import { miniGames, createMiniGame } from './ui/minigame.js';
 import { MainMenu } from './ui/main-menu.js';
 import { MenuMusic } from './audio/menu-music.js';
 import { UserSettings, deleteUserData } from './settings.js';
+import { recordArcadeCompletion } from './story/arcade.js';
+import replayConfig from './config/replay-reactions.json';
+import { ReplayReactions } from './story/replays.js';
+import { applicationName, trackIdentity } from './ui/identity.js';
 
 const BEST_SCORE_KEY = 'chaos-survival-best';
 const DEFAULT_VOLUME = 0.55;
@@ -53,13 +57,15 @@ try {
   /* Optional persistence. */
 }
 const progression = new Progression(story, storyStorage);
+const replayReactions = new ReplayReactions(progression, dialogues, replayConfig);
 const settings = new UserSettings(storyStorage, chart.volume);
 const menuMusic = new MenuMusic(() => settings.data.musicVolume);
 audio.setVolume(settings.data.musicVolume);
 let arcadeSequenceId = 'arcade-1';
+let arcadeReplay = false;
 const sounds = new DesktopSounds(
   () => settings.data.effectsVolume,
-  () => (menuMusic.active ? menuMusic.context : audio.context),
+  () => (menuMusic.active || phase === 'paused' ? menuMusic.context : audio.context),
 );
 let cancelVictory = () => {};
 let storyToastAction = null;
@@ -113,14 +119,23 @@ function createConversation(dialogue) {
         ui.sessionLabel.textContent = `À TOUT À L’HEURE, ${dialogue.contact.name.toUpperCase()}`;
     },
     renderDesktopFiles,
-    () => {
-      if (
-        progression.current?.type === 'conversation' &&
-        progression.current.dialogue === dialogue.id
-      ) {
+    (id) => {
+      if (progression.current?.type === 'conversation' && progression.current.dialogue === id) {
         progression.complete(progression.current.id, { dialogue: dialogue.id });
         ui.sessionLabel.textContent = 'SUPER_MEGA_GAME.exe T’ATTEND';
       }
+    },
+    {
+      getDialogues: () => [dialogue, ...replayReactions.dialogues],
+      isUnlocked: () => progression.data.unlockedConversations.includes(dialogue.id),
+      onWindowState: ({ open, minimized }) => {
+        ui.msnTask.hidden = !open;
+        ui.msnTask.setAttribute('aria-pressed', String(open && !minimized));
+        if (phase === 'paused' || phase === 'ended') {
+          ui.modalLayer.hidden = open && !minimized;
+          ui.playfield.inert = !open || minimized;
+        }
+      },
     },
   );
 }
@@ -153,7 +168,9 @@ ui.bpmLabel.textContent = `≈ ${Math.round(music.bpm)} BPM`;
 ui.launcherBpm.textContent = `NIVEAU 1 · ≈ ${Math.round(music.bpm)} BPM`;
 ui.volume.value = settings.data.musicVolume * 100;
 ui.durationLabel.textContent = `${Math.round(chart.durationSeconds)} secondes · découverte`;
-ui.trackTitle.firstChild.textContent = `${chart.title} `;
+ui.trackTitle.firstChild.textContent = `${trackIdentity.displayName} `;
+ui.trackTitle.title = `${trackIdentity.artist} — ${trackIdentity.title} · Source : ${trackIdentity.source}`;
+ui.windowsStart.title = applicationName('system');
 
 function musicalTime() {
   return audio.time - chart.offsetSeconds - syncOffset;
@@ -168,7 +185,8 @@ function debugSnapshot() {
     phase,
     level: chart.level,
     open: state.open,
-    maxWindows: chart.gameplay.maxWindows,
+    maxWindows: chart.gameplay.peakWindows ?? chart.gameplay.maxWindows,
+    launches: progression.data.level1Launches,
     skipped: director?.skipped ?? 0,
     closeSeconds: director?.closeSeconds ?? 1.8,
     lastLateness,
@@ -245,6 +263,7 @@ document.addEventListener('fullscreenchange', () => {
   }
 });
 async function continueFromMenu() {
+  ui.desktop.inert = false;
   menu.hide();
   menuMusic.stop();
   returnMenu.hidden = false;
@@ -281,12 +300,17 @@ function returnToMenu() {
   cancelAnimationFrame(frame);
   audio.stop(true);
   clearEffects();
-  if (progression.current?.type === 'conversation' && conversation.session?.state.finished)
+  if (
+    progression.current?.type === 'conversation' &&
+    conversation.dialogue.id === progression.current.dialogue &&
+    conversation.session?.state.finished
+  )
     progression.complete(progression.current.id, { dialogue: activeDialogue.id });
   manager.clear();
   miniGame = null;
   if (progression.hasSave) progression.save();
   phase = 'menu';
+  ui.desktop.inert = true;
   ui.modalLayer.hidden = true;
   ui.introLayer.hidden = true;
   ui.playfield.inert = true;
@@ -308,6 +332,7 @@ debug.render();
 async function startGame() {
   if (!['idle', 'ended', 'desktop'].includes(phase)) return;
   cancelVictory();
+  arcadeReplay = progression.data.completed.includes('arcade-1');
   if (progression.current?.type === 'arcade') arcadeSequenceId = progression.current.id;
   ui.desktop.classList.remove('story-desktop');
   storyToastAction = null;
@@ -321,6 +346,7 @@ async function startGame() {
   try {
     if (configurationError) throw configurationError;
     const trackDuration = await audio.start();
+    replayReactions.launch();
     duration = Math.min(chart.durationSeconds, trackDuration);
     manager.clear();
     clearEffects();
@@ -491,7 +517,10 @@ function finishGame(won) {
   ui.best.textContent = String(best).padStart(6, '0');
   ui.sessionLabel.textContent = won ? 'BUREAU SAUVÉ' : 'LE SYSTÈME A CRAQUÉ';
   if (won) {
-    progression.complete(arcadeSequenceId, { score: state.score, closed: state.closed });
+    const firstCompletion = recordArcadeCompletion(progression, arcadeSequenceId, {
+      score: state.score,
+      closed: state.closed,
+    });
     ui.modalLayer.hidden = true;
     ui.dialogTitle.textContent = 'Tu as survécu !';
     cancelVictory = celebrateVictory(
@@ -499,7 +528,8 @@ function finishGame(won) {
       { score: state.score, closed: state.closed, newRecord },
       sounds,
       () => {
-        if (progression.current) progression.enterCurrent().catch(showStoryError);
+        if (firstCompletion && progression.current)
+          progression.enterCurrent().catch(showStoryError);
         else showStoryDesktop(false);
       },
     );
@@ -511,7 +541,10 @@ function finishGame(won) {
     '↻ REJOUER',
     startGame,
     won ? 'computer' : 'error',
-    { label: 'Retour au bureau', callback: restartDesktop },
+    {
+      label: 'Retour au bureau',
+      callback: arcadeReplay ? () => showStoryDesktop(false) : restartDesktop,
+    },
   );
 }
 function restartDesktop() {
@@ -558,6 +591,10 @@ function feedback(x, y, points, onBeat) {
   label.addEventListener('animationend', () => label.remove(), { once: true });
 }
 function notify(contact, message) {
+  if (storyToastAction && !ui.toast.hidden) return;
+  storyToastAction = null;
+  ui.toastOpen.hidden = true;
+  ui.toast.classList.remove('story-toast');
   ui.toastContact.textContent = contact;
   ui.toastMessage.textContent = message;
   ui.toast.hidden = false;
@@ -585,7 +622,7 @@ function clearEffects() {
   ui.feedbackLayer.replaceChildren();
 }
 function showStoryError(error) {
-  showDialog('MSN Messenger', '<p class="story-error"></p>', 'Retour au bureau', () =>
+  showDialog(applicationName('messenger'), '<p class="story-error"></p>', 'Retour au bureau', () =>
     showStoryDesktop(false),
   );
   ui.dialogCopy.querySelector('.story-error').textContent = error.message;
@@ -629,11 +666,25 @@ function showStoryDesktop(announce) {
   renderDesktopFiles();
   debug.render();
 }
-function openConversation() {
-  if (phase !== 'desktop') return;
+async function openConversation() {
+  if (['menu', 'loading', 'resuming'].includes(phase)) return;
+  if (phase === 'playing') await pauseGame();
+  if (phase === 'paused' || phase === 'ended') {
+    ui.modalLayer.hidden = true;
+    ui.playfield.inert = false;
+  }
   ui.toast.hidden = true;
   sounds.unlock();
   conversation.open();
+  if (replayReactions.pendingDialogue)
+    conversation.activateDialogue(replayReactions.pendingDialogue);
+}
+function replayLevelOne() {
+  if (!['desktop', 'idle', 'ended', 'playing', 'paused'].includes(phase)) return;
+  cancelAnimationFrame(frame);
+  pauseGeneration++;
+  phase = 'ended';
+  startGame();
 }
 function renderDesktopFiles() {
   let files = ui.desktop.querySelector('#desktop-files');
@@ -720,6 +771,10 @@ ui.toast.addEventListener('click', (event) => {
   if (!event.target.closest('button')) storyToastAction?.();
 });
 ui.msnTask.addEventListener('click', openConversation);
+ui.menuMessenger.addEventListener('click', () => {
+  setStartMenuOpen(false);
+  openConversation();
+});
 ui.volume.addEventListener('input', (event) => {
   setVolume(Number(event.target.value) / 100);
 });
@@ -748,14 +803,23 @@ ui.menuHelp.addEventListener('click', () => {
 ui.shortcuts.forEach((button) =>
   button.addEventListener('click', () => {
     const kind = button.dataset.shortcut;
-    if (kind === 'msn' && phase === 'desktop') return openConversation();
-    if (kind === 'music') return help();
+    if (kind === 'msn') return openConversation();
+    if (kind === 'music') return;
     if (phase === 'idle')
       manager.spawn(kind === 'msn' ? 'msn' : kind === 'folder' ? 'download' : 'error', {
         preview: true,
       });
   }),
 );
+const musicShortcut = ui.desktop.querySelector('[data-shortcut="music"]');
+musicShortcut.title = `${trackIdentity.displayName}\nSource : ${trackIdentity.source}\nDouble-cliquer pour jouer / rejouer le niveau 1`;
+musicShortcut.addEventListener('dblclick', replayLevelOne);
+musicShortcut.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    replayLevelOne();
+  }
+});
 document.addEventListener('keydown', (event) => {
   if (event.key !== 'Escape' || event.repeat) return;
   if (phase === 'playing') pauseGame();
@@ -769,8 +833,27 @@ function updateClock() {
     hour: '2-digit',
     minute: '2-digit',
   });
+  menu.clock.textContent = ui.clock.textContent;
 }
 updateClock();
+function receiveReplayReactions() {
+  for (const definition of replayReactions.flush()) {
+    const visible = conversation.element?.isConnected && !conversation.element.hidden;
+    if (conversation.element?.isConnected) conversation.activateDialogue(definition);
+    sounds.unlock().then(() => sounds.play('message'));
+    if (!visible) {
+      ui.toastContact.textContent = definition.contact.nickname;
+      ui.toastMessage.textContent = 't’a envoyé un nouveau message.';
+      ui.toast.hidden = false;
+      ui.toastOpen.hidden = false;
+      ui.toast.classList.add('story-toast');
+      storyToastAction = openConversation;
+      toastUntil = audio.time + 6;
+    }
+  }
+  requestAnimationFrame(receiveReplayReactions);
+}
+receiveReplayReactions();
 setInterval(updateClock, 10000);
 ui.trackTime.textContent = `00:00 / ${formatTime(chart.durationSeconds)}`;
 returnToMenu();

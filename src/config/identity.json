@@ -1,0 +1,15 @@
+{
+  "applications": {
+    "system": { "name": "Windows XD", "logo": "./logos/windows-xd.svg" },
+    "messenger": { "name": "Windows Love Messenger", "logo": "./logos/love-messenger.svg" },
+    "browser": { "name": "Internet Adventurer", "logo": "./logos/internet-adventurer.svg" },
+    "media": { "name": "Windows Media Play", "logo": "./logos/media-play.svg" },
+    "upgrade": { "name": "Windows Upgrade", "logo": "./logos/windows-upgrade.svg" }
+  },
+  "music": {
+    "displayName": "DJARTMUSIC - Best Game Console.mp3",
+    "artist": "DJARTMUSIC",
+    "title": "Best Game Console",
+    "source": "Pixabay"
+  }
+}

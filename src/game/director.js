@@ -1,6 +1,9 @@
 // Never queue missed windows. Decisions use the chart's musical clock.
 export class BeginnerDirector {
   constructor(settings) {
+    for (const key of ['singleWindowRecovery', 'crowdedRecovery'])
+      if (settings[key] !== undefined && (!Number.isFinite(settings[key]) || settings[key] <= 0))
+        throw new Error('La récupération adaptative est invalide.');
     if (
       !Number.isFinite(settings.minSpawnSeconds) ||
       settings.minSpawnSeconds <= 0 ||
@@ -20,10 +23,18 @@ export class BeginnerDirector {
   preview(event, now, state) {
     if (now - event.time > this.settings.maxEventLatenessSeconds)
       return 'Ralentissement : temps dépassé';
-    if (state.open >= this.settings.maxWindows) return 'Bureau plein : respiration';
+    const limit = Math.min(
+      this.settings.peakWindows ?? this.settings.maxWindows,
+      event.maxWindows ?? this.settings.maxWindows,
+    );
+    if (state.open >= limit) return 'Bureau plein : respiration';
     if (state.chaos >= 60 && state.open >= 1) return 'Chaos élevé : récupération';
     const recovery =
-      state.open >= 2 ? this.closeSeconds * 1.3 : state.open === 1 ? this.closeSeconds * 0.6 : 0;
+      state.open >= 2
+        ? this.closeSeconds * (this.settings.crowdedRecovery ?? 1.3)
+        : state.open === 1
+          ? this.closeSeconds * (this.settings.singleWindowRecovery ?? 0.6)
+          : 0;
     if (now - this.lastSpawn < Math.max(this.settings.minSpawnSeconds, recovery))
       return 'Récupération entre deux fenêtres';
     return '';

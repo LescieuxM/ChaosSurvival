@@ -79,6 +79,18 @@ NEW GAME demande confirmation et archive la partie précédente.
 sessions. **Démarrer → Menu principal** permet de revenir au menu depuis le jeu ou le bureau.
 Voir [le fonctionnement des sauvegardes](docs/saves-and-menu.md).
 
+Sur le bureau XP, double-clique sur **DJARTMUSIC - Best Game Console.mp3** (ou appuie sur Entrée après
+l'avoir sélectionné) pour jouer ou rejouer le niveau 1. La musique, le score,
+les fenêtres et le chaos repartent de zéro. La progression narrative reste
+intacte ; une victoire en replay ne déclenche pas une nouvelle rencontre MSN.
+
+**Démarrer → Windows Love Messenger** ouvre l'application ou remet sa fenêtre au
+premier plan. **Réduire** conserve son bouton dans la barre des tâches ; **Fermer**
+retire la fenêtre et son bouton, sans effacer la conversation. Avant la première
+rencontre, Messenger affiche une liste de contacts vide. Pendant un niveau,
+l'ouverture de Messenger met le jeu en pause ; sa fermeture ou sa réduction
+permet de retrouver la boîte de reprise du niveau.
+
 - F11 ou Alt+Entrée : entrer / sortir du plein écran.
 - Échap : pause / reprise.
 - F3 ou bouton ♫ du bandeau : afficher le debug musical et régler le décalage.
@@ -204,3 +216,5 @@ enregistrées dans `.qa/victory.png`, `.qa/pixelgirl-conversation.png`,
 Le rapport est enregistré dans `.qa/portable-verification.json` et une capture
 dans `.qa/portable-verification.png`. Node.js est utilisé uniquement par l'outil
 de vérification, jamais requis par le joueur.
+
+Les noms et logos des logiciels fictifs sont centralisés dans `src/config/identity.json`. Voir [l’identité visuelle](docs/visual-identity.md).
