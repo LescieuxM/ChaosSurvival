@@ -1,0 +1,27 @@
+node_modules/
+dist/
+release/
+.tools/
+.qa/
+Microsoft/
+*.log
+
+# Caches et environnements locaux de développement
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.cache/
+.vite/
+coverage/
+.DS_Store
+Thumbs.db
+
+# Configuration personnelle et secrets (conserver les exemples partageables)
+.env
+.env.*
+!.env.example
+!.env.*.example
+.idea/
+.vscode/

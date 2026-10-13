@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+<defs>
+ <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#258de2"/><stop offset=".65" stop-color="#81d3f7"/><stop offset="1" stop-color="#d5f1fc"/></linearGradient>
+ <linearGradient id="hill" x1="0" y1="0" x2=".4" y2="1"><stop stop-color="#79cf36"/><stop offset=".45" stop-color="#58a81d"/><stop offset="1" stop-color="#246b13"/></linearGradient>
+ <linearGradient id="far" x2="0" y2="1"><stop stop-color="#94d944"/><stop offset="1" stop-color="#3c8b28"/></linearGradient>
+ <filter id="blur"><feGaussianBlur stdDeviation="16"/></filter>
+ <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".6" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope=".09"/></feComponentTransfer><feBlend in="SourceGraphic" mode="soft-light"/></filter>
+</defs>
+<g filter="url(#grain)"><path fill="url(#sky)" d="M0 0h1920v1080H0z"/>
+<g fill="#fff" opacity=".82" filter="url(#blur)"><path d="M1010 231c15-33 55-27 70-33 12-34 58-50 88-28 31-45 118-24 127 19 42-2 81 26 103 37 37-4 68 7 93 25-124 26-312 27-481-20Z"/><path d="M-40 352c40-28 74-38 101-28 33-61 108-46 131-14 61-15 104 9 127 30 67-10 108 12 131 31-167 27-354 27-490-19Z"/><path d="M1450 80c30-27 56-38 90-28 40-43 100-27 120 4 71-9 127 21 136 37-144 26-235 20-346-13Z"/></g>
+<path d="M0 742C329 643 481 786 784 761s530-109 773-134c142-14 276 6 363 24v429H0Z" fill="url(#far)"/>
+<path d="M0 676c315-75 602-20 899 103 393 162 776 12 1021-65v366H0Z" fill="url(#hill)"/>
+<path d="M0 704c315-67 505-32 735 48" fill="none" stroke="#c0e852" stroke-width="10" opacity=".18"/>
+</g></svg>

@@ -1,0 +1,84 @@
+# Conversations MSN
+
+`src/dialogues/pixelgirl-intro.json` contient le scénario fourni : quatre choix
+de trois réponses, avec branches qui rejoignent la conversation commune. Chaque
+réponse a un identifiant unique. Les messages ne sont jamais effacés et aucune
+réponse n'est choisie automatiquement. « Pause messages » arrête les arrivées ;
+remonter dans l'historique suspend aussi la suite. « Derniers messages » ramène en bas.
+
+La première réponse non sélectionnée apparaît 500 ms dans le journal comme une
+ligne normale. Elle ne devient pas un message envoyé et PixelGirl ne réagit pas.
+Le JSON active cet effet via `anomaly: { "type": "unselectedEcho", "durationMs": 500 }`.
+
+La sauvegarde contient les propositions `choiceOffers`, puis les options
+`offered` et `unselected` pour chaque choix. Ces données gardent le texte proposé
+à l'époque, même si le scénario est modifié ensuite. L'anomalie ne se rejoue pas
+après rechargement. Les anciennes sauvegardes restent disponibles ; les anciennes
+conversations sont conservées dans `dialogueArchives` lors d'un changement de `revision`.
+
+## Format des dialogues
+
+Chaque JSON possède `id`, `version: 1`, `revision`, `contact`, `player`, `start`
+et une table `nodes`. Un nœud possède des `messages` puis un des champs `choices`,
+`next`, `transfer` ou `end: true`. Vite intègre automatiquement tous les JSON du dossier.
+
+```json
+{
+  "messages": [{ "speaker": "contact", "text": "heyyyy :DDD", "delayMs": 800, "typingMs": 600 }],
+  "choices": [
+    { "id": "hello-wave", "text": "salut :3", "next": "common", "set": { "mood": "happy" } },
+    { "id": "hello-joke", "text": "GG !", "next": "common", "set": { "mood": "playful" } }
+  ]
+}
+```
+
+`delayMs` précède la saisie ; `typingMs` contrôle l'indicateur. Les textes sont
+rendus comme texte, sans exécution HTML. Les avatars sont locaux dans `public/avatars/`.
+Un message ou une réponse peut utiliser `when: { "flag": "mood", "equals": "happy" }`.
+Une conversation future peut aussi dépendre d'une réponse proposée et non sélectionnée :
+
+```json
+{
+  "choice": {
+    "dialogue": "pixelgirl-intro",
+    "node": "first-contact",
+    "id": "greeting-2",
+    "selected": false
+  }
+}
+```
+
+Les boucles de transitions automatiques sont rejetées. Une boucle interactive
+de refus de fichier est permise : le joueur reste libre d'accepter plus tard.
+
+## Fichiers fictifs
+
+Un message `type: "file"` inclut `file: { "id", "name", "sizeLabel", "launch" }`.
+`speaker: "contact"` propose une réception ; `speaker: "player"` propose un envoi.
+Le champ `launch` peut contenir `game` et `sequence`. Un nœud attend le résultat
+avec `transfer: { "fileId": "super-mega-game", "accept": "good-luck", "refuse": "refused" }`.
+
+`SUPER_MEGA_GAME.exe` est seulement un élément du faux bureau. Le transfert
+affiche une barre et un son, puis ajoute l'icône. Son double-clic lance Smiley
+Catcher dans une fenêtre XP. Aucun programme externe n'est créé ni exécuté.
+Le fichier reçu est sauvegardé et reste accessible après relancement.
+
+## Remplacer le mini-jeu
+
+`src/config/story.json` enchaîne arcade, conversation et mini-jeu. Le descripteur
+`src/minigames/smiley-catcher.json` choisit le moteur et ses réglages. L'interface
+`registerMiniGame(engine, factory)` permet de remplacer le gameplay sans modifier
+le moteur de dialogues. Le prototype dure 30 secondes et propose pause, score,
+combos et retour au bureau, sans condition de défaite.
+
+Le build valide les dialogues, les transferts, les avatars et les références aux jeux.
+`npm run verify:portable -- --story` vérifie le parcours complet dans l'EXE hors
+du projet : victoire, connexion, choix, anomalie, refus puis transfert, fichier,
+mini-jeu et retour au bureau. Les captures sont dans `.qa/`.
+
+Pour réinitialiser uniquement l'histoire en développement, via F12 :
+
+```js
+localStorage.removeItem('chaos-survival-story-v1');
+location.reload();
+```

@@ -1,0 +1,9 @@
+{
+  "id": "smiley-catcher",
+  "engine": "smiley-catcher",
+  "title": "SMILEY CATCHER 2009",
+  "durationSeconds": 30,
+  "spawnSeconds": 1.35,
+  "targetLifetimeSeconds": 3.2,
+  "maxTargets": 3
+}

@@ -1,0 +1,60 @@
+{
+  "name": "chaos-survival",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Chaos Survival, un jeu arcade musical sur un bureau de 2005.",
+  "author": "Chaos Survival",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "node scripts/verify-music.mjs && node scripts/verify-story.mjs && vite build",
+    "start": "electron .",
+    "dist": "npm run build && node node_modules/electron/install.js && electron-builder --win portable --x64 --publish never && node scripts/finalize-portable.mjs",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "node --test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "verify:music": "node scripts/verify-music.mjs",
+    "verify:package": "node scripts/verify-package.mjs",
+    "verify:portable": "node scripts/verify-portable.mjs"
+  },
+  "devDependencies": {
+    "@electron/asar": "^3.4.1",
+    "electron": "^44.7.0",
+    "electron-builder": "^26.15.3",
+    "prettier": "^3.9.10",
+    "vite": "^7.1.0"
+  },
+  "build": {
+    "appId": "com.chaossurvival.game",
+    "productName": "Chaos Survival",
+    "asar": true,
+    "electronDist": "node_modules/electron/dist",
+    "directories": {
+      "output": ".tools/msn-portable-build"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "executableName": "ChaosSurvival",
+      "requestedExecutionLevel": "asInvoker",
+      "artifactName": "ChaosSurvival.exe"
+    },
+    "portable": {
+      "requestExecutionLevel": "user",
+      "unpackDirName": false
+    }
+  }
+}

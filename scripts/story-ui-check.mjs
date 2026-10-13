@@ -1,0 +1,200 @@
+import assert from 'node:assert/strict';
+import { writeFile } from 'node:fs/promises';
+import path from 'node:path';
+export async function verifyStoryUI({
+  evaluate,
+  command,
+  until,
+  wait,
+  outputDirectory,
+  victory = false,
+}) {
+  const capture = async (name) => {
+    const image = await command('Page.captureScreenshot');
+    await writeFile(path.join(outputDirectory, name), Buffer.from(image.data, 'base64'));
+  };
+  const saved = () => evaluate("JSON.parse(localStorage.getItem('chaos-survival-story-v1'))");
+  if (victory) {
+    assert.ok(await evaluate("!!document.querySelector('#victory-layer')"));
+    await wait(650);
+    await capture('victory.png');
+    await evaluate("document.querySelector('#victory-continue').click()");
+  }
+  await until(
+    () => evaluate("document.querySelector('#desktop').classList.contains('story-desktop')"),
+    'desktop',
+  );
+  await until(
+    () => evaluate("!document.querySelector('#toast-open').hidden"),
+    'PixelGirl connected',
+  );
+  assert.ok(
+    (await evaluate("document.querySelector('#toast-contact').textContent")).includes(
+      'xX_PixelGirl_Xx',
+    ),
+  );
+  await wait(2200);
+  assert.ok(
+    (await evaluate("document.querySelector('#toast-message').textContent")).includes(
+      'nouveau message',
+    ),
+  );
+  await evaluate("document.querySelector('#toast-open').click()");
+  await until(() => evaluate("!!document.querySelector('.popup-narrative')"), 'MSN window');
+  await evaluate("document.querySelector('#pause-messages').click()");
+  const count = await evaluate("document.querySelectorAll('.conversation-message').length");
+  await wait(1100);
+  assert.equal(await evaluate("document.querySelectorAll('.conversation-message').length"), count);
+  await evaluate("document.querySelector('#pause-messages').click()");
+  await until(
+    () => evaluate("!!document.querySelector('[data-choice-id=greeting-1]')"),
+    'first choice',
+    12000,
+  );
+  await wait(1200);
+  assert.equal((await saved()).choices.length, 0);
+  const offers = (await saved()).choiceOffers['pixelgirl-intro:first-contact'];
+  assert.equal(offers.length, 3);
+  await evaluate("document.querySelector('[data-choice-id=greeting-1]').click()");
+  assert.ok(await evaluate("!!document.querySelector('.dialogue-echo')"));
+  const ghost = await evaluate("document.querySelector('.dialogue-echo').textContent");
+  assert.ok(ghost.includes('au hasard'));
+  await wait(150);
+  assert.ok(await evaluate("!!document.querySelector('.dialogue-echo')"));
+  await wait(600);
+  assert.equal(await evaluate("!!document.querySelector('.dialogue-echo')"), false);
+  assert.equal(
+    (await saved()).dialogues['pixelgirl-intro'].transcript.filter(
+      (message) => message.speaker === 'player',
+    ).length,
+    1,
+  );
+  await until(
+    () =>
+      evaluate("document.querySelector('.dialogue-typing').textContent.includes('est en train')"),
+    'typing',
+    5000,
+  );
+  console.log(
+    'OK : messages, pause de lecture, choix en attente, trois propositions conservées et anomalie visuelle de 500 ms.',
+  );
+  await until(
+    () => evaluate("!!document.querySelector('[data-choice-id=nickname-3]')"),
+    'presentation choices',
+    20000,
+  );
+  await evaluate('window.__storyReload=true');
+  await command('Page.reload');
+  await until(
+    () =>
+      evaluate(
+        "window.__storyReload!==true&&document.readyState==='complete'&&!!document.querySelector('#msn-task')&&document.querySelector('#desktop').classList.contains('story-desktop')",
+      ).catch(() => false),
+    'reload',
+  );
+  await evaluate("document.querySelector('#msn-task').click()");
+  assert.equal(await evaluate("!!document.querySelector('.dialogue-echo')"), false);
+  await until(
+    () => evaluate("!!document.querySelector('[data-choice-id=nickname-3]')"),
+    'restored choices',
+  );
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 800,
+    height: 600,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await wait(250);
+  const accessible = await evaluate(
+    "[...document.querySelectorAll('.dialogue-choice')].every(button=>{const r=button.getBoundingClientRect();return r.bottom<=innerHeight&&document.elementFromPoint(r.left+r.width/2,r.top+r.height/2)?.closest('button')===button;})",
+  );
+  assert.ok(accessible);
+  await capture('pixelgirl-small.png');
+  await command('Emulation.clearDeviceMetricsOverride');
+  await evaluate("document.querySelector('[data-choice-id=nickname-3]').click()");
+  await until(
+    () => evaluate("!!document.querySelector('[data-choice-id=table-2]')"),
+    'table choices',
+    25000,
+  );
+  assert.ok(
+    (await evaluate("document.querySelector('.conversation-log').textContent")).includes(
+      '(╯°□°)╯︵ ┻━┻',
+    ),
+  );
+  await evaluate("document.querySelector('[data-choice-id=table-2]').click()");
+  await until(
+    () => evaluate("!!document.querySelector('[data-choice-id=game-3]')"),
+    'game invitation',
+    15000,
+  );
+  await capture('pixelgirl-conversation.png');
+  await evaluate("document.querySelector('[data-choice-id=game-3]').click()");
+  await until(
+    () => evaluate("!!document.querySelector('.transfer-refuse:not([hidden])')"),
+    'file offer',
+    20000,
+  );
+  await evaluate("document.querySelector('.transfer-refuse:not([hidden])').click()");
+  await until(
+    () => evaluate("document.querySelectorAll('.msn-transfer').length>=2"),
+    'retry transfer',
+    15000,
+  );
+  assert.equal(await evaluate("document.querySelectorAll('.desktop-file').length"), 0);
+  await evaluate("document.querySelector('.transfer-accept:not([hidden])').click()");
+  await until(
+    () => evaluate("!!document.querySelector('[data-file-id=super-mega-game]')"),
+    'desktop file',
+    5000,
+  );
+  await until(
+    () =>
+      evaluate(
+        "document.querySelector('.dialogue-choices button')?.textContent==='Retour au bureau'&&!document.querySelector('.dialogue-choices button').disabled",
+      ),
+    'good luck',
+    8000,
+  );
+  const data = await saved();
+  assert.equal(data.choices.length, 4);
+  assert.ok(data.choices.every((choice) => choice.unselected.length === 2));
+  await evaluate("document.querySelector('.dialogue-choices button').click()");
+  assert.equal((await saved()).current, 'super-mega-game');
+  await evaluate(
+    "document.querySelector('[data-file-id=super-mega-game]').dispatchEvent(new MouseEvent('dblclick',{bubbles:true}))",
+  );
+  await until(() => evaluate("!!document.querySelector('.popup-minigame')"), 'mini-game');
+  await evaluate("document.querySelector('.flash-pause').click()");
+  const remaining = await evaluate("document.querySelector('.flash-time').textContent");
+  await wait(1000);
+  assert.equal(await evaluate("document.querySelector('.flash-time').textContent"), remaining);
+  await evaluate("document.querySelector('.flash-pause').click()");
+  const end = Date.now() + 40000;
+  while (Date.now() < end) {
+    if (await evaluate("!document.querySelector('.flash-result').hidden")) break;
+    await evaluate("document.querySelector('.catch-smiley')?.click()");
+    await wait(300);
+  }
+  assert.ok(await evaluate("!document.querySelector('.flash-result').hidden"));
+  assert.ok((await saved()).results['super-mega-game'].score > 0);
+  await capture('smiley-catcher.png');
+  await evaluate("document.querySelector('.flash-return').click()");
+  assert.equal(await evaluate("!!document.querySelector('.popup-minigame')"), false);
+  assert.equal((await saved()).current, null);
+  console.log(
+    'OK : quatre choix, branches communes, refus puis transfert, fichier fictif, Smiley Catcher 30 s et retour au bureau.',
+  );
+  return {
+    victory,
+    choices: 4,
+    unselectedSaved: true,
+    echo500ms: true,
+    readerPause: true,
+    persistedAcrossReload: true,
+    transferRefusal: true,
+    desktopFile: true,
+    minigame: true,
+    returnToDesktop: true,
+  };
+}

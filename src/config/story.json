@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "start": "arcade-1",
+  "sequences": [
+    {
+      "id": "arcade-1",
+      "type": "arcade",
+      "level": 1,
+      "next": "pixelgirl-hello"
+    },
+    {
+      "id": "pixelgirl-hello",
+      "type": "conversation",
+      "dialogue": "pixelgirl-intro",
+      "revision": 2,
+      "next": "super-mega-game"
+    },
+    {
+      "id": "super-mega-game",
+      "type": "minigame",
+      "game": "smiley-catcher",
+      "next": null
+    }
+  ]
+}

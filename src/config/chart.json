@@ -1,0 +1,42 @@
+{
+  "level": 1,
+  "title": "music-lvl1.mp3",
+  "analysisFile": "music-lvl1.analysis.json",
+  "offsetSeconds": 0,
+  "durationSeconds": 86.49143,
+  "volume": 0.55,
+  "gameplay": {
+    "pointsPerClose": 100,
+    "beatBonus": 25,
+    "beatToleranceSeconds": 0.12,
+    "chaosRelief": 3,
+    "maxWindows": 3,
+    "pressurePerWindow": 0.5,
+    "minSpawnSeconds": 0.55,
+    "maxEventLatenessSeconds": 0.18
+  },
+  "rhythm": {
+    "introUntilBeat": 32,
+    "introEveryBeats": 8,
+    "calmEveryBeats": 8,
+    "intenseEveryBeats": 2
+  },
+  "introductions": [
+    {
+      "beat": 0,
+      "types": ["msn"]
+    },
+    {
+      "beat": 32,
+      "types": ["msn", "error"]
+    },
+    {
+      "beat": 72,
+      "types": ["msn", "ad", "download", "error"]
+    },
+    {
+      "beat": 120,
+      "types": ["msn", "download", "ad", "virus", "error"]
+    }
+  ]
+}

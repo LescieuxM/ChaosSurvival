@@ -1,0 +1,594 @@
+{
+  "id": "pixelgirl-intro",
+  "version": 1,
+  "revision": 2,
+  "contact": {
+    "id": "PixelGirl",
+    "name": "PixelGirl",
+    "nickname": "xX_PixelGirl_Xx",
+    "status": "En ligne",
+    "personalMessage": "☆ don't forget me ☆",
+    "avatar": "./avatars/pixelgirl.svg"
+  },
+  "player": {
+    "nickname": "Moi",
+    "avatar": "./avatars/player.svg"
+  },
+  "start": "first-contact",
+  "nodes": {
+    "first-contact": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "heyyyy :DDD",
+          "delayMs": 0,
+          "typingMs": 0
+        },
+        {
+          "speaker": "contact",
+          "text": "GG POUR LE NIVEAU !!!",
+          "delayMs": 800,
+          "typingMs": 0
+        },
+        {
+          "speaker": "contact",
+          "text": "j'ai cru que mon pc allait exploser avec tous tes clics ptdrrr",
+          "delayMs": 900,
+          "typingMs": 0
+        },
+        {
+          "speaker": "contact",
+          "text": "t'as survécu au moins c'est déjà ça xD",
+          "delayMs": 1500,
+          "typingMs": 0
+        }
+      ],
+      "choices": [
+        {
+          "id": "greeting-1",
+          "text": "merci merci les autographes c'est après",
+          "next": "autographs",
+          "set": {
+            "firstContactReply": "1"
+          }
+        },
+        {
+          "id": "greeting-2",
+          "text": "j'ai surtout cliqué au hasard mdr",
+          "next": "random-clicks",
+          "set": {
+            "firstContactReply": "2"
+          }
+        },
+        {
+          "id": "greeting-3",
+          "text": "attends tu regardais ma partie ??",
+          "next": "spectator",
+          "set": {
+            "firstContactReply": "3"
+          }
+        }
+      ],
+      "anomaly": {
+        "type": "unselectedEcho",
+        "durationMs": 500
+      }
+    },
+    "autographs": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "MDRRRR",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "la célébrité te monte déjà à la tête",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "jvais revendre ton autographe sur ebay",
+          "delayMs": 500,
+          "typingMs": 650
+        }
+      ],
+      "next": "introduction"
+    },
+    "random-clicks": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "ptdrrr c'est une vraie technique",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "perso je ferme aussi des fenêtres par accident",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "même quand je joue pas :')",
+          "delayMs": 500,
+          "typingMs": 650
+        }
+      ],
+      "next": "introduction"
+    },
+    "spectator": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "bah ouais xD",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "j'avais le compteur sous les yeux",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "j'aurais pas fait mieux de toute façon",
+          "delayMs": 500,
+          "typingMs": 650
+        }
+      ],
+      "next": "introduction"
+    },
+    "introduction": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "ah mais attends",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "jme suis même pas présentée",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "moi c'est PixelGirl :3",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "oui je sais pseudo super original",
+          "delayMs": 1000,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "j'ai passé au moins 40 secondes à le trouver",
+          "delayMs": 500,
+          "typingMs": 650
+        }
+      ],
+      "choices": [
+        {
+          "id": "nickname-1",
+          "text": "ça se voit que t'as beaucoup réfléchi",
+          "next": "artist",
+          "set": {
+            "nicknameReply": "1"
+          }
+        },
+        {
+          "id": "nickname-2",
+          "text": "moi j'aime bien :3",
+          "next": "sweet",
+          "set": {
+            "nicknameReply": "2"
+          }
+        },
+        {
+          "id": "nickname-3",
+          "text": "t'avais plus de place pour mettre des X ?",
+          "next": "extra-xs",
+          "set": {
+            "nicknameReply": "3"
+          }
+        }
+      ]
+    },
+    "artist": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "merci de reconnaître mon talent artistique",
+          "delayMs": 500,
+          "typingMs": 650
+        }
+      ],
+      "next": "table"
+    },
+    "sweet": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "AWWW MERCIIII <3",
+          "delayMs": 500,
+          "typingMs": 650
+        }
+      ],
+      "next": "table"
+    },
+    "extra-xs": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "MDR",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "xX_xX_PixelGirl_Xx_Xx",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "voilà t'es content ???",
+          "delayMs": 500,
+          "typingMs": 650
+        }
+      ],
+      "next": "table"
+    },
+    "table": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "attends",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "j'ai un truc important à te montrer",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "(╯°□°)╯︵ ┻━┻",
+          "delayMs": 0,
+          "typingMs": 2000
+        },
+        {
+          "speaker": "contact",
+          "text": "voilà",
+          "delayMs": 1000,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "c'est un mec qui retourne une table",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "je l'ai trouvé ya 10 min et depuis je l'envoie à tout le monde",
+          "delayMs": 500,
+          "typingMs": 650
+        }
+      ],
+      "choices": [
+        {
+          "id": "table-1",
+          "text": "merci pour cette découverte incroyable",
+          "next": "culture",
+          "set": {
+            "tableReply": "1"
+          }
+        },
+        {
+          "id": "table-2",
+          "text": "(ヘ･_･)ヘ┳━┳",
+          "next": "restore-table",
+          "set": {
+            "tableReply": "2"
+          }
+        },
+        {
+          "id": "table-3",
+          "text": "pourquoi tu m’envoies ça mdrr",
+          "next": "why-table",
+          "set": {
+            "tableReply": "3"
+          }
+        }
+      ]
+    },
+    "culture": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "de rien",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "je partage la culture",
+          "delayMs": 500,
+          "typingMs": 650
+        }
+      ],
+      "next": "game-invitation"
+    },
+    "restore-table": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "NON",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "REMETS PAS LA TABLE",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "(╯°□°)╯︵ ┻━┻",
+          "delayMs": 500,
+          "typingMs": 650
+        }
+      ],
+      "next": "game-invitation"
+    },
+    "why-table": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "aucune idée",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "ça me faisait rire toute seule :')",
+          "delayMs": 500,
+          "typingMs": 650
+        }
+      ],
+      "next": "game-invitation"
+    },
+    "game-invitation": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "sinon",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "t'aimes les jeux complètement nuls ?",
+          "delayMs": 500,
+          "typingMs": 650
+        }
+      ],
+      "choices": [
+        {
+          "id": "game-1",
+          "text": "évidemment",
+          "next": "excellent",
+          "set": {
+            "gameInvitationReply": "1"
+          }
+        },
+        {
+          "id": "game-2",
+          "text": "ça dépend du niveau de nullité",
+          "next": "very-bad",
+          "set": {
+            "gameInvitationReply": "2"
+          }
+        },
+        {
+          "id": "game-3",
+          "text": "je viens de passer 3 minutes à fermer des fenêtres, à ton avis ?",
+          "next": "not-wrong",
+          "set": {
+            "gameInvitationReply": "3"
+          }
+        }
+      ]
+    },
+    "excellent": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "EXCELLENT",
+          "delayMs": 500,
+          "typingMs": 650
+        }
+      ],
+      "next": "send-game"
+    },
+    "very-bad": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "genre vraiment très nul",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "donc forcément excellent",
+          "delayMs": 500,
+          "typingMs": 650
+        }
+      ],
+      "next": "send-game"
+    },
+    "not-wrong": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "PTDRRRR",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "pas faux",
+          "delayMs": 500,
+          "typingMs": 650
+        }
+      ],
+      "next": "send-game"
+    },
+    "send-game": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "j'ai un pote il collectionne les jeux flash éclatés",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "il dit qu'il est super fort mais bon",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "il a jamais gagné contre moi xD",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "attends je vais t'envoyer son préféré",
+          "delayMs": 1000,
+          "typingMs": 650
+        },
+        {
+          "type": "file",
+          "speaker": "contact",
+          "file": {
+            "id": "super-mega-game",
+            "name": "SUPER_MEGA_GAME.exe",
+            "sizeLabel": "1,3 Mo",
+            "description": "SMILEY CATCHER 2009",
+            "launch": {
+              "game": "smiley-catcher",
+              "sequence": "super-mega-game"
+            }
+          },
+          "delayMs": 350,
+          "typingMs": 1000
+        },
+        {
+          "speaker": "contact",
+          "text": "promis c'est pas un virus",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "enfin je crois",
+          "delayMs": 800,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "MDRRRR",
+          "delayMs": 1000,
+          "typingMs": 650
+        }
+      ],
+      "transfer": {
+        "fileId": "super-mega-game",
+        "accept": "good-luck",
+        "refuse": "refused"
+      }
+    },
+    "refused": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "ptdrrr ok monsieur l'antivirus :')",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "je te le repropose, prends ton temps xD",
+          "delayMs": 500,
+          "typingMs": 650
+        }
+      ],
+      "next": "offer-again"
+    },
+    "offer-again": {
+      "messages": [
+        {
+          "type": "file",
+          "speaker": "contact",
+          "file": {
+            "id": "super-mega-game",
+            "name": "SUPER_MEGA_GAME.exe",
+            "sizeLabel": "1,3 Mo",
+            "description": "SMILEY CATCHER 2009",
+            "launch": {
+              "game": "smiley-catcher",
+              "sequence": "super-mega-game"
+            }
+          },
+          "delayMs": 350,
+          "typingMs": 1000
+        }
+      ],
+      "transfer": {
+        "fileId": "super-mega-game",
+        "accept": "good-luck",
+        "refuse": "refused"
+      }
+    },
+    "good-luck": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "BONNE CHANCE :DDD",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "et fais pas attention aux graphismes",
+          "delayMs": 500,
+          "typingMs": 650
+        },
+        {
+          "speaker": "contact",
+          "text": "le mec a dû les faire sur paint xD",
+          "delayMs": 500,
+          "typingMs": 650
+        }
+      ],
+      "end": true
+    }
+  }
+}

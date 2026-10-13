@@ -1,0 +1,531 @@
+/* MSN story desktop */
+.story-desktop #playfield {
+  bottom: 64px;
+}
+.story-desktop .music-player {
+  display: none;
+}
+.story-desktop .session-info {
+  bottom: 67px;
+  pointer-events: none;
+}
+.story-desktop .equalizer {
+  display: none;
+}
+.story-toast {
+  cursor: pointer;
+}
+.story-toast > #toast-open {
+  margin: 0 12px 12px;
+  width: calc(100% - 24px);
+}
+.popup-narrative {
+  width: 620px;
+  height: 530px;
+  max-height: 100%;
+}
+.conversation-reader {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 4px 10px;
+  flex-shrink: 0;
+}
+.msn-minimize {
+  width: 24px;
+  height: 23px;
+  padding: 0;
+  border: 1px solid white;
+  border-radius: 3px;
+  background: linear-gradient(#70a9ee, #2166cb);
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
+  line-height: 1;
+  margin-left: auto;
+}
+.popup-narrative .msn-minimize + .close-button {
+  margin-left: 4px;
+}
+.conversation-reader .xp-button {
+  font-size: 10px;
+  padding: 3px 8px;
+}
+.conversation-message {
+  animation: msn-message-in 0.15s ease-out;
+}
+.dialogue-echo {
+  animation: none;
+}
+.msn-transfer {
+  margin: 8px 0;
+  padding: 10px;
+  background: #f0f8ff;
+  border: 1px solid #acc5dc;
+  border-radius: 3px;
+}
+.msn-transfer strong,
+.msn-transfer small,
+.msn-transfer progress {
+  display: block;
+  margin-bottom: 6px;
+}
+.msn-transfer progress {
+  width: 100%;
+}
+.msn-transfer .xp-button {
+  margin-right: 8px;
+}
+.desktop-files {
+  position: absolute;
+  top: 120px;
+  left: 130px;
+  z-index: 3;
+  display: flex;
+  gap: 10px;
+}
+.desktop-file {
+  border: 0;
+  background: transparent;
+  width: 100px;
+  padding: 7px;
+  display: grid;
+  gap: 7px;
+  justify-items: center;
+  color: white;
+  font-size: 10px;
+  text-shadow: 1px 1px #17345c;
+}
+.desktop-file span {
+  overflow-wrap: anywhere;
+}
+.desktop-file:focus,
+.desktop-file:hover {
+  background: #4b7cd355;
+  outline: 1px dotted white;
+}
+.desktop:not(.story-desktop) .desktop-files {
+  display: none;
+}
+.popup-minigame {
+  width: 660px;
+  height: 525px;
+}
+.popup-minigame .window-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.flash-game {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  background: linear-gradient(135deg, #fa5cec, #7df6ed 55%, #ffff51);
+  text-align: center;
+  position: relative;
+}
+.flash-game h2 {
+  margin: 0;
+  font:
+    bold 29px Impact,
+    sans-serif;
+  color: #6422cc;
+  text-shadow: 2px 2px #fff;
+}
+.flash-game h2 span {
+  color: #ec008a;
+}
+.flash-game > p {
+  margin: 7px 0;
+  font-size: 10px;
+}
+.flash-stats {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  justify-content: center;
+  margin: 5px;
+  color: #6d2499;
+}
+.smiley-arena {
+  position: relative;
+  flex: 1;
+  min-height: 120px;
+  border: 3px dashed #fcf94f;
+  background: #ffffff50;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.catch-smiley {
+  position: absolute;
+  width: 58px;
+  height: 58px;
+  border: 3px solid white;
+  border-radius: 50%;
+  color: #873d04;
+  font-size: 42px;
+  line-height: 1;
+  background: radial-gradient(circle at 30% 25%, #fffbd0, #ffe85c, #ff9d1b);
+  box-shadow: 3px 4px #8b47974d;
+  animation: msn-message-in 0.2s ease-out;
+}
+.flash-feedback {
+  min-height: 30px;
+  font:
+    bold 22px Impact,
+    sans-serif;
+  color: #c600a0;
+  text-shadow: 2px 2px #fff;
+  padding-top: 5px;
+}
+.flash-result {
+  position: absolute;
+  inset: 12px;
+  background: linear-gradient(#fff781, #f6bdff);
+  border: 5px ridge #ff57c2;
+  display: grid;
+  align-content: center;
+  gap: 15px;
+  padding: 24px;
+}
+.flash-result h3 {
+  font:
+    bold 37px Impact,
+    sans-serif;
+  color: #9740d4;
+  margin: 0;
+}
+.flash-result strong {
+  font-size: 25px;
+  color: #e50099;
+}
+.flash-result .xp-button {
+  background: linear-gradient(#f8ff6b, #8de837);
+  padding: 10px;
+}
+.victory-card h2 {
+  font-size: clamp(36px, 6vw, 60px);
+}
+@keyframes msn-message-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (max-height: 650px) {
+  .popup-narrative .conversation-content {
+    min-height: 45px;
+    margin: 7px 10px;
+  }
+  .popup-narrative .msn-contact {
+    padding: 5px 10px;
+  }
+  .popup-narrative .msn-contact .story-avatar {
+    width: 38px;
+    height: 38px;
+  }
+  .popup-narrative .dialogue-choice {
+    font-size: 10px;
+    padding: 5px 8px;
+  }
+  .popup-narrative .conversation-reader {
+    padding: 2px 10px;
+  }
+}
+.popup-narrative .window-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.popup-narrative .msn-contact {
+  flex-shrink: 0;
+  padding: 9px 12px;
+}
+.story-avatar {
+  width: 48px;
+  height: 48px;
+  padding: 3px;
+  border: 1px solid #98b6cf;
+  border-radius: 5px;
+  background: #fff;
+  image-rendering: pixelated;
+}
+.conversation-content {
+  display: flex;
+  flex: 1;
+  min-height: 80px;
+  gap: 10px;
+  margin: 10px;
+}
+.conversation-log {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  background: #fff;
+  border: 1px solid #b4c3d0;
+  padding: 10px;
+  scrollbar-color: #a4c5e5 #f1f6fc;
+}
+.conversation-message {
+  margin-bottom: 11px;
+  overflow-wrap: anywhere;
+}
+.conversation-message small {
+  color: #8795a5;
+  font-size: 10px;
+}
+.conversation-message p {
+  margin: 4px 0 0;
+  color: #244fb0;
+  line-height: 1.5;
+}
+.conversation-message.from-player p {
+  color: #24415d;
+}
+.conversation-portraits {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+  width: 95px;
+  padding: 6px 0;
+}
+.conversation-portraits .story-avatar {
+  width: 88px;
+  height: 88px;
+}
+.conversation-portraits small {
+  color: #7b91a8;
+  font-size: 9px;
+}
+.popup-narrative .msn-tools {
+  flex-shrink: 0;
+  margin: 0 10px;
+  padding: 4px 2px;
+}
+.popup-narrative .msn-tools small {
+  margin-left: auto;
+  font-size: 9px;
+  color: #7991a5;
+}
+.dialogue-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 10px;
+  flex-shrink: 0;
+  min-height: 43px;
+}
+.dialogue-choice {
+  text-align: left;
+  padding: 7px 10px;
+  white-space: normal;
+  line-height: 1.35;
+}
+.dialogue-typing {
+  min-height: 24px;
+  flex-shrink: 0;
+  color: #577591;
+}
+.contact-away .online-dot {
+  background: #edb843;
+  box-shadow: 0 0 0 1px #bb8c2b;
+}
+.msn-emoticon {
+  display: inline-flex;
+  vertical-align: middle;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 25%, #fff9ab, #ffd14a);
+  color: #946007;
+  margin: 0 2px;
+  box-shadow: inset 0 0 0 1px #e7ba4f;
+}
+.msn-emoticon.heart {
+  color: #e8518a;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* A celebratory interlude, separate from arcade difficulty and music. */
+.victory-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 900;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: linear-gradient(130deg, #6497ffd9, #e582eed9 55%, #56e5edd9);
+}
+.victory-rays {
+  position: absolute;
+  width: 180vmax;
+  height: 180vmax;
+  background: repeating-conic-gradient(from 0deg, #ffffff24 0deg 14deg, transparent 14deg 28deg);
+  animation: victory-spin 24s linear infinite;
+  pointer-events: none;
+}
+.victory-card {
+  position: relative;
+  text-align: center;
+  padding: 30px 40px;
+  width: min(570px, calc(100% - 36px));
+  border: 3px solid #fff;
+  border-radius: 18px;
+  background: linear-gradient(155deg, #faf3ffef, #ecfefff0);
+  box-shadow:
+    10px 10px 0 #4d64a950,
+    0 0 70px #fff9;
+  animation: victory-arrive 0.6s cubic-bezier(0.2, 1.5, 0.45, 1);
+}
+.victory-sticker {
+  display: inline-block;
+  background: #ffeb60;
+  color: #8057af;
+  padding: 8px 15px;
+  border: 2px solid #fff;
+  transform: rotate(-5deg);
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+.victory-stars {
+  color: #ee73b9;
+  font-size: 42px;
+  margin-top: 8px;
+  letter-spacing: 16px;
+  text-shadow: 2px 3px #fff;
+  animation: victory-bounce 0.9s ease-in-out infinite alternate;
+}
+.victory-card h2 {
+  margin: 2px 0 18px;
+  font-family: 'Arial Black', Impact, sans-serif;
+  font-size: clamp(48px, 8vw, 84px);
+  line-height: 1;
+  color: #7854c3;
+  text-shadow:
+    3px 3px #ffadce,
+    6px 6px #a7ecfb;
+  transform: rotate(-3deg);
+}
+.victory-card h2 span {
+  display: block;
+  margin-top: 14px;
+  font:
+    bold 13px Tahoma,
+    sans-serif;
+  letter-spacing: 4px;
+  color: #e04c99;
+  text-shadow: none;
+}
+.victory-card p {
+  color: #5b779f;
+}
+.victory-score {
+  display: block;
+  color: #389cb3;
+  font-size: 25px;
+  letter-spacing: 2px;
+  margin: 16px 0 6px;
+}
+.victory-card > small {
+  display: block;
+  color: #7486a3;
+  margin: 10px 0;
+}
+.victory-card .start-button {
+  margin-top: 20px;
+  width: 100%;
+}
+.victory-confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.victory-confetti i {
+  position: absolute;
+  top: -10%;
+  left: var(--x);
+  color: var(--color);
+  font-style: normal;
+  font-size: 22px;
+  animation: victory-confetti 3s var(--delay) linear infinite;
+  text-shadow: 1px 1px #fff;
+}
+.victory-layer.is-suspended * {
+  animation-play-state: paused;
+}
+@keyframes victory-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes victory-bounce {
+  to {
+    transform: scale(1.12) rotate(4deg);
+  }
+}
+@keyframes victory-arrive {
+  from {
+    opacity: 0;
+    transform: scale(0.5) rotate(-10deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes victory-confetti {
+  to {
+    top: 115%;
+    transform: rotate(260deg) translateX(30px);
+  }
+}
+@media (max-width: 900px) {
+  .conversation-portraits {
+    display: none;
+  }
+  .story-desktop #playfield {
+    left: 118px;
+    right: 26px;
+    bottom: 64px;
+  }
+}
+@media (max-height: 650px) {
+  .victory-card {
+    padding: 18px 28px;
+  }
+  .victory-stars {
+    font-size: 28px;
+  }
+  .victory-card h2 {
+    font-size: 56px;
+  }
+  .victory-card p {
+    margin: 10px 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .victory-layer * {
+    animation: none;
+  }
+  .victory-confetti i {
+    top: calc(12% + var(--x) / 2);
+  }
+  .victory-rays {
+    opacity: 0.4;
+  }
+}
