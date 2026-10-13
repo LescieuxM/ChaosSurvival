@@ -54,10 +54,37 @@ export function layoutIconCells(ids, saved, grid) {
   return result;
 }
 
+export function rectanglesTouch(a, b) {
+  return a.left <= b.right && a.right >= b.left && a.top <= b.bottom && a.bottom >= b.top;
+}
+export function groupIconCells(cells, ids, delta, grid) {
+  const group = new Set(ids);
+  const occupied = new Set(
+    [...cells].filter(([id]) => !group.has(id)).map(([, cell]) => `${cell.col}:${cell.row}`),
+  );
+  const result = new Map();
+  for (const id of group) {
+    const previous = cells.get(id);
+    if (!previous) return null;
+    const cell = { col: previous.col + delta.col, row: previous.row + delta.row };
+    if (
+      cell.col < 0 ||
+      cell.row < 0 ||
+      cell.col >= grid.cols ||
+      cell.row >= grid.rows ||
+      occupied.has(`${cell.col}:${cell.row}`)
+    )
+      return null;
+    result.set(id, cell);
+  }
+  return result;
+}
+
 export class DesktopIcons {
   constructor(desktop, progression) {
     this.desktop = desktop;
     this.progression = progression;
+    this.selectedIds = new Set();
     desktop.classList.add('icon-grid');
     desktop.addEventListener('dragstart', (event) => {
       if (this.button(event.target)) event.preventDefault();
@@ -86,7 +113,7 @@ export class DesktopIcons {
     this.refresh();
   }
   button(target) {
-    const button = target.closest('[data-shortcut], [data-file-id]');
+    const button = target.closest?.('[data-shortcut], [data-file-id]');
     return button?.closest('.desktop-icons, .desktop-files') ? button : null;
   }
   id(button) {
@@ -98,10 +125,26 @@ export class DesktopIcons {
     return [...this.desktop.querySelectorAll('.desktop-icons button, .desktop-files button')];
   }
   select(button) {
-    for (const item of this.buttons()) item.setAttribute('aria-pressed', String(item === button));
+    this.selectMany(button ? [button] : []);
+  }
+  selectMany(buttons) {
+    this.selectedIds = new Set(buttons.map((button) => this.id(button)));
+    for (const item of this.buttons())
+      item.setAttribute('aria-pressed', String(this.selectedIds.has(this.id(item))));
+  }
+  backgroundHit(target) {
+    return (
+      target === this.desktop ||
+      target.classList?.contains?.('desktop-wash') ||
+      ['.desktop-icons', '.desktop-files', '#playfield'].some(
+        (selector) => target === this.desktop.querySelector(selector),
+      )
+    );
   }
   refresh() {
     this.cancel();
+    if (this.runId !== this.progression.data.runId) this.selectedIds.clear();
+    this.runId = this.progression.data.runId;
     const saved = this.progression.data.desktopIcons;
     this.saved = saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {};
     const buttons = this.buttons();
@@ -120,6 +163,7 @@ export class DesktopIcons {
     for (const button of buttons) {
       const id = this.id(button),
         cell = this.cells.get(id);
+      button.setAttribute('aria-pressed', String(this.selectedIds.has(id)));
       button.style.visibility = cell ? '' : 'hidden';
       if (!cell) continue;
       button.style.left = `${MARGIN + cell.col * WIDTH}px`;
@@ -140,14 +184,35 @@ export class DesktopIcons {
     if (
       event.button !== 0 ||
       !this.desktop.classList.contains('story-desktop') ||
-      this.desktop.inert
+      this.desktop.inert ||
+      this.drag ||
+      this.rectangle
     )
       return;
     const button = this.button(event.target);
-    if (!button) return;
-    this.select(button);
+    if (!button) {
+      if (!this.backgroundHit(event.target)) return;
+      this.select(null);
+      this.rectangle = {
+        pointer: event.pointerId,
+        x: event.clientX,
+        y: event.clientY,
+        moved: false,
+      };
+      this.desktop.setPointerCapture?.(event.pointerId);
+      return;
+    }
+    if (!this.selectedIds.has(this.id(button))) this.select(button);
+    const items = this.buttons()
+      .filter((item) => this.selectedIds.has(this.id(item)))
+      .map((item) => ({
+        button: item,
+        left: parseFloat(item.style.left),
+        top: parseFloat(item.style.top),
+      }));
     this.drag = {
       button,
+      items,
       pointer: event.pointerId,
       x: event.clientX,
       y: event.clientY,
@@ -156,36 +221,99 @@ export class DesktopIcons {
     button.setPointerCapture(event.pointerId);
   }
   move(event) {
+    if (this.rectangle) return this.moveRectangle(event);
     const drag = this.drag;
     if (!drag || event.pointerId !== drag.pointer) return;
-    const dx = event.clientX - drag.x,
+    let dx = event.clientX - drag.x,
       dy = event.clientY - drag.y;
     if (!drag.moved && Math.hypot(dx, dy) < 6) return;
     drag.moved = true;
     event.preventDefault();
     const rect = this.desktop.getBoundingClientRect();
-    const left = parseFloat(drag.button.style.left),
-      top = parseFloat(drag.button.style.top);
     const bottom = this.desktop.querySelector('.taskbar').getBoundingClientRect().top - rect.top;
-    const x = Math.max(0, Math.min(rect.width - drag.button.offsetWidth, left + dx));
-    const y = Math.max(0, Math.min(bottom - drag.button.offsetHeight, top + dy));
-    drag.button.style.transform = `translate(${x - left}px, ${y - top}px)`;
-    drag.button.classList.add('is-dragging');
+    const left = Math.min(...drag.items.map((item) => item.left));
+    const top = Math.min(...drag.items.map((item) => item.top));
+    const right = Math.max(...drag.items.map((item) => item.left + item.button.offsetWidth));
+    const end = Math.max(...drag.items.map((item) => item.top + item.button.offsetHeight));
+    dx = Math.max(-left, Math.min(rect.width - right, dx));
+    dy = Math.max(-top, Math.min(bottom - end, dy));
+    for (const item of drag.items) {
+      item.button.style.transform = `translate(${dx}px, ${dy}px)`;
+      item.button.classList.add('is-dragging');
+    }
+  }
+  moveRectangle(event) {
+    const selection = this.rectangle;
+    if (event.pointerId !== selection.pointer) return;
+    if (
+      !selection.moved &&
+      Math.hypot(event.clientX - selection.x, event.clientY - selection.y) < 6
+    )
+      return;
+    selection.moved = true;
+    event.preventDefault();
+    const desktop = this.desktop.getBoundingClientRect();
+    const bottom = this.desktop.querySelector('.taskbar').getBoundingClientRect().top;
+    const x1 = Math.max(desktop.left, Math.min(desktop.right, selection.x));
+    const y1 = Math.max(desktop.top, Math.min(bottom, selection.y));
+    const x2 = Math.max(desktop.left, Math.min(desktop.right, event.clientX));
+    const y2 = Math.max(desktop.top, Math.min(bottom, event.clientY));
+    const rect = {
+      left: Math.min(x1, x2),
+      top: Math.min(y1, y2),
+      right: Math.max(x1, x2),
+      bottom: Math.max(y1, y2),
+    };
+    if (!selection.element) {
+      selection.element = document.createElement('div');
+      selection.element.className = 'desktop-selection';
+      selection.element.setAttribute('aria-hidden', 'true');
+      this.desktop.append(selection.element);
+    }
+    Object.assign(selection.element.style, {
+      left: `${rect.left - desktop.left}px`,
+      top: `${rect.top - desktop.top}px`,
+      width: `${rect.right - rect.left}px`,
+      height: `${rect.bottom - rect.top}px`,
+    });
+    this.selectMany(
+      this.buttons().filter(
+        (button) =>
+          button.style.visibility !== 'hidden' &&
+          rectanglesTouch(rect, button.getBoundingClientRect()),
+      ),
+    );
   }
   up(event) {
+    if (this.rectangle) {
+      if (event.pointerId === this.rectangle.pointer) this.cancel();
+      return;
+    }
     const drag = this.drag;
     if (!drag || event.pointerId !== drag.pointer) return;
     if (drag.moved) {
       this.suppressClick = drag.button;
-      const rect = this.desktop.getBoundingClientRect();
-      const desired = nearestIconCell(
-        parseFloat(drag.button.style.left) + event.clientX - drag.x,
-        parseFloat(drag.button.style.top) + event.clientY - drag.y,
+      const anchor = this.cells.get(this.id(drag.button));
+      let delta = {
+        col: Math.round((event.clientX - drag.x) / WIDTH),
+        row: Math.round((event.clientY - drag.y) / HEIGHT),
+      };
+      if (drag.items.length === 1) {
+        const desired = nearestIconCell(
+          parseFloat(drag.button.style.left) + event.clientX - drag.x,
+          parseFloat(drag.button.style.top) + event.clientY - drag.y,
+          this.grid,
+        );
+        delta = { col: desired.col - anchor.col, row: desired.row - anchor.row };
+      }
+      const moved = groupIconCells(
+        this.cells,
+        drag.items.map((item) => this.id(item.button)),
+        delta,
         this.grid,
       );
-      const id = this.id(drag.button);
-      if (![...this.cells].some(([other, cell]) => other !== id && same(cell, desired))) {
-        this.saved[id] = desired;
+      if (moved) {
+        for (const [id, cell] of moved) this.saved[id] = cell;
         this.persist();
       }
     }
@@ -193,11 +321,20 @@ export class DesktopIcons {
     this.refresh();
   }
   cancel() {
+    const selection = this.rectangle;
+    this.rectangle = null;
+    if (selection) {
+      selection.element?.remove();
+      if (this.desktop.hasPointerCapture?.(selection.pointer))
+        this.desktop.releasePointerCapture(selection.pointer);
+    }
     const drag = this.drag;
     this.drag = null;
     if (!drag) return;
-    drag.button.style.transform = '';
-    drag.button.classList.remove('is-dragging');
+    for (const item of drag.items) {
+      item.button.style.transform = '';
+      item.button.classList.remove('is-dragging');
+    }
     if (drag.button.hasPointerCapture(drag.pointer))
       drag.button.releasePointerCapture(drag.pointer);
   }

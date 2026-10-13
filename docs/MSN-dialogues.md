@@ -11,8 +11,24 @@ restent sauvegardés pendant l'arrivée d'un nouvel événement.
 
 `src/config/contacts.json` distingue les contacts décoratifs (`decorative`, hors
 ligne, sans dialogue) des contacts narratifs (`narrative`, avec un identifiant
-`dialogue`). Un personnage n'apparaît qu'après le déblocage de son dialogue.
-Le bouton « Mes contacts » retrouve la liste sans effacer la discussion.
+`dialogue`). Un double-clic sur un contact décoratif ouvre la même interface de
+conversation, avec un historique vide et l'envoi désactivé. Ce mode ne crée pas
+de dialogue sauvegardé et ne marque pas les messages de PixelGirl comme lus.
+Chaque contact possède sa propre fenêtre et son bouton de barre des tâches.
+La liste des contacts reste indépendante et s'ouvre depuis Démarrer ou le
+raccourci Messenger. Un double-clic restaure la conversation existante sans
+dupliquer son historique. Fermer les contacts ne ferme pas les discussions.
+
+Un personnage narratif n'apparaît qu'après le déblocage de son dialogue.
+Le menu Contacts ouvre la liste et permet de consulter le profil sélectionné.
+Les menus Fichier, Actions, Outils et Aide proposent fermeture, aperçu des
+émoticônes, Wizz local, volume des effets et informations sur l'application.
+Les contacts hors ligne ne peuvent pas recevoir de Wizz ni de messages.
+Les sons de connexion, message, Wizz et déconnexion sont synthétisés localement.
+Les menus acceptent les flèches, Entrée, Échap et se ferment au clic extérieur.
+Le contrôleur `src/ui/messenger.js` gère les fenêtres ; les dialogues et leur
+historique restent gérés par `ConversationThread` et la sauvegarde existante.
+Une conversation non consultée clignote dans la barre des tâches jusqu'à lecture.
 
 La première réponse non sélectionnée apparaît 500 ms dans le journal comme une
 ligne normale. Elle ne devient pas un message envoyé et PixelGirl ne réagit pas.
@@ -42,6 +58,15 @@ et une table `nodes`. Un nœud possède des `messages` puis un des champs `choic
 
 `delayMs` précède la saisie ; `typingMs` contrôle l'indicateur. Les textes sont
 rendus comme texte, sans exécution HTML. Les avatars sont locaux dans `public/avatars/`.
+Lorsque `typingMs` vaut zéro, une partie de `delayMs` sert à afficher la saisie,
+selon la longueur du message, sans retarder son envoi. Un message sans aucun délai
+reste immédiat. L'indicateur affiche le pseudonyme du contact juste après le
+dernier message, dans le contenu défilant du chat. Il disparaît hors saisie,
+ne réserve aucun espace permanent et ne fait jamais partie de l'historique
+sauvegardé. La lecture d'anciens messages n'impose pas de défilement vers le bas.
+Une séquence déjà commencée
+continue en arrière-plan lorsque Messenger est réduit ou fermé ; les choix attendent
+toujours une action du joueur.
 Un message ou une réponse peut utiliser `when: { "flag": "mood", "equals": "happy" }`.
 Une conversation future peut aussi dépendre d'une réponse proposée et non sélectionnée :
 
@@ -126,6 +151,10 @@ le moteur de dialogues. Le prototype dure 30 secondes et propose pause, score,
 combos et retour au bureau, sans condition de défaite.
 
 Le build valide les dialogues, les transferts, les avatars et les références aux jeux.
+Après `npm run build`, `node scripts/verify-desktop-ui.mjs --messenger-only`
+vérifie les fenêtres indépendantes, menus et clavier, profils, options, Wizz,
+réception en arrière-plan, replays, choix en attente et reprise après redémarrage.
+Ce contrôle utilise Edge sans interface et ne lance pas Electron.
 `npm run verify:portable -- --story` vérifie le parcours complet dans l'EXE hors
 du projet : victoire, connexion, choix, anomalie, refus puis transfert, fichier,
 mini-jeu et retour au bureau. Les captures sont dans `.qa/`.

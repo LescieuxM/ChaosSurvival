@@ -2,15 +2,24 @@ import assert from 'node:assert/strict';
 import { readFile, readdir, access } from 'node:fs/promises';
 import { validateStory } from '../src/story/progression.js';
 import { validateDialogue } from '../src/story/dialogue.js';
+import { validateGameRules } from '../src/ui/game-rules.js';
 
 const root = new URL('../', import.meta.url);
 const story = JSON.parse(await readFile(new URL('src/config/story.json', root), 'utf8'));
 validateStory(story);
 const ids = new Set();
 const games = new Map();
+const chart = JSON.parse(await readFile(new URL('src/config/chart.json', root), 'utf8'));
+validateGameRules(chart);
+const ruleIds = new Set([chart.rules.id]);
 for (const filename of await readdir(new URL('src/minigames/', root))) {
   if (!filename.endsWith('.json')) continue;
   const game = JSON.parse(await readFile(new URL(`src/minigames/${filename}`, root), 'utf8'));
+  validateGameRules(game);
+  if (game.rules) {
+    assert.ok(!ruleIds.has(game.rules.id), `Règles dupliquées : ${game.rules.id}`);
+    ruleIds.add(game.rules.id);
+  }
   assert.ok(!games.has(game.id));
   assert.ok(
     game.durationSeconds > 0 &&

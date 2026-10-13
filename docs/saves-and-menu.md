@@ -82,3 +82,11 @@ Le test portable copie uniquement l'exécutable hors du projet, utilise un profi
 jetable, ferme puis relance réellement Electron et vérifie les six parcours du
 menu, la corruption, l'effacement et le parcours niveau → MSN → mini-jeu.
 Il n'accède pas aux sauvegardes personnelles du joueur.
+
+Sur le bureau interactif, glisser depuis une zone vide trace un rectangle bleu de
+sélection. Les icônes touchées restent sélectionnées après relâchement. Glisser
+une icône sélectionnée déplace le groupe en conservant les écarts du quadrillage.
+Un dépôt sur une case occupée ou hors limites conserve les positions précédentes.
+Les positions validées utilisent toujours `desktopIcons` dans la sauvegarde ; la
+sélection elle-même est temporaire et n'ajoute aucun champ de sauvegarde. Le bureau
+décoratif du menu principal n'est pas interactif.

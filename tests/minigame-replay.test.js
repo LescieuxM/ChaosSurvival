@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { runInNewContext } from 'node:vm';
+import { GameRules } from '../src/ui/game-rules.js';
+import { DesktopFiles } from '../src/ui/desktop-files.js';
+import { MiniGameLauncher } from '../src/ui/minigame-launcher.js';
 import { installDevelopmentVictoryShortcut } from '../src/dev/finish-shortcut.js';
 import { Progression } from '../src/story/progression.js';
 
@@ -9,7 +11,7 @@ const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
 const story = JSON.parse(read('../src/config/story.json'));
 const definition = JSON.parse(read('../src/minigames/smiley-catcher.json'));
 
-function setup(progression) {
+function setup(progression, t, tutorials = false) {
   const element = () => ({
     style: {},
     dataset: {},
@@ -27,6 +29,7 @@ function setup(progression) {
       this.handlers[type] = handler;
     },
     attrs: {},
+    focus() {},
     setAttribute(name, value) {
       this.attrs[name] = value;
     },
@@ -64,15 +67,8 @@ function setup(progression) {
     progression,
     manager,
     ui: { desktop: element() },
-    desktopIcons: { refresh() {} },
-    icon: () => '<svg></svg>',
     miniGames: { [definition.id]: definition },
     sounds: { unlock() {}, play() {} },
-    conversation: {},
-    activeDialogue: { id: 'pixelgirl-intro' },
-    showStoryError(error) {
-      throw error;
-    },
     document: {
       hidden: false,
       createElement: element,
@@ -91,19 +87,41 @@ function setup(progression) {
       frames.delete(id);
     },
   };
-  const engine = read('../src/ui/minigame.js').split('const engines = new Map();')[1];
-  const renderFiles = read('../src/main.js').match(
-    /function renderDesktopFiles\(\) \{[\s\S]*?\n\}/,
-  )[0];
-  const launch = read('../src/main.js').match(/function openDesktopFile\(file\) \{[\s\S]*?\n\}/)[0];
-  runInNewContext(
-    `const engines = new Map(); ${engine.replaceAll('export ', '')}
-    let phase = 'desktop'; let miniGame;
-    ${launch}
-    ${renderFiles}
-    this.game = () => miniGame;`,
-    context,
+  const previous = {
+    document: globalThis.document,
+    requestAnimationFrame: globalThis.requestAnimationFrame,
+    cancelAnimationFrame: globalThis.cancelAnimationFrame,
+  };
+  Object.assign(globalThis, {
+    document: context.document,
+    requestAnimationFrame: context.requestAnimationFrame,
+    cancelAnimationFrame: context.cancelAnimationFrame,
+  });
+  t.after(() => {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete globalThis[key];
+      else globalThis[key] = value;
+    }
+  });
+  const rules = tutorials ? new GameRules(context.ui.desktop, progression) : undefined;
+  const launcher = new MiniGameLauncher(
+    context.miniGames,
+    progression,
+    manager,
+    context.sounds,
+    undefined,
+    rules,
   );
+  context.rules = rules;
+  const files = new DesktopFiles(
+    context.ui.desktop,
+    progression,
+    (file) => launcher.open(file),
+    () => {},
+  );
+  context.game = () => launcher.active;
+  context.openDesktopFile = (file) => launcher.open(file);
+  context.renderDesktopFiles = () => files.render();
   return { context, manager, visibility };
 }
 
@@ -130,9 +148,9 @@ function finish(game) {
   game.tick(31000);
 }
 
-test('received mini-game launches only after transfer, closes and restarts from zero without duplicates', () => {
+test('received mini-game launches only after transfer, closes and restarts from zero without duplicates', (t) => {
   const { progression, file } = savedRun();
-  const { context, manager, visibility } = setup(progression);
+  const { context, manager, visibility } = setup(progression, t);
   context.renderDesktopFiles();
   const desktopFiles = context.ui.desktop.querySelector('#desktop-files');
   assert.equal(desktopFiles.children.length, 0);
@@ -164,10 +182,10 @@ test('received mini-game launches only after transfer, closes and restarts from 
   assert.equal(manager.windows.size, 1);
 });
 
-test('finished mini-game stays single, can replay internally and from desktop after restart without repeating progression', () => {
+test('finished mini-game stays single, can replay internally and from desktop after restart without repeating progression', (t) => {
   const { progression, storage, file } = savedRun();
   progression.finishTransfer(file.key);
-  const { context, manager } = setup(progression);
+  const { context, manager } = setup(progression, t);
   context.openDesktopFile(file);
   const game = context.game();
   finish(game);
@@ -191,17 +209,17 @@ test('finished mini-game stays single, can replay internally and from desktop af
   const loaded = new Progression(story, storage);
   assert.equal(loaded.corrupt, undefined);
   assert.equal(loaded.data.files[file.key].status, 'complete');
-  const reopened = setup(loaded);
+  const reopened = setup(loaded, t);
   reopened.context.openDesktopFile(loaded.data.files[file.key]);
   finish(reopened.context.game());
   assert.equal(JSON.stringify(loaded.data), saved);
   assert.equal(reopened.manager.windows.size, 1);
 });
 
-test('development shortcut finishes Smiley normally once, cleans up and allows another round', () => {
+test('development shortcut finishes Smiley normally once, cleans up and allows another round', (t) => {
   const { progression, file } = savedRun();
   progression.finishTransfer(file.key);
-  const { context, visibility } = setup(progression);
+  const { context, visibility } = setup(progression, t);
   context.openDesktopFile(file);
   const game = context.game();
   let handler;
@@ -244,4 +262,38 @@ test('development shortcut finishes Smiley normally once, cleans up and allows a
   assert.equal(JSON.stringify(progression.data), saved);
   remove();
   assert.equal(handler, null);
+});
+
+test('Smiley waits for its own rules, pauses voluntary review, saves approval and replays directly', (t) => {
+  const { progression, file, storage } = savedRun();
+  progression.finishTransfer(file.key);
+  const { context, manager } = setup(progression, t, true);
+  context.openDesktopFile(file);
+  assert.equal(context.game(), null);
+  assert.equal(manager.windows.size, 0);
+  assert.equal(progression.data.completed.includes('super-mega-game'), false);
+  const confirm = context.rules.layer.querySelector('.rules-confirm').handlers.click;
+  confirm();
+  confirm();
+  assert.equal(manager.windows.size, 1);
+  const game = context.game();
+  assert.equal(progression.data.tutorials['smiley-catcher'], true);
+  game.tick(0);
+  game.tick(1000);
+  game.element.querySelector('.flash-rules').handlers.click();
+  assert.equal(game.paused, true);
+  game.tick(9000);
+  assert.equal(game.elapsed, 1);
+  context.rules.layer.querySelector('.rules-confirm').handlers.click();
+  assert.equal(game.paused, false);
+  game.tick(10000);
+  assert.equal(game.elapsed, 1);
+  manager.close([...manager.windows.keys()][0]);
+  context.openDesktopFile(file);
+  assert.equal(context.rules.active, false);
+  assert.equal(manager.windows.size, 1);
+  const loaded = new Progression(story, storage);
+  assert.equal(new GameRules(context.ui.desktop, loaded).hasSeen(definition), true);
+  loaded.newGame();
+  assert.equal(new GameRules(context.ui.desktop, loaded).hasSeen(definition), false);
 });

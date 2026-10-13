@@ -373,3 +373,22 @@ test('legacy replay templates without launch records keep their messages in the 
   assert.deepEqual(again.thread.state.history, history);
   assert.deepEqual(again.flush(99999), []);
 });
+
+test('replay typing follows the next-message deadline without postponing the two-second arrival or offering replies', () => {
+  const { progression, reactions, storage } = setup();
+  meet(progression);
+  reactions.launch(10000);
+  reactions.flush(12000);
+  const id = progression.data.replayReactions[0].id;
+  assert.equal(progression.data.dialogues[id].transcript[0].text, 'et bah !!!');
+  assert.equal(reactions.thread.typingContact(12000), null);
+  assert.equal(reactions.thread.typingContact(12600).nickname, 'xX_PixelGirl_Xx');
+  assert.equal(reactions.thread.availableResponses.length, 0);
+  const reopened = new ReplayReactions(new Progression(story, storage), definitions, config);
+  assert.equal(reopened.thread.typingContact(12600).nickname, 'xX_PixelGirl_Xx');
+  reopened.flush(12750);
+  assert.equal(reopened.thread.typingContact(12750), null);
+  reopened.flush(99999);
+  assert.equal(reopened.thread.typingContact(99999), null);
+  assert.equal(reopened.thread.availableResponses.length, 0);
+});

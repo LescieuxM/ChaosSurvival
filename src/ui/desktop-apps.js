@@ -1,5 +1,6 @@
 import definitions from '../config/desktop-apps.json' with { type: 'json' };
 import filesystem from '../config/filesystem.json' with { type: 'json' };
+import { bindFileActivation } from '../utils/activation.js';
 import { icon } from './icons.js';
 
 export const desktopApps = definitions;
@@ -205,20 +206,11 @@ export class DesktopApplications {
         fileViewer(item)
           ? this.openFile(definition, item)
           : this.render(instance, explorerItem(definition, item));
-      button.addEventListener('dblclick', activate);
-      button.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-          event.preventDefault();
-          activate();
-        }
-      });
+      bindFileActivation(button, activate);
       content.append(button);
     }
     if (!definition.items.length) {
-      if (
-        definition.image &&
-        /^\.\/(?:wallpaper\.svg|covers\/[a-z0-9-]+\.svg)$/.test(definition.image)
-      ) {
+      if (localPicture(definition.image)) {
         const image = document.createElement('img');
         image.className = 'explorer-image';
         image.src = definition.image;

@@ -1,2 +1,6 @@
 # Auto detect text files and perform LF normalization
-* text=auto
+* text=auto eol=lf
+
+# Batch launchers retain native Windows line endings.
+*.cmd text eol=crlf
+*.bat text eol=crlf

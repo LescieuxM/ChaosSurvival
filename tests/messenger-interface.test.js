@@ -5,6 +5,7 @@ import { DialogueSession } from '../src/story/dialogue.js';
 import { ConversationThread } from '../src/story/conversation-thread.js';
 import { Progression } from '../src/story/progression.js';
 import { visibleContacts } from '../src/ui/contacts.js';
+import { Messenger } from '../src/ui/messenger.js';
 import {
   desktopApps,
   explorerLocation,
@@ -250,6 +251,54 @@ test('decorative contacts are offline and PixelGirl stays hidden until unlocked'
   assert.equal(visibleContacts({ [future.id]: future }, [future.id], roster)[0].id, 'future');
 });
 
+test('Messenger keeps one independent window per contact including future contacts', () => {
+  const records = [];
+  const view = (id) => ({
+    thread: { state: { history: ['old message'] } },
+    open() {
+      records.push(`open:${id}`);
+    },
+    openOffline(contact) {
+      records.push(`offline:${contact.id}`);
+    },
+  });
+  const primary = view('pixelgirl');
+  const roster = [
+    { id: 'pixelgirl', kind: 'narrative' },
+    { id: 'skater', kind: 'decorative' },
+    { id: 'princess', kind: 'decorative' },
+    { id: 'future', kind: 'narrative' },
+  ];
+  const created = [];
+  const messenger = new Messenger({
+    primary: () => primary,
+    createConversation(contact) {
+      created.push(contact.id);
+      return view(contact.id);
+    },
+  });
+  messenger.contacts = () => roster;
+  assert.equal(messenger.openContact(roster[0]), primary);
+  const skater = messenger.openContact(roster[1]);
+  const princess = messenger.openContact(roster[2]);
+  const future = messenger.openContact(roster[3]);
+  assert.notEqual(skater, princess);
+  assert.notEqual(future, primary);
+  assert.equal(messenger.openContact(roster[1]), skater);
+  assert.equal(messenger.openContact(roster[3]), future);
+  assert.deepEqual(created, ['skater', 'princess', 'future']);
+  assert.equal(messenger.openContact({ id: 'locked' }), undefined);
+  assert.deepEqual(primary.thread.state.history, ['old message']);
+  assert.deepEqual(records, [
+    'open:pixelgirl',
+    'offline:skater',
+    'offline:princess',
+    'open:future',
+    'offline:skater',
+    'open:future',
+  ]);
+});
+
 test('queued choices survive a multi-node message sequence and only return after its last message', () => {
   const progression = new Progression(read('../src/config/story.json'));
   progression.begin();
@@ -396,4 +445,120 @@ test('response rendering keeps all buttons below the transcript and queues narra
   assert.ok(view.log.children.some((message) => message.textContent === 'réponse one'));
   assert.equal(view.log.querySelectorAll('button').length, 0);
   assert.equal(view.choices.querySelector('button').dataset.choiceId, 'answer-two');
+});
+
+test('offline contacts reuse the conversation window, remain empty and preserve narrative history', (t) => {
+  const previous = {
+    document: globalThis.document,
+    ResizeObserver: globalThis.ResizeObserver,
+    requestAnimationFrame: globalThis.requestAnimationFrame,
+    cancelAnimationFrame: globalThis.cancelAnimationFrame,
+  };
+  const element = () => ({
+    children: [],
+    style: {},
+    dataset: {},
+    handlers: {},
+    attrs: {},
+    isConnected: true,
+    classList: { add() {}, remove() {}, toggle() {} },
+    querySelector(selector) {
+      this.nodes ??= new Map();
+      if (!this.nodes.has(selector)) this.nodes.set(selector, element());
+      return this.nodes.get(selector);
+    },
+    querySelectorAll(selector) {
+      return [this.querySelector(selector)];
+    },
+    append(...items) {
+      this.children.push(...items);
+    },
+    insertBefore() {},
+    addEventListener(type, handler) {
+      this.handlers[type] = handler;
+    },
+    setAttribute(key, value) {
+      this.attrs[key] = value;
+    },
+    replaceChildren() {
+      this.children = [];
+    },
+    focus() {},
+    remove() {
+      this.isConnected = false;
+    },
+  });
+  Object.assign(globalThis, {
+    document: {
+      baseURI: 'http://game.local/',
+      createElement: element,
+      addEventListener() {},
+      removeEventListener() {},
+    },
+    ResizeObserver: class {
+      observe() {}
+      disconnect() {}
+    },
+    requestAnimationFrame() {
+      return 1;
+    },
+    cancelAnimationFrame() {},
+  });
+  t.after(() => {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete globalThis[key];
+      else globalThis[key] = value;
+    }
+  });
+  const progression = new Progression(read('../src/config/story.json'));
+  let completions = 0,
+    spawns = 0;
+  const manager = {
+    windows: new Map(),
+    z: 10,
+    spawn(type, options) {
+      const node = element();
+      node.dataset.windowId = ++spawns;
+      this.windows.set(spawns, { element: node, options });
+      return spawns;
+    },
+    close(id) {
+      const entry = this.windows.get(id);
+      entry.element.remove();
+      this.windows.delete(id);
+      entry.options.onDismiss({ reason: 'close' });
+    },
+  };
+  const view = new ConversationWindow(
+    manager,
+    intro,
+    progression,
+    { unlock() {} },
+    () => completions++,
+    undefined,
+    undefined,
+    { isUnlocked: () => false },
+  );
+  const original = JSON.stringify(progression.data);
+  const contact = read('../src/config/contacts.json')[0];
+  view.openOffline(contact);
+  assert.equal(view.element.querySelector('.contact-name').textContent, contact.nickname);
+  assert.ok(view.element.querySelector('.contact-status').textContent.startsWith('Hors ligne'));
+  assert.equal(view.log.children.length, 0);
+  assert.equal(view.choices.children.length, 0);
+  assert.equal(view.session, null);
+  assert.match(view.typing.textContent, /indisponible/);
+  view.openOffline(contact);
+  assert.equal(manager.windows.size, 1);
+  assert.equal(spawns, 1);
+  view.element.hidden = true;
+  view.restore();
+  assert.equal(view.element.hidden, false);
+  view.refresh();
+  view.pump();
+  assert.equal(JSON.stringify(progression.data), original);
+  manager.close(Number(view.element.dataset.windowId));
+  assert.equal(completions, 0);
+  assert.equal(manager.windows.size, 0);
+  assert.equal(JSON.stringify(progression.data), original);
 });

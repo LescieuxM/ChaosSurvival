@@ -121,19 +121,25 @@ export async function verifyMenuUI({ evaluate, command, until, wait, restart, ou
     "document.querySelector('#windows-start').click();document.querySelector('#menu-messenger').click()",
   );
   await until(
-    () => evaluate("!!document.querySelector('.msn-contacts-empty')"),
+    () => evaluate("!!document.querySelector('.messenger-contact-list')"),
     'Messenger avant PixelGirl',
   );
   const frozenMusic = (await evaluate('window.chaosDebug.snapshot()')).audioTime;
   await wait(500);
   assert.equal((await evaluate('window.chaosDebug.snapshot()')).audioTime, frozenMusic);
   assert.equal(Object.keys((await saved()).dialogues).length, 0);
-  assert.equal(await evaluate("document.querySelector('#msn-task').hidden"), false);
+  assert.equal(
+    await evaluate('document.querySelector(\'[data-app="messenger:contacts"]\').hidden'),
+    false,
+  );
   const messengerId = await evaluate("document.querySelector('.popup-narrative').dataset.windowId");
   await evaluate("document.querySelector('.msn-minimize').click()");
   assert.equal(await evaluate("document.querySelector('.popup-narrative').hidden"), true);
-  assert.equal(await evaluate("document.querySelector('#msn-task').hidden"), false);
-  await click('#msn-task');
+  assert.equal(
+    await evaluate('document.querySelector(\'[data-app="messenger:contacts"]\').hidden'),
+    false,
+  );
+  await click('[data-app=\"messenger:contacts\"]');
   await evaluate(
     "document.querySelector('#windows-start').click();document.querySelector('#menu-messenger').click()",
   );
@@ -145,14 +151,14 @@ export async function verifyMenuUI({ evaluate, command, until, wait, restart, ou
   await evaluate("document.querySelector('.popup-narrative .close-button').click()");
   assert.equal(await evaluate("!!document.querySelector('.popup-narrative')"), false);
   assert.equal(
-    await evaluate("getComputedStyle(document.querySelector('#msn-task')).display"),
-    'none',
+    await evaluate('!!document.querySelector(\'[data-app="messenger:contacts"]\')'),
+    false,
   );
   await evaluate(
     "document.querySelector('#windows-start').click();document.querySelector('#menu-messenger').click()",
   );
   await until(
-    () => evaluate("!!document.querySelector('.msn-contacts-empty')"),
+    () => evaluate("!!document.querySelector('.messenger-contact-list')"),
     'relance Messenger',
   );
   await evaluate(

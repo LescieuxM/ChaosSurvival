@@ -1,4 +1,4 @@
-// Focused UI check against the local production build; no portable packaging.
+﻿// Focused UI check against the local production build; no portable packaging.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
@@ -10,8 +10,13 @@ import electron from 'electron';
 import { Progression } from '../src/story/progression.js';
 import { DialogueSession } from '../src/story/dialogue.js';
 import { ConversationThread } from '../src/story/conversation-thread.js';
+import { smileyIcon } from '../src/minigames/smiley-icons.js';
 
-const minigameOnly = process.argv.includes('--minigame-only');
+const rulesOnly = process.argv.includes('--rules-only');
+const typingOnly = process.argv.includes('--typing-only');
+const messengerOnly = process.argv.includes('--messenger-only');
+const minigameOnly =
+  process.argv.includes('--minigame-only') || typingOnly || rulesOnly || messengerOnly;
 let browserServer;
 const root = fileURLToPath(new URL('../', import.meta.url));
 const output = path.join(root, '.qa');
@@ -125,9 +130,16 @@ try {
   await command('Emulation.setFocusEmulationEnabled', { enabled: true });
   await until(() => evaluate("window.chaosDebug?.snapshot().phase==='menu'"), 'menu');
   if (minigameOnly) {
-    await verifyMiniGameLaunch();
+    if (messengerOnly) {
+      await verifyTypingIndicator();
+      await verifyMessengerWindows();
+    } else if (rulesOnly) await verifyRulesFlow();
+    else if (typingOnly) await verifyTypingIndicator();
+    else await verifyMiniGameLaunch();
   } else {
     await click('#menu-play');
+    await until(() => evaluate("!!document.querySelector('.rules-confirm')"), 'first rules');
+    await click('.rules-confirm');
     await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'niveau');
     await click('#windows-start');
     await click('#menu-messenger');
@@ -151,10 +163,13 @@ try {
     await click('.messenger-contact-list details[data-group="false"] summary');
     await capture('messenger-contacts-offline.png');
     await click('.msn-minimize');
-    await click('#msn-task');
+    await click('[data-app=\"messenger:contacts\"]');
     assert.ok(await evaluate("!document.querySelector('.popup-narrative').hidden"));
     await click('.popup-narrative .close-button');
-    assert.ok(await evaluate("document.querySelector('#msn-task').hidden"));
+    assert.equal(
+      await evaluate('!!document.querySelector(\'[data-app="messenger:contacts"]\')'),
+      false,
+    );
     for (const kind of ['computer', 'folder', 'bin']) {
       await doubleClick(`[data-shortcut=${kind}]`);
       await until(
@@ -253,7 +268,8 @@ try {
     await click('#menu-play');
     await until(() => evaluate("!!document.querySelector('[data-choice-id=greeting-1]')"), 'intro');
     assert.equal(await evaluate("!!document.querySelector('#pause-messages')"), false);
-    await click('#messenger-contacts');
+    await click('#windows-start');
+    await click('#menu-messenger');
     assert.equal(
       await evaluate("document.querySelectorAll('[data-contact-id=pixelgirl]').length"),
       1,
@@ -265,9 +281,9 @@ try {
       mobile: false,
     });
     await capture('messenger-contacts-online.png');
-    await click('[data-contact-id=pixelgirl]');
+    await doubleClick('[data-contact-id=pixelgirl]');
     assert.equal(await evaluate("document.querySelectorAll('.dialogue-choice').length"), 3);
-    await click('.popup-narrative .close-button');
+    await click('[data-messenger-contact=pixelgirl] .close-button');
     await doubleClick('[data-shortcut=music]');
     await until(
       () =>
@@ -294,12 +310,13 @@ try {
     );
     await capture('messenger-queued-choices.png');
     await evaluate("window.__closedLog=document.querySelector('.conversation-log')");
-    await click('.popup-narrative .close-button');
+    await click('[data-messenger-contact=pixelgirl] .close-button');
     await evaluate(
       "window.__closedLog.dispatchEvent(new Event('scroll'));delete window.__closedLog",
     );
     await click('#windows-start');
     await click('#menu-messenger');
+    await doubleClick('[data-contact-id=pixelgirl]');
     assert.equal(
       await evaluate("document.querySelectorAll('.dialogue-choice:not(:disabled)').length"),
       3,
@@ -477,11 +494,64 @@ async function verifyMiniGameLaunch() {
   );
   assert.equal(await evaluate("document.querySelectorAll('.popup-minigame').length"), 0);
   await physicalClick(shortcut, true);
+  await until(() => evaluate("!!document.querySelector('.rules-confirm')"), 'Smiley first rules');
+  assert.equal(
+    await evaluate("document.querySelector('#rules-title').textContent"),
+    'Smiley Catcher 2009',
+  );
+  assert.equal(await evaluate("document.querySelectorAll('.popup-minigame').length"), 0);
+  await physicalClick('.rules-confirm');
   await until(
     () => evaluate("document.querySelectorAll('.popup-minigame .catch-smiley').length>0"),
     'smiley game started',
   );
+  const artwork = [0, 1, 2, 3].map(smileyIcon);
+  const centered = await evaluate(`(() => {
+    const original = document.querySelector('.catch-smiley');
+    const artwork = ${JSON.stringify(artwork)};
+    return [42, 58, 76].flatMap(size => artwork.map((markup, variant) => {
+      const target = original.cloneNode(true);
+      target.innerHTML = markup;
+      Object.assign(target.style, { width: size + 'px', height: size + 'px', animation: 'none' });
+      original.parentElement.append(target);
+      const svg = target.querySelector('svg');
+      const bounds = svg.getBBox();
+      const point = new DOMPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)
+        .matrixTransform(svg.getScreenCTM());
+      const circle = target.getBoundingClientRect();
+      const dx = point.x - circle.left - circle.width / 2;
+      const dy = point.y - circle.top - circle.height / 2;
+      const valid = Math.abs(dx) < 0.1 && Math.abs(dy) < 0.1;
+      target.remove();
+      return {size, variant, valid, dx, dy};
+    }));
+  })()`);
+  assert.ok(
+    centered.every((item) => item.valid),
+    JSON.stringify(centered),
+  );
+  await evaluate(`(() => {
+    const arena = document.querySelector('.smiley-arena');
+    const gallery = document.createElement('div');
+    gallery.id = 'qa-smiley-gallery';
+    Object.assign(gallery.style, { position: 'absolute', inset: '0', zIndex: '100', background: '#fab5ec' });
+    ${JSON.stringify(artwork)}.forEach((markup, index) => {
+      const target = document.createElement('button');
+      target.className = 'catch-smiley';
+      target.innerHTML = markup;
+      Object.assign(target.style, { left: (12 + index * 70) + 'px', top: '24px', animation: 'none' });
+      gallery.append(target);
+    });
+    arena.append(gallery);
+  })()`);
+  await capture('smiley-centering.png');
+  await evaluate("document.querySelector('#qa-smiley-gallery').remove()");
   await wait(300);
+  await physicalClick('.flash-rules');
+  const pausedTime = await evaluate("document.querySelector('.flash-time').textContent");
+  await wait(300);
+  assert.equal(await evaluate("document.querySelector('.flash-time').textContent"), pausedTime);
+  await physicalClick('.rules-confirm');
   await physicalClick('.catch-smiley');
   assert.ok(await evaluate("document.querySelector('.flash-score').textContent !== 'SCORE 0'"));
   await physicalClick('.popup-minigame .close-button');
@@ -513,6 +583,69 @@ async function verifyMiniGameLaunch() {
   const menuIcons = await evaluate(
     "document.querySelector('.menu-desktop-background .desktop-icons').innerHTML",
   );
+  await command('Input.dispatchMouseEvent', {
+    type: 'mousePressed',
+    x: 5,
+    y: 5,
+    button: 'left',
+    clickCount: 1,
+  });
+  await command('Input.dispatchMouseEvent', {
+    type: 'mouseMoved',
+    x: 125,
+    y: 216,
+    button: 'left',
+    buttons: 1,
+  });
+  assert.equal(await evaluate("document.querySelectorAll('.desktop-selection').length"), 1);
+  assert.equal(
+    await evaluate(
+      "document.querySelectorAll('#desktop .desktop-icons [aria-pressed=true]').length",
+    ),
+    2,
+  );
+  await command('Input.dispatchMouseEvent', {
+    type: 'mouseReleased',
+    x: 125,
+    y: 216,
+    button: 'left',
+    clickCount: 1,
+  });
+  assert.equal(await evaluate("document.querySelectorAll('.desktop-selection').length"), 0);
+  await physicalDrag('[data-shortcut=computer]', 140, 20);
+  assert.equal(
+    await evaluate("document.querySelector('[data-shortcut=computer]').style.left"),
+    '140px',
+  );
+  assert.equal(
+    await evaluate("document.querySelector('[data-shortcut=folder]').style.left"),
+    '140px',
+  );
+  await physicalDrag('[data-shortcut=computer]', 260, 20); // The unlocked game occupies this cell.
+  assert.equal(
+    await evaluate("document.querySelector('[data-shortcut=computer]').style.left"),
+    '140px',
+  );
+  await command('Input.dispatchMouseEvent', {
+    type: 'mousePressed',
+    x: 900,
+    y: 50,
+    button: 'left',
+    clickCount: 1,
+  });
+  await command('Input.dispatchMouseEvent', {
+    type: 'mouseReleased',
+    x: 900,
+    y: 50,
+    button: 'left',
+    clickCount: 1,
+  });
+  assert.equal(
+    await evaluate(
+      "document.querySelectorAll('#desktop .desktop-icons [aria-pressed=true]').length",
+    ),
+    0,
+  );
   await physicalDrag('[data-shortcut=computer]', 380, 20);
   await physicalClick('[data-shortcut=computer]', true);
   await until(
@@ -526,7 +659,48 @@ async function verifyMiniGameLaunch() {
     () => evaluate("document.querySelectorAll('.popup-narrative').length===1"),
     'Messenger double click',
   );
-  await physicalClick('.popup-narrative .close-button');
+  const narrative = await evaluate(
+    "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).dialogues)",
+  );
+  await physicalClick('[data-contact-id=skater]', true);
+  assert.equal(
+    await evaluate("document.querySelector('.contact-name').textContent"),
+    'Sk8er_du_93',
+  );
+  assert.ok(
+    await evaluate(
+      "document.querySelector('.contact-status').textContent.startsWith('Hors ligne')",
+    ),
+  );
+  assert.equal(
+    await evaluate("document.querySelectorAll('.conversation-log .conversation-message').length"),
+    0,
+  );
+  assert.equal(await evaluate("document.querySelectorAll('.dialogue-choice').length"), 0);
+  assert.ok(
+    await evaluate(
+      "document.querySelector('.dialogue-typing').textContent.includes('indisponible')",
+    ),
+  );
+  assert.equal(await evaluate("document.querySelectorAll('.popup-narrative').length"), 2);
+  await physicalClick('[data-messenger-contact=skater] .msn-minimize');
+  await physicalClick('[data-app=\"messenger:conversation:skater\"]');
+  assert.equal(
+    await evaluate("document.querySelector('.contact-name').textContent"),
+    'Sk8er_du_93',
+  );
+  assert.equal(
+    await evaluate(
+      "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).dialogues)",
+    ),
+    narrative,
+  );
+  await physicalClick('[data-app=\"messenger:contacts\"]');
+  await physicalClick('[data-contact-id=pixelgirl]', true);
+  assert.ok(await evaluate("document.querySelectorAll('.conversation-message').length>0"));
+  await physicalClick('[data-messenger-contact=pixelgirl] .close-button');
+  await click('[data-messenger-contact=skater] .close-button');
+  await click('[data-messenger-view=contacts] .close-button');
   await physicalClick('#windows-start');
   await physicalClick('#return-main-menu');
   assert.equal(
@@ -543,5 +717,402 @@ async function verifyMiniGameLaunch() {
   assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
   console.log(
     'OK: desktop grid, physical dragging, occupied cells, resize, saved positions, Smiley, applications, Messenger, Start/menu and rhythmic MP3; no Electron.',
+  );
+}
+
+async function verifyTypingIndicator() {
+  const story = JSON.parse(await readFile(path.join(root, 'src/config/story.json')));
+  const intro = JSON.parse(await readFile(path.join(root, 'src/dialogues/pixelgirl-intro.json')));
+  const progression = new Progression(story);
+  progression.begin();
+  progression.complete('arcade-1');
+  const session = new DialogueSession(intro, progression);
+  session.deliver();
+  session.deliver(); // Start with the next existing message, whose typing window lasts 900 ms.
+  const fixture = JSON.stringify(progression.data);
+  async function start() {
+    // Inject before the new app starts; a live conversation must not overwrite this fixture.
+    const marker = String(Date.now());
+    await command('Page.enable');
+    const injected = await command('Page.addScriptToEvaluateOnNewDocument', {
+      source: `localStorage.setItem('chaos-survival-story-v1',${JSON.stringify(fixture)});window.__typingFixture=${JSON.stringify(marker)}`,
+    });
+    await command('Page.reload');
+    await until(
+      () =>
+        evaluate(
+          `window.__typingFixture===${JSON.stringify(marker)}&&window.chaosDebug?.snapshot().phase==='menu'`,
+        ).catch(() => false),
+      'typing fixture reload',
+    ).catch(async (error) => {
+      throw new Error(
+        error.message +
+          JSON.stringify(
+            await evaluate(
+              `({marker: window.__typingFixture, phase: window.chaosDebug?.snapshot().phase, expected: ${JSON.stringify(marker)}})`,
+            ),
+          ) +
+          JSON.stringify(exceptions),
+      );
+    });
+    await command('Page.removeScriptToEvaluateOnNewDocument', { identifier: injected.identifier });
+    await click('#menu-play');
+    await until(
+      () => evaluate("!!document.querySelector('.contact-typing.is-typing')"),
+      'NPC is typing',
+    ).catch(async (error) => {
+      const state = await evaluate(
+        `({phase: window.chaosDebug?.snapshot().phase, log: !!document.querySelector('.conversation-log'), indicator: document.querySelector('.contact-typing')?.outerHTML, saved: JSON.parse(localStorage.getItem('chaos-survival-story-v1'))?.dialogues['pixelgirl-intro'], exceptions: ${JSON.stringify(exceptions)}})`,
+      );
+      throw new Error(error.message + JSON.stringify(state));
+    });
+    assert.equal(
+      await evaluate("document.querySelector('.contact-typing').textContent"),
+      "xX_PixelGirl_Xx est en train d'\u00e9crire...",
+    );
+    assert.ok(
+      await evaluate(
+        "document.querySelector('.conversation-flow') === document.querySelector('.contact-typing').parentElement",
+      ),
+    );
+    assert.equal(
+      await evaluate("!!document.querySelector('.conversation-log .contact-typing')"),
+      true,
+    );
+    assert.equal(await evaluate("document.querySelectorAll('.dialogue-choice').length"), 0);
+    const inline = await evaluate(`(() => {
+      const flow = document.querySelector('.conversation-flow');
+      flow.closest('.popup').style.animation = 'none';
+      const log = document.querySelector('.conversation-log');
+      const indicator = document.querySelector('.contact-typing');
+      const last = [...flow.querySelectorAll('.conversation-message')].at(-1);
+      const lastBounds = last.getBoundingClientRect();
+      const bounds = indicator.getBoundingClientRect();
+      const spacer = document.createElement('div');
+      spacer.style.height = '2000px';
+      flow.prepend(spacer);
+      log.scrollTop = 0;
+      const before = indicator.getBoundingClientRect().top;
+      log.scrollTop += 40;
+      const after = indicator.getBoundingClientRect().top;
+      const diagnostics = { before, after, scroll: log.scrollTop, height: log.clientHeight, content: log.scrollHeight };
+      spacer.remove();
+      return { diagnostics, last: flow.lastElementChild === indicator,
+        underMessage: bounds.top >= lastBounds.bottom,
+        followsScroll: Math.abs(before - after - 40) < 1 };
+    })()`);
+    assert.ok(inline.last && inline.underMessage && inline.followsScroll, JSON.stringify(inline));
+  }
+  async function received() {
+    await until(
+      () =>
+        evaluate(
+          "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).dialogues['pixelgirl-intro'].cursor===4",
+        ),
+      'messages continue in background',
+    );
+  }
+  await start();
+  await click('.popup-narrative .msn-minimize');
+  await received();
+  await click('[data-app=\"messenger:conversation:pixelgirl\"]');
+  assert.equal(await evaluate("!!document.querySelector('.contact-typing')"), false);
+  assert.equal(await evaluate("document.querySelectorAll('.dialogue-choice').length"), 3);
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 800,
+    height: 600,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await start();
+  await click('.popup-narrative .close-button');
+  await received();
+  await click('#windows-start');
+  await click('#menu-messenger');
+  await evaluate(
+    "document.querySelector('[data-contact-id=pixelgirl]').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))",
+  );
+  assert.equal(await evaluate("!!document.querySelector('.contact-typing')"), false);
+  assert.equal(await evaluate("document.querySelectorAll('.dialogue-choice').length"), 3);
+  assert.equal(
+    await evaluate("document.querySelectorAll('.conversation-log .from-contact').length"),
+    4,
+  );
+  assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
+  console.log(
+    'OK: typing follows messages in the chat, respects reading history, nickname, background reception after minimize/close, restoration and persistent choices; no Electron.',
+  );
+}
+
+async function verifyMessengerWindows() {
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 1280,
+    height: 800,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  const roster = '[data-messenger-view="contacts"]';
+  const pixel = '[data-messenger-contact="pixelgirl"]';
+  const skater = '[data-messenger-contact="skater"]';
+  const bubble = '[data-messenger-contact="princess"]';
+  await click('#windows-start');
+  await click('#menu-messenger');
+  assert.ok(await evaluate(`!!document.querySelector('${roster} .messenger-contact-list')`));
+  await capture('messenger-contacts-list.png');
+  const saved = await evaluate(
+    "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).dialogues)",
+  );
+  const openContact = async (id) =>
+    evaluate(
+      `document.querySelector('[data-contact-id=${id}]').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`,
+    );
+  await openContact('skater');
+  await openContact('princess');
+  await openContact('pixelgirl');
+  assert.equal(await evaluate("document.querySelectorAll('[data-messenger-contact]').length"), 3);
+  assert.equal(await evaluate(`document.querySelector('${roster}').hidden`), false);
+  assert.equal(await evaluate("!!document.querySelector('#messenger-contacts')"), false);
+  assert.equal(
+    await evaluate(
+      `document.querySelectorAll('${skater} .conversation-message, ${bubble} .conversation-message').length`,
+    ),
+    0,
+  );
+  assert.equal(
+    await evaluate(
+      `document.querySelectorAll('${skater} .dialogue-choice, ${bubble} .dialogue-choice').length`,
+    ),
+    0,
+  );
+  assert.equal(await evaluate(`document.querySelectorAll('${pixel} .dialogue-choice').length`), 3);
+  assert.equal(
+    await evaluate(
+      "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).dialogues)",
+    ),
+    saved,
+  );
+  await openContact('skater');
+  assert.equal(await evaluate("document.querySelectorAll('[data-messenger-contact]').length"), 3);
+  await click(`${skater} .msn-minimize`);
+  assert.equal(await evaluate(`document.querySelector('${skater}').hidden`), true);
+  assert.equal(await evaluate(`document.querySelector('${bubble}').hidden`), false);
+  await click('[data-app="messenger:conversation:skater"]');
+  assert.equal(await evaluate(`document.querySelector('${skater}').hidden`), false);
+  await click(`${skater} .close-button`);
+  assert.equal(
+    await evaluate('!!document.querySelector(\'[data-app="messenger:conversation:skater"]\')'),
+    false,
+  );
+  await openContact('skater');
+  const menuAction = async (windowSelector, group, action) => {
+    await evaluate(`(() => { const element = document.querySelector(${JSON.stringify(windowSelector)});
+      [...element.querySelectorAll('.messenger-menu-group > button')].find(button => button.textContent === ${JSON.stringify(group)}).click();
+      [...element.querySelectorAll('.messenger-dropdown:not([hidden]) button')].find(button => button.textContent === ${JSON.stringify(action)}).click(); })()`);
+  };
+  await menuAction(pixel, 'Contacts', 'Consulter le profil');
+  assert.equal(
+    await evaluate('document.querySelector(\'[data-messenger-view^="profile:"] h3\').textContent'),
+    'xX_PixelGirl_Xx',
+  );
+  await click('[data-messenger-view^="profile:"] .close-button');
+  await menuAction(pixel, 'Actions', 'Émoticônes');
+  await click('[data-messenger-view=emoticons] .messenger-emoticons button');
+  assert.equal(await evaluate("document.querySelector('.emoticon-preview').textContent"), ':)');
+  await click('[data-messenger-view=emoticons] .close-button');
+  await menuAction(pixel, 'Actions', 'Wizz !');
+  assert.equal(
+    await evaluate(`document.querySelector('${pixel}').classList.contains('messenger-wizz')`),
+    true,
+  );
+  assert.equal(
+    await evaluate(`document.querySelector('${skater} [data-msn-action=wizz]').disabled`),
+    true,
+  );
+  await menuAction(pixel, 'Outils', 'Options de Messenger');
+  await evaluate(
+    "const input = document.querySelector('.messenger-volume'); input.value = 37; input.dispatchEvent(new Event('input')); ",
+  );
+  await click('[data-messenger-view=options] .close-button');
+  await menuAction(pixel, 'Outils', 'Options de Messenger');
+  assert.equal(await evaluate("document.querySelector('.messenger-volume').value"), '37');
+  await click('[data-messenger-view=options] .close-button');
+  await menuAction(pixel, 'Aide', 'À propos');
+  assert.ok(
+    await evaluate(
+      "document.querySelector('[data-messenger-view=about]').textContent.includes('2009')",
+    ),
+  );
+  await click('[data-messenger-view=about] .close-button');
+  await evaluate(`document.querySelector('${pixel} .messenger-menu-group > button').focus();`);
+  await command('Input.dispatchKeyEvent', { type: 'keyDown', key: 'ArrowDown', code: 'ArrowDown' });
+  assert.equal(
+    await evaluate(
+      `document.querySelectorAll('${pixel} .messenger-dropdown:not([hidden])').length`,
+    ),
+    1,
+  );
+  await command('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape' });
+  assert.equal(
+    await evaluate(
+      `document.querySelectorAll('${pixel} .messenger-dropdown:not([hidden])').length`,
+    ),
+    0,
+  );
+  await click(`${pixel} .messenger-menu-group > button`);
+  await evaluate(
+    `document.querySelector('${pixel} .contact-name').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));`,
+  );
+  assert.equal(
+    await evaluate(
+      `document.querySelectorAll('${pixel} .messenger-dropdown:not([hidden])').length`,
+    ),
+    0,
+  );
+  await menuAction(roster, 'Fichier', 'Fermer la fenêtre');
+  assert.equal(await evaluate(`!!document.querySelector('${roster}')`), false);
+  assert.equal(await evaluate(`!!document.querySelector('${pixel}')`), true);
+  await click(`${pixel} .close-button`);
+  await click(`${skater} .close-button`);
+  await click(`${bubble} .close-button`);
+  const historyBefore = await evaluate(
+    "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).conversations.pixelgirl.history.length",
+  );
+  await evaluate(
+    "document.querySelector('[data-shortcut=music]').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))",
+  );
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'replay started');
+  await until(
+    () =>
+      evaluate(
+        `JSON.parse(localStorage.getItem('chaos-survival-story-v1')).conversations.pixelgirl.history.length > ${historyBefore}`,
+      ),
+    'replay received with Messenger closed',
+  );
+  await click('#windows-start');
+  await click('#menu-messenger');
+  await openContact('pixelgirl');
+  await until(
+    () =>
+      evaluate(
+        `document.querySelector('${pixel} .conversation-log').textContent.includes('et bah !!!')`,
+      ),
+    'replay in unique history',
+  );
+  // Let the remaining replay messages arrive while the roster covers the chat.
+  await click('#windows-start');
+  await click('#menu-messenger');
+  await evaluate("window.__contactRow = document.querySelector('[data-contact-id=pixelgirl]')");
+  await until(
+    () =>
+      evaluate(
+        `document.querySelector('[data-app="messenger:conversation:pixelgirl"]').classList.contains('messenger-unread')`,
+      ),
+    'unread conversation task flashes behind roster',
+  );
+  assert.equal(
+    await evaluate("window.__contactRow === document.querySelector('[data-contact-id=pixelgirl]')"),
+    true,
+  );
+  await click('[data-app="messenger:conversation:pixelgirl"]');
+  await until(
+    () =>
+      evaluate(
+        `!document.querySelector('[data-app="messenger:conversation:pixelgirl"]').classList.contains('messenger-unread')`,
+      ),
+    'reading clears flashing',
+  );
+  await until(
+    () => evaluate(`document.querySelectorAll('${pixel} .dialogue-choice').length===3`),
+    'original unanswered choices preserved after message-only replay',
+  );
+  await capture('messenger-independent-windows.png');
+  const history = await evaluate(
+    "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).conversations.pixelgirl.history)",
+  );
+  await click(`${pixel} .close-button`);
+  await openContact('pixelgirl');
+  assert.equal(
+    await evaluate(
+      "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).conversations.pixelgirl.history)",
+    ),
+    history,
+  );
+  const launches = await evaluate(
+    "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).level1Launches",
+  );
+  await command('Page.reload');
+  await until(() => evaluate("window.chaosDebug?.snapshot().phase==='menu'"), 'restart menu');
+  await click('#menu-play');
+  await until(
+    () => evaluate(`!!document.querySelector('${pixel} .conversation-log')`),
+    'restored narrative chat',
+  );
+  assert.equal(
+    await evaluate(
+      "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).conversations.pixelgirl.history)",
+    ),
+    history,
+  );
+  assert.equal(
+    await evaluate("JSON.parse(localStorage.getItem('chaos-survival-story-v1')).level1Launches"),
+    launches,
+  );
+  assert.equal(await evaluate(`document.querySelectorAll('${pixel} .dialogue-choice').length`), 3);
+  assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
+  console.log(
+    'OK: independent roster and conversations, duplicate prevention, taskbar restore/close, profiles, menus/keyboard/outside click, options, emoticons, Wizz, closed-window replay reception, unread flashing and preserved history/choices; no Electron.',
+  );
+}
+
+async function verifyRulesFlow() {
+  await click('#menu-play');
+  await until(() => evaluate("!!document.querySelector('.rules-confirm')"), 'arcade first rules');
+  assert.equal(await evaluate('window.chaosDebug.snapshot().phase'), 'rules');
+  assert.equal(await evaluate('window.chaosDebug.snapshot().audioTime'), 0);
+  assert.equal(await evaluate('window.chaosDebug.snapshot().launches'), 0);
+  assert.equal(await evaluate("document.querySelectorAll('#playfield .popup').length"), 0);
+  await wait(300);
+  assert.equal(await evaluate('window.chaosDebug.snapshot().audioTime'), 0);
+  await click('.rules-confirm');
+  await until(
+    () => evaluate("window.chaosDebug.snapshot().phase==='playing'"),
+    'arcade starts after confirmation',
+  );
+  assert.equal(
+    await evaluate(
+      "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).tutorials['arcade-1']",
+    ),
+    true,
+  );
+  await click('#help-button');
+  await until(
+    () =>
+      evaluate(
+        "!!document.querySelector('.rules-confirm')&&window.chaosDebug.snapshot().phase==='paused'",
+      ),
+    'voluntary rules pause',
+  );
+  const time = await evaluate('window.chaosDebug.snapshot().audioTime');
+  await wait(300);
+  assert.equal(await evaluate('window.chaosDebug.snapshot().audioTime'), time);
+  await click('.rules-confirm');
+  await until(
+    () => evaluate("window.chaosDebug.snapshot().phase==='playing'"),
+    'controlled resume',
+  );
+  await click('#windows-start');
+  assert.equal(await evaluate("!!document.querySelector('#menu-help')"), false);
+  await click('#return-main-menu');
+  await click('#menu-play');
+  await until(
+    () => evaluate("window.chaosDebug.snapshot().phase==='playing'"),
+    'continue without mandatory rules',
+  );
+  assert.equal(await evaluate("!!document.querySelector('.rules-layer')"), false);
+  await click('#windows-start');
+  await click('#return-main-menu');
+  await verifyMiniGameLaunch();
+  console.log(
+    'OK: first arcade rules before audio, persisted approval, direct replay, paused voluntary review, Smiley tutorial and Start menu cleanup.',
   );
 }

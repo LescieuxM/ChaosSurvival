@@ -242,3 +242,11 @@ test('outgoing fictional files use the same transfer system without creating a r
   progression.finishTransfer(file.key);
   assert.equal(file.status, 'complete');
 });
+
+test('PixelGirl describes the received executable with the exact requested wording', () => {
+  const messages = Object.values(dialogue.nodes).flatMap((node) => node.messages);
+  assert.ok(
+    messages.some((message) => message.text === "j'ai un ami qui collectionne les ptits jeux nuls"),
+  );
+  assert.ok(!messages.some((message) => /jeux flash/i.test(message.text ?? '')));
+});

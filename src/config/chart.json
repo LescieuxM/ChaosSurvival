@@ -1,5 +1,22 @@
 {
   "level": 1,
+  "rules": {
+    "id": "arcade-1",
+    "title": "Chaos Survival · Niveau 1",
+    "description": "Ferme les fenêtres au rythme de la musique et sauve ton bureau jusqu’à la fin du morceau !",
+    "illustration": "./covers/best-game-console.svg",
+    "controls": [
+      "Clique sur les croix rouges pour fermer les fenêtres.",
+      "Déplace les fenêtres par leur barre bleue.",
+      "Échap : pause. Le bouton ? permet de revoir ces règles.",
+      "F11 ou Alt + Entrée : plein écran."
+    ],
+    "mechanics": [
+      "Chaque fermeture rapporte 100 points, plus 25 points si tu cliques sur un temps musical.",
+      "Les fenêtres oubliées font monter le chaos. Les fermer le réduit.",
+      "À 100 % de chaos, c’est perdu. Survis jusqu’à la fin de la musique pour gagner."
+    ]
+  },
   "title": "musiclvl1.mp3",
   "analysisFile": "music-lvl1.analysis.json",
   "offsetSeconds": 0,

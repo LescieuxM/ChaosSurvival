@@ -104,14 +104,22 @@ export async function verifyStoryUI({
   );
   const restored = await saved();
   await evaluate("document.querySelector('.msn-minimize').click()");
-  assert.equal(await evaluate("document.querySelector('#msn-task').hidden"), false);
-  await evaluate(
-    "document.querySelector('#msn-task').click();document.querySelector('.popup-narrative .close-button').click()",
+  assert.equal(
+    await evaluate(
+      'document.querySelector(\'[data-app="messenger:conversation:pixelgirl"]\').hidden',
+    ),
+    false,
   );
-  assert.equal(await evaluate("document.querySelector('#msn-task').hidden"), true);
+  await evaluate(
+    "document.querySelector('[data-app=\"messenger:conversation:pixelgirl\"]').click();document.querySelector('.popup-narrative .close-button').click()",
+  );
+  assert.equal(
+    await evaluate('!!document.querySelector(\'[data-app="messenger:conversation:pixelgirl"]\')'),
+    false,
+  );
   assert.deepEqual((await saved()).choices, restored.choices);
   await evaluate(
-    "document.querySelector('#windows-start').click();document.querySelector('#menu-messenger').click()",
+    "document.querySelector('#windows-start').click();document.querySelector('#menu-messenger').click();document.querySelector('[data-contact-id=pixelgirl]')?.dispatchEvent(new MouseEvent('dblclick', {bubbles:true}))",
   );
   await until(
     () => evaluate("!!document.querySelector('[data-choice-id=nickname-3]')"),
@@ -222,7 +230,7 @@ export async function verifyStoryUI({
   assert.equal(await evaluate("document.querySelector('#toast').hidden"), true);
   assert.equal(await evaluate("!!document.querySelector('.popup-minigame')"), false);
   await evaluate(
-    "document.querySelector('#windows-start').click();document.querySelector('#menu-messenger').click()",
+    "document.querySelector('#windows-start').click();document.querySelector('#menu-messenger').click();document.querySelector('[data-contact-id=pixelgirl]')?.dispatchEvent(new MouseEvent('dblclick', {bubbles:true}))",
   );
   assert.equal(
     await evaluate("document.querySelectorAll('.conversation-message').length"),
@@ -279,7 +287,7 @@ export async function verifyStoryUI({
   );
   assert.ok((await saved()).conversations.pixelgirl.history.at(-1).text.includes('ENCORE ???'));
   await evaluate(
-    "document.querySelector('#windows-start').click();document.querySelector('#menu-messenger').click()",
+    "document.querySelector('#windows-start').click();document.querySelector('#menu-messenger').click();document.querySelector('[data-contact-id=pixelgirl]')?.dispatchEvent(new MouseEvent('dblclick', {bubbles:true}))",
   );
   await until(
     () =>
@@ -334,7 +342,7 @@ export async function verifyStoryUI({
   await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'second replay');
   assert.ok((await evaluate('window.chaosDebug.snapshot()')).audioTime < 1);
   await evaluate(
-    "document.querySelector('#windows-start').click();document.querySelector('#menu-messenger').click()",
+    "document.querySelector('#windows-start').click();document.querySelector('#menu-messenger').click();document.querySelector('[data-contact-id=pixelgirl]')?.dispatchEvent(new MouseEvent('dblclick', {bubbles:true}))",
   );
   await until(
     () => evaluate("!!document.querySelector('.popup-narrative')"),
@@ -359,8 +367,15 @@ export async function verifyStoryUI({
   );
   assert.equal(await evaluate("document.querySelectorAll('.popup-narrative').length"), 1);
   assert.equal((await evaluate('window.chaosDebug.snapshot()')).phase, 'playing');
-  assert.equal(await evaluate("document.querySelector('#msn-task').hidden"), false);
-  await evaluate("document.querySelector('#msn-task').click()");
+  assert.equal(
+    await evaluate(
+      'document.querySelector(\'[data-app="messenger:conversation:pixelgirl"]\').hidden',
+    ),
+    false,
+  );
+  await evaluate(
+    'document.querySelector(\'[data-app="messenger:conversation:pixelgirl"]\').click()',
+  );
   assert.ok(
     (await evaluate("document.querySelector('.conversation-log').textContent")).includes(
       'médaille',

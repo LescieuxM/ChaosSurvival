@@ -22,6 +22,7 @@ function freshData(story) {
     unlockedConversations: [],
     level1Launches: 0,
     replayReactions: [],
+    tutorials: {},
   };
 }
 function validSaved(saved, story) {
@@ -118,6 +119,7 @@ export class Progression {
       this.corrupt = true;
     }
     this.data.choiceOffers ??= {};
+    if (!record(this.data.tutorials)) this.data.tutorials = {};
     this.data.files ??= {};
     this.data.anomalies ??= {};
     this.data.dialogueArchives ??= {};

@@ -10,8 +10,12 @@ import { BeginnerDirector } from './game/director.js';
 import { WINDOW_TYPES } from './config/popups.js';
 import { GameState } from './game/state.js';
 import { WindowManager } from './ui/windows.js';
+import { bindFileActivation } from './utils/activation.js';
 import { icon } from './ui/icons.js';
 import { mountDesktop, updateRhythmHud } from './ui/desktop.js';
+import { GameRules } from './ui/game-rules.js';
+import { DesktopFiles } from './ui/desktop-files.js';
+import { MiniGameLauncher } from './ui/minigame-launcher.js';
 import { DesktopIcons } from './ui/desktop-icons.js';
 import { DesktopApplications } from './ui/desktop-apps.js';
 import { createMusicDebug } from './ui/music-debug.js';
@@ -19,10 +23,12 @@ import story from './config/story.json';
 import pixelgirlDialogue from './dialogues/pixelgirl-intro.json';
 import { Progression } from './story/progression.js';
 import { ConversationWindow } from './ui/conversation.js';
+import { Messenger } from './ui/messenger.js';
+import { ConversationThread } from './story/conversation-thread.js';
 import { celebrateVictory } from './ui/victory.js';
 import { DesktopSounds } from './audio/sounds.js';
 import { dialogues } from './story/catalog.js';
-import { miniGames, createMiniGame } from './ui/minigame.js';
+import { miniGames } from './ui/minigame.js';
 import { MainMenu } from './ui/main-menu.js';
 import { MenuMusic } from './audio/menu-music.js';
 import { UserSettings, deleteUserData } from './settings.js';
@@ -117,9 +123,55 @@ const desktopApplications = new DesktopApplications(
   ui.desktop.querySelector('.taskbar'),
   syncSystemWindows,
 );
-let miniGame;
+const messenger = new Messenger({
+  manager,
+  applications: desktopApplications,
+  progression,
+  sounds,
+  player: pixelgirlDialogue.player,
+  definitions: () => dialogues,
+  primary: () => conversation,
+  settings,
+  onWindowState: syncSystemWindows,
+  onMessage: (contact) => {
+    ui.toastContact.textContent = contact.nickname;
+    ui.toastMessage.textContent = 't’a envoyé un nouveau message.';
+    ui.toast.hidden = false;
+    ui.toastOpen.hidden = false;
+    ui.toast.classList.add('story-toast');
+    const entry = messenger.contacts().find((item) => item.nickname === contact.nickname);
+    storyToastAction = () => openConversation(false, entry);
+    toastUntil = audio.time + 6;
+  },
+  createConversation: (contact) => {
+    const definition = dialogues[contact.dialogue] ?? pixelgirlDialogue;
+    const thread =
+      contact.kind === 'decorative'
+        ? replayReactions.thread
+        : new ConversationThread(contact.id, progression, () =>
+            Object.values(dialogues).filter(
+              (event) => event.contact.name === definition.contact.name,
+            ),
+          );
+    return createConversation(definition, contact.id, thread);
+  },
+});
+const rules = new GameRules(ui.desktop, progression);
+const miniGameLauncher = new MiniGameLauncher(
+  miniGames,
+  progression,
+  manager,
+  sounds,
+  () => {
+    if (progression.current?.type === 'conversation')
+      progression.complete(progression.current.id, { dialogue: activeDialogue.id });
+    if (conversation.element?.isConnected)
+      manager.close(Number(conversation.element.dataset.windowId));
+  },
+  rules,
+);
 let restoringStory = false;
-function createConversation(dialogue) {
+function createConversation(dialogue, contactId = 'pixelgirl', thread = replayReactions.thread) {
   return new ConversationWindow(
     manager,
     dialogue,
@@ -141,14 +193,12 @@ function createConversation(dialogue) {
       }
     },
     {
-      thread: replayReactions.thread,
-      getContactDefinitions: () => dialogues,
+      thread,
+      manageWindow: (view) => messenger.attachConversation(view, contactId),
+      onDispose: (view) => messenger.disposeConversation(view),
+      onContactsRequested: () => messenger.open(),
       isUnlocked: () => progression.data.unlockedConversations.includes(dialogue.id),
-      onWindowState: ({ open, minimized }) => {
-        ui.msnTask.hidden = !open;
-        ui.msnTask.setAttribute('aria-pressed', String(open && !minimized));
-        syncSystemWindows();
-      },
+      onWindowState: syncSystemWindows,
     },
   );
 }
@@ -247,6 +297,9 @@ const menu = new MainMenu(document.getElementById('app'), progression, settings,
   },
 });
 const desktopIcons = new DesktopIcons(ui.desktop, progression);
+const desktopFiles = new DesktopFiles(ui.desktop, progression, openDesktopFile, () =>
+  desktopIcons.refresh(),
+);
 const returnMenu = ui.menuPlay;
 returnMenu.id = 'return-main-menu';
 returnMenu.innerHTML = `${icon('menu-computer')}<span>Menu principal<small>Continuer / nouvelle partie / options</small></span>`;
@@ -326,7 +379,7 @@ function returnToMenu() {
   )
     progression.complete(progression.current.id, { dialogue: activeDialogue.id });
   manager.clear();
-  miniGame = null;
+  miniGameLauncher.reset();
   if (progression.hasSave) progression.save();
   setPhase('menu');
   ui.desktop.inert = true;
@@ -350,6 +403,21 @@ debug.render();
 
 async function startGame() {
   if (!['idle', 'ended', 'desktop'].includes(phase)) return;
+  if (!rules.hasSeen(chart)) {
+    manager.clear();
+    cancelVictory();
+    ui.introLayer.hidden = true;
+    setPhase('rules');
+    rules.beforeStart(
+      chart,
+      () => {
+        setPhase('idle');
+        startGame();
+      },
+      returnToMenu,
+    );
+    return;
+  }
   cancelVictory();
   arcadeReplay = progression.data.completed.includes('arcade-1');
   if (progression.current?.type === 'arcade') arcadeSequenceId = progression.current.id;
@@ -546,11 +614,11 @@ function finishGame(won) {
     return;
   }
   showDialog(
-    won ? 'Tu as survécu !' : 'Ton PC a rendu l’âme.',
-    `<p>${won ? 'Le drop est passé. Le bureau respire à nouveau.' : 'Trop de fenêtres. Pas assez de clics. On remet ça ?'}</p><div class="result-score"><span>${newRecord ? '★ NOUVEAU RECORD' : 'SCORE FINAL'}</span><strong>${String(state.score).padStart(6, '0')}</strong></div><div class="result-details"><span>${state.closed} fenêtres fermées</span><span>${formatTime(lastTime)} de survie</span></div>`,
+    'Ton PC a rendu l’âme.',
+    `<p>Trop de fenêtres. Pas assez de clics. On remet ça ?</p><div class="result-score"><span>${newRecord ? '★ NOUVEAU RECORD' : 'SCORE FINAL'}</span><strong>${String(state.score).padStart(6, '0')}</strong></div><div class="result-details"><span>${state.closed} fenêtres fermées</span><span>${formatTime(lastTime)} de survie</span></div>`,
     '↻ REJOUER',
     startGame,
-    won ? 'computer' : 'error',
+    'error',
     {
       label: 'Retour au bureau',
       callback: arcadeReplay ? () => showStoryDesktop(false) : restartDesktop,
@@ -598,18 +666,13 @@ function showDialog(title, copy, button, callback, type = 'help', secondary) {
   ui.dialogAction.focus();
 }
 async function help() {
-  if (phase === 'loading') return;
-  if (phase === 'playing') await pauseGame();
-  showDialog(
-    'Mode d’emploi, version 2005.',
-    '<p>Ferme les fenêtres avec leur <b>croix rouge</b>. Une fermeture rapporte <b>100 points</b>, avec <b>25 points bonus</b> si tu cliques sur un temps musical.</p><p>Les fenêtres oubliées font monter le chaos ; les fermer le réduit. À <b>100 %</b>, c’est perdu. Survis jusqu’à la fin pour gagner.</p><p class="dialog-hint">Déplace les fenêtres par leur barre bleue. Échap met en pause. F11 ou Alt+Entrée active / désactive le plein écran. Le jeu se met aussi en pause si tu réduis sa fenêtre.</p>',
-    phase === 'paused' ? '▶ REPRENDRE' : 'COMPRIS !',
-    phase === 'paused'
-      ? resumeGame
-      : () => {
-          ui.modalLayer.hidden = true;
-        },
-  );
+  if (!['playing', 'paused', 'ended'].includes(phase) || rules.active) return;
+  const resume = phase === 'playing';
+  if (resume) await pauseGame();
+  if (resume && phase !== 'paused') return;
+  rules.review(chart, () => {
+    if (resume) resumeGame();
+  });
 }
 function feedback(x, y, points, onBeat) {
   const label = document.createElement('div');
@@ -696,7 +759,7 @@ function showStoryDesktop(announce) {
   renderDesktopFiles();
   debug.render();
 }
-async function openConversation(restore = false) {
+async function openConversation(restore = false, contact = null) {
   if (['menu', 'loading', 'resuming'].includes(phase)) return;
   if (phase === 'playing') await pauseGame();
   if (phase === 'paused' || phase === 'ended') {
@@ -705,8 +768,15 @@ async function openConversation(restore = false) {
   }
   ui.toast.hidden = true;
   sounds.unlock();
-  if (restore === true) conversation.restore();
+  if (contact) messenger.openContact(contact);
+  else if (restore === true) conversation.restore();
   else conversation.open();
+}
+async function openMessenger() {
+  if (['menu', 'loading', 'resuming'].includes(phase)) return;
+  if (phase === 'playing') await pauseGame();
+  ui.playfield.inert = false;
+  messenger.open();
 }
 function replayLevelOne() {
   if (!['desktop', 'idle', 'ended', 'playing', 'paused'].includes(phase)) return;
@@ -716,67 +786,15 @@ function replayLevelOne() {
   startGame();
 }
 function renderDesktopFiles() {
-  let files = ui.desktop.querySelector('#desktop-files');
-  if (!files) {
-    files = document.createElement('nav');
-    files.id = 'desktop-files';
-    files.className = 'desktop-files';
-    files.setAttribute('aria-label', 'Fichiers reçus');
-    ui.desktop.append(files);
-  }
-  files.replaceChildren();
-  const received = new Map(
-    Object.values(progression.data.files)
-      .filter((file) => file.status === 'complete' && file.direction === 'receive')
-      .map((file) => [file.id, file]),
-  );
-  for (const file of received.values()) {
-    const button = document.createElement('button');
-    button.className = 'desktop-file';
-    button.dataset.fileId = file.id;
-    button.setAttribute('aria-pressed', 'false');
-    button.innerHTML = icon('download');
-    const name = document.createElement('span');
-    name.textContent = file.name;
-    button.append(name);
-    button.addEventListener('click', () => {
-      for (const item of files.children) item.setAttribute('aria-pressed', String(item === button));
-    });
-    button.addEventListener('dblclick', () => openDesktopFile(file));
-    button.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        openDesktopFile(file);
-      }
-    });
-    files.append(button);
-  }
-  desktopIcons.refresh();
+  desktopFiles.render();
 }
 function openDesktopFile(file) {
-  if (phase !== 'desktop' || !file.launch) return;
-  const unlocked = Object.values(progression.data.files).some(
-    (saved) =>
-      saved.id === file.id &&
-      saved.status === 'complete' &&
-      saved.direction === 'receive' &&
-      saved.launch?.game === file.launch.game,
-  );
-  if (!unlocked) return;
-  const definition = miniGames[file.launch.game];
-  if (!definition) return showStoryError(new Error('Ce mini-jeu est indisponible.'));
-  if (progression.current?.type === 'conversation')
-    progression.complete(progression.current.id, { dialogue: activeDialogue.id });
-  if (conversation.element?.isConnected) {
-    manager.close(Number(conversation.element.dataset.windowId));
+  if (phase !== 'desktop') return;
+  try {
+    miniGameLauncher.open(file);
+  } catch (error) {
+    showStoryError(error);
   }
-  if (!miniGame?.element?.isConnected || miniGame.definition.id !== definition.id)
-    miniGame = createMiniGame(definition, manager, sounds, (result) => {
-      if (progression.current?.type === 'minigame' && progression.current.game === definition.id)
-        progression.complete(progression.current.id, result);
-    });
-  sounds.unlock();
-  miniGame.open();
 }
 function formatTime(value) {
   return `${String(Math.floor(value / 60)).padStart(2, '0')}:${String(Math.floor(value % 60)).padStart(2, '0')}`;
@@ -812,10 +830,9 @@ ui.toastOpen.addEventListener('click', () => storyToastAction?.());
 ui.toast.addEventListener('click', (event) => {
   if (!event.target.closest('button')) storyToastAction?.();
 });
-ui.msnTask.addEventListener('click', () => openConversation(true));
 ui.menuMessenger.addEventListener('click', () => {
   setStartMenuOpen(false);
-  openConversation();
+  openMessenger();
 });
 ui.volume.addEventListener('input', (event) => {
   setVolume(Number(event.target.value) / 100);
@@ -837,10 +854,6 @@ document.addEventListener('pointerdown', (event) => {
 ui.menuPlay.addEventListener('click', () => {
   setStartMenuOpen(false);
   returnToMenu();
-});
-ui.menuHelp.addEventListener('click', () => {
-  setStartMenuOpen(false);
-  help();
 });
 function syncSystemWindows() {
   if (phase !== 'paused' && phase !== 'ended') return;
@@ -866,49 +879,34 @@ ui.desktop.querySelectorAll('[data-system-app]').forEach((button) =>
     openSystemApplication(button.dataset.systemApp);
   }),
 );
+const shortcutActions = {
+  msn: () => openMessenger(),
+  computer: () => openSystemApplication('computer'),
+  folder: () => openSystemApplication('folder'),
+  bin: () => openSystemApplication('bin'),
+  music: replayLevelOne,
+};
 ui.shortcuts.forEach((button) => {
-  if (button.dataset.shortcut === 'msn') {
-    button.addEventListener('dblclick', () => openConversation());
-    button.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        openConversation();
-      }
-    });
-    return;
-  }
-  if (!['computer', 'folder', 'bin'].includes(button.dataset.shortcut)) return;
-  button.addEventListener('dblclick', () => openSystemApplication(button.dataset.shortcut));
-  button.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      openSystemApplication(button.dataset.shortcut);
-    }
-  });
+  const activate = shortcutActions[button.dataset.shortcut];
+  if (activate) bindFileActivation(button, activate);
 });
 const musicShortcut = ui.desktop.querySelector('[data-shortcut="music"]');
 musicShortcut.title = `${trackIdentity.displayName}\nSource : ${trackIdentity.source}\nDouble-cliquer pour jouer / rejouer le niveau 1`;
-musicShortcut.addEventListener('dblclick', replayLevelOne);
-musicShortcut.addEventListener('keydown', (event) => {
-  if (event.key === 'Enter') {
-    event.preventDefault();
-    replayLevelOne();
-  }
-});
 // Vite removes this entire import and handler from production builds.
 if (import.meta.env.DEV) {
   import('./dev/finish-shortcut.js').then(({ installDevelopmentVictoryShortcut }) => {
     installDevelopmentVictoryShortcut(document, () => {
+      if (rules.active) return null;
       if (['playing', 'paused'].includes(phase)) return { finish: () => finishGame(true) };
-      if (phase === 'desktop' && miniGame?.element?.isConnected && !miniGame.finished)
-        return miniGame;
+      const game = miniGameLauncher.active;
+      if (phase === 'desktop' && game?.element?.isConnected && !game.finished) return game;
       return null;
     });
   });
 }
 
 document.addEventListener('keydown', (event) => {
-  if (event.key !== 'Escape' || event.repeat) return;
+  if (event.key !== 'Escape' || event.repeat || rules.active) return;
   if (phase === 'playing') pauseGame();
   else if (phase === 'paused') resumeGame();
 });
@@ -926,14 +924,10 @@ updateClock();
 let notifiedMessages = '';
 function receiveReplayReactions() {
   const incoming = replayReactions.flush();
-  conversation.refresh();
-  const visible =
-    conversation.log && conversation.element?.isConnected && !conversation.element.hidden;
-  if (visible && conversation.log && conversation.followLatest) replayReactions.thread.markRead();
+  messenger.update();
+  const visible = !conversation.offlineContact && messenger.isVisible(conversation);
   const unread = replayReactions.thread.state.unread;
-  ui.msnTask.title = unread.length
-    ? `${unread.length} message(s) non lu(s)`
-    : applicationName('messenger');
+  if (visible && !unread.length && storyToastAction === openConversation) ui.toast.hidden = true;
   const notificationKey = `${progression.data.runId}:${unread.join(',')}`;
   if (incoming.length) sounds.unlock().then(() => sounds.play('message'));
   if (

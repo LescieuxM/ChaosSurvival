@@ -1,0 +1,215 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { Progression } from '../src/story/progression.js';
+import { DialogueSession } from '../src/story/dialogue.js';
+import { ConversationThread } from '../src/story/conversation-thread.js';
+import { ConversationWindow } from '../src/ui/conversation.js';
+
+const story = {
+  version: 1,
+  start: 'chat',
+  sequences: [{ id: 'chat', type: 'conversation', dialogue: 'intro', next: null }],
+};
+const definition = {
+  id: 'intro',
+  version: 1,
+  contact: { name: 'Friend', nickname: 'xX_Friend_Xx', status: 'En ligne' },
+  player: { nickname: 'Me' },
+  start: 'hello',
+  nodes: {
+    hello: {
+      messages: [
+        { speaker: 'contact', text: 'hello', delayMs: 800, typingMs: 0 },
+        { speaker: 'contact', text: 'another message', delayMs: 1200, typingMs: 200 },
+      ],
+      choices: [{ id: 'yes', text: 'OK', next: 'end' }],
+    },
+    end: { messages: [{ speaker: 'contact', text: 'bye', delayMs: 500, typingMs: 0 }], end: true },
+  },
+};
+function setup() {
+  const entries = new Map();
+  const storage = {
+    getItem: (key) => entries.get(key) ?? null,
+    setItem: (key, value) => entries.set(key, value),
+  };
+  const progression = new Progression(story, storage);
+  progression.begin();
+  const thread = new ConversationThread('friend', progression, () => [definition]);
+  thread.schedule(definition, 1000);
+  return { progression, thread, storage };
+}
+
+test('typing uses existing waits, disappears between messages and exposes choices only after the last delivery', () => {
+  const { progression, thread } = setup();
+  assert.equal(thread.typingContact(1619), null);
+  assert.equal(thread.typingContact(1620).nickname, 'xX_Friend_Xx');
+  assert.equal(thread.receive(1799).length, 0);
+  assert.equal(thread.availableResponses.length, 0);
+  thread.receive(1800);
+  assert.equal(progression.data.dialogues.intro.transcript.length, 1);
+  assert.equal(thread.typingContact(1800), null);
+  assert.equal(thread.typingContact(2999), null);
+  assert.equal(thread.typingContact(3000).nickname, 'xX_Friend_Xx');
+  thread.receive(3200);
+  assert.equal(thread.typingContact(3200), null);
+  assert.equal(thread.availableResponses[0].choices[0].id, 'yes');
+  assert.equal(progression.data.choices.length, 0);
+  assert.equal(progression.data.dialogues.intro.transcript.length, 2);
+  const session = new DialogueSession(definition, progression);
+  session.offerChoices();
+  session.choose('yes');
+  thread.schedule(definition, 4000);
+  thread.receive(4500);
+  assert.equal(progression.data.dialogues.intro.finished, true);
+  assert.equal(thread.typingContact(5000), null);
+});
+
+test('scheduled messages and typing deadlines survive closed/reduced windows and restart without an indicator in history', () => {
+  const { progression, thread, storage } = setup();
+  assert.equal(thread.typingContact(1700).nickname, 'xX_Friend_Xx');
+  const loaded = new Progression(story, storage);
+  const reopened = new ConversationThread('friend', loaded, () => [definition]);
+  assert.equal(reopened.typingContact(1700).nickname, 'xX_Friend_Xx');
+  reopened.receive(3200); // No window is needed for receiving.
+  assert.equal(reopened.typingContact(3200), null);
+  assert.equal(reopened.state.history.length, 2);
+  assert.equal(loaded.data.choices.length, 0);
+  assert.deepEqual(
+    reopened.state.history.map((message) => message.text),
+    ['hello', 'another message'],
+  );
+  assert.equal(loaded.data.dialogues.intro.receiveDueAt, undefined);
+  const view = {
+    thread: reopened,
+    typingIndicator: { textContent: 'stale', classList: { toggle() {} }, remove() {} },
+    scrollLatest() {},
+  };
+  ConversationWindow.prototype.renderTyping.call(view, 3200);
+  assert.equal(view.typingIndicator.textContent, '');
+  view.typingIndicator = null;
+  assert.doesNotThrow(() => ConversationWindow.prototype.renderTyping.call(view, 3200));
+});
+
+test('the view uses the real nickname, does not announce unchanged text repeatedly, and ignores offline contacts', () => {
+  const { thread } = setup();
+  let text = '',
+    writes = 0,
+    active = false;
+  const indicator = {
+    remove() {
+      this.parentNode = null;
+    },
+    get textContent() {
+      return text;
+    },
+    set textContent(value) {
+      text = value;
+      writes++;
+    },
+    classList: {
+      toggle(name, value) {
+        active = value;
+      },
+    },
+  };
+  const view = {
+    thread,
+    typingIndicator: indicator,
+    log: {
+      append(node) {
+        node.parentNode = this;
+      },
+    },
+    scrollLatest() {},
+  };
+  ConversationWindow.prototype.renderTyping.call(view, 1700);
+  assert.equal(text, "xX_Friend_Xx est en train d'\u00e9crire...");
+  assert.equal(active, true);
+  ConversationWindow.prototype.renderTyping.call(view, 1701);
+  assert.equal(writes, 1);
+  const offline = structuredClone(definition);
+  offline.contact.status = 'Hors ligne';
+  const hidden = new ConversationThread('friend', thread.progression, () => [offline]);
+  assert.equal(hidden.typingContact(1700), null);
+  thread.receive(1800);
+  ConversationWindow.prototype.renderTyping.call(view, 1800);
+  assert.equal(text, '');
+  assert.equal(active, false);
+});
+
+test('typing follows the final message without forcing the scroll position while reading history', (t) => {
+  const previous = globalThis.document;
+  const node = () => ({
+    children: [],
+    dataset: {},
+    textContent: '',
+    isConnected: true,
+    classList: { toggle() {} },
+    setAttribute() {},
+    append(...items) {
+      for (const item of items) {
+        item.remove();
+        this.children.push(item);
+        item.parentNode = this;
+      }
+    },
+    remove() {
+      if (this.parentNode)
+        this.parentNode.children = this.parentNode.children.filter((item) => item !== this);
+      this.parentNode = null;
+    },
+  });
+  globalThis.document = {
+    createElement: node,
+    createTextNode(text) {
+      const item = node();
+      item.textContent = text;
+      return item;
+    },
+  };
+  t.after(() => {
+    if (previous === undefined) delete globalThis.document;
+    else globalThis.document = previous;
+  });
+  const log = node();
+  log.scrollHeight = 500;
+  log.scrollTop = 0;
+  const indicator = node();
+  const history = node();
+  history.append(log);
+  const view = {
+    log,
+    history,
+    typingIndicator: indicator,
+    dialogue: definition,
+    followLatest: true,
+    thread: { typingContact: () => definition.contact },
+    scrollLatest: ConversationWindow.prototype.scrollLatest,
+  };
+  const first = ConversationWindow.prototype.appendMessage.call(view, {
+    speaker: 'contact',
+    text: 'hello',
+  });
+  ConversationWindow.prototype.renderTyping.call(view, 0);
+  assert.deepEqual(log.children, [first, indicator]);
+  assert.deepEqual(history.children, [log]);
+  assert.equal(indicator.hidden, false);
+  assert.equal(log.scrollTop, 500);
+  view.followLatest = false;
+  log.scrollTop = 80;
+  const next = ConversationWindow.prototype.appendMessage.call(view, {
+    speaker: 'contact',
+    text: 'another message',
+  });
+  assert.deepEqual(log.children, [first, next]);
+  ConversationWindow.prototype.renderTyping.call(view, 1);
+  assert.deepEqual(log.children, [first, next, indicator]);
+  assert.deepEqual(history.children, [log]);
+  assert.equal(log.scrollTop, 80);
+  view.thread.typingContact = () => null;
+  ConversationWindow.prototype.renderTyping.call(view, 2);
+  assert.deepEqual(log.children, [first, next]);
+  assert.equal(indicator.hidden, true);
+  assert.equal(log.scrollTop, 80);
+});

@@ -2,6 +2,21 @@
   "id": "smiley-catcher",
   "engine": "smiley-catcher",
   "title": "SMILEY CATCHER 2009",
+  "rules": {
+    "id": "smiley-catcher",
+    "title": "Smiley Catcher 2009",
+    "description": "Attrape un maximum de smileys pendant 30 secondes. Un festival de MEGA POINTS t’attend !",
+    "controls": [
+      "Clique sur les smileys qui apparaissent dans la fenêtre.",
+      "Pause : fais une petite pause. Le bouton ? permet de revoir les règles.",
+      "Ferme la fenêtre pour revenir au bureau."
+    ],
+    "mechanics": [
+      "Les smileys disparaissent après quelques secondes : attrape-les avant !",
+      "Enchaîne les prises pour gagner un bonus de combo.",
+      "À la fin des 30 secondes, admire ton score ou rejoue avec Encore !!!"
+    ]
+  },
   "durationSeconds": 30,
   "spawnSeconds": 1.35,
   "targetLifetimeSeconds": 3.2,

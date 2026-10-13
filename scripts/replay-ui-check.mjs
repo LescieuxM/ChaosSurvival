@@ -215,7 +215,9 @@ export async function verifyReplayUI({
   );
   assert.ok(await evaluate("document.querySelector('.popup-narrative').hidden"));
   assert.equal((await evaluate('window.chaosDebug.snapshot()')).phase, 'playing');
-  await evaluate("document.querySelector('#msn-task').click()");
+  await evaluate(
+    'document.querySelector(\'[data-app="messenger:conversation:pixelgirl"]\').click()',
+  );
   assert.equal(await evaluate("document.querySelectorAll('.popup-narrative').length"), 1);
   assert.equal((await saved()).current, 'pixelgirl-hello');
   assert.equal(await evaluate("!!document.querySelector('.popup-narrative select')"), false);

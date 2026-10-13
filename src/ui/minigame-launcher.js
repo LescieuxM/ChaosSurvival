@@ -1,0 +1,49 @@
+import { createMiniGame } from './minigame-registry.js';
+
+// Received fictional files unlock engines; the launcher never executes host programs.
+export class MiniGameLauncher {
+  constructor(definitions, progression, manager, sounds, beforeOpen = () => {}, rules) {
+    Object.assign(this, { definitions, progression, manager, sounds, beforeOpen, rules });
+    this.active = null;
+  }
+  open(file) {
+    if (!file.launch) return null;
+    const unlocked = Object.values(this.progression.data.files).some(
+      (saved) =>
+        saved.id === file.id &&
+        saved.status === 'complete' &&
+        saved.direction === 'receive' &&
+        saved.launch?.game === file.launch.game,
+    );
+    if (!unlocked) return null;
+    const definition = this.definitions[file.launch.game];
+    if (!definition) throw new Error('Ce mini-jeu est indisponible.');
+    if (this.rules && !this.rules.hasSeen(definition)) {
+      this.rules.beforeStart(definition, () => this.open(file));
+      return null;
+    }
+    this.beforeOpen();
+    if (!this.active?.element?.isConnected || this.active.definition.id !== definition.id)
+      this.active = createMiniGame(definition, this.manager, this.sounds, (result) => {
+        const sequence = this.progression.current;
+        if (sequence?.type === 'minigame' && sequence.game === definition.id)
+          this.progression.complete(sequence.id, result);
+      });
+    this.active.showRules = () => {
+      if (!this.rules) return;
+      const game = this.active;
+      const paused = game.paused;
+      game.paused = true;
+      this.rules.review(definition, () => {
+        game.paused = paused;
+        game.lastFrame = null;
+      });
+    };
+    this.sounds.unlock();
+    this.active.open();
+    return this.active;
+  }
+  reset() {
+    this.active = null;
+  }
+}

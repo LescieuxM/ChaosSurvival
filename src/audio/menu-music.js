@@ -1,3 +1,8 @@
+const MENU_MELODY = [
+  76, 79, 81, 79, 76, 74, 72, 74, 77, 81, 84, 81, 77, 76, 74, 72, 79, 83, 86, 83, 79, 77, 76, 74,
+  72, 76, 79, 84, 81, 79, 76, 74,
+];
+
 // A local, original chiptune. Independent from the level's audio clock.
 export class MenuMusic {
   constructor(getVolume) {
@@ -46,14 +51,10 @@ export class MenuMusic {
   }
   tick() {
     if (!this.active) return;
-    const melody = [
-      76, 79, 81, 79, 76, 74, 72, 74, 77, 81, 84, 81, 77, 76, 74, 72, 79, 83, 86, 83, 79, 77, 76,
-      74, 72, 76, 79, 84, 81, 79, 76, 74,
-    ];
     // Skip suspended/background intervals instead of queuing accumulated notes.
     if (this.nextTime < this.context.currentTime) this.nextTime = this.context.currentTime + 0.02;
     while (this.nextTime < this.context.currentTime + 0.12) {
-      this.note(melody[this.step % melody.length], this.nextTime, 0.16, 'triangle', 0.7);
+      this.note(MENU_MELODY[this.step % MENU_MELODY.length], this.nextTime, 0.16, 'triangle', 0.7);
       if (this.step % 2 === 0)
         this.note(
           [48, 53, 55, 48][Math.floor(this.step / 8) % 4],

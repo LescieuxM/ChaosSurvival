@@ -18,6 +18,8 @@ export class DesktopSounds {
     const notes = {
       online: [659, 880, 1047],
       message: [880, 1175],
+      wizz: [220, 440, 220, 440],
+      offline: [659, 523, 392],
       send: [523, 659],
       catch: [440, 1568, 880],
       victory: [523, 659, 784, 1047, 1319, 1568],

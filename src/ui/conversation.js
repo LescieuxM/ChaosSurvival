@@ -1,34 +1,9 @@
 import { DialogueSession } from '../story/dialogue.js';
 import { ConversationThread } from '../story/conversation-thread.js';
 import { applicationName } from './identity.js';
-import { visibleContacts } from './contacts.js';
 
-const emoticons = {
-  ':)': '☺',
-  ':D': '☻',
-  ';)': '😉',
-  ':P': '😛',
-  ':$': '😊',
-  '<3': '♥',
-  xD: '☻',
-  ':3': '😺',
-  ":')": '😂',
-};
-export function appendMessageText(element, text) {
-  for (const part of text.split(/(:'\)|:\)|:D|;\)|:P|:\$|<3|xD|:3)/g)) {
-    if (!emoticons[part]) {
-      element.append(document.createTextNode(part));
-      continue;
-    }
-    const face = document.createElement('span');
-    face.className = `msn-emoticon${part === '<3' ? ' heart' : ''}`;
-    face.textContent = emoticons[part];
-    face.title = part;
-    face.setAttribute('role', 'img');
-    face.setAttribute('aria-label', part);
-    element.append(face);
-  }
-}
+import { appendMessageText } from './message-text.js';
+export { appendMessageText } from './message-text.js';
 
 export class ConversationWindow {
   constructor(
@@ -43,10 +18,15 @@ export class ConversationWindow {
       isUnlocked = () => true,
       onWindowState = () => {},
       thread,
-      getContactDefinitions,
-      onContactSelected,
+      onContactsRequested,
+      manageWindow,
+      onDispose,
     } = {},
   ) {
+    this.onContactsRequested = onContactsRequested;
+    this.manageWindow = manageWindow;
+    this.onDispose = onDispose;
+    this.player = dialogue.player;
     this.manager = manager;
     this.dialogue = dialogue;
     this.progression = progression;
@@ -60,10 +40,6 @@ export class ConversationWindow {
       thread ??
       new ConversationThread(dialogue.contact.name.toLowerCase(), progression, () => [dialogue]);
     this.sessions = new Map();
-    this.getContactDefinitions =
-      getContactDefinitions ??
-      (() => Object.fromEntries(this.thread.getEvents().map((event) => [event.id, event])));
-    this.onContactSelected = onContactSelected ?? (() => this.open());
   }
   sessionFor(definition) {
     const existing = this.sessions.get(definition.id);
@@ -73,8 +49,17 @@ export class ConversationWindow {
     this.sessions.set(definition.id, session);
     return session;
   }
-  open() {
-    if (this.element?.isConnected && !this.log && this.isUnlocked()) this.closeForViewSwitch();
+  openOffline(contact) {
+    if (this.element?.isConnected && this.offlineContact?.id === contact.id) return this.restore();
+    this.closeForViewSwitch();
+    this.offlineContact = contact;
+    this.open(true);
+  }
+  open(keepOffline = false) {
+    if (!keepOffline && this.offlineContact) {
+      this.closeForViewSwitch();
+      this.offlineContact = null;
+    }
     if (this.element?.isConnected) {
       this.refresh();
       this.element.hidden = false;
@@ -84,9 +69,11 @@ export class ConversationWindow {
       this.onWindowState({ open: true, minimized: false });
       return;
     }
-    if (!this.isUnlocked()) return this.openContacts();
-    this.dialogue = this.thread.activeDefinition;
-    this.session = this.sessionFor(this.dialogue);
+    if (!this.offlineContact && !this.isUnlocked()) return this.openContacts();
+    this.dialogue = this.offlineContact
+      ? { contact: this.offlineContact, player: this.player }
+      : this.thread.activeDefinition;
+    this.session = this.offlineContact ? null : this.sessionFor(this.dialogue);
     const id = this.manager.spawn('narrative', {
       preview: true,
       x: 0.35,
@@ -95,9 +82,7 @@ export class ConversationWindow {
         title: 'Conversation MSN',
         iconName: 'msn',
         body: /* HTML */ `
-          <div class="msn-menu">
-            Fichier <span>Édition</span><span>Actions</span><span>Aide</span>
-          </div>
+          <div class="msn-menu"></div>
           <div class="msn-contact">
             <img class="story-avatar contact-avatar" alt="Avatar de PixelGirl" />
             <div>
@@ -106,13 +91,19 @@ export class ConversationWindow {
             </div>
           </div>
           <div class="conversation-content">
-            <div
-              class="conversation-log"
-              role="log"
-              aria-label="Messages de la conversation"
-              aria-live="polite"
-              aria-relevant="additions"
-            ></div>
+            <div class="conversation-history">
+              <div
+                class="conversation-log"
+                role="log"
+                aria-label="Messages de la conversation"
+                aria-live="polite"
+                aria-relevant="additions"
+              >
+                <div class="conversation-flow">
+                  <div class="contact-typing" role="status" aria-live="polite" hidden></div>
+                </div>
+              </div>
+            </div>
             <div class="conversation-portraits">
               <img class="story-avatar contact-avatar" alt="Avatar du contact" /><img
                 class="story-avatar player-avatar"
@@ -121,47 +112,58 @@ export class ConversationWindow {
             </div>
           </div>
           <div class="msn-tools">
-            <span>☺</span><span>♥</span><span>♫</span><small>Choisis une réponse ci-dessous</small>
+            <button class="text-button" data-msn-action="emoticons" aria-label="Émoticônes">
+              ☺</button
+            ><button class="text-button" data-msn-action="wizz">Wizz !</button
+            ><small>Choisis une réponse ci-dessous</small>
           </div>
           <div class="conversation-reader">
-            <button class="xp-button" id="messenger-contacts">Mes contacts</button
-            ><button class="text-button" id="read-latest">Derniers messages ↓</button>
+            <button class="text-button" id="read-latest">Derniers messages ↓</button>
           </div>
           <div class="dialogue-choices" aria-label="Réponses possibles"></div>
           <div class="window-status dialogue-typing" role="status"></div>
         `,
       },
       onDismiss: ({ reason }) => {
-        const complete = reason === 'close' && !this.switchingView && this.session.state.finished;
+        const complete =
+          reason === 'close' &&
+          !this.switchingView &&
+          !this.offlineContact &&
+          this.session?.state.finished;
         this.dispose();
         if (complete) this.onComplete(this.dialogue.id);
       },
     });
     this.element = this.manager.windows.get(id).element;
-    const minimize = document.createElement('button');
-    minimize.className = 'msn-minimize';
-    minimize.textContent = '−';
-    minimize.setAttribute('aria-label', 'Réduire MSN');
-    minimize.addEventListener('click', () => {
-      this.element.hidden = true;
-      this.lastFrame = null;
-      this.onWindowState({ open: true, minimized: true });
-      if (this.ghost) {
-        this.ghost.remove();
-        this.ghost = null;
-        this.pump();
-      }
-    });
-    this.element
-      .querySelector('.titlebar')
-      .insertBefore(minimize, this.element.querySelector('.close-button'));
+    this.element.classList.toggle('contact-offline', Boolean(this.offlineContact));
+    if (this.manageWindow) this.manageWindow(this);
+    else {
+      const minimize = document.createElement('button');
+      minimize.className = 'msn-minimize';
+      minimize.textContent = '−';
+      minimize.setAttribute('aria-label', 'Réduire MSN');
+      minimize.addEventListener('click', () => {
+        this.element.hidden = true;
+        this.lastFrame = null;
+        this.onWindowState({ open: true, minimized: true });
+        if (this.ghost) {
+          this.ghost.remove();
+          this.ghost = null;
+          this.pump();
+        }
+      });
+      this.element
+        .querySelector('.titlebar')
+        .insertBefore(minimize, this.element.querySelector('.close-button'));
+    }
     this.element.querySelector('.window-title > span').textContent =
       `${this.dialogue.contact.nickname} — Conversation`;
     this.element
       .querySelector('.close-button')
       .setAttribute('aria-label', `Fermer ${applicationName('messenger')}`);
     this.element.querySelector('.contact-name').textContent = this.dialogue.contact.nickname;
-    this.element.querySelector('.contact-avatar').alt = `Avatar de ${this.dialogue.contact.name}`;
+    this.element.querySelector('.contact-avatar').alt =
+      `Avatar de ${this.dialogue.contact.name ?? this.dialogue.contact.nickname}`;
     this.element.querySelector('.contact-status').textContent =
       `${this.dialogue.contact.status} · ${this.dialogue.contact.personalMessage ?? ''}`;
     for (const [selector, path] of [
@@ -174,12 +176,12 @@ export class ConversationWindow {
       });
     }
     this.log = this.element.querySelector('.conversation-log');
+    this.history = this.element.querySelector('.conversation-history');
+    this.flow = this.element.querySelector('.conversation-flow');
     this.choices = this.element.querySelector('.dialogue-choices');
     this.typing = this.element.querySelector('.dialogue-typing');
+    this.typingIndicator = this.element.querySelector('.contact-typing');
     this.followLatest = true;
-    this.element
-      .querySelector('#messenger-contacts')
-      .addEventListener('click', () => this.showContacts());
     const log = this.log;
     this.log.addEventListener('scroll', () => {
       if (this.log !== log || !log.isConnected) return;
@@ -204,7 +206,7 @@ export class ConversationWindow {
     this.frame = requestAnimationFrame((time) => this.tick(time));
   }
   restore() {
-    if (!this.element?.isConnected) return this.open();
+    if (!this.element?.isConnected) return this.open(Boolean(this.offlineContact));
     this.element.hidden = false;
     this.element.style.zIndex = ++this.manager.z;
     this.lastFrame = null;
@@ -212,11 +214,12 @@ export class ConversationWindow {
     this.onWindowState({ open: true, minimized: false });
   }
   renderTranscript() {
-    this.log.replaceChildren();
+    (this.flow ?? this.log).replaceChildren();
     this.renderedKeys = new Set();
     this.appendHistory();
   }
   appendHistory() {
+    if (this.offlineContact) return;
     for (const message of this.thread.sync()) {
       if (this.renderedKeys.has(message.key)) continue;
       this.renderedKeys.add(message.key);
@@ -224,13 +227,11 @@ export class ConversationWindow {
     }
   }
   refresh() {
-    if (this.element?.isConnected && !this.log) {
-      this.renderContacts();
-      return;
-    }
+    if (this.offlineContact && this.log) return;
     if (!this.element?.isConnected || !this.log) return;
     this.appendHistory();
     this.renderResponses();
+    this.renderTyping();
     const definition = this.thread.activeDefinition;
     if (this.dialogue.id === definition.id) {
       if (this.receiving && !this.thread.isReceiving(definition.id)) this.pump();
@@ -268,7 +269,8 @@ export class ConversationWindow {
     appendMessageText(copy, message.text);
     row.append(author, copy);
     if (message.type === 'file') this.renderTransfer(row, message.fileKey);
-    this.log.append(row);
+    this.typingIndicator?.remove();
+    (this.flow ?? this.log).append(row);
     this.scrollLatest();
     return row;
   }
@@ -324,19 +326,29 @@ export class ConversationWindow {
     row.append(card);
   }
   pump() {
+    if (this.offlineContact) {
+      this.choices.replaceChildren();
+      this.typing.textContent =
+        'Ce contact est hors ligne. L\u2019envoi de messages est indisponible.';
+      if (this.typingIndicator) this.typingIndicator.hidden = true;
+      return;
+    }
     this.renderResponses();
+    this.renderTyping();
     this.receiving = this.thread.isReceiving(this.session.dialogue.id);
     if (this.receiving) {
       this.pending = null;
-      this.typing.textContent = `${this.dialogue.contact.name} est en train d’écrire…`;
+      this.typing.textContent = 'Dernier message reçu · connexion à 56k';
+      this.renderTyping();
       return;
     }
     for (let transitions = 0; transitions < 100; transitions++) {
       const message = this.session.nextMessage();
       if (message) {
-        this.pending = message;
-        this.stage = 'waiting';
-        this.remaining = message.delayMs;
+        this.thread.schedule(this.dialogue);
+        this.receiving = true;
+        this.pending = null;
+        this.renderTyping();
         this.typing.textContent = 'Dernier message reçu · connexion à 56k';
         this.scrollLatest();
         return;
@@ -384,7 +396,26 @@ export class ConversationWindow {
     }
     throw new Error('Le dialogue contient une boucle automatique.');
   }
+  renderTyping(now = Date.now()) {
+    if (!this.typingIndicator) return;
+    const contact = this.offlineContact ? null : this.thread.typingContact(now);
+    const text = contact ? `${contact.nickname ?? contact.name} est en train d'écrire...` : '';
+    const changed = this.typingIndicator.textContent !== text;
+    if (changed) this.typingIndicator.textContent = text;
+    this.typingIndicator.classList.toggle('is-typing', Boolean(contact));
+    this.typingIndicator.hidden = !contact;
+    if (!contact) {
+      this.typingIndicator.remove();
+      return;
+    }
+    const flow = this.flow ?? this.log;
+    if (this.typingIndicator.parentNode !== flow) {
+      flow.append(this.typingIndicator);
+      this.scrollLatest();
+    }
+  }
   renderResponses() {
+    if (this.offlineContact) return;
     if (!this.choices || this.ghost) return;
     // One narrative question at a time, in order. Other questions stay saved.
     const groups = this.thread.availableResponses.slice(0, 1);
@@ -443,7 +474,7 @@ export class ConversationWindow {
     if (groups.length) this.element.classList.remove('contact-away');
   }
   tick(time) {
-    if (!this.element?.isConnected) return;
+    if (!this.element?.isConnected || this.offlineContact) return;
     const delta =
       this.lastFrame === null || this.lastFrame === undefined ? 0 : time - this.lastFrame;
     this.lastFrame = time;
@@ -469,25 +500,11 @@ export class ConversationWindow {
         if (!this.pending) this.pump();
       }
     }
-    if (!document.hidden && !this.element.hidden && !this.ghost && this.pending) {
-      this.remaining -= delta;
-      if (this.remaining <= 0) {
-        if (this.stage === 'waiting') {
-          this.stage = 'typing';
-          this.remaining = this.pending.typingMs;
-          this.typing.textContent = `${this.dialogue.contact.name} est en train d’écrire…`;
-        } else {
-          const message = this.session.deliver();
-          this.pending = null;
-          this.appendHistory();
-          if (message.speaker === 'contact') this.sounds.play('message');
-          this.pump();
-        }
-      }
-    }
+    this.renderTyping();
     this.frame = requestAnimationFrame((next) => this.tick(next));
   }
   dispose() {
+    this.onDispose?.(this);
     this.logObserver?.disconnect();
     cancelAnimationFrame(this.frame);
     document.removeEventListener('visibilitychange', this.onVisibility);
@@ -497,6 +514,9 @@ export class ConversationWindow {
     this.lastFrame = null;
     this.element = null;
     this.log = null;
+    this.flow = null;
+    this.history = null;
+    this.typingIndicator = null;
     this.choices = null;
     this.session = null;
     this.renderedKeys = null;
@@ -506,34 +526,7 @@ export class ConversationWindow {
     this.onWindowState({ open: false, minimized: false });
   }
   openContacts() {
-    const id = this.manager.spawn('narrative', {
-      preview: true,
-      x: 0.35,
-      y: 0.15,
-      content: {
-        title: applicationName('messenger'),
-        iconName: 'msn',
-        body: `<div class="msn-menu">Fichier <span>Contacts</span><span>Actions</span><span>Aide</span></div><div class="msn-contact msn-self"><img class="story-avatar" src="./avatars/player.svg" alt="Votre avatar" /><div><strong>Joueur.exe</strong><small><i class="online-dot"></i> En ligne · occupé à sauver mon bureau</small></div></div><div class="contacts-toolbar"><span>☺ Ajouter un contact</span><span>♥ Mes amis</span></div><div class="messenger-contact-list"></div><div class="window-status">Connecté · Windows Love Messenger</div>`,
-      },
-      onDismiss: () => this.dispose(),
-    });
-    this.element = this.manager.windows.get(id).element;
-    this.renderContacts();
-    this.element
-      .querySelector('.close-button')
-      .setAttribute('aria-label', `Fermer ${applicationName('messenger')}`);
-    const minimize = document.createElement('button');
-    minimize.className = 'msn-minimize';
-    minimize.textContent = '−';
-    minimize.setAttribute('aria-label', 'Réduire MSN');
-    minimize.addEventListener('click', () => {
-      this.element.hidden = true;
-      this.onWindowState({ open: true, minimized: true });
-    });
-    this.element
-      .querySelector('.titlebar')
-      .insertBefore(minimize, this.element.querySelector('.close-button'));
-    this.onWindowState({ open: true, minimized: false });
+    return this.onContactsRequested?.();
   }
   closeForViewSwitch() {
     if (!this.element?.isConnected) return;
@@ -545,67 +538,6 @@ export class ConversationWindow {
     }
   }
   showContacts() {
-    if (this.element?.isConnected && !this.log) {
-      this.element.hidden = false;
-      this.element.style.zIndex = ++this.manager.z;
-      this.renderContacts();
-      this.onWindowState({ open: true, minimized: false });
-      return;
-    }
-    this.closeForViewSwitch();
-    this.openContacts();
-  }
-  renderContacts() {
-    const list = this.element?.querySelector('.messenger-contact-list');
-    if (!list) return;
-    const definitions = this.getContactDefinitions();
-    const contacts = visibleContacts(definitions, this.progression.data.unlockedConversations);
-    const signature = JSON.stringify([contacts, this.thread.state.unread.length]);
-    if (signature === this.contactsSignature) return;
-    this.contactsSignature = signature;
-    const collapsed = new Map(
-      [...list.querySelectorAll('details')].map((group) => [group.dataset.group, !group.open]),
-    );
-    list.replaceChildren();
-    for (const online of [true, false]) {
-      const members = contacts.filter((contact) => contact.online === online);
-      const group = document.createElement('details');
-      group.dataset.group = String(online);
-      group.open = !collapsed.get(String(online));
-      const summary = document.createElement('summary');
-      summary.textContent = `${online ? 'En ligne' : 'Hors ligne'} (${members.length})`;
-      group.append(summary);
-      for (const contact of members) {
-        const row = document.createElement(contact.kind === 'narrative' ? 'button' : 'div');
-        row.className = `messenger-contact-row ${online ? 'online' : 'offline'}`;
-        row.dataset.contactId = contact.id;
-        const image = document.createElement('img');
-        image.src = contact.avatar;
-        image.alt = `Avatar de ${contact.nickname}`;
-        const copy = document.createElement('span');
-        const nickname = document.createElement('strong');
-        nickname.textContent = contact.nickname;
-        const status = document.createElement('small');
-        status.textContent = `${contact.status} · ${contact.personalMessage ?? ''}`;
-        copy.append(nickname, status);
-        row.append(image, copy);
-        if (contact.kind === 'narrative') {
-          const badge = document.createElement('b');
-          badge.className = 'contact-unread';
-          badge.textContent = this.thread.state.unread.length
-            ? String(this.thread.state.unread.length)
-            : '☺';
-          row.append(badge);
-          row.addEventListener('click', () => this.onContactSelected(contact));
-        }
-        group.append(row);
-      }
-      if (!members.length) {
-        const empty = document.createElement('p');
-        empty.textContent = 'Personne en ligne pour le moment. Mes amis arrivent bientôt :)';
-        group.append(empty);
-      }
-      list.append(group);
-    }
+    return this.onContactsRequested?.();
   }
 }

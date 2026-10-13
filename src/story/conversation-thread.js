@@ -117,7 +117,68 @@ export class ConversationThread {
     if (changed && this.progression.hasSave) this.progression.save();
     return state.history;
   }
+  schedule(definition, now = Date.now()) {
+    const session = new DialogueSession(definition, this.progression);
+    const message = session.nextMessage();
+    if (!message) return;
+    if (!Number.isFinite(session.state.receiveDueAt)) {
+      session.state.receiveDueAt = now + message.delayMs + message.typingMs;
+      session.persist();
+    }
+  }
+  typingContact(now = Date.now()) {
+    for (const event of this.getEvents()) {
+      const state = this.progression.data.dialogues[event.id];
+      const message = state && !state.finished && event.nodes[state.node]?.messages[state.cursor];
+      if (!message || message.speaker !== 'contact' || !Number.isFinite(state.receiveDueAt))
+        continue;
+      const total = message.delayMs + message.typingMs;
+      // Reuse the existing wait budget, including scripts with typingMs = 0.
+      const typing =
+        message.typingMs ||
+        Math.min(total, Math.max(180, Math.min(900, (message.text?.length ?? 20) * 18)));
+      if (
+        now >= state.receiveDueAt - typing &&
+        now < state.receiveDueAt &&
+        event.contact.status !== 'Hors ligne' &&
+        event.contact.online !== false
+      )
+        return event.contact;
+    }
+    return null;
+  }
+  receiveScheduled(definition, now) {
+    const state = this.progression.data.dialogues[definition.id];
+    if (!Number.isFinite(state?.receiveDueAt)) return false;
+    const session = new DialogueSession(definition, this.progression);
+    let dueAt = state.receiveDueAt;
+    let delivered = false;
+    while (session.nextMessage() && dueAt <= now) {
+      session.deliver();
+      delivered = true;
+      let transitions = 0;
+      while (!session.nextMessage() && session.advance()) {
+        if (++transitions >= 100) throw new Error('Automatic dialogue loop.');
+      }
+      const next = session.nextMessage();
+      if (!next) {
+        delete state.receiveDueAt;
+        if (session.choices.length) session.offerChoices();
+        session.persist();
+        break;
+      }
+      dueAt += next.delayMs + next.typingMs;
+      state.receiveDueAt = dueAt;
+      session.persist();
+    }
+    return delivered;
+  }
   isReceiving(id) {
+    const first = this.getEvents()[0];
+    const scheduled = this.progression.data.dialogues[id];
+    if (first?.id === id)
+      return Boolean(Number.isFinite(scheduled?.receiveDueAt) && !scheduled.finished);
+
     const event = this.getEvents()
       .slice(1)
       .find((event) => event.id === id);
@@ -132,6 +193,8 @@ export class ConversationThread {
   }
   receive(now = Date.now()) {
     const incoming = [];
+    const first = this.getEvents()[0];
+    if (first && this.receiveScheduled(first, now)) incoming.push(first);
     for (const event of this.getEvents().slice(1)) {
       if (this.progression.data.dialogues[event.id]?.finished && !this.hasPendingFile(event.id))
         continue;

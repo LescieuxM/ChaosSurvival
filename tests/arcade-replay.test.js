@@ -203,6 +203,8 @@ test('development shortcut uses arcade victory and never duplicates results or s
     progression,
     queueArcadeVictory,
     installDevelopmentVictoryShortcut,
+    miniGameLauncher: { active: null },
+    rules: { active: false },
     state: { score: 1200, closed: 12 },
     audio: {
       stop() {
@@ -230,7 +232,7 @@ test('development shortcut uses arcade victory and never duplicates results or s
     },
   };
   runInNewContext(
-    `let phase = 'desktop', miniGame, pauseGeneration = 0, frame = 0, best = 0;
+    `let phase = 'desktop', pauseGeneration = 0, frame = 0, best = 0;
     const BEST_SCORE_KEY = 'test'; const arcadeSequenceId = 'arcade-1';
     function setPhase(next) { phase = next; }
     ${finish}

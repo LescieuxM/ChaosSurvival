@@ -167,7 +167,6 @@ export function mountDesktop(root, best) {
       <button data-system-app="computer">${icon('computer')} Poste de travail</button>
       <button data-system-app="folder">${icon('folder')} Mes documents</button>
       <button data-system-app="bin">${icon('bin')} Corbeille</button>
-      <button id="menu-help">${icon('help')} Comment jouer</button>
       <footer>Bienvenue en 2005. Reste un peu.</footer>
     </div>
     <footer class="taskbar">
@@ -175,9 +174,6 @@ export function mountDesktop(root, best) {
         ${icon('flag')} démarrer
       </button>
       <div class="task-tab">${icon('computer')} Chaos Survival</div>
-      <button class="task-tab task-msn" id="msn-task" hidden>
-        ${icon('msn')} ${applicationName('messenger')}
-      </button>
       <div class="tray">
         <span class="tray-online" title="Connecté">●</span
         ><button id="mute-button" aria-label="Couper le son">♫</button><span>FR</span
@@ -221,7 +217,6 @@ export function mountDesktop(root, best) {
     feedbackLayer: select('#feedback-layer'),
     toast: select('#toast'),
     toastOpen: select('#toast-open'),
-    msnTask: select('#msn-task'),
     toastContact: select('#toast-contact'),
     toastMessage: select('#toast-message'),
     dismissToast: select('#dismiss-toast'),
@@ -230,7 +225,6 @@ export function mountDesktop(root, best) {
     startMenu: select('#start-menu'),
     windowsStart: select('#windows-start'),
     menuPlay: select('#desktop-menu-play'),
-    menuHelp: select('#menu-help'),
     menuMessenger: select('#menu-messenger'),
     clock: select('#clock'),
     shortcuts: root.querySelectorAll('[data-shortcut]'),
