@@ -11,7 +11,8 @@ import { WINDOW_TYPES } from './config/popups.js';
 import { GameState } from './game/state.js';
 import { WindowManager } from './ui/windows.js';
 import { icon } from './ui/icons.js';
-import { mountDesktop } from './ui/desktop.js';
+import { mountDesktop, updateRhythmHud } from './ui/desktop.js';
+import { DesktopIcons } from './ui/desktop-icons.js';
 import { DesktopApplications } from './ui/desktop-apps.js';
 import { createMusicDebug } from './ui/music-debug.js';
 import story from './config/story.json';
@@ -85,6 +86,10 @@ try {
   configurationError = error;
 }
 let phase = 'idle';
+function setPhase(next) {
+  phase = next;
+  updateRhythmHud(ui, phase);
+}
 let duration = chart.durationSeconds;
 let lastTime = 0;
 let frame = 0;
@@ -151,7 +156,7 @@ progression.register('arcade', async (sequence) => {
   if (sequence.level !== chart.level)
     throw new Error(`Le niveau ${sequence.level} n’est pas disponible.`);
   arcadeSequenceId = sequence.id;
-  phase = 'idle';
+  setPhase('idle');
   await startGame();
 });
 progression.register('conversation', (sequence) => {
@@ -241,6 +246,7 @@ const menu = new MainMenu(document.getElementById('app'), progression, settings,
     }
   },
 });
+const desktopIcons = new DesktopIcons(ui.desktop, progression);
 const returnMenu = ui.menuPlay;
 returnMenu.id = 'return-main-menu';
 returnMenu.innerHTML = `${icon('menu-computer')}<span>Menu principal<small>Continuer / nouvelle partie / options</small></span>`;
@@ -282,7 +288,7 @@ async function continueFromMenu() {
     return;
   }
   if (progression.current?.type === 'arcade') {
-    phase = 'idle';
+    setPhase('idle');
     await startGame();
     return;
   }
@@ -322,7 +328,7 @@ function returnToMenu() {
   manager.clear();
   miniGame = null;
   if (progression.hasSave) progression.save();
-  phase = 'menu';
+  setPhase('menu');
   ui.desktop.inert = true;
   ui.modalLayer.hidden = true;
   ui.introLayer.hidden = true;
@@ -349,7 +355,7 @@ async function startGame() {
   if (progression.current?.type === 'arcade') arcadeSequenceId = progression.current.id;
   ui.desktop.classList.remove('story-desktop');
   storyToastAction = null;
-  phase = 'loading';
+  setPhase('loading');
   returnMenu.disabled = true;
   if (!progression.hasSave) progression.begin();
   ui.startButton.disabled = true;
@@ -373,7 +379,7 @@ async function startGame() {
     ui.introLayer.hidden = true;
     ui.modalLayer.hidden = true;
     ui.playfield.inert = false;
-    phase = 'playing';
+    setPhase('playing');
     ui.pauseButton.disabled = false;
     ui.desktop.classList.add('is-playing');
     renderStats();
@@ -382,7 +388,7 @@ async function startGame() {
     if (document.hidden) await pauseGame();
   } catch (error) {
     audio.stop();
-    phase = 'idle';
+    setPhase('idle');
     ui.loadStatus.textContent = `Impossible de démarrer : ${error.message}`;
     showDialog(
       'Connexion interrompue',
@@ -469,7 +475,7 @@ function renderStats() {
 
 async function pauseGame() {
   if (phase !== 'playing') return;
-  phase = 'paused';
+  setPhase('paused');
   cancelAnimationFrame(frame);
   ui.playfield.inert = true;
   ui.desktop.classList.remove('is-playing');
@@ -488,7 +494,7 @@ async function pauseGame() {
 }
 async function resumeGame() {
   if (phase !== 'paused') return;
-  phase = 'resuming';
+  setPhase('resuming');
   const generation = ++pauseGeneration;
   ui.dialogAction.disabled = true;
   try {
@@ -496,7 +502,7 @@ async function resumeGame() {
     if (phase !== 'resuming' || generation !== pauseGeneration) return;
     ui.modalLayer.hidden = true;
     ui.playfield.inert = false;
-    phase = 'playing';
+    setPhase('playing');
     ui.desktop.classList.add('is-playing');
     debug.render();
     manager.reposition();
@@ -504,15 +510,16 @@ async function resumeGame() {
     if (document.hidden) await pauseGame();
   } catch (error) {
     if (generation !== pauseGeneration) return;
-    phase = 'paused';
+    setPhase('paused');
     ui.dialogCopy.textContent = `La reprise a échoué : ${error.message}`;
   } finally {
     ui.dialogAction.disabled = false;
   }
 }
 function finishGame(won) {
+  if (!['playing', 'paused'].includes(phase)) return;
   pauseGeneration++;
-  phase = 'ended';
+  setPhase('ended');
   cancelAnimationFrame(frame);
   audio.stop();
   clearEffects();
@@ -551,7 +558,7 @@ function finishGame(won) {
   );
 }
 function showArcadeVictory(result) {
-  phase = 'ended';
+  setPhase('ended');
   ui.playfield.inert = true;
   ui.pauseButton.disabled = true;
   ui.modalLayer.hidden = true;
@@ -575,7 +582,7 @@ function restartDesktop() {
 }
 function restartGame() {
   pauseGeneration++;
-  phase = 'ended';
+  setPhase('ended');
   startGame();
 }
 function showDialog(title, copy, button, callback, type = 'help', secondary) {
@@ -656,7 +663,7 @@ function showStoryDesktop(announce) {
   audio.stop();
   clearEffects();
   manager.clear();
-  phase = 'desktop';
+  setPhase('desktop');
   ui.desktop.classList.add('story-desktop');
   ui.desktop.classList.remove('is-playing', 'on-beat');
   ui.introLayer.hidden = true;
@@ -705,7 +712,7 @@ function replayLevelOne() {
   if (!['desktop', 'idle', 'ended', 'playing', 'paused'].includes(phase)) return;
   cancelAnimationFrame(frame);
   pauseGeneration++;
-  phase = 'ended';
+  setPhase('ended');
   startGame();
 }
 function renderDesktopFiles() {
@@ -727,10 +734,14 @@ function renderDesktopFiles() {
     const button = document.createElement('button');
     button.className = 'desktop-file';
     button.dataset.fileId = file.id;
+    button.setAttribute('aria-pressed', 'false');
     button.innerHTML = icon('download');
     const name = document.createElement('span');
     name.textContent = file.name;
     button.append(name);
+    button.addEventListener('click', () => {
+      for (const item of files.children) item.setAttribute('aria-pressed', String(item === button));
+    });
     button.addEventListener('dblclick', () => openDesktopFile(file));
     button.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
@@ -740,9 +751,18 @@ function renderDesktopFiles() {
     });
     files.append(button);
   }
+  desktopIcons.refresh();
 }
 function openDesktopFile(file) {
   if (phase !== 'desktop' || !file.launch) return;
+  const unlocked = Object.values(progression.data.files).some(
+    (saved) =>
+      saved.id === file.id &&
+      saved.status === 'complete' &&
+      saved.direction === 'receive' &&
+      saved.launch?.game === file.launch.game,
+  );
+  if (!unlocked) return;
   const definition = miniGames[file.launch.game];
   if (!definition) return showStoryError(new Error('Ce mini-jeu est indisponible.'));
   if (progression.current?.type === 'conversation')
@@ -750,7 +770,7 @@ function openDesktopFile(file) {
   if (conversation.element?.isConnected) {
     manager.close(Number(conversation.element.dataset.windowId));
   }
-  if (!miniGame || miniGame.definition.id !== definition.id || miniGame.finished)
+  if (!miniGame?.element?.isConnected || miniGame.definition.id !== definition.id)
     miniGame = createMiniGame(definition, manager, sounds, (result) => {
       if (progression.current?.type === 'minigame' && progression.current.game === definition.id)
         progression.complete(progression.current.id, result);
@@ -846,14 +866,17 @@ ui.desktop.querySelectorAll('[data-system-app]').forEach((button) =>
     openSystemApplication(button.dataset.systemApp);
   }),
 );
-ui.shortcuts.forEach((button) =>
-  button.addEventListener('click', () => {
-    const kind = button.dataset.shortcut;
-    if (kind === 'msn') return openConversation();
-    if (kind === 'music') return;
-  }),
-);
 ui.shortcuts.forEach((button) => {
+  if (button.dataset.shortcut === 'msn') {
+    button.addEventListener('dblclick', () => openConversation());
+    button.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        openConversation();
+      }
+    });
+    return;
+  }
   if (!['computer', 'folder', 'bin'].includes(button.dataset.shortcut)) return;
   button.addEventListener('dblclick', () => openSystemApplication(button.dataset.shortcut));
   button.addEventListener('keydown', (event) => {
@@ -872,6 +895,18 @@ musicShortcut.addEventListener('keydown', (event) => {
     replayLevelOne();
   }
 });
+// Vite removes this entire import and handler from production builds.
+if (import.meta.env.DEV) {
+  import('./dev/finish-shortcut.js').then(({ installDevelopmentVictoryShortcut }) => {
+    installDevelopmentVictoryShortcut(document, () => {
+      if (['playing', 'paused'].includes(phase)) return { finish: () => finishGame(true) };
+      if (phase === 'desktop' && miniGame?.element?.isConnected && !miniGame.finished)
+        return miniGame;
+      return null;
+    });
+  });
+}
+
 document.addEventListener('keydown', (event) => {
   if (event.key !== 'Escape' || event.repeat) return;
   if (phase === 'playing') pauseGame();

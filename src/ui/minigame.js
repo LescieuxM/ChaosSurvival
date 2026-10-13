@@ -63,30 +63,40 @@ class SmileyCatcher {
       .querySelector('.flash-return')
       .addEventListener('click', () => this.manager.close(id));
     this.element.querySelector('.flash-replay').addEventListener('click', () => {
-      this.elapsed = 0;
-      this.score = 0;
-      this.combo = 0;
-      this.targets = [];
-      this.spawnClock = 0;
-      this.arena.replaceChildren();
-      this.result.hidden = true;
-      this.paused = false;
-      this.finished = false;
+      this.resetRound();
       this.spawn();
+      this.render();
+      this.startLoop();
     });
     this.element.querySelector('.flash-pause').addEventListener('click', (event) => {
       this.paused = !this.paused;
       event.target.textContent = this.paused ? 'Reprendre' : 'Pause';
     });
-    this.paused = false;
-    this.lastFrame = null;
+    this.resetRound();
     this.onVisibility = () => {
       this.lastFrame = null;
     };
-    document.addEventListener('visibilitychange', this.onVisibility);
     this.spawn();
     this.render();
+    this.startLoop();
+  }
+  startLoop() {
+    cancelAnimationFrame(this.frame);
+    document.addEventListener('visibilitychange', this.onVisibility);
     this.frame = requestAnimationFrame((time) => this.tick(time));
+  }
+  resetRound() {
+    this.elapsed = 0;
+    this.score = 0;
+    this.combo = 0;
+    this.spawnClock = 0;
+    this.targets = [];
+    this.arena.replaceChildren();
+    this.result.hidden = true;
+    this.paused = false;
+    this.finished = false;
+    this.lastFrame = null;
+    this.element.querySelector('.flash-pause').textContent = 'Pause';
   }
   spawn() {
     if (this.targets.length >= this.definition.maxTargets) return;
@@ -116,7 +126,7 @@ class SmileyCatcher {
       `${Math.ceil(Math.max(0, this.definition.durationSeconds - this.elapsed))} s`;
   }
   tick(time) {
-    if (!this.element?.isConnected) return;
+    if (!this.element?.isConnected || this.finished) return;
     const delta = this.lastFrame === null ? 0 : (time - this.lastFrame) / 1000;
     this.lastFrame = time;
     if (!document.hidden && !this.paused && !this.finished) {
@@ -133,17 +143,23 @@ class SmileyCatcher {
         this.spawn();
       }
       this.render();
-      if (this.elapsed >= this.definition.durationSeconds) {
-        this.finished = true;
-        this.targets = [];
-        this.arena.replaceChildren();
-        this.result.hidden = false;
-        this.result.querySelector('strong').textContent = `${this.score} MEGA POINTS !!!`;
-        this.sounds.play('victory');
-        this.onComplete({ score: this.score, duration: this.elapsed });
-      }
+      if (this.elapsed >= this.definition.durationSeconds) return this.finish();
     }
     this.frame = requestAnimationFrame((next) => this.tick(next));
+  }
+  finish() {
+    if (!this.element?.isConnected || this.finished) return;
+    this.finished = true;
+    cancelAnimationFrame(this.frame);
+    document.removeEventListener('visibilitychange', this.onVisibility);
+    this.elapsed = this.definition.durationSeconds;
+    this.targets = [];
+    this.arena.replaceChildren();
+    this.render();
+    this.result.hidden = false;
+    this.result.querySelector('strong').textContent = `${this.score} MEGA POINTS !!!`;
+    this.sounds.play('victory');
+    this.onComplete({ score: this.score, duration: this.elapsed });
   }
   dispose() {
     cancelAnimationFrame(this.frame);

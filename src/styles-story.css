@@ -296,7 +296,11 @@ button.messenger-contact-row:hover {
   }
 }
 .story-desktop #playfield {
+  pointer-events: none;
   bottom: 64px;
+}
+.story-desktop #playfield > .popup {
+  pointer-events: auto;
 }
 .story-desktop .music-player {
   display: none;
@@ -395,6 +399,7 @@ button.messenger-contact-row:hover {
 .desktop-file span {
   overflow-wrap: anywhere;
 }
+.desktop-file[aria-pressed='true'],
 .desktop-file:focus,
 .desktop-file:hover {
   background: #4b7cd355;
@@ -832,4 +837,49 @@ button.messenger-contact-row:hover {
 }
 .task-msn[hidden] {
   display: none;
+}
+
+/* The desktop uses the space reserved for the arcade HUD outside rhythmic sessions. */
+.desktop:not(.rhythm-active) .desktop-icons,
+.desktop:not(.rhythm-active) .desktop-files,
+.menu-desktop-background .desktop-icons {
+  top: 20px;
+}
+.desktop:not(.rhythm-active) #playfield {
+  top: 20px;
+}
+@media (max-width: 700px) {
+  .desktop:not(.rhythm-active) #playfield,
+  .desktop:not(.rhythm-active) .desktop-files {
+    top: 100px;
+  }
+}
+@media (max-height: 650px) and (max-width: 700px) {
+  .desktop:not(.rhythm-active) #playfield {
+    top: 20px;
+  }
+}
+
+/* One desktop grid for shortcuts and received files; the menu clone stays unchanged. */
+.desktop.story-desktop.icon-grid .desktop-icons,
+.desktop.story-desktop.icon-grid .desktop-files {
+  inset: 0;
+  display: block;
+  pointer-events: none;
+}
+.desktop.story-desktop.icon-grid .desktop-icons button,
+.desktop.story-desktop.icon-grid .desktop-file {
+  position: absolute;
+  width: 100px;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+}
+.desktop.story-desktop.icon-grid [aria-pressed='true'] {
+  background: #4b7cd355;
+  outline: 1px dotted white;
+}
+.desktop.story-desktop.icon-grid button.is-dragging {
+  z-index: 1;
+  opacity: 0.8;
 }

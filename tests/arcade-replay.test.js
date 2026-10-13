@@ -8,6 +8,9 @@ import {
   pendingArcadeVictory,
   acknowledgeArcadeVictory,
 } from '../src/story/arcade.js';
+import { runInNewContext } from 'node:vm';
+import { mountDesktop, updateRhythmHud } from '../src/ui/desktop.js';
+import { installDevelopmentVictoryShortcut } from '../src/dev/finish-shortcut.js';
 import { celebrateVictory } from '../src/ui/victory.js';
 const story = JSON.parse(readFileSync(new URL('../src/config/story.json', import.meta.url)));
 
@@ -130,4 +133,127 @@ test('first arcade success unlocks PixelGirl once; replays preserve every narrat
   const finished = structuredClone(progression.data);
   assert.equal(recordArcadeCompletion(progression, 'arcade-1', { score: 999 }), false);
   assert.deepEqual(progression.data, finished);
+});
+
+test('rhythm HUD follows the real phase through loading, pauses, results, desktop and replay', () => {
+  const nodes = new Map();
+  const classes = new Set();
+  const root = {
+    querySelector(selector) {
+      if (!nodes.has(selector)) nodes.set(selector, {});
+      return nodes.get(selector);
+    },
+    querySelectorAll() {
+      return [];
+    },
+  };
+  const ui = mountDesktop(root, 0);
+  assert.match(root.innerHTML, /<header class="hud" hidden /);
+  ui.desktop.classList = {
+    toggle(name, enabled) {
+      enabled ? classes.add(name) : classes.delete(name);
+    },
+  };
+  // Execute the actual central phase transition without starting audio or Electron.
+  const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+  const setter = main.match(/function setPhase\(next\) \{[\s\S]*?\n\}/)[0];
+  const context = { ui, updateRhythmHud };
+  runInNewContext(`let phase = 'idle'; ${setter}; this.transition = setPhase;`, context);
+  // No transition can bypass the HUD update via a direct assignment.
+  assert.deepEqual(main.match(/^[\t ]*phase = .*;/gm), ['  phase = next;']);
+  for (const [phase, visible] of [
+    ['menu', false],
+    ['idle', false],
+    ['loading', true],
+    ['playing', true],
+    ['paused', true],
+    ['resuming', true],
+    ['playing', true],
+    ['ended', true],
+    ['desktop', false],
+    ['loading', true],
+    ['playing', true],
+    ['desktop', false],
+    ['menu', false],
+    ['ended', true],
+    ['desktop', false],
+    ['loading', true],
+    ['idle', false],
+  ]) {
+    context.transition(phase);
+    assert.equal(ui.hud.hidden, !visible, phase);
+    assert.equal(classes.has('rhythm-active'), visible, phase);
+  }
+});
+
+test('development shortcut uses arcade victory and never duplicates results or starts PixelGirl early', async () => {
+  const progression = new Progression(story);
+  progression.begin();
+  let keydown;
+  let stops = 0;
+  let celebrations = 0;
+  let arrivals = 0;
+  progression.register('conversation', () => arrivals++);
+  const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+  const finish = main.match(/function finishGame\(won\) \{[\s\S]*?\n\}/)[0];
+  const registration = main.match(
+    /installDevelopmentVictoryShortcut\(document, \(\) => \{[\s\S]*?\n    \}\);/,
+  )[0];
+  const context = {
+    progression,
+    queueArcadeVictory,
+    installDevelopmentVictoryShortcut,
+    state: { score: 1200, closed: 12 },
+    audio: {
+      stop() {
+        stops++;
+      },
+    },
+    ui: {
+      pauseButton: {},
+      playfield: {},
+      desktop: { classList: { remove() {} } },
+      best: {},
+      sessionLabel: {},
+    },
+    debug: { render() {} },
+    localStorage: { setItem() {} },
+    document: {
+      addEventListener(type, handler) {
+        keydown = handler;
+      },
+    },
+    cancelAnimationFrame() {},
+    clearEffects() {},
+    showArcadeVictory() {
+      celebrations++;
+    },
+  };
+  runInNewContext(
+    `let phase = 'desktop', miniGame, pauseGeneration = 0, frame = 0, best = 0;
+    const BEST_SCORE_KEY = 'test'; const arcadeSequenceId = 'arcade-1';
+    function setPhase(next) { phase = next; }
+    ${finish}
+    ${registration}
+    this.setPhase = setPhase;`,
+    context,
+  );
+  const key = { key: 'D', ctrlKey: true, shiftKey: true, preventDefault() {} };
+  keydown(key);
+  assert.equal(stops, 0);
+  context.setPhase('playing');
+  keydown(key);
+  assert.equal(stops, 1);
+  assert.equal(celebrations, 1);
+  assert.equal(pendingArcadeVictory(progression).score, 1200);
+  assert.equal(arrivals, 0);
+  keydown(key);
+  assert.equal(celebrations, 1);
+  assert.equal(acknowledgeArcadeVictory(progression).firstCompletion, true);
+  await progression.enterCurrent();
+  assert.equal(arrivals, 1);
+  context.setPhase('paused');
+  keydown(key);
+  assert.equal(celebrations, 2);
+  assert.equal(pendingArcadeVictory(progression).firstCompletion, false);
 });

@@ -4,7 +4,7 @@ import { applicationName, trackIdentity } from './identity.js';
 export function mountDesktop(root, best) {
   root.innerHTML = /* HTML */ ` <main class="desktop" id="desktop">
     <div class="desktop-wash"></div>
-    <header class="hud" aria-label="Statistiques de la partie">
+    <header class="hud" hidden aria-label="Statistiques de la partie">
       <div class="hud-brand">
         ${icon('computer')}
         <div><strong>CHAOS SURVIVAL</strong><small>ARCADE MUSICAL / ÉDITION 2005</small></div>
@@ -189,6 +189,7 @@ export function mountDesktop(root, best) {
   const select = (selector) => root.querySelector(selector);
   return {
     desktop: select('#desktop'),
+    hud: select('.hud'),
     startButton: select('#start-button'),
     closeLauncher: select('#close-launcher'),
     pauseButton: select('#pause-button'),
@@ -234,4 +235,11 @@ export function mountDesktop(root, best) {
     clock: select('#clock'),
     shortcuts: root.querySelectorAll('[data-shortcut]'),
   };
+}
+
+// Pauses and results still belong to the rhythmic session, including restored results.
+export function updateRhythmHud(ui, phase) {
+  const visible = ['loading', 'playing', 'paused', 'resuming', 'ended'].includes(phase);
+  ui.hud.hidden = !visible;
+  ui.desktop.classList.toggle('rhythm-active', visible);
 }
