@@ -1,5 +1,6 @@
 import './styles.css';
 import './styles-story.css';
+import './styles-menu.css';
 import chart from './config/chart.json';
 import music from './config/music-lvl1.analysis.json';
 import { AudioEngine } from './audio/engine.js';
@@ -20,6 +21,9 @@ import { celebrateVictory } from './ui/victory.js';
 import { DesktopSounds } from './audio/sounds.js';
 import { dialogues } from './story/catalog.js';
 import { miniGames, createMiniGame } from './ui/minigame.js';
+import { MainMenu } from './ui/main-menu.js';
+import { MenuMusic } from './audio/menu-music.js';
+import { UserSettings, deleteUserData } from './settings.js';
 
 const BEST_SCORE_KEY = 'chaos-survival-best';
 const DEFAULT_VOLUME = 0.55;
@@ -49,10 +53,13 @@ try {
   /* Optional persistence. */
 }
 const progression = new Progression(story, storyStorage);
+const settings = new UserSettings(storyStorage, chart.volume);
+const menuMusic = new MenuMusic(() => settings.data.musicVolume);
+audio.setVolume(settings.data.musicVolume);
 let arcadeSequenceId = 'arcade-1';
 const sounds = new DesktopSounds(
-  () => audio.volume,
-  () => audio.context,
+  () => settings.data.effectsVolume,
+  () => (menuMusic.active ? menuMusic.context : audio.context),
 );
 let cancelVictory = () => {};
 let storyToastAction = null;
@@ -90,6 +97,7 @@ const manager = new WindowManager(ui.playfield, ({ preview, x, y, openedAt }) =>
 let activeDialogue = pixelgirlDialogue;
 let conversation = createConversation(activeDialogue);
 let miniGame;
+let restoringStory = false;
 function createConversation(dialogue) {
   return new ConversationWindow(
     manager,
@@ -105,19 +113,30 @@ function createConversation(dialogue) {
         ui.sessionLabel.textContent = `À TOUT À L’HEURE, ${dialogue.contact.name.toUpperCase()}`;
     },
     renderDesktopFiles,
+    () => {
+      if (
+        progression.current?.type === 'conversation' &&
+        progression.current.dialogue === dialogue.id
+      ) {
+        progression.complete(progression.current.id, { dialogue: dialogue.id });
+        ui.sessionLabel.textContent = 'SUPER_MEGA_GAME.exe T’ATTEND';
+      }
+    },
   );
 }
-progression.register('arcade', (sequence) => {
+progression.register('arcade', async (sequence) => {
   if (sequence.level !== chart.level)
     throw new Error(`Le niveau ${sequence.level} n’est pas disponible.`);
-  restartDesktop();
+  arcadeSequenceId = sequence.id;
+  phase = 'idle';
+  await startGame();
 });
 progression.register('conversation', (sequence) => {
   const dialogue = dialogues[sequence.dialogue];
   if (!dialogue) throw new Error(`Conversation introuvable : ${sequence.dialogue}`);
   activeDialogue = dialogue;
   conversation = createConversation(dialogue);
-  showStoryDesktop(true);
+  showStoryDesktop(!restoringStory);
 });
 progression.register('minigame', () => {
   showStoryDesktop(false);
@@ -132,7 +151,7 @@ function previewWindows() {
 previewWindows();
 ui.bpmLabel.textContent = `≈ ${Math.round(music.bpm)} BPM`;
 ui.launcherBpm.textContent = `NIVEAU 1 · ≈ ${Math.round(music.bpm)} BPM`;
-ui.volume.value = chart.volume * 100;
+ui.volume.value = settings.data.musicVolume * 100;
 ui.durationLabel.textContent = `${Math.round(chart.durationSeconds)} secondes · découverte`;
 ui.trackTitle.firstChild.textContent = `${chart.title} `;
 
@@ -175,6 +194,113 @@ function setSyncOffset(value) {
   debug.render();
 }
 const debug = createMusicDebug(ui.desktop, music, debugSnapshot, setSyncOffset);
+let deletingUserData = false;
+const menu = new MainMenu(document.getElementById('app'), progression, settings, sounds, {
+  play: continueFromMenu,
+  newGame: async () => {
+    progression.newGame();
+    await continueFromMenu();
+  },
+  settingsChanged: () => setVolume(settings.data.musicVolume),
+  fullscreen: setFullscreen,
+  deleteData: async () => {
+    deletingUserData = true;
+    try {
+      await setFullscreen(false);
+      deleteUserData(storyStorage);
+      window.location.reload();
+    } catch (error) {
+      deletingUserData = false;
+      throw error;
+    }
+  },
+});
+const returnMenu = ui.menuPlay;
+returnMenu.id = 'return-main-menu';
+returnMenu.innerHTML = `${icon('computer')}<span>Menu principal<small>Continuer / nouvelle partie / options</small></span>`;
+async function setFullscreen(value) {
+  try {
+    if (window.chaosWindow) await window.chaosWindow.setFullscreen(value);
+    else if (value && !document.fullscreenElement)
+      await document.documentElement.requestFullscreen();
+    else if (!value && document.fullscreenElement) await document.exitFullscreen();
+    settings.update({ fullscreen: value });
+    menu.syncSettings();
+  } catch (error) {
+    menu.syncSettings();
+    throw error;
+  }
+}
+window.chaosWindow?.onFullscreenChanged(async () => {
+  if (deletingUserData) return;
+  const value = await window.chaosWindow.getFullscreen();
+  if (deletingUserData) return;
+  settings.update({ fullscreen: value });
+  menu.syncSettings();
+});
+document.addEventListener('fullscreenchange', () => {
+  if (!window.chaosWindow && !deletingUserData) {
+    settings.update({ fullscreen: Boolean(document.fullscreenElement) });
+    menu.syncSettings();
+  }
+});
+async function continueFromMenu() {
+  menu.hide();
+  menuMusic.stop();
+  returnMenu.hidden = false;
+  progression.begin();
+  if (progression.current?.type === 'arcade') {
+    phase = 'idle';
+    await startGame();
+    return;
+  }
+  restoringStory = true;
+  try {
+    const last = [...story.sequences]
+      .reverse()
+      .find(
+        (item) =>
+          item.type === 'conversation' &&
+          (item.id === progression.data.current || progression.data.completed.includes(item.id)),
+      );
+    activeDialogue = dialogues[last?.dialogue] ?? pixelgirlDialogue;
+    conversation = createConversation(activeDialogue);
+    if (progression.current) await progression.enterCurrent();
+    else showStoryDesktop(false);
+    if (progression.current?.type === 'conversation') openConversation();
+  } catch (error) {
+    showStoryError(error);
+  } finally {
+    restoringStory = false;
+  }
+}
+function returnToMenu() {
+  if (['loading', 'resuming'].includes(phase)) return;
+  cancelVictory();
+  pauseGeneration++;
+  cancelAnimationFrame(frame);
+  audio.stop(true);
+  clearEffects();
+  if (progression.current?.type === 'conversation' && conversation.session?.state.finished)
+    progression.complete(progression.current.id, { dialogue: activeDialogue.id });
+  manager.clear();
+  miniGame = null;
+  if (progression.hasSave) progression.save();
+  phase = 'menu';
+  ui.modalLayer.hidden = true;
+  ui.introLayer.hidden = true;
+  ui.playfield.inert = true;
+  ui.pauseButton.disabled = true;
+  ui.desktop.classList.remove('is-playing', 'on-beat');
+  setStartMenuOpen(false);
+  returnMenu.hidden = true;
+  menu.show();
+  menuMusic.start();
+  debug.render();
+}
+document.addEventListener('pointerdown', () => {
+  if (phase === 'menu' && !menuMusic.active) menuMusic.start();
+});
 // Diagnostic data remains available in the standalone game (F3).
 Object.defineProperty(window, 'chaosDebug', { value: Object.freeze({ snapshot: debugSnapshot }) });
 debug.render();
@@ -186,6 +312,8 @@ async function startGame() {
   ui.desktop.classList.remove('story-desktop');
   storyToastAction = null;
   phase = 'loading';
+  returnMenu.disabled = true;
+  if (!progression.hasSave) progression.begin();
   ui.startButton.disabled = true;
   ui.closeLauncher.disabled = true;
   ui.dialogAction.disabled = true;
@@ -228,6 +356,7 @@ async function startGame() {
     );
     ui.dialogCopy.querySelector('.dialog-detail').textContent = error.message;
   } finally {
+    returnMenu.disabled = false;
     ui.startButton.disabled = false;
     ui.closeLauncher.disabled = false;
     ui.dialogAction.disabled = false;
@@ -386,33 +515,7 @@ function finishGame(won) {
   );
 }
 function restartDesktop() {
-  cancelVictory();
-  ui.desktop.classList.remove('story-desktop');
-  storyToastAction = null;
-  pauseGeneration++;
-  cancelAnimationFrame(frame);
-  audio.stop(true);
-  clearEffects();
-  manager.clear();
-  state.reset();
-  lastTime = 0;
-  lastLateness = null;
-  maxLateness = 0;
-  timeline?.reset();
-  director?.reset();
-  phase = 'idle';
-  ui.modalLayer.hidden = true;
-  ui.introLayer.hidden = false;
-  ui.playfield.inert = false;
-  ui.desktop.classList.remove('is-playing', 'on-beat');
-  ui.pauseButton.disabled = true;
-  ui.trackFill.style.width = '0%';
-  ui.trackTime.textContent = `00:00 / ${formatTime(chart.durationSeconds)}`;
-  ui.loadStatus.textContent = 'Prêt à faire planter l’année 2005 ?';
-  ui.sessionLabel.textContent = 'SYSTÈME OPÉRATIONNEL';
-  renderStats();
-  debug.render();
-  previewWindows();
+  returnToMenu();
 }
 function restartGame() {
   pauseGeneration++;
@@ -593,6 +696,8 @@ function setStartMenuOpen(open) {
 
 function setVolume(value) {
   audio.setVolume(value);
+  settings.update({ musicVolume: value });
+  menuMusic.setVolume(value);
   ui.volume.value = value * 100;
   ui.muteButton.textContent = value === 0 ? '♪̸' : '♫';
   ui.muteButton.setAttribute('aria-label', value === 0 ? 'Réactiver le son' : 'Couper le son');
@@ -634,11 +739,7 @@ document.addEventListener('pointerdown', (event) => {
 });
 ui.menuPlay.addEventListener('click', () => {
   setStartMenuOpen(false);
-  if (phase === 'idle' && ui.introLayer.hidden) {
-    ui.introLayer.hidden = false;
-    ui.startButton.focus();
-  } else if (phase === 'paused') resumeGame();
-  else startGame();
+  returnToMenu();
 });
 ui.menuHelp.addEventListener('click', () => {
   setStartMenuOpen(false);
@@ -672,14 +773,5 @@ function updateClock() {
 updateClock();
 setInterval(updateClock, 10000);
 ui.trackTime.textContent = `00:00 / ${formatTime(chart.durationSeconds)}`;
-if (progression.data.completed.includes('arcade-1')) {
-  if (progression.current) progression.enterCurrent().catch(showStoryError);
-  else {
-    const last = [...story.sequences]
-      .reverse()
-      .find((item) => item.type === 'conversation' && progression.data.completed.includes(item.id));
-    activeDialogue = dialogues[last?.dialogue] ?? pixelgirlDialogue;
-    conversation = createConversation(activeDialogue);
-    showStoryDesktop(false);
-  }
-}
+returnToMenu();
+if (settings.data.fullscreen) setFullscreen(true).catch(() => {});

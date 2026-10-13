@@ -1,0 +1,12 @@
+{
+  "title": "CHAOS SURVIVAL",
+  "tagline": "Ton bureau. Tes amis. Un peu trop de fenêtres.",
+  "labels": {
+    "play": "★ PLAY ! ★",
+    "continue": "▶ CONTINUE !",
+    "newGame": "★ NEW GAME !",
+    "options": "⚙ OPTIONS"
+  },
+  "theme": "bubblegum",
+  "variants": []
+}

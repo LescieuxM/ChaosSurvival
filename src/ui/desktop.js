@@ -150,7 +150,7 @@ export function mountDesktop(root, best) {
     </div>
     <div class="start-menu" id="start-menu" hidden>
       <header>${icon('computer')} <strong>Joueur.exe</strong></header>
-      <button id="menu-play">
+      <button id="desktop-menu-play">
         ${icon('music')}
         <span>Chaos Survival<small>Démarrer / reprendre la partie</small></span></button
       ><button id="menu-help">${icon('help')} Comment jouer</button>
@@ -212,7 +212,7 @@ export function mountDesktop(root, best) {
     muteButton: select('#mute-button'),
     startMenu: select('#start-menu'),
     windowsStart: select('#windows-start'),
-    menuPlay: select('#menu-play'),
+    menuPlay: select('#desktop-menu-play'),
     menuHelp: select('#menu-help'),
     clock: select('#clock'),
     shortcuts: root.querySelectorAll('[data-shortcut]'),

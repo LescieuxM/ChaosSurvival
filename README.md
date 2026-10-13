@@ -71,6 +71,14 @@ demande de droits administrateur.
 
 ## Commandes du jeu
 
+Le menu principal affiche **PLAY** au premier lancement, puis **CONTINUE** et
+**NEW GAME** lorsqu'une partie a commencé. CONTINUE reprend le dernier point de
+sauvegarde ; un niveau ou mini-jeu inachevé recommence au début de cette séquence.
+NEW GAME demande confirmation et archive la partie précédente.
+**OPTIONS** conserve les volumes musique/bruitages et le plein écran entre les
+sessions. **Démarrer → Menu principal** permet de revenir au menu depuis le jeu ou le bureau.
+Voir [le fonctionnement des sauvegardes](docs/saves-and-menu.md).
+
 - F11 ou Alt+Entrée : entrer / sortir du plein écran.
 - Échap : pause / reprise.
 - F3 ou bouton ♫ du bandeau : afficher le debug musical et régler le décalage.

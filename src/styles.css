@@ -1542,7 +1542,10 @@ h1 .title-star {
 }
 .desktop:has(.modal-layer:not([hidden])) .taskbar {
   pointer-events: none;
-  z-index: 650;
+  z-index: 800;
+}
+.desktop:has(.modal-layer:not([hidden])) .windows-start {
+  pointer-events: auto;
 }
 .desktop:has(.modal-layer:not([hidden])) *,
 .desktop:has(.modal-layer:not([hidden])).wizz {

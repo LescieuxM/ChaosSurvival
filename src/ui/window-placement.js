@@ -2,17 +2,20 @@
 export function chooseWindowPosition(width, height, windowWidth, windowHeight, occupied, sequence) {
   const maxX = Math.max(0, width - windowWidth);
   const maxY = Math.max(0, height - windowHeight);
-  if (!occupied.length) return { x: maxX, y: 0 };
-  const candidates = [];
+  const preferred = {
+    x: maxX * (0.08 + 0.84 * ((sequence * 0.61803398875) % 1)),
+    y: maxY * (0.08 + 0.76 * ((sequence * 0.41421356237) % 1)),
+  };
+  if (!occupied.length) return preferred;
+  const candidates = [preferred];
   for (let y = 0; y <= 4; y++)
     for (let x = 0; x <= 4; x++) candidates.push({ x: (maxX * x) / 4, y: (maxY * y) / 4 });
   let best = candidates[sequence % candidates.length];
   let bestScore = -Infinity;
   for (let i = 0; i < candidates.length; i++) {
     const position = candidates[(i + sequence * 7) % candidates.length];
-    // Start near the top so later windows can expose existing titlebars by
-    // staggering downward, including in a small Electron window.
-    let score = -position.y * 8;
+    // Vary locations across the desktop while keeping existing close buttons exposed.
+    let score = -Math.hypot(position.x - preferred.x, position.y - preferred.y);
     for (const item of occupied) {
       const closeX = item.x + item.width - 17;
       const closeY = item.y + 17;

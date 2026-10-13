@@ -28,13 +28,22 @@ export function appendMessageText(element, text) {
 }
 
 export class ConversationWindow {
-  constructor(manager, dialogue, progression, sounds, onComplete, onFilesChanged = () => {}) {
+  constructor(
+    manager,
+    dialogue,
+    progression,
+    sounds,
+    onComplete,
+    onFilesChanged = () => {},
+    onCheckpoint = () => {},
+  ) {
     this.manager = manager;
     this.dialogue = dialogue;
     this.progression = progression;
     this.sounds = sounds;
     this.onComplete = onComplete;
     this.onFilesChanged = onFilesChanged;
+    this.onCheckpoint = onCheckpoint;
   }
   open() {
     if (this.element?.isConnected) {
@@ -254,6 +263,7 @@ export class ConversationWindow {
             this.progression.data.files[entry.fileKey]?.status === 'pending',
         );
         button.disabled = pendingFile;
+        if (!pendingFile) this.onCheckpoint();
         if (pendingFile) this.typing.textContent = 'Termine le transfert quand tu le souhaites.';
         button.addEventListener('click', () => {
           const id = Number(this.element.dataset.windowId);

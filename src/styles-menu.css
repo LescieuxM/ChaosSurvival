@@ -1,0 +1,422 @@
+.main-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 50000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  padding: 24px;
+  color: #153468;
+  background:
+    radial-gradient(ellipse at 15% 15%, #ffdcfc 0%, transparent 45%),
+    radial-gradient(ellipse at 90% 90%, #71fff1 0%, transparent 45%),
+    linear-gradient(135deg, #ab83ff, #72cfff 55%, #ffa4e1);
+  font-family: Tahoma, sans-serif;
+  isolation: isolate;
+}
+.main-menu[hidden],
+.main-menu [hidden] {
+  display: none !important;
+}
+.main-menu::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background-image: radial-gradient(#fff9 1.4px, transparent 1.4px);
+  background-size: 22px 22px;
+  mask-image: linear-gradient(#0008, transparent);
+}
+.menu-shell {
+  width: min(610px, 100%);
+  flex-shrink: 0;
+  border: 3px solid #165ae2;
+  border-radius: 13px 13px 7px 7px;
+  background: #fff9fd;
+  box-shadow:
+    0 18px 0 #5237a22b,
+    0 30px 70px #44308d50,
+    inset 0 0 0 2px #fff;
+  overflow: hidden;
+  position: relative;
+}
+.menu-titlebar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: linear-gradient(#6ea8ff, #2869ee 35%, #0750d4 80%, #3672f6);
+  color: white;
+  font-size: 13px;
+  font-weight: bold;
+  text-shadow: 1px 1px #174fba;
+}
+.menu-titlebar b {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 21px;
+  margin-left: 5px;
+  border: 1px solid white;
+  border-radius: 3px;
+  background: linear-gradient(#ffad93, #e24425);
+}
+.menu-toolbar {
+  display: flex;
+  justify-content: space-between;
+  padding: 7px 12px;
+  font-size: 10px;
+  background: #ece9d8;
+  border-bottom: 1px solid #ccc5af;
+}
+.menu-content {
+  text-align: center;
+  padding: 28px 42px 22px;
+  position: relative;
+  background: radial-gradient(ellipse at top, #fff, #eff7ff 55%, #ffe5f9);
+}
+.menu-edition {
+  font: bold 10px Tahoma;
+  letter-spacing: 2px;
+  color: #437295;
+  margin: 0 0 16px;
+}
+.menu-edition i {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  background: #48cc79;
+  border: 1px solid #149844;
+  border-radius: 50%;
+  box-shadow: 0 0 7px #71ffaf;
+}
+.menu-logo {
+  margin: 0;
+  font-family: Impact, 'Arial Black', sans-serif;
+  font-size: clamp(50px, 8vw, 78px);
+  font-weight: 900;
+  letter-spacing: 1px;
+  line-height: 0.92;
+  color: #5264f2;
+  transform: rotate(-3deg);
+  text-shadow:
+    2px 2px white,
+    4px 4px #263893,
+    6px 7px #26389322;
+}
+.menu-logo > span {
+  display: block;
+  color: #f542a0;
+  font-size: 0.9em;
+}
+.menu-logo-star {
+  display: inline-block;
+  color: #ffcb38;
+  font-size: 0.6em;
+  vertical-align: top;
+  margin: -12px -35px 0 0;
+  animation: menu-bob 3s ease-in-out infinite;
+}
+.menu-tagline {
+  margin: 23px 0 19px;
+  font-size: 12px;
+  color: #5d6388;
+}
+.menu-badges {
+  display: flex;
+  justify-content: center;
+  gap: 9px;
+  margin-bottom: 20px;
+}
+.menu-badges span {
+  font-size: 10px;
+  font-weight: bold;
+  color: #7a5599;
+  background: #fff;
+  border: 1px solid #d6c9ee;
+  border-radius: 20px;
+  padding: 6px 10px;
+  box-shadow: 0 2px #d9d8f1;
+}
+.menu-actions {
+  display: grid;
+  gap: 11px;
+  justify-items: center;
+}
+.menu-big,
+.menu-small {
+  cursor: pointer;
+  font-family: Tahoma;
+  font-weight: 900;
+  border-radius: 10px;
+  transition:
+    transform 0.12s,
+    filter 0.12s,
+    box-shadow 0.12s;
+}
+.menu-big {
+  width: min(340px, 100%);
+  padding: 18px 15px;
+  font-size: 27px;
+  letter-spacing: 1px;
+  color: #fff;
+  border: 2px solid #bd358b;
+  background: linear-gradient(#ffa4e0, #fc73c8 44%, #ef37a0 45%, #ce2287);
+  box-shadow:
+    inset 0 1px 2px #fff,
+    0 5px #962664,
+    0 8px 18px #e654a733;
+  text-shadow: 0 2px #a42c79;
+}
+.menu-secondary {
+  font-size: 19px;
+  padding: 12px;
+  border-color: #419848;
+  background: linear-gradient(#bdf8a0, #77d869 44%, #4abd49 45%, #279e43);
+  box-shadow:
+    inset 0 1px 2px #fff,
+    0 4px #187d35;
+  text-shadow: 0 2px #237936;
+}
+.menu-small {
+  padding: 10px 20px;
+  font-size: 12px;
+  color: #295293;
+  border: 1px solid #85a4d1;
+  background: linear-gradient(#fff, #e0eeff 47%, #cddff9 48%, #edf4ff);
+  box-shadow:
+    inset 0 0 0 1px white,
+    0 3px #9eb4dc;
+}
+.menu-big:hover,
+.menu-small:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px) scale(1.025);
+}
+.menu-big:active,
+.menu-small:active {
+  transform: translateY(3px);
+}
+.main-menu button:focus-visible,
+.main-menu input:focus-visible {
+  outline: 3px solid #6948de;
+  outline-offset: 4px;
+}
+.main-menu button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+.menu-checkpoint {
+  margin: 22px 0 0;
+  color: #9252ae;
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+.menu-tip {
+  font-size: 10px;
+  color: #7a82a2;
+  margin: 10px 0 0;
+}
+.menu-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  background: #f5f2ff;
+  border-top: 1px solid #d5cbef;
+  padding: 11px 15px;
+  color: #876ca8;
+  font-size: 9px;
+  font-weight: bold;
+}
+.menu-footer span:last-child {
+  color: #e99d14;
+  letter-spacing: 3px;
+}
+.menu-sticker {
+  position: absolute;
+  top: 30px;
+  right: 15px;
+  font-size: 8px;
+  line-height: 1.6;
+  background: #fff898;
+  padding: 8px;
+  border: 1px solid #e3c955;
+  box-shadow: 2px 3px #dbc16040;
+  transform: rotate(12deg);
+}
+.menu-orbit {
+  position: fixed;
+  color: white;
+  text-shadow: 0 4px 0 #8656d230;
+  font-size: 100px;
+  animation: menu-bob 5s ease-in-out infinite;
+  z-index: -1;
+  user-select: none;
+}
+.orbit-one {
+  left: 7%;
+  top: 13%;
+  color: #ffe771;
+  transform: rotate(-15deg);
+}
+.orbit-two {
+  right: 6%;
+  bottom: 12%;
+  color: #fffd89;
+  animation-delay: -1.5s;
+}
+.orbit-three {
+  right: 14%;
+  top: 13%;
+  font-size: 60px;
+  animation-delay: -3s;
+}
+.menu-bottom {
+  margin: 24px 0 0;
+  font-size: 8px;
+  color: #555e9e;
+  letter-spacing: 1px;
+  text-align: center;
+}
+.menu-options-panel h2 {
+  font-size: 20px;
+  color: #7353b6;
+  margin: 6px 0 20px;
+}
+.menu-options-panel > label {
+  text-align: left;
+  display: block;
+  margin: 16px 0;
+  font-size: 12px;
+  font-weight: bold;
+}
+.menu-options-panel output {
+  float: right;
+  color: #c13b97;
+}
+.menu-options-panel input[type='range'] {
+  width: 100%;
+  margin: 10px 0 0;
+  accent-color: #ed4faa;
+  cursor: pointer;
+}
+.menu-fullscreen {
+  padding: 12px;
+  border-radius: 7px;
+  background: #fff;
+  border: 1px solid #d8d8ef;
+}
+.menu-fullscreen small {
+  float: right;
+  color: #8886a9;
+  font-size: 9px;
+  padding-top: 3px;
+}
+.menu-delete {
+  display: block;
+  margin: 20px auto 0;
+  background: transparent;
+  border: 0;
+  color: #786887;
+  font-size: 10px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.menu-status {
+  margin: 12px 0 0;
+  color: #a2376c;
+  font-size: 11px;
+}
+.menu-status:empty {
+  display: none;
+}
+.menu-confirm-layer {
+  position: fixed;
+  inset: 0;
+  background: #1d285970;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+.menu-confirm {
+  width: min(430px, 100%);
+  border: 3px solid #165ae2;
+  border-radius: 9px;
+  background: #ece9d8;
+  box-shadow: 0 20px 60px #10284780;
+  overflow: hidden;
+}
+.menu-confirm header {
+  background: linear-gradient(#6ea8ff, #0952dd);
+  color: white;
+  font-size: 13px;
+  font-weight: bold;
+  padding: 9px 12px;
+}
+.menu-confirm p {
+  margin: 22px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.menu-confirm > div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 0 20px 20px;
+}
+#return-main-menu[hidden] {
+  display: none;
+}
+@keyframes menu-bob {
+  50% {
+    translate: 0 -12px;
+    rotate: 5deg;
+  }
+}
+@media (max-height: 690px) {
+  .main-menu {
+    padding: 12px;
+  }
+  .menu-content {
+    padding: 18px 36px 14px;
+  }
+  .menu-logo {
+    font-size: 60px;
+  }
+  .menu-edition {
+    margin-bottom: 12px;
+  }
+  .menu-tagline {
+    margin: 16px 0 12px;
+  }
+  .menu-badges {
+    margin-bottom: 12px;
+  }
+  .menu-big {
+    padding: 13px;
+    font-size: 24px;
+  }
+  .menu-secondary {
+    padding: 10px;
+    font-size: 18px;
+  }
+  .menu-checkpoint {
+    margin-top: 16px;
+  }
+  .menu-bottom {
+    margin-top: 12px;
+  }
+  .menu-options-panel > label {
+    margin: 10px 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .main-menu * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

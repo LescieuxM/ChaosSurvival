@@ -18,6 +18,7 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import { projectRoot, verifyArchive } from './verify-package.mjs';
 import { verifyStoryUI } from './story-ui-check.mjs';
+import { verifyMenuUI } from './menu-ui-check.mjs';
 
 assert.equal(process.platform, 'win32', 'Cette vérification doit être exécutée sur Windows.');
 const run = promisify(execFile);
@@ -52,6 +53,7 @@ const networkFailures = [];
 const verifyMusic = process.argv.includes('--music') || process.argv.includes('--story');
 let musicalChecks;
 let storyChecks;
+let menuChecks;
 
 async function freePort() {
   const listener = createServer();
@@ -140,67 +142,94 @@ try {
     'ELECTRON_NO_ASAR',
   ])
     delete env[key];
-  child = spawn(
-    copiedExecutable,
-    [`--remote-debugging-port=${port}`, `--user-data-dir=${profileDirectory}`],
-    { cwd: shareDirectory, env, windowsHide: false, stdio: ['ignore', 'ignore', 'pipe'] },
-  );
-  child.once('error', (error) => {
-    spawnError = error;
-  });
-  child.stderr.on('data', (data) => {
-    stderr = (stderr + data).slice(-8192);
-  });
+  async function launchPortable() {
+    spawnError = undefined;
+    child = spawn(
+      copiedExecutable,
+      [`--remote-debugging-port=${port}`, `--user-data-dir=${profileDirectory}`],
+      { cwd: shareDirectory, env, windowsHide: false, stdio: ['ignore', 'ignore', 'pipe'] },
+    );
+    child.once('error', (error) => {
+      spawnError = error;
+    });
+    child.stderr.on('data', (data) => {
+      stderr = (stderr + data).slice(-8192);
+    });
 
-  let target;
-  await until(
-    async () => {
-      if (spawnError) throw spawnError;
-      assert.equal(child.exitCode, null, `Le portable s’est arrêté avant le chargement. ${stderr}`);
-      try {
-        const response = await fetch(`http://127.0.0.1:${port}/json/list`, {
-          signal: AbortSignal.timeout(1000),
-        });
-        const targets = await response.json();
-        target = targets.find(
-          (item) => item.type === 'page' && item.url.startsWith('chaos://game/'),
+    let target;
+    await until(
+      async () => {
+        if (spawnError) throw spawnError;
+        assert.equal(
+          child.exitCode,
+          null,
+          `Le portable s’est arrêté avant le chargement. ${stderr}`,
         );
-        return Boolean(target);
-      } catch {
-        return false;
-      }
-    },
-    'démarrage du portable',
-    45000,
-  );
+        try {
+          const response = await fetch(`http://127.0.0.1:${port}/json/list`, {
+            signal: AbortSignal.timeout(1000),
+          });
+          const targets = await response.json();
+          target = targets.find(
+            (item) => item.type === 'page' && item.url.startsWith('chaos://game/'),
+          );
+          return Boolean(target);
+        } catch {
+          return false;
+        }
+      },
+      'démarrage du portable',
+      45000,
+    );
 
-  socket = new WebSocket(target.webSocketDebuggerUrl);
-  socket.addEventListener('message', (event) => {
-    const message = JSON.parse(event.data);
-    const request = pending.get(message.id);
-    if (request) {
-      clearTimeout(request.timer);
-      pending.delete(message.id);
-      if (message.error) request.reject(new Error(JSON.stringify(message.error)));
-      else request.resolve(message.result);
-    }
-    if (message.method === 'Runtime.exceptionThrown')
-      exceptions.push(message.params.exceptionDetails);
-    if (message.method === 'Network.requestWillBeSent')
-      requests.set(message.params.requestId, message.params.request.url);
-    if (message.method === 'Network.loadingFailed')
-      networkFailures.push({
-        url: requests.get(message.params.requestId),
-        error: message.params.errorText,
-      });
-  });
-  await once(socket, 'open');
-  await command('Runtime.enable');
-  await command('Network.enable');
-  // Keep the diagnostic page visible when the host desktop changes focus.
-  // This only affects the test; normal gameplay still pauses when minimized.
-  await command('Emulation.setFocusEmulationEnabled', { enabled: true });
-  await until(() => evaluate("!!document.querySelector('#start-button')"), 'interface du jeu');
+    socket = new WebSocket(target.webSocketDebuggerUrl);
+    socket.addEventListener('message', (event) => {
+      const message = JSON.parse(event.data);
+      const request = pending.get(message.id);
+      if (request) {
+        clearTimeout(request.timer);
+        pending.delete(message.id);
+        if (message.error) request.reject(new Error(JSON.stringify(message.error)));
+        else request.resolve(message.result);
+      }
+      if (message.method === 'Runtime.exceptionThrown')
+        exceptions.push(message.params.exceptionDetails);
+      if (message.method === 'Network.requestWillBeSent')
+        requests.set(message.params.requestId, message.params.request.url);
+      if (message.method === 'Network.loadingFailed')
+        networkFailures.push({
+          url: requests.get(message.params.requestId),
+          error: message.params.errorText,
+        });
+    });
+    await once(socket, 'open');
+    await command('Runtime.enable');
+    await command('Network.enable');
+    // Keep the diagnostic page visible when the host desktop changes focus.
+    // This only affects the test; normal gameplay still pauses when minimized.
+    await command('Emulation.setFocusEmulationEnabled', { enabled: true });
+    await until(() => evaluate("!!document.querySelector('#start-button')"), 'interface du jeu');
+    await until(() => evaluate("!!document.querySelector('#main-menu')"), 'menu principal');
+  }
+  await launchPortable();
+  if (process.argv.includes('--menu')) {
+    const outputDirectory = path.join(projectRoot, '.qa');
+    await mkdir(outputDirectory, { recursive: true });
+    menuChecks = await verifyMenuUI({
+      evaluate,
+      command,
+      until,
+      wait,
+      outputDirectory,
+      restart: async () => {
+        await evaluate('window.close()');
+        await waitForExit();
+        socket.close();
+        await wait(200);
+        await launchPortable();
+      },
+    });
+  }
   assert.equal(await evaluate('location.protocol'), 'chaos:');
   assert.equal(await evaluate('typeof process'), 'undefined');
   console.log(
@@ -279,7 +308,7 @@ try {
   assert.equal(blocked.error, 'net::ERR_BLOCKED_BY_CLIENT', JSON.stringify(blocked));
   console.log('OK : accès réseau bloqué dans le jeu ; aucun serveur de développement nécessaire.');
 
-  await evaluate("document.querySelector('#start-button').click()");
+  await evaluate("document.querySelector('#menu-play').click()");
   await until(
     () =>
       evaluate(
@@ -506,6 +535,7 @@ try {
         loadedAssets,
         musicalChecks,
         storyChecks,
+        menuChecks,
         checks: {
           exeOnly: true,
           outsideProject: true,

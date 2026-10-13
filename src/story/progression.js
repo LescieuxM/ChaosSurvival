@@ -1,5 +1,75 @@
 const TYPES = ['arcade', 'conversation', 'minigame'];
 const STORAGE_KEY = 'chaos-survival-story-v1';
+export const HISTORY_KEY = 'chaos-survival-history-v1';
+const record = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
+const runId = () => globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
+function freshData(story) {
+  return {
+    version: 1,
+    runId: runId(),
+    started: false,
+    current: story.start,
+    completed: [],
+    flags: {},
+    choices: [],
+    dialogues: {},
+    results: {},
+    choiceOffers: {},
+    files: {},
+    anomalies: {},
+    dialogueArchives: {},
+    unlockedConversations: [],
+  };
+}
+function validSaved(saved, story) {
+  const ids = new Set(story.sequences.map((item) => item.id));
+  return (
+    record(saved) &&
+    saved.version === 1 &&
+    (saved.started === undefined || typeof saved.started === 'boolean') &&
+    (saved.current === null || ids.has(saved.current)) &&
+    Array.isArray(saved.completed) &&
+    saved.completed.every((id) => ids.has(id)) &&
+    Array.isArray(saved.choices) &&
+    saved.choices.every(
+      (item) => record(item) && typeof item.key === 'string' && typeof item.choice === 'string',
+    ) &&
+    ['flags', 'dialogues', 'results'].every((key) => record(saved[key])) &&
+    ['choiceOffers', 'files', 'anomalies', 'dialogueArchives'].every(
+      (key) => saved[key] === undefined || record(saved[key]),
+    ) &&
+    Object.values(saved.choiceOffers ?? {}).every(
+      (items) =>
+        Array.isArray(items) &&
+        items.every(
+          (item) => record(item) && typeof item.id === 'string' && typeof item.text === 'string',
+        ),
+    ) &&
+    Object.values(saved.files ?? {}).every(
+      (item) =>
+        record(item) &&
+        typeof item.id === 'string' &&
+        typeof item.name === 'string' &&
+        ['pending', 'declined', 'complete'].includes(item.status) &&
+        (!item.launch || (record(item.launch) && typeof item.launch.game === 'string')),
+    ) &&
+    Object.values(saved.dialogues).every(
+      (item) =>
+        record(item) &&
+        typeof item.node === 'string' &&
+        Number.isInteger(item.cursor) &&
+        item.cursor >= 0 &&
+        typeof item.finished === 'boolean' &&
+        Array.isArray(item.transcript) &&
+        item.transcript.every(
+          (message) =>
+            record(message) &&
+            ['contact', 'player'].includes(message.speaker) &&
+            typeof message.text === 'string',
+        ),
+    )
+  );
+}
 
 export function validateStory(story) {
   if (story.version !== 1 || !Array.isArray(story.sequences) || !story.sequences.length)
@@ -23,42 +93,31 @@ export class Progression {
     this.story = story;
     this.storage = storage;
     this.handlers = new Map();
-    this.data = {
-      version: 1,
-      current: story.start,
-      completed: [],
-      flags: {},
-      choices: [],
-      dialogues: {},
-      results: {},
-      choiceOffers: {},
-      files: {},
-      anomalies: {},
-    };
+    this.data = freshData(story);
     try {
       const saved = JSON.parse(storage?.getItem(STORAGE_KEY) ?? 'null');
-      const ids = new Set(story.sequences.map((item) => item.id));
-      if (
-        saved?.version === 1 &&
-        (saved.current === null || ids.has(saved.current)) &&
-        Array.isArray(saved.completed) &&
-        saved.completed.every((id) => ids.has(id)) &&
-        Array.isArray(saved.choices) &&
-        saved.flags &&
-        typeof saved.flags === 'object' &&
-        saved.dialogues &&
-        typeof saved.dialogues === 'object' &&
-        saved.results &&
-        typeof saved.results === 'object'
-      )
-        this.data = saved;
+      if (validSaved(saved, story)) this.data = saved;
+      else if (saved !== null) this.corrupt = true;
     } catch {
-      /* Playable even if local storage is unavailable or damaged. */
+      this.corrupt = true;
     }
     this.data.choiceOffers ??= {};
     this.data.files ??= {};
     this.data.anomalies ??= {};
     this.data.dialogueArchives ??= {};
+    this.data.runId ??= runId();
+    this.data.started ??= Boolean(
+      this.data.completed.length ||
+      this.data.choices.length ||
+      Object.keys(this.data.dialogues).length,
+    );
+    this.data.unlockedConversations = story.sequences
+      .filter(
+        (sequence) =>
+          sequence.type === 'conversation' &&
+          (this.data.completed.includes(sequence.id) || this.data.current === sequence.id),
+      )
+      .map((sequence) => sequence.dialogue);
     for (const sequence of story.sequences) {
       if (
         sequence.type === 'conversation' &&
@@ -75,10 +134,44 @@ export class Progression {
   }
   save() {
     try {
+      this.data.chapter = this.current?.chapter ?? 1;
       this.storage?.setItem(STORAGE_KEY, JSON.stringify(this.data));
+      this.persistenceError = false;
+      return true;
     } catch {
-      /* Session-only fallback. */
+      this.persistenceError = true;
+      return false;
     }
+  }
+  get hasSave() {
+    return this.data.started || this.data.completed.length > 0;
+  }
+  begin() {
+    this.data.started = true;
+    this.data.startedAt ??= new Date().toISOString();
+    this.save();
+  }
+  newGame() {
+    const next = freshData(this.story);
+    next.started = true;
+    next.startedAt = new Date().toISOString();
+    next.chapter = this.story.sequences.find((item) => item.id === next.current)?.chapter ?? 1;
+    // Each setItem is atomic. Archive first; never replace the active run if either write fails.
+    if (this.storage) {
+      const history = JSON.parse(this.storage.getItem(HISTORY_KEY) ?? '{"version":1,"runs":[]}');
+      if (!record(history) || history.version !== 1 || !Array.isArray(history.runs))
+        throw new Error('Historique illisible. La partie active a été conservée.');
+      if (this.hasSave && !history.runs.some((run) => run.runId === this.data.runId)) {
+        history.runs.push({ ...structuredClone(this.data), archivedAt: new Date().toISOString() });
+        this.storage.setItem(HISTORY_KEY, JSON.stringify(history));
+      }
+      this.storage.setItem(STORAGE_KEY, JSON.stringify(next));
+    }
+    this.data = next;
+    this.corrupt = false;
+    this.persistenceError = false;
+    // Extension point for future narrative events; no event is registered today.
+    this.onNewGame?.({ runId: next.runId });
   }
   get current() {
     return this.story.sequences.find((item) => item.id === this.data.current) ?? null;
@@ -103,6 +196,10 @@ export class Progression {
     this.data.completed.push(id);
     this.data.results[id] = result;
     this.data.current = this.current.next;
+    const next = this.current;
+    if (next?.type === 'conversation' && !this.data.unlockedConversations.includes(next.dialogue))
+      this.data.unlockedConversations.push(next.dialogue);
+    this.data.started = true;
     this.save();
     return true;
   }

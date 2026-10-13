@@ -88,11 +88,15 @@ export async function verifyStoryUI({
   await until(
     () =>
       evaluate(
-        "window.__storyReload!==true&&document.readyState==='complete'&&!!document.querySelector('#msn-task')&&document.querySelector('#desktop').classList.contains('story-desktop')",
+        "window.__storyReload!==true&&document.readyState==='complete'&&window.chaosDebug?.snapshot().phase==='menu'",
       ).catch(() => false),
     'reload',
   );
-  await evaluate("document.querySelector('#msn-task').click()");
+  await evaluate("document.querySelector('#menu-play').click()");
+  await until(
+    () => evaluate("!!document.querySelector('.popup-narrative')"),
+    'conversation reprise depuis le menu',
+  );
   assert.equal(await evaluate("!!document.querySelector('.dialogue-echo')"), false);
   await until(
     () => evaluate("!!document.querySelector('[data-choice-id=nickname-3]')"),
@@ -182,6 +186,46 @@ export async function verifyStoryUI({
   await evaluate("document.querySelector('.flash-return').click()");
   assert.equal(await evaluate("!!document.querySelector('.popup-minigame')"), false);
   assert.equal((await saved()).current, null);
+  const completedRun = await saved();
+  await evaluate("document.querySelector('#return-main-menu').click(); window.__storyReload=true");
+  await command('Page.reload');
+  await until(
+    () =>
+      evaluate("window.__storyReload!==true&&window.chaosDebug?.snapshot().phase==='menu'").catch(
+        () => false,
+      ),
+    'menu après histoire terminée',
+  );
+  await evaluate("document.querySelector('#menu-play').click()");
+  await until(
+    () => evaluate("window.chaosDebug.snapshot().phase==='desktop'"),
+    'bureau après histoire terminée',
+  );
+  assert.equal((await saved()).current, null);
+  assert.deepEqual((await saved()).completed, completedRun.completed);
+  assert.equal(await evaluate("document.querySelector('#toast').hidden"), true);
+  assert.equal(await evaluate("!!document.querySelector('.popup-minigame')"), false);
+  await evaluate("document.querySelector('#msn-task').click()");
+  assert.equal(
+    await evaluate("document.querySelectorAll('.conversation-message').length"),
+    completedRun.dialogues['pixelgirl-intro'].transcript.length,
+  );
+  assert.equal(await evaluate("!!document.querySelector('.dialogue-choice')"), false);
+  await evaluate(
+    "document.querySelector('#return-main-menu').click();document.querySelector('#menu-new-game').click();document.querySelector('#menu-confirm-yes').click()",
+  );
+  await until(
+    () => evaluate("window.chaosDebug.snapshot().phase==='playing'"),
+    'nouvelle partie après histoire terminée',
+  );
+  const archive = await evaluate(
+    "JSON.parse(localStorage.getItem('chaos-survival-history-v1')).runs.at(-1)",
+  );
+  assert.equal(archive.runId, completedRun.runId);
+  assert.deepEqual(archive.choices, completedRun.choices);
+  assert.deepEqual(archive.dialogues, completedRun.dialogues);
+  assert.deepEqual(archive.files, completedRun.files);
+  assert.deepEqual((await saved()).choices, []);
   console.log(
     'OK : quatre choix, branches communes, refus puis transfert, fichier fictif, Smiley Catcher 30 s et retour au bureau.',
   );
@@ -196,5 +240,7 @@ export async function verifyStoryUI({
     desktopFile: true,
     minigame: true,
     returnToDesktop: true,
+    completedStoryResume: true,
+    newGamePreservesFullHistory: true,
   };
 }

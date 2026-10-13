@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, Menu, net, protocol, session } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, Menu, net, protocol, session } = require('electron');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { resolveLocalAsset } = require('./local-assets.cjs');
@@ -6,6 +6,7 @@ const { resolveLocalAsset } = require('./local-assets.cjs');
 const productionUrl = 'chaos://game/index.html';
 // A packaged executable always loads its own bundled game.
 const devUrl = !app.isPackaged ? process.env.CHAOS_DEV_URL : undefined;
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -26,13 +27,23 @@ async function createWindow() {
     show: false,
     autoHideMenuBar: true,
     webPreferences: {
+      preload: path.join(__dirname, 'preload.cjs'),
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
     },
   });
 
-  window.once('ready-to-show', () => window.show());
+  window.chaosReady = new Promise((resolve) =>
+    window.once('ready-to-show', () => {
+      window.show();
+      resolve();
+    }),
+  );
+  for (const event of ['enter-full-screen', 'leave-full-screen'])
+    window.on(event, () => {
+      window.webContents.send('chaos:fullscreen-changed', window.isFullScreen());
+    });
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   window.webContents.on('will-navigate', (event, url) => {
     if (url !== (devUrl || productionUrl)) event.preventDefault();
@@ -55,6 +66,16 @@ async function createWindow() {
 app
   .whenReady()
   .then(async () => {
+    ipcMain.handle(
+      'chaos:get-fullscreen',
+      (event) => BrowserWindow.fromWebContents(event.sender)?.isFullScreen() ?? false,
+    );
+    ipcMain.handle('chaos:set-fullscreen', async (event, value) => {
+      const window = BrowserWindow.fromWebContents(event.sender);
+      if (window) await window.chaosReady;
+      if (window && typeof value === 'boolean') window.setFullScreen(value);
+      return window?.isFullScreen() ?? false;
+    });
     Menu.setApplicationMenu(null);
     app.setAppUserModelId('com.chaossurvival.game');
     session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) =>

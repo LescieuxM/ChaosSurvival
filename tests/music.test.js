@@ -156,6 +156,16 @@ test('ignoring all windows still fills the chaos gauge and causes defeat', () =>
   assert.fail('A completely abandoned desktop must still reach 100% chaos');
 });
 
+test('successive isolated windows vary across the desktop instead of always spawning on the right', () => {
+  const positions = Array.from({ length: 24 }, (_, index) =>
+    chooseWindowPosition(1136, 524, 330, 340, [], index + 1),
+  );
+  assert.ok(positions.some(({ x }) => x < 200));
+  assert.ok(positions.some(({ x }) => x > 600));
+  assert.ok(positions.some(({ y }) => y > 100));
+  assert.equal(new Set(positions.map(({ x, y }) => `${x}:${y}`)).size, positions.length);
+});
+
 test('window placement staggers all three titlebars without hiding existing close buttons', () => {
   for (const [width, height, w, h] of [
     [1136, 524, 330, 340],
