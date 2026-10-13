@@ -1,11 +1,12 @@
 {
   "schemaVersion": 1,
   "source": {
-    "file": "music-lvl1.mp3",
-    "sha256": "77955757a7fa132fe9edd0f6dc69ad4d7f5a05f2c20e886f14f52c68ed1f9144",
-    "durationSeconds": 86.49143,
+    "file": "musiclvl1.mp3",
+    "sha256": "a68d59e8e836c407306c488651de5b83b8f7c8e1938ee222d3c352b1e0ad6c86",
+    "durationSeconds": 83.27503401360545,
     "sampleRate": 44100,
-    "channels": 2
+    "channels": 2,
+    "decodedSamples": 3672429
   },
   "analysis": {
     "tool": "librosa",
@@ -14,7 +15,15 @@
     "hopLength": 220,
     "resolutionSeconds": 0.00998,
     "method": "Autocorrelation candidate coherence, dynamic local tempo, waveform attack refinement, HPSS low-band flux, RMS/attack/high-band energy",
-    "limitations": "Kick candidates and intro/build/drop/break labels are acoustic estimates; beats may be ambiguous at half/double tempo."
+    "limitations": "Kick candidates and intro/build/drop/break labels are acoustic estimates; beats may be ambiguous at half/double tempo.",
+    "sourceUpdate": {
+      "operation": "Validated trailing trim and MP3 re-encoding; original rhythmic timestamps retained",
+      "previousSha256": "77955757a7fa132fe9edd0f6dc69ad4d7f5a05f2c20e886f14f52c68ed1f9144",
+      "previousDurationSeconds": 86.49142857142857,
+      "removedSeconds": 3.216394557823122,
+      "decodedPrefixCorrelation": 0.99840234,
+      "alignmentOffsetSeconds": 0
+    }
   },
   "bpm": 185.75,
   "globalTempoEstimate": 187.93,
@@ -6042,58 +6051,6 @@
     {
       "time": 83.06122,
       "value": 0.0
-    },
-    {
-      "time": 83.31066,
-      "value": 0.0
-    },
-    {
-      "time": 83.56009,
-      "value": 0.0
-    },
-    {
-      "time": 83.80952,
-      "value": 0.0
-    },
-    {
-      "time": 84.05896,
-      "value": 0.0
-    },
-    {
-      "time": 84.30839,
-      "value": 0.0
-    },
-    {
-      "time": 84.55782,
-      "value": 0.0
-    },
-    {
-      "time": 84.80726,
-      "value": 0.0
-    },
-    {
-      "time": 85.05669,
-      "value": 0.0
-    },
-    {
-      "time": 85.30612,
-      "value": 0.0
-    },
-    {
-      "time": 85.55556,
-      "value": 0.0
-    },
-    {
-      "time": 85.80499,
-      "value": 0.0
-    },
-    {
-      "time": 86.05442,
-      "value": 0.0
-    },
-    {
-      "time": 86.30385,
-      "value": 0.0
     }
   ],
   "phrases": [
@@ -6317,7 +6274,7 @@
     {
       "beat": 248,
       "time": 80.02812,
-      "endTime": 86.49143,
+      "endTime": 83.27503401360545,
       "intensity": 0.21864,
       "attackDensity": 2.32079
     }
@@ -6501,7 +6458,7 @@
     },
     {
       "time": 80.02812,
-      "endTime": 86.49143,
+      "endTime": 83.27503401360545,
       "beat": 248,
       "kind": "outro",
       "label": "DECONNEXION TRANQUILLE",

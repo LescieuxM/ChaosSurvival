@@ -19,7 +19,17 @@ assert.equal(
 assert.equal(chart.analysisFile, 'music-lvl1.analysis.json');
 assert.equal(chart.title, music.source.file);
 assert.ok(Math.abs(chart.durationSeconds - music.source.durationSeconds) < 0.02);
+if (music.source.decodedSamples !== undefined)
+  assert.equal(chart.durationSeconds, music.source.decodedSamples / music.source.sampleRate);
 const events = compileChart(chart, music);
+assert.ok(
+  events.every((event) => event.time < music.source.durationSeconds),
+  'Un événement dépasse la fin du MP3.',
+);
+assert.ok(
+  music.sections.every((section) => section.endTime <= music.source.durationSeconds),
+  'Une section dépasse la fin du MP3.',
+);
 const windows = events.filter((event) => WINDOW_TYPES.includes(event.type));
 assert.ok(windows.every((event) => event.time === music.beats[event.beat].time));
 console.log(

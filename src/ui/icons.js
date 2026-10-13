@@ -1,5 +1,15 @@
 import { brandIcons, applicationLogo } from './identity.js';
+const desktopIcons = {
+  computer: './icons/computer.svg',
+  folder: './icons/folder.svg',
+  bin: './icons/recycle-empty.svg',
+};
 const paths = {
+  drive:
+    '<path d="M6 17 13 7h23l7 10v24H6z" fill="#acbac8" stroke="#506176" stroke-width="2"/><path d="M8 19h33v10H8z" fill="#e8f2fa"/><path d="M11 34h22" stroke="#566c82" stroke-width="3"/><circle cx="37" cy="35" r="2" fill="#88d55a"/>',
+  disc: '<circle cx="24" cy="24" r="20" fill="#d0def4" stroke="#7189a3" stroke-width="2"/><path d="m24 5 6 14 12-5M7 31l12-4 5 16" fill="#b3efd5"/><circle cx="24" cy="24" r="6" fill="#fff" stroke="#7189a3"/><path d="M11 14a17 17 0 0 1 9-6" fill="none" stroke="#fff" stroke-width="3"/>',
+  document:
+    '<path d="M10 4h22l8 8v32H10z" fill="#fbfeff" stroke="#69849a" stroke-width="2"/><path d="M32 4v10h8M16 21h18M16 27h18M16 33h12" fill="none" stroke="#82a3c1" stroke-width="2"/>',
   computer:
     '<rect x="5" y="3" width="36" height="27" rx="3" fill="#dce5eb" stroke="#536774" stroke-width="2"/><path d="M10 8h26v16H10z" fill="#0e7bcc"/><path d="m13 21 7-9 7 6 6-7v10" fill="#6ce5fc"/><path d="M20 31h8v5h-8z" fill="#919ca7"/><path d="M10 37h28l5 7H5z" fill="#e7e6dc" stroke="#69757c"/>',
   folder:
@@ -14,6 +24,8 @@ const paths = {
   help: '<circle cx="24" cy="24" r="20" fill="#58a8ee" stroke="#1b63b7"/><path d="M17 16c0-9 18-9 16 1-1 5-9 5-9 12m0 5v3" fill="none" stroke="white" stroke-width="4"/>',
 };
 export function icon(name, className = '') {
+  if (desktopIcons[name])
+    return `<img class="icon ${className}" src="${desktopIcons[name]}" alt="" aria-hidden="true" draggable="false" />`;
   if (brandIcons[name])
     return `<img class="icon ${className}" src="${applicationLogo(brandIcons[name])}" alt="" aria-hidden="true" draggable="false" />`;
   return `<svg class="icon ${className}" viewBox="0 0 48 48" aria-hidden="true">${paths[name] ?? paths.computer}</svg>`;

@@ -137,6 +137,36 @@ export function pendingChoices(dialogue, state, progression) {
   );
 }
 
+// Empty nodes and automatic joins do not end a contact's message sequence.
+export function hasPendingMessages(dialogue, state, progression) {
+  if (!state || state.finished) return false;
+  const visited = new Set();
+  let id = state.node;
+  let cursor = state.cursor;
+  while (dialogue.nodes[id] && !visited.has(id)) {
+    visited.add(id);
+    const node = dialogue.nodes[id];
+    if (
+      node.messages
+        .slice(cursor)
+        .some((message) => matches(message.when, progression.data.flags, progression.data.choices))
+    )
+      return true;
+    if (
+      node.end ||
+      node.transfer ||
+      node.choices?.some((choice) =>
+        matches(choice.when, progression.data.flags, progression.data.choices),
+      ) ||
+      !node.next
+    )
+      return false;
+    id = node.next;
+    cursor = 0;
+  }
+  return false;
+}
+
 export class DialogueSession {
   constructor(dialogue, progression) {
     validateDialogue(dialogue);

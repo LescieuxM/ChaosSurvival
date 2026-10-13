@@ -59,8 +59,14 @@ export async function verifyMenuUI({ evaluate, command, until, wait, restart, ou
   );
   assert.equal(
     await evaluate("document.querySelector('[data-shortcut=music] span').textContent"),
-    'DJARTMUSIC - Best Game Console.mp3',
+    'DJARTMUSIC__Best_Game_Console.mp3',
   );
+  assert.ok(
+    await evaluate(
+      "[...document.querySelectorAll('.album-art img')].every(img => img.complete && img.naturalWidth > 0 && img.alt.includes('8-bit'))",
+    ),
+  );
+  assert.doesNotMatch(await evaluate('document.body.innerText'), /hyper\s*pop/i);
   assert.ok(
     await evaluate(
       "getComputedStyle(document.querySelector('#main-menu')).backgroundImage.includes('wallpaper.svg')",

@@ -7,7 +7,9 @@
     "upgrade": { "name": "Windows Upgrade", "logo": "./logos/windows-upgrade.svg" }
   },
   "music": {
-    "displayName": "DJARTMUSIC - Best Game Console.mp3",
+    "displayName": "DJARTMUSIC__Best_Game_Console.mp3",
+    "cover": "./covers/best-game-console.svg",
+    "genre": "8-bit / chiptune",
     "artist": "DJARTMUSIC",
     "title": "Best Game Console",
     "source": "Pixabay"

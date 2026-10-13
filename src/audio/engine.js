@@ -1,4 +1,4 @@
-import musicUrl from '../../assets/music-lvl1.mp3?url';
+import musicUrl from '../../assets/musiclvl1.mp3?url';
 
 export class AudioEngine {
   constructor(volume, url = musicUrl) {
@@ -7,7 +7,7 @@ export class AudioEngine {
     this.startTime = 0;
     this.stoppedTime = 0;
     this.loading = fetch(url).then((response) => {
-      if (!response.ok) throw new Error('Le fichier assets/music-lvl1.mp3 est introuvable.');
+      if (!response.ok) throw new Error('Le fichier assets/musiclvl1.mp3 est introuvable.');
       return response.arrayBuffer();
     });
     // Keep preload failures handled until the player presses START.

@@ -31,6 +31,13 @@ test('visible arcade app names are harmonized without rewriting their configurat
       assert.doesNotMatch(`${popup.title} ${popup.body}`, old);
     }
   assert.equal(brandedText('Windows XP / Windows Update'), 'Windows XD / Windows Upgrade');
-  assert.equal(trackIdentity.displayName, 'DJARTMUSIC - Best Game Console.mp3');
+  assert.equal(trackIdentity.displayName, 'DJARTMUSIC__Best_Game_Console.mp3');
+  assert.equal(trackIdentity.genre, '8-bit / chiptune');
+  const cover = readFileSync(
+    new URL(`../public/${trackIdentity.cover.slice(2)}`, import.meta.url),
+    'utf8',
+  );
+  assert.match(cover, /shape-rendering="crispEdges"/);
+  assert.doesNotMatch(cover, /<image|<script|href=/);
   assert.equal(trackIdentity.source, 'Pixabay');
 });

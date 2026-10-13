@@ -65,7 +65,7 @@ export function mountDesktop(root, best) {
           <h1 id="launcher-title">
             CHAOS<br /><span>SURVIVAL<span class="title-star">✳</span></span>
           </h1>
-          <p class="tagline">Niveau 1 · découvre le bureau, profite de la musique.</p>
+          <p class="tagline">Niveau 1 · MEDIUM · garde le rythme, maîtrise le chaos.</p>
           <div class="how-to">
             <div>
               <b>01</b><span>Clique sur les <em>×</em> pour fermer les fenêtres.</span>
@@ -95,7 +95,10 @@ export function mountDesktop(root, best) {
     </div>
     <section class="music-player" aria-label="Lecteur musical">
       <div class="album-art">
-        ${icon('music')}<span>HYPER<br />POP</span>
+        <img
+          src="${trackIdentity.cover}"
+          alt="Console et arcade en pixel art · ${trackIdentity.genre}"
+        />
       </div>
       <div class="track">
         <small>LECTURE EN COURS</small
@@ -161,6 +164,9 @@ export function mountDesktop(root, best) {
         ${icon('music')}
         <span>Chaos Survival<small>Démarrer / reprendre la partie</small></span></button
       ><button id="menu-messenger">${icon('msn')} ${applicationName('messenger')}</button>
+      <button data-system-app="computer">${icon('computer')} Poste de travail</button>
+      <button data-system-app="folder">${icon('folder')} Mes documents</button>
+      <button data-system-app="bin">${icon('bin')} Corbeille</button>
       <button id="menu-help">${icon('help')} Comment jouer</button>
       <footer>Bienvenue en 2005. Reste un peu.</footer>
     </div>

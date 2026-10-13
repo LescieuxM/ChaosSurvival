@@ -121,7 +121,7 @@ export class MainMenu {
     }
     this.element.querySelector('.menu-options-panel').append(catalog);
     this.element.querySelector('.menu-music-credit').textContent =
-      `Musique niveau 1 : ${trackIdentity.artist} — ${trackIdentity.title} · Source : ${trackIdentity.source}`;
+      `Musique niveau 1 : ${trackIdentity.artist} — ${trackIdentity.title} (${trackIdentity.source})`;
     this.find = (selector) => this.element.querySelector(selector);
     this.find('#menu-play').addEventListener('click', () =>
       this.run(() => this.actions.play(this.progression.hasSave)),

@@ -1,18 +1,253 @@
 /* MSN story desktop */
-.dialogue-history-choices {
-  display: grid;
-  gap: 5px;
-  margin-top: 8px;
-  padding: 8px;
-  border: 1px solid #b5c8dc;
-  background: #f2f8ff;
+.desktop .popup-narrative,
+.desktop .popup-desktopapp {
+  opacity: 1;
 }
-.dialogue-history-choices small {
-  color: #536582;
+.desktop.is-playing .popup-narrative,
+.desktop.is-playing .popup-desktopapp {
+  max-height: 100%;
 }
-.dialogue-history-choices button {
+.messenger-contact-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px;
+  background: linear-gradient(#fff, #f0f7fd);
+}
+.messenger-contact-list summary {
+  padding: 7px;
+  font-weight: bold;
+  color: #28528a;
+  cursor: pointer;
+  border-bottom: 1px solid #c9d9e9;
+  background: linear-gradient(#fcfeff, #e1edf9);
+}
+.messenger-contact-list details {
+  margin-bottom: 12px;
+}
+.messenger-contact-list details > p {
+  padding: 12px;
+  color: #7790a4;
+}
+.messenger-contact-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 8px;
   text-align: left;
-  white-space: normal;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #264266;
+}
+button.messenger-contact-row:hover {
+  background: linear-gradient(#ecf9ff, #d2e8ff);
+  border-color: #91b5da;
+}
+.messenger-contact-row img {
+  width: 42px;
+  height: 42px;
+  border: 1px solid #9bacbd;
+  padding: 2px;
+  background: white;
+  border-radius: 4px;
+}
+.messenger-contact-row.offline img {
+  filter: saturate(0.5);
+}
+.messenger-contact-row span {
+  min-width: 0;
+  flex: 1;
+}
+.messenger-contact-row strong {
+  display: block;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.messenger-contact-row strong::before {
+  content: '● ';
+  color: #b4bcc7;
+}
+.messenger-contact-row.online strong::before {
+  color: #5baa52;
+}
+.messenger-contact-row small {
+  display: block;
+  margin-top: 3px;
+  color: #8090a1;
+  font-size: 10px;
+}
+.contacts-toolbar {
+  display: flex;
+  gap: 22px;
+  padding: 10px 14px;
+  color: #57769b;
+  border-bottom: 1px solid #b9cfe7;
+  background: linear-gradient(#fff, #e6f1ff);
+  font-size: 11px;
+}
+.contact-unread {
+  padding: 4px 7px;
+  border-radius: 8px;
+  background: #fbe29e;
+  color: #7d5427;
+}
+.msn-self .story-avatar {
+  width: 56px;
+  height: 56px;
+}
+.popup-desktopapp {
+  width: 620px;
+  height: 430px;
+  max-height: 100%;
+}
+.popup-desktopapp .window-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+.popup-desktopapp .msn-minimize + .close-button {
+  margin-left: 4px;
+}
+.explorer-menu {
+  padding: 5px 8px;
+  background: #f0ede0;
+  font-size: 11px;
+}
+.explorer-menu span {
+  margin-left: 12px;
+}
+.explorer-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 7px;
+  border-block: 1px solid #d2cfc3;
+  background: #f5f3e9;
+  font-size: 10px;
+}
+.explorer-toolbar button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.explorer-toolbar .icon {
+  width: 20px;
+  height: 20px;
+}
+.explorer-address {
+  display: flex;
+  gap: 8px;
+  padding: 6px 8px;
+  background: #eeeada;
+  font-size: 10px;
+}
+.explorer-address strong {
+  background: white;
+  border: 1px solid #b0b7b8;
+  padding: 3px;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.explorer-content {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.explorer-content aside {
+  width: 155px;
+  flex-shrink: 0;
+  padding: 12px;
+  background: linear-gradient(#799ee1, #ccdef9);
+  color: #23436d;
+  overflow: auto;
+  font-size: 10px;
+}
+.explorer-content aside h3 {
+  margin: 6px 0;
+  padding: 5px;
+  background: #ecf4ff;
+  border-radius: 4px;
+  font-size: 11px;
+}
+.explorer-content aside p {
+  line-height: 1.5;
+}
+.explorer-content aside button {
+  display: block;
+  border: 0;
+  background: transparent;
+  color: #234c8a;
+  padding: 5px 0;
+  text-align: left;
+  text-decoration: underline;
+}
+.explorer-items {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: start;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  padding: 16px;
+  background: white;
+  overflow: auto;
+}
+.explorer-item {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 4px 8px;
+  width: 100%;
+  border: 1px solid transparent;
+  background: transparent;
+  text-align: left;
+  padding: 6px;
+}
+.explorer-item .icon {
+  width: 40px;
+  height: 40px;
+  grid-row: span 2;
+}
+.explorer-item strong {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.explorer-item small {
+  color: #78879a;
+  font-size: 10px;
+}
+.explorer-item:hover,
+.explorer-item:focus-visible {
+  background: #e4effd;
+  border-color: #abc8ed;
+}
+.explorer-empty {
+  color: #70859a;
+  white-space: pre-wrap;
+  line-height: 1.7;
+  font-size: 12px;
+}
+.desktop-app-task {
+  max-width: 140px;
+}
+.desktop-app-task span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+@media (max-width: 850px) {
+  .popup-desktopapp {
+    width: min(560px, 100%);
+  }
+  .explorer-content aside {
+    width: 125px;
+  }
+  .desktop-app-task {
+    max-width: 100px;
+  }
 }
 .story-desktop #playfield {
   bottom: 64px;
@@ -546,15 +781,4 @@
 }
 .task-msn[hidden] {
   display: none;
-}
-.popup-narrative:has(.msn-contacts-empty) {
-  width: 330px;
-  height: 300px;
-}
-.msn-contacts-empty {
-  padding: 20px;
-  min-height: 160px;
-  background: #fff;
-  color: #536582;
-  font: 12px/1.7 Tahoma;
 }

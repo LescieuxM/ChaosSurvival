@@ -104,7 +104,10 @@ export function compileMusicalEvents(chart, music) {
     'buildEveryBeats',
     'buildLateEveryBeats',
   ])
-    if (settings[key] !== undefined && (!Number.isInteger(settings[key]) || settings[key] < 2))
+    if (
+      settings[key] !== undefined &&
+      (!Number.isInteger(settings[key]) || settings[key] < (key === 'buildLateEveryBeats' ? 1 : 2))
+    )
       throw new Error('La cadence du niveau est invalide.');
   if (
     settings.dropBurstPeriodBeats !== undefined &&

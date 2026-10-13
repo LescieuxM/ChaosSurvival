@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" shape-rendering="crispEdges" role="img" aria-labelledby="title desc">
+  <title id="title">Best Game Console — 8-bit arcade</title>
+  <desc id="desc">Illustration originale : borne d'arcade turquoise, console rose et manette rétro sur un ciel de pixels violet.</desc>
+  <rect width="240" height="240" fill="#21114d"/>
+  <path fill="#38206c" d="M0 0h80v40H0zm160 0h80v40h-80zM80 40h80v40H80zM0 80h80v40H0zm160 0h80v40h-80zM80 120h80v40H80zM0 160h80v40H0zm160 0h80v40h-80zM80 200h80v40H80z"/>
+  <path fill="#ff69c8" d="M20 36h8v8h8v8h-8v8h-8v-8h-8v-8h8zM204 76h8v8h8v8h-8v8h-8v-8h-8v-8h8z"/>
+  <path fill="#b9ff61" d="M188 24h8v8h-8zM24 112h8v8h-8zM208 136h8v8h-8z"/>
+  <path fill="#080c27" d="M64 20h112v12h12v112h-12v56H52v-56h12z"/>
+  <path fill="#49e6ef" d="M72 28h96v20H72zM68 56h104v76H68zM60 136h120v28H60zM60 164h112v28H60z"/>
+  <path fill="#167aad" d="M164 56h8v76h-8zM172 136h8v28h-8zM160 164h12v28h-12z"/>
+  <rect x="76" y="64" width="88" height="60" fill="#111539"/>
+  <path fill="#adff62" d="M108 76h24v8h8v16h-8v8h-24v-8h-8V84h8z"/>
+  <path fill="#111539" d="M108 84h8v8h-8zm16 0h8v8h-8zM116 100h8v8h-8z"/>
+  <path fill="#ff72cf" d="M84 108h8v8h-8zm60-36h8v8h-8z"/>
+  <path fill="#e9ffff" d="M80 36h8v4h-8zm16 0h8v4h-8zm16 0h8v4h-8zm16 0h8v4h-8zm16 0h16v4h-16z"/>
+  <path fill="#111539" d="M84 140h8v16h-8zM76 152h24v8H76z"/>
+  <rect x="84" y="136" width="8" height="8" fill="#ff69c8"/>
+  <path fill="#ff69c8" d="M128 148h12v8h-12zm20-8h12v8h-12z"/>
+  <rect x="104" y="176" width="24" height="8" fill="#111539"/>
+  <path fill="#080c27" d="M16 192h88v8h16v24H8v-24h8z"/>
+  <path fill="#ff72cf" d="M16 200h88v8h8v8H16z"/>
+  <path fill="#111539" d="M32 200h8v16h-8zM24 204h24v8H24z"/>
+  <path fill="#fcffc9" d="M76 204h8v8h-8zm16 0h8v8h-8z"/>
+  <rect x="136" y="204" width="92" height="28" fill="#b9ff61"/>
+  <!-- A pixel-drawn 8-BIT label stays readable at thumbnail size. -->
+  <path fill="#21114d" d="M144 208h12v4h-12zm0 8h12v4h-12zm0 8h12v4h-12zM144 208h4v20h-4zm8 0h4v20h-4zM160 216h8v4h-8zM172 208h4v20h-4zm0 0h12v4h-12zm0 8h12v4h-12zm0 8h12v4h-12zm8-12h4v4h-4zm0 8h4v4h-4zM188 208h4v20h-4zM196 208h20v4h-20zm8 0h4v20h-4z"/>
+</svg>

@@ -3,8 +3,16 @@
 `src/dialogues/pixelgirl-intro.json` contient le scénario fourni : quatre choix
 de trois réponses, avec branches qui rejoignent la conversation commune. Chaque
 réponse a un identifiant unique. Les messages ne sont jamais effacés et aucune
-réponse n'est choisie automatiquement. « Pause messages » arrête les arrivées ;
-remonter dans l'historique suspend aussi la suite. « Derniers messages » ramène en bas.
+réponse n'est choisie automatiquement. Les messages arrivent naturellement : aucun
+contrôle de pause et remonter dans l'historique ne suspend pas la suite.
+« Derniers messages » ramène en bas. Les réponses deviennent visibles après la
+séquence complète, y compris ses transitions automatiques. Les anciens choix
+restent sauvegardés pendant l'arrivée d'un nouvel événement.
+
+`src/config/contacts.json` distingue les contacts décoratifs (`decorative`, hors
+ligne, sans dialogue) des contacts narratifs (`narrative`, avec un identifiant
+`dialogue`). Un personnage n'apparaît qu'après le déblocage de son dialogue.
+Le bouton « Mes contacts » retrouve la liste sans effacer la discussion.
 
 La première réponse non sélectionnée apparaît 500 ms dans le journal comme une
 ligne normale. Elle ne devient pas un message envoyé et PixelGirl ne réagit pas.
@@ -66,10 +74,15 @@ Le fichier reçu est sauvegardé et reste accessible après relancement.
 ## Réactions aux replays du niveau 1
 
 `src/config/replay-reactions.json` définit le délai de réception (2 secondes), la
-première réaction et la rotation des cinq variantes. Les textes, les trois choix
-et leurs branches se trouvent dans `src/dialogues/pixelgirl-replay-*.json` et
+première réaction et la rotation des cinq variantes. Les messages sans choix
+se trouvent dans `src/dialogues/pixelgirl-replay-*.json` et
 utilisent le moteur de dialogue existant. La conversation d'introduction reste
 inchangée.
+
+Le premier message arrive à l'échéance des deux secondes ; les suivants
+respectent les délais et temps d'écriture du JSON. L'échéance de réception
+suivante est sauvegardée pour reprendre sans doublons après fermeture de
+Messenger ou redémarrage. Ces événements ne proposent aucune réponse du joueur.
 
 `src/story/replays.js` enregistre chaque lancement réussi de la musique dans
 `level1Launches`, même si le niveau est abandonné. Les réactions restent désactivées
@@ -83,11 +96,16 @@ PixelGirl possède une seule discussion, sans sélecteur de scénarios. Les fich
 JSON représentent des événements injectés automatiquement dans ce fil. Le
 gestionnaire `src/story/conversation-thread.js` ajoute les messages à l'historique
 chronologique du contact dès leur échéance, indépendamment des réponses en
-attente. Les choix les plus récents nécessitant une réponse apparaissent sous
-l'historique ; les anciens choix restent accessibles auprès de leurs messages.
+attente. Les questions narratives attendent leur tour : une seule question à la
+fois est affichée dans la zone de réponses en bas, après la séquence de messages.
+Aucun bouton de réponse n'est inséré dans l'historique. La réponse choisie y
+apparaît uniquement comme un message envoyé.
 Chaque réponse est liée à son propre événement, sans sélecteur de scénarios.
 Un choix ou un transfert en attente n'est jamais perdu. Les anciennes échéances
 de cinq secondes encore en attente sont migrées vers le délai de deux secondes.
+Les anciens choix de replay en attente sont clôturés à la reprise. Les messages,
+réponses déjà envoyées, choix enregistrés et anciennes propositions restent
+conservés ; aucune branche de replay n'est relancée.
 
 La sauvegarde `conversations.pixelgirl` conserve l'historique unique, les messages
 non lus, l'événement actif et la file des événements prêts. Les états des scripts

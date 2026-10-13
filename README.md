@@ -39,7 +39,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\dev.ps1 -Task dist
 ```
 
 Le fichier à distribuer est **`release/ChaosSurvival.exe`** (Windows x64).
-Il contient Electron, le jeu, `music-lvl1.mp3` et toutes les ressources. Le joueur
+Il contient Electron, le jeu, `musiclvl1.mp3` et toutes les ressources. Le joueur
 double-clique sur cet unique fichier ; aucune installation de Node.js, aucun
 navigateur externe et aucun serveur ne sont nécessaires. Le lanceur portable
 extrait son contenu dans le dossier temporaire Windows au démarrage.
@@ -79,7 +79,7 @@ NEW GAME demande confirmation et archive la partie précédente.
 sessions. **Démarrer → Menu principal** permet de revenir au menu depuis le jeu ou le bureau.
 Voir [le fonctionnement des sauvegardes](docs/saves-and-menu.md).
 
-Sur le bureau XP, double-clique sur **DJARTMUSIC - Best Game Console.mp3** (ou appuie sur Entrée après
+Sur le bureau XP, double-clique sur **DJARTMUSIC__Best_Game_Console.mp3** (ou appuie sur Entrée après
 l'avoir sélectionné) pour jouer ou rejouer le niveau 1. La musique, le score,
 les fenêtres et le chaos repartent de zéro. La progression narrative reste
 intacte ; une victoire en replay ne déclenche pas une nouvelle rencontre MSN.
@@ -105,6 +105,20 @@ leurs introductions et leur cadence sont réglées dans `src/config/chart.json` 
 rapporte les mêmes points que fermer une fenêtre avec sa croix.
 
 ## Conversations MSN et mini-jeu
+
+Les messages de Messenger arrivent automatiquement, sans bouton de pause.
+Les réponses narratives attendent la fin de la séquence et s'affichent uniquement
+en bas, une question à la fois. Les replays du niveau 1 ne proposent aucune réponse.
+« Mes contacts » affiche une liste MSN avec des
+groupes repliables et des amis décoratifs hors ligne. PixelGirl apparaît seulement
+après son déblocage narratif.
+
+Double-cliquez sur **Poste de travail**, **Mes documents** ou **Corbeille** pour
+ouvrir leur fenêtre. Le menu Démarrer propose aussi ces applications. Réduire
+conserve leur bouton dans la barre des tâches ; fermer le retire. La corbeille
+est vide. Les contenus fictifs se configurent dans `src/config/desktop-apps.json`.
+`npm run verify:desktop` effectue une vérification ciblée de ces interfaces dans
+Electron avec un profil isolé, après `npm run build`, sans produire de portable.
 
 Le scénario de PixelGirl, ses quatre choix, l'anomalie de 500 ms et le transfert
 de SUPER_MEGA_GAME.exe sont intégrés. Les choix attendent une action du joueur
@@ -132,21 +146,22 @@ ce morceau. Le BPM affiché sert d'information ; les événements ne sont jamais
 programmés à partir d'une grille constante. Le suivi utilise les possibilités de
 [tempo variable de librosa](https://librosa.org/doc/0.11.0/generated/librosa.beat.beat_track.html).
 
-Le tutoriel commence avec une conversation MSN toutes les 8 pulsations. Erreurs,
+Le niveau 1, de difficulté **Medium**, commence avec une conversation MSN toutes les 4 pulsations. Erreurs,
 publicités, téléchargements et antivirus arrivent progressivement. La cadence
-passe à 6, 4 ou 2 pulsations selon l'énergie réelle du morceau et revient à 8
+passe à 2 pulsations selon l'énergie réelle du morceau et revient à 4
 pendant les breaks. Les attaques détectées sur les contretemps déclenchent des
-effets décoratifs, sans ajouter de fenêtres. Aucune séquence à un clic par
-pulsation n'est imposée dans ce premier niveau.
+effets décoratifs, sans ajouter de fenêtres. Les fins de montée et les courtes
+rafales des drops proposent une fenêtre par pulsation, sous réserve de la charge du joueur.
 
-Trois fenêtres au maximum restent ouvertes. Le directeur adapte l'espacement
+Quatre fenêtres au maximum restent ouvertes. Le directeur adapte l'espacement
 au temps de fermeture du joueur, à l'encombrement et au chaos. Une occasion
 supprimée n'est jamais remise en file ni pénalisée. Les croix restent accessibles
 grâce au placement décalé des barres de titre, y compris après redimensionnement.
 Les fenêtres n'ont pas de délai individuel de fermeture ; la jauge conserve sa
-pression et ses bonus habituels. Abandonner complètement le bureau peut toujours
-faire perdre, tandis qu'un clic toutes les 2,5 à 4 secondes suffit dans les
-simulations du niveau complet.
+pression. L'adaptation reste bornée : elle ne transforme pas une accumulation
+de fenêtres en niveau facile. Les simulations montrent qu'un clic toutes les
+0,8 à 1 seconde permet de réussir, tandis qu'un clic toutes les 1,5 seconde
+entraîne une défaite. La musique et son analyse conservent leur vitesse et leurs timestamps.
 
 La lecture Web Audio fournit l'unique horloge musicale. `requestAnimationFrame`
 consulte cette horloge ; les apparitions et les durées de notifications / wizz
@@ -201,13 +216,13 @@ ressource, le blocage réseau, la musique, la pause/reprise et le score. Le test
 ferme ensuite sa propre fenêtre et supprime ses fichiers temporaires.
 
 L'option `--music` teste aussi le panneau F3, le décalage, le redémarrage, les
-trois croix à 800 × 600 et une partie complète à un clic toutes les 2,5 secondes,
+trois croix à 800 × 600 et une partie complète à un clic toutes les 0,8 seconde,
 avec un blocage volontaire du rendu de 1,2 seconde. Compter environ deux minutes.
 Le diagnostic maintient sa page de test visible pour éviter qu'un changement
 de fenêtre sur le bureau ne déclenche la pause automatique pendant les mesures.
 
 L'option `--story` inclut le test musical complet, puis vérifie la victoire, la
-notification, la pause de lecture, les quatre choix, les propositions sauvegardées,
+notification, les messages automatiques, les quatre choix, les propositions sauvegardées,
 l'anomalie de 500 ms, la reprise, le refus puis l'acceptation du fichier et le
 mini-jeu de 30 secondes. Compter environ quatre minutes. Les captures sont
 enregistrées dans `.qa/victory.png`, `.qa/pixelgirl-conversation.png`,

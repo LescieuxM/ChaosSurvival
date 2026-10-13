@@ -12,6 +12,30 @@ export class ReplayReactions {
       event.dueAt = event.launchedAt + config.delayMs;
       migrated = true;
     }
+    // Retire legacy reply nodes without resetting their transcript or choice records.
+    const templates = new Set([config.first, ...config.variants]);
+    const savedEvents = new Map(
+      progression.data.replayReactions.map((event) => [event.id, event.template]),
+    );
+    for (const [id, saved] of Object.entries(progression.data.dialogues)) {
+      const templateId = savedEvents.get(id) ?? (templates.has(id) ? id : null);
+      const template = templates.has(templateId) && definitions[templateId];
+      if (!template) continue;
+      const length = template.nodes[template.start].messages.length;
+      if (saved.node === template.start && saved.cursor < length && !saved.finished) continue;
+      if (
+        saved.node !== template.start ||
+        saved.cursor !== length ||
+        !saved.finished ||
+        saved.receiveDueAt !== undefined
+      ) {
+        saved.node = template.start;
+        saved.cursor = length;
+        saved.finished = true;
+        delete saved.receiveDueAt;
+        migrated = true;
+      }
+    }
     if (migrated) progression.save();
     this.thread = new ConversationThread('pixelgirl', progression, () => [
       definitions['pixelgirl-intro'],
@@ -49,7 +73,7 @@ export class ReplayReactions {
   definition(event) {
     const template = this.definitions[event.template];
     if (!template) throw new Error('Réaction de replay inconnue.');
-    return { ...template, id: event.id };
+    return { ...template, id: event.id, incomingAt: event.dueAt };
   }
   flush(now = Date.now()) {
     for (const event of this.progression.data.replayReactions) {
@@ -58,11 +82,18 @@ export class ReplayReactions {
       event.ready = true;
       this.progression.save();
     }
-    return this.thread.receive();
+    return this.thread.receive(now);
   }
   get dialogues() {
-    return this.progression.data.replayReactions
+    const registered = this.progression.data.replayReactions
       .filter((event) => event.ready && this.definitions[event.template])
       .map((event) => this.definition(event));
+    // Older selectable scripts may have been saved under their template ID,
+    // without a launch record. Keep their messages in the same contact history.
+    const ids = new Set(this.progression.data.replayReactions.map((event) => event.id));
+    const legacy = [this.config.first, ...this.config.variants]
+      .filter((id) => this.progression.data.dialogues[id] && !ids.has(id) && this.definitions[id])
+      .map((id) => this.definitions[id]);
+    return [...legacy, ...registered];
   }
 }

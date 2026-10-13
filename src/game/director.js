@@ -1,10 +1,23 @@
 // Never queue missed windows. Decisions use the chart's musical clock.
 export class BeginnerDirector {
   constructor(settings) {
-    for (const key of ['singleWindowRecovery', 'crowdedRecovery'])
+    for (const key of [
+      'singleWindowRecovery',
+      'crowdedRecovery',
+      'initialCloseSeconds',
+      'maxRecoverySeconds',
+    ])
       if (settings[key] !== undefined && (!Number.isFinite(settings[key]) || settings[key] <= 0))
         throw new Error('La récupération adaptative est invalide.');
     if (
+      (settings.chaosRecoveryThreshold !== undefined &&
+        (!Number.isFinite(settings.chaosRecoveryThreshold) ||
+          settings.chaosRecoveryThreshold <= 0 ||
+          settings.chaosRecoveryThreshold > 100)) ||
+      (settings.recoveryWindows !== undefined &&
+        (!Number.isInteger(settings.recoveryWindows) ||
+          settings.recoveryWindows < 1 ||
+          settings.recoveryWindows > settings.maxWindows)) ||
       !Number.isFinite(settings.minSpawnSeconds) ||
       settings.minSpawnSeconds <= 0 ||
       !Number.isFinite(settings.maxEventLatenessSeconds) ||
@@ -16,7 +29,7 @@ export class BeginnerDirector {
   }
   reset() {
     this.lastSpawn = -Infinity;
-    this.closeSeconds = 1.8;
+    this.closeSeconds = this.settings.initialCloseSeconds ?? 1.8;
     this.skipped = 0;
     this.reason = 'Prêt';
   }
@@ -28,12 +41,19 @@ export class BeginnerDirector {
       event.maxWindows ?? this.settings.maxWindows,
     );
     if (state.open >= limit) return 'Bureau plein : respiration';
-    if (state.chaos >= 60 && state.open >= 1) return 'Chaos élevé : récupération';
+    if (
+      state.chaos >= (this.settings.chaosRecoveryThreshold ?? 60) &&
+      state.open >= (this.settings.recoveryWindows ?? 1)
+    )
+      return 'Chaos élevé : récupération';
+    // Queue residence includes waiting behind other windows. Cap its influence
+    // on pacing without losing the player's measured response time.
+    const closeSeconds = Math.min(this.closeSeconds, this.settings.maxRecoverySeconds ?? Infinity);
     const recovery =
       state.open >= 2
-        ? this.closeSeconds * (this.settings.crowdedRecovery ?? 1.3)
+        ? closeSeconds * (this.settings.crowdedRecovery ?? 1.3)
         : state.open === 1
-          ? this.closeSeconds * (this.settings.singleWindowRecovery ?? 0.6)
+          ? closeSeconds * (this.settings.singleWindowRecovery ?? 0.6)
           : 0;
     if (now - this.lastSpawn < Math.max(this.settings.minSpawnSeconds, recovery))
       return 'Récupération entre deux fenêtres';

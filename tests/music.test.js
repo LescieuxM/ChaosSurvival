@@ -15,9 +15,37 @@ const music = JSON.parse(
 );
 const events = compileChart(chart, music);
 const windows = events.filter((event) => WINDOW_TYPES.includes(event.type));
+// Previous released level, used to measure actual difficulty rather than only settings.
+const previousChart = structuredClone(chart);
+Object.assign(previousChart.gameplay, {
+  chaosRelief: 3,
+  maxWindows: 3,
+  peakWindows: 4,
+  pressurePerWindow: 0.5,
+  minSpawnSeconds: 0.28,
+  singleWindowRecovery: 0.25,
+  crowdedRecovery: 0.45,
+});
+for (const key of [
+  'initialCloseSeconds',
+  'maxRecoverySeconds',
+  'chaosRecoveryThreshold',
+  'recoveryWindows',
+])
+  delete previousChart.gameplay[key];
+Object.assign(previousChart.rhythm, {
+  introUntilBeat: 32,
+  introEveryBeats: 8,
+  calmEveryBeats: 6,
+  normalEveryBeats: 3,
+  mediumEveryBeats: 3,
+  buildEveryBeats: 3,
+  buildLateEveryBeats: 2,
+  dropBurstPeriodBeats: 16,
+});
 
 test('analysis belongs to the actual MP3 and every window is anchored to a detected beat', () => {
-  const bytes = readFileSync(new URL('../assets/music-lvl1.mp3', import.meta.url));
+  const bytes = readFileSync(new URL('../assets/musiclvl1.mp3', import.meta.url));
   assert.equal(music.source.sha256, createHash('sha256').update(bytes).digest('hex'));
   assert.ok(music.beats.length > 200);
   assert.ok(music.firstBeatSeconds > 0);
@@ -27,6 +55,35 @@ test('analysis belongs to the actual MP3 and every window is anchored to a detec
     music.subdivisions.length,
   );
   assert.ok(music.tempoCandidates.some((candidate) => candidate.bpm > 180));
+});
+
+test('the level ends at the decoded MP3 duration and never schedules events beyond it', () => {
+  const duration = music.source.decodedSamples / music.source.sampleRate;
+  assert.equal(music.source.file, 'musiclvl1.mp3');
+  assert.equal(chart.durationSeconds, duration);
+  assert.equal(music.source.durationSeconds, duration);
+  assert.ok(events.every((event) => event.time < duration));
+  for (const key of [
+    'beats',
+    'subdivisions',
+    'kicks',
+    'accents',
+    'intensity',
+    'phrases',
+    'sections',
+  ]) {
+    assert.ok(
+      music[key].every(
+        (item) => item.time < duration && (item.endTime === undefined || item.endTime <= duration),
+      ),
+      key,
+    );
+  }
+  const shortened = { ...chart, durationSeconds: duration - 4 };
+  assert.deepEqual(
+    compileChart(shortened, music),
+    events.filter((event) => event.time < shortened.durationSeconds),
+  );
 });
 
 test('beat lookup and score follow irregular timestamps and calibration, not the average BPM', () => {
@@ -39,11 +96,11 @@ test('beat lookup and score follow irregular timestamps and calibration, not the
   assert.equal(musicAt(0.81, irregular).index, 1);
 });
 
-test('level one introduces mechanics slowly and breathes during musical breaks', () => {
-  const intro = windows.filter((event) => event.beat < 32);
+test('Medium introduces mechanics before beat-aligned build and drop bursts, with musical breaks', () => {
+  const intro = windows.filter((event) => event.beat < chart.rhythm.introUntilBeat);
   assert.deepEqual(
     intro.map((event) => event.beat),
-    [8, 16, 24],
+    [4, 8, 12],
   );
   assert.ok(intro.every((event) => event.type === 'msn'));
   assert.ok(windows.every((event) => event.everyBeats >= 1));
@@ -52,32 +109,18 @@ test('level one introduces mechanics slowly and breathes during musical breaks',
     if (musicAt(event.time, music).section.kind === 'break')
       assert.equal(event.everyBeats, chart.rhythm.calmEveryBeats);
     if (event.everyBeats === 1) {
-      assert.equal(musicAt(event.time, music).section.kind, 'drop');
+      assert.ok(['drop', 'build'].includes(musicAt(event.time, music).section.kind));
       assert.equal(event.maxWindows, 4);
     }
     if (event.type === 'virus') assert.ok(event.beat >= 120);
   }
 });
-test('level one is busier with short drop bursts and preserves the gentle introduction', () => {
-  const earlier = {
-    ...chart,
-    rhythm: {
-      ...chart.rhythm,
-      normalEveryBeats: 6,
-      mediumEveryBeats: 4,
-      calmEveryBeats: 8,
-      buildEveryBeats: 4,
-      intenseThreshold: 0.62,
-      buildLateEveryBeats: undefined,
-      dropBurstPeriodBeats: undefined,
-    },
-  };
-  const previous = compileChart(earlier, music).filter((event) =>
+test('Medium has at least 50% more beat-aligned windows than the previous level', () => {
+  const previous = compileChart(previousChart, music).filter((event) =>
     WINDOW_TYPES.includes(event.type),
   );
-  assert.ok(windows.length > previous.length);
-  assert.ok(windows.length <= previous.length * 1.7);
-  assert.equal(chart.gameplay.maxWindows, 3);
+  assert.ok(windows.length >= previous.length * 1.5);
+  assert.equal(chart.gameplay.maxWindows, 4);
 });
 
 test('invalid music timestamps and introductions are rejected', () => {
@@ -115,14 +158,14 @@ test('director suppresses stale/congested beats, retains chaos, and adapts to sl
   assert.equal(director.allow({ time: 5 }, 5, state), true);
   state.spawn();
   director.closed(9, 5);
-  assert.ok(director.closeSeconds > 1.8);
+  assert.ok(director.closeSeconds > chart.gameplay.initialCloseSeconds);
   assert.equal(director.allow({ time: 5.4 }, 5.4, state), false);
   while (state.open < chart.gameplay.maxWindows) state.spawn();
   assert.equal(director.allow({ time: 10 }, 10, state), false);
   assert.equal(state.chaos, 0); // Skips never punish a beginner.
   assert.ok(director.skipped >= 3);
   director.reset();
-  assert.equal(director.closeSeconds, 1.8);
+  assert.equal(director.closeSeconds, chart.gameplay.initialCloseSeconds);
   assert.equal(director.skipped, 0);
 });
 
@@ -135,13 +178,17 @@ function simulate(secondsPerClick, stall = false, configuration = chart) {
   let nextClose = Infinity;
   let maxChaos = 0;
   let actualWindows = 0;
+  let lost = false;
   while (time < chart.durationSeconds) {
     const previous = time;
     time = Math.min(
       chart.durationSeconds,
       time + (stall && time > 26 && time < 26.05 ? 2.2 : 1 / 60),
     );
-    assert.equal(state.update(time - previous), false, `Defeat at ${time.toFixed(2)}s`);
+    if (state.update(time - previous)) {
+      lost = true;
+      break;
+    }
     if (time >= nextClose && opened.length) {
       director.closed(time, opened.shift());
       state.close();
@@ -154,47 +201,50 @@ function simulate(secondsPerClick, stall = false, configuration = chart) {
       actualWindows++;
       if (!Number.isFinite(nextClose)) nextClose = time + secondsPerClick;
     });
-    assert.ok(state.open <= chart.gameplay.peakWindows);
+    assert.ok(state.open <= configuration.gameplay.peakWindows);
     maxChaos = Math.max(maxChaos, state.chaos);
   }
-  return { maxChaos, actualWindows, skipped: director.skipped, peak: state.peak };
+  return { lost, time, maxChaos, actualWindows, skipped: director.skipped, peak: state.peak };
 }
 
-test('a beginner closing one window every 2.5–4 seconds survives the entire level, even with a stall', () => {
-  const comfortable = simulate(2.5);
-  const slow = simulate(4, true);
-  assert.ok(comfortable.actualWindows > 15);
-  assert.ok(slow.maxChaos < 80);
-  assert.ok(slow.skipped > comfortable.skipped);
-  assert.ok(slow.actualWindows < windows.length);
+test('Medium is winnable with practice and a stalled frame, but no longer rewards slow clicking', () => {
+  for (const speed of [0.55, 0.8, 1]) {
+    const result = simulate(speed, true);
+    assert.equal(result.lost, false, JSON.stringify({ speed, result }));
+    assert.ok(result.actualWindows > 65);
+    assert.ok(result.skipped > 0);
+  }
+  for (const speed of [1.5, 2.5, 4]) {
+    assert.equal(simulate(speed).lost, true, `Too forgiving at ${speed} seconds per click`);
+    assert.equal(simulate(speed, false, previousChart).lost, false);
+  }
 });
 
-test('the actual click load increases for an attentive player while a fourth window is reserved for drops', () => {
-  const earlier = structuredClone(chart);
-  Object.assign(earlier.gameplay, {
-    minSpawnSeconds: 0.55,
-    singleWindowRecovery: 0.55,
-    crowdedRecovery: 1.2,
-  });
-  Object.assign(earlier.rhythm, {
-    normalEveryBeats: 6,
-    mediumEveryBeats: 4,
-    buildEveryBeats: 4,
-    calmEveryBeats: 8,
-    intenseThreshold: 0.62,
-    buildLateEveryBeats: undefined,
-    dropBurstPeriodBeats: undefined,
-  });
-  const previous = simulate(1.5, false, earlier).actualWindows;
-  const current = simulate(1.5).actualWindows;
-  assert.ok(current >= previous * 1.12, `${previous} -> ${current}`);
+test('actual click load rises significantly and adaptation retains a manageable four-window cap', () => {
+  const previous = simulate(0.8, false, previousChart).actualWindows;
+  const current = simulate(0.8).actualWindows;
+  assert.ok(current >= previous * 1.3, `${previous} -> ${current}`);
   const director = new BeginnerDirector(chart.gameplay);
   const state = new GameState(chart.gameplay);
-  while (state.open < 3) state.spawn();
+  while (state.open < 4) state.spawn();
   assert.equal(director.allow({ time: 10 }, 10, state), false);
-  assert.equal(director.allow({ time: 10, maxWindows: 4 }, 10, state), true);
-  state.spawn();
+  assert.equal(director.allow({ time: 10, maxWindows: 4 }, 10, state), false);
   assert.equal(director.allow({ time: 20, maxWindows: 4 }, 20, state), false);
+});
+
+test('adaptive recovery is bounded in Medium while legacy levels retain their previous defaults', () => {
+  const medium = new BeginnerDirector(chart.gameplay);
+  const old = new BeginnerDirector(previousChart.gameplay);
+  medium.closeSeconds = old.closeSeconds = 6;
+  medium.lastSpawn = old.lastSpawn = 0;
+  const state = { open: 2, chaos: 0 };
+  assert.equal(medium.allow({ time: 1 }, 1, state), true);
+  assert.equal(old.allow({ time: 1 }, 1, state), false);
+  assert.equal(
+    medium.preview({ time: 10 }, 10, { open: 2, chaos: 90 }),
+    'Chaos élevé : récupération',
+  );
+  assert.equal(old.preview({ time: 10 }, 10, { open: 1, chaos: 60 }), 'Chaos élevé : récupération');
 });
 
 test('ignoring all windows still fills the chaos gauge and causes defeat', () => {

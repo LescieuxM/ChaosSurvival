@@ -24,7 +24,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 ROOT = Path(__file__).resolve().parent.parent
-SOURCE = ROOT / "assets/music-lvl1.mp3"
+SOURCE = ROOT / "assets/musiclvl1.mp3"
 OUTPUT = ROOT / "src/config/music-lvl1.analysis.json"
 SR = 22050
 HOP = 220  # ~10 ms analysis resolution; actual audio timestamps retained below.
@@ -43,7 +43,7 @@ def main():
     print("Decoding actual MP3...", flush=True)
     original_info = sf.info(SOURCE)
     y, sr = librosa.load(SOURCE, sr=SR, mono=True)
-    duration = len(y) / sr
+    duration = original_info.frames / original_info.samplerate
     spectrum = np.abs(librosa.stft(y, n_fft=2048, hop_length=HOP))
     frequencies = librosa.fft_frequencies(sr=sr, n_fft=2048)
     print(f"Decoded {duration:.3f}s; {original_info.samplerate} Hz original", flush=True)
@@ -201,7 +201,7 @@ def main():
     result = {
         "schemaVersion": 1,
         "source": {"file": SOURCE.name, "sha256": hashlib.sha256(SOURCE.read_bytes()).hexdigest(),
-                   "durationSeconds": rounded(duration), "sampleRate": original_info.samplerate,
+                   "durationSeconds": duration, "decodedSamples": original_info.frames, "sampleRate": original_info.samplerate,
                    "channels": original_info.channels},
         "analysis": {"tool": "librosa", "version": librosa.__version__, "sampleRate": sr,
                      "hopLength": HOP, "resolutionSeconds": rounded(HOP / sr),
@@ -237,7 +237,7 @@ def main():
     axes[2].set_ylabel("BPM")
     axes[2].set_xlabel("Audio time (seconds)")
     axes[2].legend()
-    fig.suptitle(f"music-lvl1.mp3: {duration:.2f}s, median {bpm:.2f} BPM; first pulse {beat_times[0]:.3f}s")
+    fig.suptitle(f"musiclvl1.mp3: {duration:.2f}s, median {bpm:.2f} BPM; first pulse {beat_times[0]:.3f}s")
     fig.tight_layout()
     fig.savefig(qa / "music-lvl1-analysis.png", dpi=130)
     print(json.dumps({"duration": duration, "bpm": bpm, "globalTempo": global_tempo,

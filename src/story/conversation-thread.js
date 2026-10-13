@@ -1,4 +1,4 @@
-import { DialogueSession, pendingChoices } from './dialogue.js';
+import { DialogueSession, pendingChoices, hasPendingMessages } from './dialogue.js';
 
 // JSON dialogues are event scripts. A contact owns one durable discussion.
 export class ConversationThread {
@@ -72,6 +72,18 @@ export class ConversationThread {
       .filter((group) => group.choices.length)
       .sort((a, b) => a.position - b.position);
   }
+  get hasPendingMessages() {
+    return this.getEvents().some((definition) =>
+      hasPendingMessages(
+        definition,
+        this.progression.data.dialogues[definition.id],
+        this.progression,
+      ),
+    );
+  }
+  get availableResponses() {
+    return this.hasPendingMessages ? [] : this.pendingResponses;
+  }
   sync() {
     const state = this.state;
     const keys = new Set(state.history.map((entry) => entry.key));
@@ -105,7 +117,20 @@ export class ConversationThread {
     if (changed && this.progression.hasSave) this.progression.save();
     return state.history;
   }
-  receive() {
+  isReceiving(id) {
+    const event = this.getEvents()
+      .slice(1)
+      .find((event) => event.id === id);
+    const state = this.progression.data.dialogues[id];
+    return Boolean(
+      event &&
+      state &&
+      !state.finished &&
+      state.node === event.start &&
+      state.cursor < event.nodes[event.start].messages.length,
+    );
+  }
+  receive(now = Date.now()) {
     const incoming = [];
     for (const event of this.getEvents().slice(1)) {
       if (this.progression.data.dialogues[event.id]?.finished && !this.hasPendingFile(event.id))
@@ -121,10 +146,31 @@ export class ConversationThread {
           continue;
       }
       const session = new DialogueSession(event, this.progression);
-      while (session.nextMessage()) session.deliver();
-      session.offerChoices();
-      session.advance();
-      incoming.push(event);
+      // Arrival starts at the game's deadline. Subsequent messages retain the
+      // JSON's delays, even with Messenger closed or after a restart.
+      let dueAt = Number.isFinite(session.state.receiveDueAt)
+        ? session.state.receiveDueAt
+        : (event.incomingAt ?? now) +
+          event.nodes[event.start].messages
+            .slice(1, session.state.cursor + 1)
+            .reduce((total, message) => total + message.delayMs + message.typingMs, 0);
+      let delivered = false;
+      while (session.nextMessage() && dueAt <= now) {
+        session.deliver();
+        delivered = true;
+        const next = session.nextMessage();
+        if (next) {
+          dueAt += next.delayMs + next.typingMs;
+          session.state.receiveDueAt = dueAt;
+          session.persist();
+        }
+      }
+      if (!session.nextMessage()) {
+        delete session.state.receiveDueAt;
+        if (session.choices.length) session.offerChoices();
+        session.advance();
+      }
+      if (delivered) incoming.push(event);
     }
     this.sync();
     return incoming;

@@ -222,6 +222,10 @@ button svg {
   height: 40px;
   filter: drop-shadow(1px 3px 2px #15427366);
 }
+.desktop-icons [data-shortcut='music'] > span {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
 .desktop-icons button:hover,
 .desktop-icons button:focus-visible {
   background: #3d6cd757;
@@ -1036,6 +1040,13 @@ h1 .title-star {
   overflow: hidden;
   flex-shrink: 0;
   box-shadow: inset 0 0 0 2px #ffffff55;
+}
+.album-art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
 }
 .album-art .icon {
   position: absolute;

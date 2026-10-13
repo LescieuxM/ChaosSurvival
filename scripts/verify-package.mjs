@@ -73,7 +73,7 @@ export async function verifyArchive(
   assert.equal(music.length, 1, 'La musique doit être intégrée à l’archive');
   assert.equal(
     music[0].sha256,
-    digest(await readFile(path.join(projectRoot, 'assets/music-lvl1.mp3'))),
+    digest(await readFile(path.join(projectRoot, 'assets/musiclvl1.mp3'))),
     'La musique intégrée doit correspondre au MP3 original',
   );
   assert.ok(

@@ -12,6 +12,7 @@ import { GameState } from './game/state.js';
 import { WindowManager } from './ui/windows.js';
 import { icon } from './ui/icons.js';
 import { mountDesktop } from './ui/desktop.js';
+import { DesktopApplications } from './ui/desktop-apps.js';
 import { createMusicDebug } from './ui/music-debug.js';
 import story from './config/story.json';
 import pixelgirlDialogue from './dialogues/pixelgirl-intro.json';
@@ -102,6 +103,11 @@ const manager = new WindowManager(ui.playfield, ({ preview, x, y, openedAt }) =>
 });
 let activeDialogue = pixelgirlDialogue;
 let conversation = createConversation(activeDialogue);
+const desktopApplications = new DesktopApplications(
+  manager,
+  ui.desktop.querySelector('.taskbar'),
+  syncSystemWindows,
+);
 let miniGame;
 let restoringStory = false;
 function createConversation(dialogue) {
@@ -127,14 +133,12 @@ function createConversation(dialogue) {
     },
     {
       thread: replayReactions.thread,
+      getContactDefinitions: () => dialogues,
       isUnlocked: () => progression.data.unlockedConversations.includes(dialogue.id),
       onWindowState: ({ open, minimized }) => {
         ui.msnTask.hidden = !open;
         ui.msnTask.setAttribute('aria-pressed', String(open && !minimized));
-        if (phase === 'paused' || phase === 'ended') {
-          ui.modalLayer.hidden = open && !minimized;
-          ui.playfield.inert = !open || minimized;
-        }
+        syncSystemWindows();
       },
     },
   );
@@ -167,9 +171,9 @@ previewWindows();
 ui.bpmLabel.textContent = `≈ ${Math.round(music.bpm)} BPM`;
 ui.launcherBpm.textContent = `NIVEAU 1 · ≈ ${Math.round(music.bpm)} BPM`;
 ui.volume.value = settings.data.musicVolume * 100;
-ui.durationLabel.textContent = `${Math.round(chart.durationSeconds)} secondes · découverte`;
+ui.durationLabel.textContent = `${Math.round(chart.durationSeconds)} secondes · MEDIUM`;
 ui.trackTitle.firstChild.textContent = `${trackIdentity.displayName} `;
-ui.trackTitle.title = `${trackIdentity.artist} — ${trackIdentity.title} · Source : ${trackIdentity.source}`;
+ui.trackTitle.title = `${trackIdentity.artist} — ${trackIdentity.title} (${trackIdentity.source})`;
 ui.windowsStart.title = applicationName('system');
 
 function musicalTime() {
@@ -666,7 +670,7 @@ function showStoryDesktop(announce) {
   renderDesktopFiles();
   debug.render();
 }
-async function openConversation() {
+async function openConversation(restore = false) {
   if (['menu', 'loading', 'resuming'].includes(phase)) return;
   if (phase === 'playing') await pauseGame();
   if (phase === 'paused' || phase === 'ended') {
@@ -675,7 +679,8 @@ async function openConversation() {
   }
   ui.toast.hidden = true;
   sounds.unlock();
-  conversation.open();
+  if (restore === true) conversation.restore();
+  else conversation.open();
 }
 function replayLevelOne() {
   if (!['desktop', 'idle', 'ended', 'playing', 'paused'].includes(phase)) return;
@@ -768,7 +773,7 @@ ui.toastOpen.addEventListener('click', () => storyToastAction?.());
 ui.toast.addEventListener('click', (event) => {
   if (!event.target.closest('button')) storyToastAction?.();
 });
-ui.msnTask.addEventListener('click', openConversation);
+ui.msnTask.addEventListener('click', () => openConversation(true));
 ui.menuMessenger.addEventListener('click', () => {
   setStartMenuOpen(false);
   openConversation();
@@ -798,17 +803,47 @@ ui.menuHelp.addEventListener('click', () => {
   setStartMenuOpen(false);
   help();
 });
+function syncSystemWindows() {
+  if (phase !== 'paused' && phase !== 'ended') return;
+  const visible = [...manager.windows.values()].some(
+    ({ element }) =>
+      element.isConnected &&
+      !element.hidden &&
+      (element.classList.contains('popup-narrative') ||
+        element.classList.contains('popup-desktopapp')),
+  );
+  ui.modalLayer.hidden = visible;
+  ui.playfield.inert = !visible;
+}
+async function openSystemApplication(kind) {
+  if (['menu', 'loading', 'resuming'].includes(phase)) return;
+  if (phase === 'playing') await pauseGame();
+  ui.playfield.inert = false;
+  desktopApplications.open(kind);
+}
+ui.desktop.querySelectorAll('[data-system-app]').forEach((button) =>
+  button.addEventListener('click', () => {
+    setStartMenuOpen(false);
+    openSystemApplication(button.dataset.systemApp);
+  }),
+);
 ui.shortcuts.forEach((button) =>
   button.addEventListener('click', () => {
     const kind = button.dataset.shortcut;
     if (kind === 'msn') return openConversation();
     if (kind === 'music') return;
-    if (phase === 'idle')
-      manager.spawn(kind === 'msn' ? 'msn' : kind === 'folder' ? 'download' : 'error', {
-        preview: true,
-      });
   }),
 );
+ui.shortcuts.forEach((button) => {
+  if (!['computer', 'folder', 'bin'].includes(button.dataset.shortcut)) return;
+  button.addEventListener('dblclick', () => openSystemApplication(button.dataset.shortcut));
+  button.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      openSystemApplication(button.dataset.shortcut);
+    }
+  });
+});
 const musicShortcut = ui.desktop.querySelector('[data-shortcut="music"]');
 musicShortcut.title = `${trackIdentity.displayName}\nSource : ${trackIdentity.source}\nDouble-cliquer pour jouer / rejouer le niveau 1`;
 musicShortcut.addEventListener('dblclick', replayLevelOne);
@@ -838,8 +873,9 @@ let notifiedMessages = '';
 function receiveReplayReactions() {
   const incoming = replayReactions.flush();
   conversation.refresh();
-  const visible = conversation.element?.isConnected && !conversation.element.hidden;
-  if (visible && conversation.followLatest) replayReactions.thread.markRead();
+  const visible =
+    conversation.log && conversation.element?.isConnected && !conversation.element.hidden;
+  if (visible && conversation.log && conversation.followLatest) replayReactions.thread.markRead();
   const unread = replayReactions.thread.state.unread;
   ui.msnTask.title = unread.length
     ? `${unread.length} message(s) non lu(s)`

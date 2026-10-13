@@ -1,6 +1,7 @@
 import { DialogueSession } from '../story/dialogue.js';
 import { ConversationThread } from '../story/conversation-thread.js';
 import { applicationName } from './identity.js';
+import { visibleContacts } from './contacts.js';
 
 const emoticons = {
   ':)': '☺',
@@ -38,7 +39,13 @@ export class ConversationWindow {
     onComplete,
     onFilesChanged = () => {},
     onCheckpoint = () => {},
-    { isUnlocked = () => true, onWindowState = () => {}, thread } = {},
+    {
+      isUnlocked = () => true,
+      onWindowState = () => {},
+      thread,
+      getContactDefinitions,
+      onContactSelected,
+    } = {},
   ) {
     this.manager = manager;
     this.dialogue = dialogue;
@@ -53,6 +60,10 @@ export class ConversationWindow {
       thread ??
       new ConversationThread(dialogue.contact.name.toLowerCase(), progression, () => [dialogue]);
     this.sessions = new Map();
+    this.getContactDefinitions =
+      getContactDefinitions ??
+      (() => Object.fromEntries(this.thread.getEvents().map((event) => [event.id, event])));
+    this.onContactSelected = onContactSelected ?? (() => this.open());
   }
   sessionFor(definition) {
     const existing = this.sessions.get(definition.id);
@@ -63,6 +74,7 @@ export class ConversationWindow {
     return session;
   }
   open() {
+    if (this.element?.isConnected && !this.log && this.isUnlocked()) this.closeForViewSwitch();
     if (this.element?.isConnected) {
       this.refresh();
       this.element.hidden = false;
@@ -112,7 +124,7 @@ export class ConversationWindow {
             <span>☺</span><span>♥</span><span>♫</span><small>Choisis une réponse ci-dessous</small>
           </div>
           <div class="conversation-reader">
-            <button class="xp-button" id="pause-messages">Pause messages</button
+            <button class="xp-button" id="messenger-contacts">Mes contacts</button
             ><button class="text-button" id="read-latest">Derniers messages ↓</button>
           </div>
           <div class="dialogue-choices" aria-label="Réponses possibles"></div>
@@ -120,7 +132,7 @@ export class ConversationWindow {
         `,
       },
       onDismiss: ({ reason }) => {
-        const complete = reason === 'close' && this.session.state.finished;
+        const complete = reason === 'close' && !this.switchingView && this.session.state.finished;
         this.dispose();
         if (complete) this.onComplete(this.dialogue.id);
       },
@@ -164,16 +176,14 @@ export class ConversationWindow {
     this.log = this.element.querySelector('.conversation-log');
     this.choices = this.element.querySelector('.dialogue-choices');
     this.typing = this.element.querySelector('.dialogue-typing');
-    this.paused = false;
     this.followLatest = true;
-    this.reader = this.element.querySelector('#pause-messages');
-    this.reader.addEventListener('click', () => {
-      this.paused = !this.paused;
-      this.reader.textContent = this.paused ? 'Reprendre les messages' : 'Pause messages';
-      this.reader.setAttribute('aria-pressed', String(this.paused));
-    });
+    this.element
+      .querySelector('#messenger-contacts')
+      .addEventListener('click', () => this.showContacts());
+    const log = this.log;
     this.log.addEventListener('scroll', () => {
-      this.followLatest = this.log.scrollHeight - this.log.clientHeight - this.log.scrollTop < 24;
+      if (this.log !== log || !log.isConnected) return;
+      this.followLatest = log.scrollHeight - log.clientHeight - log.scrollTop < 24;
     });
     this.element.querySelector('#read-latest').addEventListener('click', () => {
       this.followLatest = true;
@@ -193,6 +203,14 @@ export class ConversationWindow {
     this.pump();
     this.frame = requestAnimationFrame((time) => this.tick(time));
   }
+  restore() {
+    if (!this.element?.isConnected) return this.open();
+    this.element.hidden = false;
+    this.element.style.zIndex = ++this.manager.z;
+    this.lastFrame = null;
+    this.refresh();
+    this.onWindowState({ open: true, minimized: false });
+  }
   renderTranscript() {
     this.log.replaceChildren();
     this.renderedKeys = new Set();
@@ -206,11 +224,16 @@ export class ConversationWindow {
     }
   }
   refresh() {
+    if (this.element?.isConnected && !this.log) {
+      this.renderContacts();
+      return;
+    }
     if (!this.element?.isConnected || !this.log) return;
     this.appendHistory();
     this.renderResponses();
     const definition = this.thread.activeDefinition;
     if (this.dialogue.id === definition.id) {
+      if (this.receiving && !this.thread.isReceiving(definition.id)) this.pump();
       return;
     }
     // Only completed events yield control; pending choices and transfers stay intact.
@@ -250,7 +273,7 @@ export class ConversationWindow {
     return row;
   }
   scrollLatest() {
-    if (this.followLatest) this.log.scrollTop = this.log.scrollHeight;
+    if (this.followLatest && this.log?.isConnected) this.log.scrollTop = this.log.scrollHeight;
   }
   renderTransfer(row, key) {
     const file = this.progression.data.files[key];
@@ -302,6 +325,12 @@ export class ConversationWindow {
   }
   pump() {
     this.renderResponses();
+    this.receiving = this.thread.isReceiving(this.session.dialogue.id);
+    if (this.receiving) {
+      this.pending = null;
+      this.typing.textContent = `${this.dialogue.contact.name} est en train d’écrire…`;
+      return;
+    }
     for (let transitions = 0; transitions < 100; transitions++) {
       const message = this.session.nextMessage();
       if (message) {
@@ -334,9 +363,9 @@ export class ConversationWindow {
           const id = Number(this.element.dataset.windowId);
           this.manager.close(id);
         });
-        if (!this.thread.pendingResponses.length) {
+        if (!this.thread.pendingResponses.length && !this.thread.hasPendingMessages) {
           this.choices.replaceChildren(button);
-          this.responseSignature = JSON.stringify([]);
+          this.responseSignature = JSON.stringify([false, []]);
         } else {
           this.element.classList.remove('contact-away');
           this.typing.textContent = 'À toi de répondre :)';
@@ -357,43 +386,33 @@ export class ConversationWindow {
   }
   renderResponses() {
     if (!this.choices || this.ghost) return;
-    const groups = this.thread.pendingResponses;
-    const signature = JSON.stringify(
+    // One narrative question at a time, in order. Other questions stay saved.
+    const groups = this.thread.availableResponses.slice(0, 1);
+    const signature = JSON.stringify([
+      this.thread.hasPendingMessages,
       groups.map((group) => [
         group.definition.id,
         this.progression.data.dialogues[group.definition.id].node,
         group.choices.map((choice) => choice.id),
         group.position,
       ]),
-    );
+    ]);
     if (signature === this.responseSignature) return;
     this.responseSignature = signature;
     this.choices.replaceChildren();
-    this.log.querySelectorAll('.dialogue-history-choices').forEach((panel) => panel.remove());
-    for (const [index, group] of groups.entries()) {
+    for (const group of groups) {
       const { definition } = group;
       const session = this.sessionFor(definition);
       session.offerChoices();
-      const panel = index === groups.length - 1 ? this.choices : document.createElement('div');
+      const panel = this.choices;
       panel.dataset.eventId = definition.id;
-      if (panel !== this.choices) {
-        panel.className = 'dialogue-history-choices';
-        const label = document.createElement('small');
-        label.textContent = 'Tu peux encore répondre à ce message :';
-        panel.append(label);
-        const anchor = this.thread.state.history[group.position];
-        const row = [...this.log.querySelectorAll('[data-message-key]')].find(
-          (element) => element.dataset.messageKey === anchor?.key,
-        );
-        (row ?? this.log).append(panel);
-      }
       for (const choice of group.choices) {
         const button = document.createElement('button');
         button.className = 'xp-button dialogue-choice';
         button.dataset.choiceId = choice.id;
         appendMessageText(button, choice.text);
         button.addEventListener('click', () => {
-          if (!button.isConnected || button.disabled) return;
+          if (!button.isConnected || button.disabled || this.thread.hasPendingMessages) return;
           panel.querySelectorAll('button').forEach((item) => {
             item.disabled = true;
           });
@@ -405,6 +424,7 @@ export class ConversationWindow {
           this.element.classList.remove('contact-away');
           this.sounds.play('send');
           this.appendHistory();
+          this.renderResponses();
           const echo = this.session.takeEcho();
           if (echo) {
             this.choices.replaceChildren();
@@ -449,14 +469,7 @@ export class ConversationWindow {
         if (!this.pending) this.pump();
       }
     }
-    if (
-      !document.hidden &&
-      !this.element.hidden &&
-      !this.paused &&
-      this.followLatest &&
-      !this.ghost &&
-      this.pending
-    ) {
+    if (!document.hidden && !this.element.hidden && !this.ghost && this.pending) {
       this.remaining -= delta;
       if (this.remaining <= 0) {
         if (this.stage === 'waiting') {
@@ -488,6 +501,7 @@ export class ConversationWindow {
     this.session = null;
     this.renderedKeys = null;
     this.responseSignature = null;
+    this.contactsSignature = null;
     this.sessions.clear();
     this.onWindowState({ open: false, minimized: false });
   }
@@ -499,11 +513,12 @@ export class ConversationWindow {
       content: {
         title: applicationName('messenger'),
         iconName: 'msn',
-        body: `<div class="msn-contact"><div><strong>${applicationName('messenger')}</strong><small><i class="online-dot"></i> En ligne</small></div></div><div class="msn-contacts-empty"><h3>Mes contacts</h3><p>Aucun contact connecté pour le moment.</p><p>Tes conversations apparaîtront ici quand tes amis se connecteront :)</p></div>`,
+        body: `<div class="msn-menu">Fichier <span>Contacts</span><span>Actions</span><span>Aide</span></div><div class="msn-contact msn-self"><img class="story-avatar" src="./avatars/player.svg" alt="Votre avatar" /><div><strong>Joueur.exe</strong><small><i class="online-dot"></i> En ligne · occupé à sauver mon bureau</small></div></div><div class="contacts-toolbar"><span>☺ Ajouter un contact</span><span>♥ Mes amis</span></div><div class="messenger-contact-list"></div><div class="window-status">Connecté · Windows Love Messenger</div>`,
       },
       onDismiss: () => this.dispose(),
     });
     this.element = this.manager.windows.get(id).element;
+    this.renderContacts();
     this.element
       .querySelector('.close-button')
       .setAttribute('aria-label', `Fermer ${applicationName('messenger')}`);
@@ -519,5 +534,78 @@ export class ConversationWindow {
       .querySelector('.titlebar')
       .insertBefore(minimize, this.element.querySelector('.close-button'));
     this.onWindowState({ open: true, minimized: false });
+  }
+  closeForViewSwitch() {
+    if (!this.element?.isConnected) return;
+    this.switchingView = true;
+    try {
+      this.manager.close(Number(this.element.dataset.windowId));
+    } finally {
+      this.switchingView = false;
+    }
+  }
+  showContacts() {
+    if (this.element?.isConnected && !this.log) {
+      this.element.hidden = false;
+      this.element.style.zIndex = ++this.manager.z;
+      this.renderContacts();
+      this.onWindowState({ open: true, minimized: false });
+      return;
+    }
+    this.closeForViewSwitch();
+    this.openContacts();
+  }
+  renderContacts() {
+    const list = this.element?.querySelector('.messenger-contact-list');
+    if (!list) return;
+    const definitions = this.getContactDefinitions();
+    const contacts = visibleContacts(definitions, this.progression.data.unlockedConversations);
+    const signature = JSON.stringify([contacts, this.thread.state.unread.length]);
+    if (signature === this.contactsSignature) return;
+    this.contactsSignature = signature;
+    const collapsed = new Map(
+      [...list.querySelectorAll('details')].map((group) => [group.dataset.group, !group.open]),
+    );
+    list.replaceChildren();
+    for (const online of [true, false]) {
+      const members = contacts.filter((contact) => contact.online === online);
+      const group = document.createElement('details');
+      group.dataset.group = String(online);
+      group.open = !collapsed.get(String(online));
+      const summary = document.createElement('summary');
+      summary.textContent = `${online ? 'En ligne' : 'Hors ligne'} (${members.length})`;
+      group.append(summary);
+      for (const contact of members) {
+        const row = document.createElement(contact.kind === 'narrative' ? 'button' : 'div');
+        row.className = `messenger-contact-row ${online ? 'online' : 'offline'}`;
+        row.dataset.contactId = contact.id;
+        const image = document.createElement('img');
+        image.src = contact.avatar;
+        image.alt = `Avatar de ${contact.nickname}`;
+        const copy = document.createElement('span');
+        const nickname = document.createElement('strong');
+        nickname.textContent = contact.nickname;
+        const status = document.createElement('small');
+        status.textContent = `${contact.status} · ${contact.personalMessage ?? ''}`;
+        copy.append(nickname, status);
+        row.append(image, copy);
+        if (contact.kind === 'narrative') {
+          const badge = document.createElement('b');
+          badge.className = 'contact-unread';
+          badge.textContent = this.thread.state.unread.length
+            ? String(this.thread.state.unread.length)
+            : '☺';
+          row.append(badge);
+          row.addEventListener('click', () => this.onContactSelected(contact));
+        }
+        group.append(row);
+      }
+      if (!members.length) {
+        const empty = document.createElement('p');
+        empty.textContent = 'Personne en ligne pour le moment. Mes amis arrivent bientôt :)';
+        group.append(empty);
+      }
+      list.append(group);
+    }
   }
 }

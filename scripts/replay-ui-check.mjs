@@ -102,20 +102,13 @@ export async function verifyReplayUI({
     assert.equal(await evaluate("document.querySelector('#toast-open').hidden"), false);
     await evaluate("document.querySelector('#toast-open').click()");
   }
-  await until(
-    () => evaluate("!!document.querySelector('[data-choice-id=replay-olympics]')"),
-    'choices',
-  );
+  await until(() => evaluate("!!document.querySelector('[data-choice-id=greeting-1]')"), 'choices');
   assert.equal(await evaluate("!!document.querySelector('.popup-narrative select')"), false);
   assert.ok(
-    await evaluate(
-      "!!document.querySelector('.dialogue-choices [data-choice-id=replay-olympics]')",
-    ),
+    await evaluate("!!document.querySelector('.dialogue-choices [data-choice-id=greeting-1]')"),
   );
   assert.ok(
-    await evaluate(
-      "!!document.querySelector('.dialogue-history-choices [data-choice-id=greeting-1]')",
-    ),
+    await evaluate("!!document.querySelector('.dialogue-choices [data-choice-id=greeting-1]')"),
   );
   assert.equal((await evaluate('window.chaosDebug.snapshot()')).phase, 'paused');
   const before = await saved();
@@ -144,13 +137,19 @@ export async function verifyReplayUI({
     "document.querySelector('#windows-start').click();document.querySelector('#menu-messenger').click()",
   );
   await until(
-    () => evaluate("!!document.querySelector('[data-choice-id=replay-olympics]')"),
+    () => evaluate("!!document.querySelector('[data-choice-id=greeting-1]')"),
     'restored choices',
   );
   const windowId = await evaluate("document.querySelector('.popup-narrative').dataset.windowId");
-  await wait(2300);
+  await until(
+    () =>
+      evaluate(
+        "!document.querySelector('.dialogue-typing').textContent.includes('en train') && document.querySelector('.conversation-log').textContent.includes('ENCORE ???')",
+      ),
+    'replay sequence delivered',
+  );
   assert.ok(
-    await evaluate("!!document.querySelector('[data-choice-id=replay-olympics]:not(:disabled)')"),
+    await evaluate("!!document.querySelector('[data-choice-id=greeting-1]:not(:disabled)')"),
   );
   assert.equal(
     await evaluate(
@@ -159,25 +158,18 @@ export async function verifyReplayUI({
     true,
   );
   assert.ok(
-    await evaluate(
-      "!!document.querySelector('.dialogue-choices [data-choice-id=replay-olympics]')",
-    ),
+    await evaluate("!!document.querySelector('.dialogue-choices [data-choice-id=greeting-1]')"),
   );
   assert.ok(
-    await evaluate(
-      "!!document.querySelector('.dialogue-history-choices [data-choice-id=greeting-1]')",
-    ),
+    await evaluate("!!document.querySelector('.dialogue-choices [data-choice-id=greeting-1]')"),
   );
-  await evaluate("document.querySelector('[data-choice-id=replay-olympics]').click()");
-  await until(
-    () => evaluate("document.querySelector('.conversation-log').textContent.includes('médaille')"),
-    'branch',
-    8000,
+  assert.equal(
+    await evaluate("document.querySelectorAll('.conversation-log .dialogue-choice').length"),
+    0,
   );
-  await until(
-    () =>
-      evaluate("document.querySelector('.conversation-log').textContent.includes('ENCORE ???')"),
-    'queued event injected',
+  assert.equal(
+    await evaluate("!!document.querySelector('[data-choice-id=replay-olympics]')"),
+    false,
   );
   assert.equal(
     await evaluate("document.querySelector('.popup-narrative').dataset.windowId"),
@@ -240,13 +232,16 @@ export async function verifyReplayUI({
     "document.querySelector('#windows-start').click();document.querySelector('#menu-messenger').click()",
   );
   await until(
-    () => evaluate("!!document.querySelector('.msn-contacts-empty')"),
+    () =>
+      evaluate(
+        "!!document.querySelector('.messenger-contact-list') && !document.querySelector('[data-contact-id=pixelgirl]')",
+      ),
     'locked contacts after new game',
   );
   assert.deepEqual((await saved()).conversations.pixelgirl.history, []);
   return {
     notifications: true,
-    branches: true,
+    messageOnlyReplays: true,
     minimized: true,
     noAutomaticPause: true,
     queuedChoices: true,

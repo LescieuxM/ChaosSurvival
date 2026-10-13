@@ -71,7 +71,7 @@ function command(method, params = {}) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       pending.delete(id);
-      reject(new Error(`Le diagnostic ne répond pas : ${method}`));
+      reject(new Error(`Le diagnostic ne répond pas : ${method} ${params.expression ?? ''}`));
     }, 15000);
     pending.set(id, { resolve, reject, timer });
     socket.send(JSON.stringify({ id, method, params }));
@@ -438,7 +438,7 @@ try {
     assert.equal((await snapshot()).open, 0);
     console.log('OK : trois croix accessibles à 800 × 600, clics réels et redimensionnement.');
 
-    let nextClick = (await snapshot()).audioTime + 2.5;
+    let nextClick = (await snapshot()).audioTime + 0.8;
     let stalled = false;
     let peakOpen = 0;
     let maxChaos = 0;
@@ -466,7 +466,7 @@ try {
       }
       if (data.audioTime >= nextClick && data.open) {
         await evaluate("document.querySelector('.popup .close-button').click()");
-        nextClick = data.audioTime + 2.5;
+        nextClick = data.audioTime + 0.8;
       }
       await wait(200);
     }
@@ -493,7 +493,7 @@ try {
       rendererStall: true,
     };
     console.log(
-      `OK : niveau complet réussi à un clic / 2,5 s, y compris après un blocage de 1,2 s ; retard max ${Math.round(final.maxLateness * 1000)} ms.`,
+      `OK : niveau Medium complet réussi à un clic / 0,8 s, y compris après un blocage de 1,2 s ; retard max ${Math.round(final.maxLateness * 1000)} ms.`,
     );
     if (process.argv.includes('--story'))
       storyChecks = await verifyStoryUI({

@@ -1,0 +1,50 @@
+{
+  "computer": {
+    "title": "Poste de travail",
+    "icon": "computer",
+    "address": "Poste de travail",
+    "description": "Les lecteurs de votre ordinateur Windows XD.",
+    "items": [
+      {
+        "name": "Disque local (C:)",
+        "icon": "drive",
+        "detail": "Disque dur · 32 Go · 12 Go libres"
+      },
+      { "name": "Lecteur CD/DVD (D:)", "icon": "disc", "detail": "Aucun disque dans le lecteur" },
+      { "name": "Clé USB (E:)", "icon": "drive", "detail": "256 Mo · pas mal pour l'époque !" }
+    ]
+  },
+  "folder": {
+    "title": "Mes documents",
+    "icon": "folder",
+    "address": "C:\\Documents and Settings\\Joueur\\Mes documents",
+    "description": "Vos dossiers et souvenirs numériques.",
+    "items": [
+      {
+        "name": "Mes images",
+        "icon": "folder",
+        "detail": "Fonds d'écran, smileys et photos de vacances"
+      },
+      { "name": "Mes musiques", "icon": "folder", "detail": "La playlist attend le prochain tube" },
+      {
+        "name": "devoir_final_v7_VRAIMENT_FINAL.txt",
+        "icon": "document",
+        "detail": "Penser à sauvegarder avant de tout fermer :)",
+        "text": "Devoir pour lundi\n\n1. Faire le devoir.\n2. Ne pas passer la soirée sur Messenger.\n3. Bon, juste cinq minutes alors."
+      },
+      {
+        "name": "liens_trop_biens.txt",
+        "icon": "document",
+        "detail": "Les découvertes du mercredi après-midi",
+        "text": "Des smileys, des jeux Flash et des fonds d'écran à paillettes.\n\nLa connexion 56k a demandé une pause café."
+      }
+    ]
+  },
+  "bin": {
+    "title": "Corbeille",
+    "icon": "bin",
+    "address": "Corbeille",
+    "description": "La corbeille est vide.",
+    "items": []
+  }
+}

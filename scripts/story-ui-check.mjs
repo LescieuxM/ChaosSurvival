@@ -45,11 +45,7 @@ export async function verifyStoryUI({
     await evaluate("!!document.querySelector('.conversation-channel, .popup-narrative select')"),
     false,
   );
-  await evaluate("document.querySelector('#pause-messages').click()");
-  const count = await evaluate("document.querySelectorAll('.conversation-message').length");
-  await wait(1100);
-  assert.equal(await evaluate("document.querySelectorAll('.conversation-message').length"), count);
-  await evaluate("document.querySelector('#pause-messages').click()");
+  assert.equal(await evaluate("!!document.querySelector('#pause-messages')"), false);
   await until(
     () => evaluate("!!document.querySelector('[data-choice-id=greeting-1]')"),
     'first choice',
@@ -80,7 +76,7 @@ export async function verifyStoryUI({
     5000,
   );
   console.log(
-    'OK : messages, pause de lecture, choix en attente, trois propositions conservées et anomalie visuelle de 500 ms.',
+    'OK : messages automatiques, choix en attente, trois propositions conservées et anomalie visuelle de 500 ms.',
   );
   await until(
     () => evaluate("!!document.querySelector('[data-choice-id=nickname-3]')"),
@@ -251,8 +247,11 @@ export async function verifyStoryUI({
   assert.equal(await evaluate("!!document.querySelector('.popup-narrative')"), false);
   await evaluate("document.querySelector('#toast-open').click()");
   await until(
-    () => evaluate("!!document.querySelector('[data-choice-id=replay-olympics]')"),
-    'choix de replay',
+    () =>
+      evaluate(
+        "document.querySelector('.conversation-log')?.textContent.includes('champion du monde')",
+      ),
+    'messages de replay',
   );
   assert.ok(
     (await evaluate("document.querySelector('.conversation-log').textContent")).includes(
@@ -260,6 +259,7 @@ export async function verifyStoryUI({
     ),
   );
   assert.equal((await evaluate('window.chaosDebug.snapshot()')).phase, 'paused');
+  assert.equal(await evaluate("document.querySelectorAll('.dialogue-choice').length"), 0);
   const pendingReply = await saved();
   await evaluate(
     "document.querySelector('.popup-narrative .close-button').click();document.querySelector('[data-shortcut=music]').dispatchEvent(new MouseEvent('dblclick',{bubbles:true}))",
@@ -282,27 +282,14 @@ export async function verifyStoryUI({
     "document.querySelector('#windows-start').click();document.querySelector('#menu-messenger').click()",
   );
   await until(
-    () => evaluate("!!document.querySelector('[data-choice-id=replay-olympics]:not(:disabled)')"),
-    'reponse preservee',
-  );
-  const persistentWindow = await evaluate(
-    "document.querySelector('.popup-narrative').dataset.windowId",
-  );
-  await evaluate("document.querySelector('[data-choice-id=replay-olympics]').click()");
-  await until(
-    () => evaluate("document.querySelector('.conversation-log').textContent.includes('médaille')"),
-    'branche de replay',
-    8000,
-  );
-  await wait(300);
-  await until(
     () =>
-      evaluate("document.querySelector('.conversation-log').textContent.includes('ENCORE ???')"),
-    'evenement injecte apres la reponse',
+      evaluate("document.querySelector('.conversation-log')?.textContent.includes('ENCORE ???')"),
+    'messages du replay suivant',
   );
+  assert.equal(await evaluate("document.querySelectorAll('.dialogue-choice').length"), 0);
   assert.equal(
-    await evaluate("document.querySelector('.popup-narrative').dataset.windowId"),
-    persistentWindow,
+    await evaluate("document.querySelectorAll('.conversation-log button.dialogue-choice').length"),
+    0,
   );
   assert.equal(
     await evaluate("document.querySelectorAll('.conversation-message').length"),
@@ -424,7 +411,7 @@ export async function verifyStoryUI({
     choices: 4,
     unselectedSaved: true,
     echo500ms: true,
-    readerPause: true,
+    automaticMessages: true,
     persistedAcrossReload: true,
     transferRefusal: true,
     desktopFile: true,

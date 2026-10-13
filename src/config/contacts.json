@@ -1,0 +1,27 @@
+[
+  {
+    "id": "skater",
+    "kind": "decorative",
+    "nickname": "Sk8er_du_93",
+    "status": "Hors ligne",
+    "personalMessage": "parti rider, laisse un com sur mon skyblog",
+    "avatar": "./avatars/contact-skater.svg"
+  },
+  {
+    "id": "princess",
+    "kind": "decorative",
+    "nickname": "Oo_bubble-princess_oO",
+    "status": "Hors ligne",
+    "personalMessage": "♫ cette chanson c'est toute ma vie ♫",
+    "avatar": "./avatars/contact-bubble.svg"
+  },
+  {
+    "id": "modem",
+    "kind": "decorative",
+    "nickname": "LeModemEnPLS",
+    "status": "Hors ligne",
+    "personalMessage": "ma mère utilise le téléphone :'(",
+    "avatar": "./avatars/contact-modem.svg"
+  },
+  { "id": "pixelgirl", "kind": "narrative", "dialogue": "pixelgirl-intro" }
+]
