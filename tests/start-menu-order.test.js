@@ -2,6 +2,35 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { StartMenuOrder, resolveStartMenuOrder } from '../src/ui/start-menu-order.js';
 import { UserSettings } from '../src/settings.js';
+import { mountDesktop } from '../src/ui/desktop.js';
+
+test('Buddy defaults immediately below the fixed main-menu command while saved manual order remains authoritative', () => {
+  const root = { querySelector: () => ({}), querySelectorAll: () => [] };
+  mountDesktop(root, 0);
+  const html = root.innerHTML.slice(
+    root.innerHTML.indexOf('id="start-menu"'),
+    root.innerHTML.indexOf('<footer>Bienvenue'),
+  );
+  assert.match(html, /id="desktop-menu-play"[\s\S]*?<\/button>\s*<button id="menu-buddy"/);
+  const defaults = [
+    ...html.matchAll(/data-start-app="([^"]+)"|data-system-app="([^"]+)"|id="menu-messenger"/g),
+  ].map((match) => match[1] ?? match[2] ?? 'menu-messenger');
+  assert.deepEqual(defaults, ['buddy', 'menu-messenger', 'computer', 'folder', 'bin']);
+  assert.equal([...html.matchAll(/id="menu-buddy"/g)].length, 1);
+  const values = new Map();
+  const storage = {
+    getItem: (key) => values.get(key),
+    setItem: (key, value) => values.set(key, value),
+  };
+  const preferences = new UserSettings(storage);
+  assert.deepEqual(resolveStartMenuOrder(preferences.data.startMenuOrder, defaults), defaults);
+  const custom = ['folder', 'menu-messenger', 'computer', 'buddy', 'bin'];
+  preferences.update({ startMenuOrder: custom });
+  const restored = new UserSettings(storage);
+  assert.deepEqual(resolveStartMenuOrder(restored.data.startMenuOrder, defaults), custom);
+  restored.reset();
+  assert.deepEqual(resolveStartMenuOrder(restored.data.startMenuOrder, defaults), defaults);
+});
 
 test('saved start applications keep their order, ignore obsolete/duplicate IDs and append new applications', () => {
   assert.deepEqual(

@@ -23,14 +23,41 @@
     "personalMessage": "ma mère utilise le téléphone :'(",
     "avatar": "./avatars/contact-modem.svg"
   },
-  { "id": "pixelgirl", "kind": "narrative", "dialogue": "pixelgirl-intro" },
+  {
+    "id": "pixelgirl",
+    "kind": "narrative",
+    "dialogue": "pixelgirl-intro",
+    "visibleInitially": true
+  },
   {
     "id": "turbo",
     "kind": "decorative",
     "connection": true,
+    "visibleInitially": true,
     "nickname": "xX_TURBO_59_Xx",
     "status": "En ligne",
-    "personalMessage": "",
+    "personalMessage": "♫ BASSHUNTER - DOTA ♫",
     "avatar": "./avatars/turbo.svg"
+  },
+  {
+    "id": "luna",
+    "kind": "narrative",
+    "dialogue": "luna-intro",
+    "visibleInitially": true,
+    "nickname": "°•.LuNa.°•",
+    "status": "Hors ligne",
+    "personalMessage": "♪ somewhere only we know",
+    "avatar": "./avatars/luna.svg"
+  },
+  {
+    "id": "offline",
+    "kind": "narrative",
+    "dialogue": "offline-intro",
+    "visibleInitially": true,
+    "alwaysOffline": true,
+    "nickname": "0FFLINE",
+    "status": "Hors ligne",
+    "personalMessage": "",
+    "avatar": "./avatars/offline.svg"
   }
 ]

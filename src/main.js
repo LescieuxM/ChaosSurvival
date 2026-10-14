@@ -1,6 +1,8 @@
 import './styles.css';
 import './styles-story.css';
 import './styles-menu.css';
+import './styles-buddy.css';
+import { Buddy } from './ui/buddy.js';
 import chart from './config/chart.json';
 import music from './config/music-lvl1.analysis.json';
 import { AudioEngine } from './audio/engine.js';
@@ -76,6 +78,7 @@ const ui = mountDesktop(document.getElementById('app'), best);
 const state = new GameState(chart.gameplay);
 const audio = new AudioEngine(chart.volume);
 const progression = new Progression(story, storyStorage);
+const buddy = new Buddy(ui.desktop, progression);
 const replayReactions = new ReplayReactions(progression, dialogues, replayConfig);
 const settings = new UserSettings(storyStorage, chart.volume);
 const menuMusic = new MenuMusic(() => settings.data.musicVolume);
@@ -102,6 +105,7 @@ let phase = 'idle';
 function setPhase(next) {
   phase = next;
   updateRhythmHud(ui, phase);
+  buddy.setActive(next !== 'menu');
 }
 let duration = chart.durationSeconds;
 let lastTime = 0;
@@ -156,7 +160,7 @@ const messenger = new Messenger({
   createConversation: (contact) => {
     const definition = dialogues[contact.dialogue] ?? pixelgirlDialogue;
     const thread =
-      contact.kind === 'decorative'
+      contact.kind === 'decorative' || !dialogues[contact.dialogue]
         ? replayReactions.thread
         : new ConversationThread(contact.id, progression, () =>
             Object.values(dialogues).filter(
@@ -332,6 +336,7 @@ async function resetGameToInitialState() {
     await resetSession({
       progression,
       stop: () => {
+        buddy.setActive(false);
         clearTimeout(msnArrivalTimer);
         pauseGeneration++;
         cancelAnimationFrame(frame);
@@ -350,6 +355,7 @@ async function resetGameToInitialState() {
         clearEffects();
       },
       rebuild: async () => {
+        buddy.restore();
         settings.reset();
         messenger.conversations.clear();
         messenger.views.clear();
@@ -928,6 +934,10 @@ ui.muteButton.addEventListener('click', () => {
 ui.windowsStart.addEventListener('click', () => {
   setStartMenuOpen(ui.startMenu.hidden);
 });
+ui.desktop.querySelector('#menu-buddy').addEventListener('click', () => {
+  setStartMenuOpen(false);
+  buddy.open();
+});
 document.addEventListener('pointerdown', (event) => {
   if (!event.target.closest('.start-menu, .windows-start')) setStartMenuOpen(false);
 });
@@ -1010,6 +1020,7 @@ function receiveReplayReactions() {
   const incoming = replayReactions.flush();
   dialogueEvents.update(Date.now(), phase !== 'menu');
   messenger.update();
+  buddy.update();
   const visible = !conversation.offlineContact && messenger.isVisible(conversation);
   const unread = replayReactions.thread.state.unread;
   if (visible && !unread.length && storyToastAction === openConversation) ui.toast.hidden = true;

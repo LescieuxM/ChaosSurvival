@@ -158,7 +158,16 @@ test('rhythm HUD follows the real phase through loading, pauses, results, deskto
   // Execute the actual central phase transition without starting audio or Electron.
   const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
   const setter = main.match(/function setPhase\(next\) \{[\s\S]*?\n\}/)[0];
-  const context = { ui, updateRhythmHud };
+  let buddyActive;
+  const context = {
+    ui,
+    updateRhythmHud,
+    buddy: {
+      setActive(active) {
+        buddyActive = active;
+      },
+    },
+  };
   runInNewContext(`let phase = 'idle'; ${setter}; this.transition = setPhase;`, context);
   // No transition can bypass the HUD update via a direct assignment.
   assert.deepEqual(main.match(/^[\t ]*phase = .*;/gm), ['  phase = next;']);
@@ -182,6 +191,7 @@ test('rhythm HUD follows the real phase through loading, pauses, results, deskto
     ['idle', false],
   ]) {
     context.transition(phase);
+    assert.equal(buddyActive, phase !== 'menu');
     assert.equal(ui.hud.hidden, !visible, phase);
     assert.equal(classes.has('rhythm-active'), visible, phase);
   }

@@ -8,7 +8,7 @@ export function mountDesktop(root, best) {
     <header class="hud" hidden aria-label="Statistiques de la partie">
       <div class="hud-brand">
         ${icon('computer')}
-        <div><strong>CHAOS SURVIVAL</strong><small>ARCADE MUSICAL / ÉDITION 2005</small></div>
+        <div><strong>CHAOS SURVIVAL</strong><small>ARCADE MUSICAL / ÉDITION 2009</small></div>
       </div>
       <div class="score-panel">
         <span>SCORE</span><strong id="score">000000</strong
@@ -86,7 +86,7 @@ export function mountDesktop(root, best) {
             ><span>Échap = pause</span>
           </div>
           <p class="load-status" id="load-status" role="status">
-            Prêt à faire planter l’année 2005 ?
+            Prêt à faire planter l’année 2009 ?
           </p>
         </div>
         <footer class="launcher-footer">
@@ -159,12 +159,14 @@ export function mountDesktop(root, best) {
       <header>${icon('computer')} <strong>Joueur.exe</strong></header>
       <button id="desktop-menu-play">
         ${icon('music')}
-        <span>Chaos Survival<small>Démarrer / reprendre la partie</small></span></button
-      ><button id="menu-messenger">${icon('msn')} ${applicationName('messenger')}</button>
+        <span>Chaos Survival<small>Démarrer / reprendre la partie</small></span>
+      </button>
+      <button id="menu-buddy" data-start-app="buddy">${icon('buddy')} Buddy</button>
+      <button id="menu-messenger">${icon('msn')} ${applicationName('messenger')}</button>
       <button data-system-app="computer">${icon('computer')} Poste de travail</button>
       <button data-system-app="folder">${icon('folder')} Mes documents</button>
       <button data-system-app="bin">${icon('bin')} Corbeille</button>
-      <footer>Bienvenue en 2005. Reste un peu.</footer>
+      <footer>Bienvenue en 2009. Reste un peu.</footer>
     </div>
     <footer class="taskbar">
       <button class="windows-start" id="windows-start" aria-expanded="false">

@@ -1,4 +1,4 @@
-import { visibleContacts } from './contacts.js';
+import { orderedContacts, visibleContacts } from './contacts.js';
 import { bindFileActivation } from '../utils/activation.js';
 
 export class MessengerContacts {
@@ -10,11 +10,14 @@ export class MessengerContacts {
     const list = this.element?.querySelector('.messenger-contact-list');
     if (!list) return;
     const definitions = this.getContactDefinitions();
-    const contacts = visibleContacts(
-      definitions,
-      this.progression.data.unlockedConversations,
-      undefined,
-      this.progression.data.contactConnections,
+    const contacts = orderedContacts(
+      visibleContacts(
+        definitions,
+        this.progression.data.unlockedConversations,
+        undefined,
+        this.progression.data.contactConnections,
+        this.progression.data.contactProfiles,
+      ),
     );
     const unreadFor = (contact) => this.getUnread?.(contact) ?? this.thread.state.unread.length;
     const signature = JSON.stringify(contacts);
@@ -23,8 +26,11 @@ export class MessengerContacts {
       for (const row of list.querySelectorAll('.messenger-contact-row')) {
         const contact = contacts.find((entry) => entry.id === row.dataset.contactId);
         const badge = row.querySelector('.contact-unread');
-        if (badge && contact)
-          badge.textContent = unreadFor(contact) ? String(unreadFor(contact)) : '☺';
+        if (badge && contact) {
+          const unread = unreadFor(contact);
+          badge.textContent = unread ? String(unread) : '';
+          badge.hidden = !unread;
+        }
       }
       return;
     }
@@ -52,13 +58,17 @@ export class MessengerContacts {
         const nickname = document.createElement('strong');
         nickname.textContent = contact.nickname;
         const status = document.createElement('small');
-        status.textContent = `${contact.status} · ${contact.personalMessage ?? ''}`;
+        status.textContent = contact.personalMessage
+          ? `${contact.status} · ${contact.personalMessage}`
+          : contact.status;
         copy.append(nickname, status);
         row.append(image, copy);
         if (contact.kind === 'narrative') {
           const badge = document.createElement('b');
           badge.className = 'contact-unread';
-          badge.textContent = unreadFor(contact) ? String(unreadFor(contact)) : '☺';
+          const unread = unreadFor(contact);
+          badge.textContent = unread ? String(unread) : '';
+          badge.hidden = !unread;
           row.append(badge);
           bindFileActivation(row, () => this.onContactSelected(contact));
         } else {

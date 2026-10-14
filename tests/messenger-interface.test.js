@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { DialogueSession } from '../src/story/dialogue.js';
 import { ConversationThread } from '../src/story/conversation-thread.js';
 import { Progression } from '../src/story/progression.js';
-import { visibleContacts } from '../src/ui/contacts.js';
+import { orderedContacts, visibleContacts } from '../src/ui/contacts.js';
 import { Messenger } from '../src/ui/messenger.js';
 import { playerIdentity } from '../src/ui/player-identity.js';
 import {
@@ -20,6 +20,34 @@ import { ConversationWindow } from '../src/ui/conversation.js';
 
 const read = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url)));
 const intro = read('../src/dialogues/pixelgirl-intro.json');
+
+test('display order is explicit, independent of creation order, and stable within connection groups', () => {
+  const order = ['skater', 'luna', 'modem', 'pixelgirl', 'princess', 'offline', 'turbo'];
+  const source = visibleContacts({ [intro.id]: intro }, []);
+  const before = JSON.stringify(source);
+  assert.deepEqual(
+    orderedContacts([...source].reverse()).map((contact) => contact.id),
+    order,
+  );
+  assert.equal(JSON.stringify(source), before);
+  const connected = orderedContacts(
+    visibleContacts({ [intro.id]: intro }, [intro.id], undefined, { turbo: { status: 'online' } }),
+  );
+  assert.deepEqual(
+    connected.filter((contact) => contact.online).map((contact) => contact.id),
+    ['pixelgirl', 'turbo'],
+  );
+  assert.deepEqual(
+    connected.filter((contact) => !contact.online).map((contact) => contact.id),
+    order.filter((id) => !['pixelgirl', 'turbo'].includes(id)),
+  );
+  const disconnected = orderedContacts(visibleContacts({ [intro.id]: intro }, [], undefined, {}));
+  assert.deepEqual(
+    disconnected.map((contact) => contact.id),
+    order,
+  );
+  assert.ok(disconnected.every((contact) => !contact.online));
+});
 
 test('Wizz send events persist one chronological system entry for each sender without changing dialogues', async () => {
   const values = new Map();
@@ -131,6 +159,86 @@ test('Messenger and conversation views share the central player profile instead 
   assert.equal(messenger.player, playerIdentity);
   assert.equal(conversation.player, playerIdentity);
   assert.equal(intro.player.nickname, 'Moi', 'narrative JSON is not rewritten');
+});
+
+test('requested personal messages and distinct local avatars are available before narrative unlock', () => {
+  const contacts = visibleContacts({ [intro.id]: intro }, []);
+  for (const [id, message, avatar] of [
+    ['pixelgirl', "☆ don't forget me ☆", 'pixelgirl.svg'],
+    ['turbo', '♫ BASSHUNTER - DOTA ♫', 'turbo.svg'],
+    ['luna', '♪ somewhere only we know', 'luna.svg'],
+    ['offline', '', 'offline.svg'],
+  ]) {
+    const contact = contacts.find((contact) => contact.id === id);
+    assert.equal(contact.personalMessage, message);
+    assert.equal(contact.avatar, `./avatars/${avatar}`);
+    const svg = readFileSync(new URL(`../public/avatars/${avatar}`, import.meta.url), 'utf8');
+    assert.match(svg, /viewBox="0 0 (64 64|96 96)"/);
+    assert.doesNotMatch(svg, /<script|<image|href=/);
+  }
+});
+
+test('profiles reuse stable windows and update current status/message without changing narrative data; saved overrides reset with New Game', () => {
+  const values = new Map();
+  const storage = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, value),
+    removeItem: (key) => values.delete(key),
+  };
+  const story = read('../src/config/story.json');
+  const progression = new Progression(story, storage);
+  const primary = { offlineContact: true, refresh() {} };
+  const messenger = new Messenger({
+    progression,
+    definitions: () => ({ [intro.id]: intro }),
+    primary: () => primary,
+  });
+  let panels = 0;
+  messenger.panel = (key, title, body) => {
+    if (messenger.views.has(key)) return messenger.views.get(key);
+    assert.doesNotMatch(body, /biograph|intérêt/i);
+    const fields = new Map();
+    const instance = {
+      element: {
+        querySelector(selector) {
+          if (!fields.has(selector)) fields.set(selector, {});
+          return fields.get(selector);
+        },
+      },
+    };
+    messenger.views.set(key, instance);
+    panels++;
+    return instance;
+  };
+  const turbo = messenger.contacts().find((contact) => contact.id === 'turbo');
+  const instance = messenger.profile(turbo),
+    field = (selector) => instance.element.querySelector(selector);
+  assert.equal(field('.messenger-profile img').src, './avatars/turbo.svg');
+  assert.equal(field('img').src, undefined, 'the titlebar icon is not overwritten');
+  assert.equal(field('h3').textContent, 'xX_TURBO_59_Xx');
+  assert.equal(field('.profile-status').textContent, 'Hors ligne');
+  const before = JSON.stringify([progression.data.dialogues, progression.data.choices]);
+  progression.data.contactConnections.turbo = { status: 'online' };
+  progression.data.contactProfiles = { turbo: { personalMessage: 'new track' } };
+  messenger.update();
+  assert.equal(field('.profile-status').textContent, 'En ligne');
+  assert.equal(field('.profile-message').textContent, 'new track');
+  assert.equal(messenger.profile(turbo), instance);
+  assert.equal(panels, 1);
+  assert.equal(JSON.stringify([progression.data.dialogues, progression.data.choices]), before);
+  progression.save();
+  assert.equal(
+    new Progression(story, storage).data.contactProfiles.turbo.personalMessage,
+    'new track',
+  );
+  const offline = messenger.profile(
+    messenger.contacts().find((contact) => contact.id === 'offline'),
+  );
+  assert.equal(offline.element.querySelector('.profile-message').hidden, true);
+  progression.newGame();
+  messenger.update();
+  assert.equal(field('.profile-status').textContent, 'Hors ligne');
+  assert.equal(field('.profile-message').textContent, '♫ BASSHUNTER - DOTA ♫');
 });
 
 test('text and picture viewers have independent windows and task controls without replacing the explorer', (t) => {
@@ -416,12 +524,12 @@ test('the menu CRT is original and distinct from the desktop computer', () => {
   assert.doesNotMatch(svg, /<image|<script|href=/);
 });
 
-test('decorative contacts are offline and PixelGirl stays hidden until unlocked', () => {
+test('main contacts are visible offline initially and become available in place without duplicates', () => {
   const locked = visibleContacts({ [intro.id]: intro }, []);
-  assert.equal(locked.length, 3);
+  assert.equal(locked.length, 7);
   assert.ok(
     locked.every(
-      (contact) => contact.kind === 'decorative' && !contact.online && !contact.dialogue,
+      (contact) => !contact.online && contact.status === 'Hors ligne' && !contact.available,
     ),
   );
   for (const contact of locked)
@@ -429,14 +537,100 @@ test('decorative contacts are offline and PixelGirl stays hidden until unlocked'
       readFileSync(new URL(`../public/${contact.avatar.slice(2)}`, import.meta.url)).length,
     );
   const unlocked = visibleContacts({ [intro.id]: intro }, [intro.id]);
-  assert.equal(unlocked.length, 4);
-  assert.equal(unlocked.at(-1).nickname, intro.contact.nickname);
-  assert.equal(unlocked.at(-1).kind, 'narrative');
-  assert.equal(unlocked.at(-1).online, true);
+  assert.deepEqual(
+    locked
+      .filter((contact) => ['pixelgirl', 'turbo', 'luna', 'offline'].includes(contact.id))
+      .map((contact) => contact.nickname),
+    ['xX_PixelGirl_Xx', 'xX_TURBO_59_Xx', '°•.LuNa.°•', '0FFLINE'],
+  );
+  assert.equal(unlocked.length, 7);
+  const pixel = unlocked.find((contact) => contact.id === 'pixelgirl');
+  assert.equal(pixel.nickname, intro.contact.nickname);
+  assert.equal(pixel.online, true);
+  assert.equal(pixel.available, true);
+  const connected = visibleContacts({ [intro.id]: intro }, [intro.id], undefined, {
+    turbo: { status: 'online' },
+  });
+  assert.equal(connected.find((contact) => contact.id === 'turbo').online, true);
+  assert.equal(new Set(connected.map((contact) => contact.id)).size, 7);
+  assert.ok(locked.every((contact) => !['Raph', 'SUPER_BUDDY'].includes(contact.nickname)));
   const future = { ...intro, id: 'future-contact', contact: { ...intro.contact, name: 'Future' } };
   const roster = [{ id: 'future', kind: 'narrative', dialogue: future.id }];
   assert.deepEqual(visibleContacts({ [future.id]: future }, [], roster), []);
   assert.equal(visibleContacts({ [future.id]: future }, [future.id], roster)[0].id, 'future');
+});
+
+test('locked contacts use read-only windows and resolve current availability after unlocking', () => {
+  let unlocked = [];
+  const received = [];
+  const primary = {
+    openOffline(contact) {
+      received.push(`offline:${contact.id}`);
+    },
+    open() {
+      received.push('online:pixelgirl');
+    },
+  };
+  const messenger = new Messenger({ primary: () => primary, createConversation: () => primary });
+  messenger.contacts = () => visibleContacts({ [intro.id]: intro }, unlocked);
+  const locked = messenger.contacts().find((contact) => contact.id === 'pixelgirl');
+  messenger.openContact(locked);
+  unlocked = [intro.id];
+  messenger.openContact(locked);
+  assert.deepEqual(received, ['offline:pixelgirl', 'online:pixelgirl']);
+});
+
+test('0FFLINE can be narratively available while its visible status remains offline', () => {
+  const definition = {
+    ...intro,
+    id: 'offline-intro',
+    contact: { ...intro.contact, nickname: '0FFLINE' },
+  };
+  const contact = visibleContacts({ [definition.id]: definition }, [definition.id]).find(
+    (contact) => contact.id === 'offline',
+  );
+  assert.equal(contact.available, true);
+  assert.equal(contact.online, false);
+  assert.equal(contact.status, 'Hors ligne');
+});
+
+test('contact presence does not unlock stories or alter saved dialogue data and New Game restores offline status', () => {
+  const values = new Map();
+  const storage = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, value),
+    removeItem: (key) => values.delete(key),
+  };
+  const story = read('../src/config/story.json');
+  const progression = new Progression(story, storage);
+  const before = JSON.stringify(progression.data);
+  visibleContacts({ [intro.id]: intro }, progression.data.unlockedConversations);
+  assert.equal(JSON.stringify(progression.data), before);
+  progression.begin();
+  progression.complete('arcade-1');
+  const session = new DialogueSession(intro, progression);
+  session.deliver();
+  progression.data.contactConnections.turbo = { status: 'online' };
+  progression.save();
+  const restored = new Progression(story, storage);
+  const messages = JSON.stringify(restored.data.dialogues);
+  const contacts = visibleContacts(
+    { [intro.id]: intro },
+    restored.data.unlockedConversations,
+    undefined,
+    restored.data.contactConnections,
+  );
+  assert.equal(contacts.find((contact) => contact.id === 'pixelgirl').online, true);
+  assert.equal(JSON.stringify(restored.data.dialogues), messages);
+  restored.newGame();
+  const fresh = visibleContacts(
+    { [intro.id]: intro },
+    restored.data.unlockedConversations,
+    undefined,
+    restored.data.contactConnections,
+  );
+  assert.equal(fresh.length, 7);
+  assert.ok(fresh.every((contact) => !contact.online && !contact.available));
 });
 
 test('Messenger keeps one independent window per contact including future contacts', () => {

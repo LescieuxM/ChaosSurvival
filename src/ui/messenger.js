@@ -40,6 +40,7 @@ export class Messenger {
       this.progression.data.unlockedConversations,
       undefined,
       this.progression.data.contactConnections,
+      this.progression.data.contactProfiles,
     );
   }
   open() {
@@ -70,13 +71,14 @@ export class Messenger {
     return instance;
   }
   openContact(contact) {
-    if (!this.contacts().some((entry) => entry.id === contact.id)) return;
+    contact = this.contacts().find((entry) => entry.id === contact.id);
+    if (!contact) return;
     let view = contact.id === 'pixelgirl' ? this.primary() : this.conversations.get(contact.id);
     if (!view) {
       view = this.createConversation(contact);
       this.conversations.set(contact.id, view);
     }
-    if (contact.kind === 'decorative') view.openOffline(contact);
+    if (contact.kind === 'decorative' || contact.available === false) view.openOffline(contact);
     else view.open();
     return view;
   }
@@ -137,16 +139,34 @@ export class Messenger {
         'Profil du contact',
         '<div class="messenger-profile"><p>Sélectionne un contact dans la liste puis choisis Contacts → Consulter le profil.</p></div>',
       );
+    contact =
+      this.contacts().find(
+        (entry) => entry.id === contact.id || entry.nickname === contact.nickname,
+      ) ?? contact;
     const instance = this.panel(
       `profile:${contact.id ?? contact.name}`,
       'Profil du contact',
-      '<div class="messenger-profile"><img class="story-avatar" alt="Avatar du contact" /><h3></h3><p class="profile-status"></p><p class="profile-message"></p></div>',
+      '<div class="messenger-profile messenger-contact-profile"><div class="profile-header"><div class="profile-avatar-frame"><img class="story-avatar" alt="Avatar du contact" /></div><div class="profile-identity"><h3></h3><p class="profile-status"></p></div></div><p class="profile-message"></p></div>',
     );
+    instance.profileContactId = contact.id;
+    this.renderProfile(instance, contact);
+    return instance;
+  }
+  renderProfile(instance, contact) {
+    const signature = JSON.stringify([
+      contact.avatar,
+      contact.nickname,
+      contact.status,
+      contact.personalMessage,
+    ]);
+    if (signature === instance.profileSignature) return;
+    instance.profileSignature = signature;
     const element = instance.element;
-    element.querySelector('img').src = contact.avatar;
+    element.querySelector('.messenger-profile img').src = contact.avatar;
     element.querySelector('h3').textContent = contact.nickname;
     element.querySelector('.profile-status').textContent = contact.status;
     element.querySelector('.profile-message').textContent = contact.personalMessage ?? '';
+    element.querySelector('.profile-message').hidden = !contact.personalMessage;
   }
   options() {
     const instance = this.panel(
@@ -277,6 +297,12 @@ export class Messenger {
   }
   update() {
     this.roster?.renderContacts();
+    const contacts = this.contacts();
+    for (const instance of this.views.values()) {
+      if (!instance.profileContactId) continue;
+      const contact = contacts.find((entry) => entry.id === instance.profileContactId);
+      if (contact) this.renderProfile(instance, contact);
+    }
     for (const view of [this.primary(), ...this.conversations.values()]) {
       if (view !== this.primary() && !view.offlineContact) {
         const incoming = view.thread.receive();

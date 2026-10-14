@@ -22,6 +22,7 @@ const gridOnly = process.argv.includes('--desktop-grid-only');
 const menuLayoutOnly = process.argv.includes('--menu-layout-only');
 const smileyDialogueOnly = process.argv.includes('--smiley-dialogue-only');
 const newGameOnly = process.argv.includes('--new-game-only');
+const buddyOnly = process.argv.includes('--buddy-only');
 const minigameOnly =
   process.argv.includes('--minigame-only') ||
   typingOnly ||
@@ -33,6 +34,7 @@ const minigameOnly =
   menuLayoutOnly ||
   smileyDialogueOnly ||
   newGameOnly ||
+  buddyOnly ||
   stabilityOnly;
 let browserServer;
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -545,7 +547,8 @@ try {
     0,
   );
   if (minigameOnly) {
-    if (newGameOnly) await verifyNewGame();
+    if (buddyOnly) await verifyBuddy();
+    else if (newGameOnly) await verifyNewGame();
     else if (smileyDialogueOnly) await verifySmileyDialogue();
     else if (menuLayoutOnly) await verifyMenuLayout();
     else if (gridOnly) await verifyDesktopGrid();
@@ -1019,6 +1022,47 @@ async function verifyNewGame() {
       originals[index],
     );
   }
+  await click('#windows-start');
+  await click('#menu-messenger');
+  const contacts = await evaluate(
+    "['pixelgirl','turbo','luna','offline'].map(id=>{const rows=document.querySelectorAll('[data-contact-id='+id+']'); const row=rows[0];return {id,count:rows.length,name:row?.querySelector('strong').textContent,offline:row?.classList.contains('offline'),group:row?.closest('details').dataset.group};})",
+  );
+  assert.deepEqual(
+    contacts.map((contact) => contact.name),
+    ['xX_PixelGirl_Xx', 'xX_TURBO_59_Xx', '°•.LuNa.°•', '0FFLINE'],
+  );
+  assert.ok(
+    contacts.every(
+      (contact) => contact.count === 1 && contact.offline && contact.group === 'false',
+    ),
+  );
+  assert.deepEqual(
+    await evaluate(
+      "[...document.querySelectorAll('.messenger-contact-list details[data-group=false] [data-contact-id]')].map(row=>row.dataset.contactId)",
+    ),
+    ['skater', 'luna', 'modem', 'pixelgirl', 'princess', 'offline', 'turbo'],
+  );
+  assert.equal(
+    await evaluate("document.querySelector('.messenger-contact-list').textContent.includes('☺')"),
+    false,
+  );
+  for (const id of ['pixelgirl', 'luna', 'offline']) {
+    await doubleClick(`[data-contact-id=${id}]`);
+    assert.equal(
+      await evaluate(
+        `document.querySelectorAll('[data-messenger-contact=${id}] .conversation-message, [data-messenger-contact=${id}] .dialogue-choice').length`,
+      ),
+      0,
+    );
+    assert.equal(
+      await evaluate(
+        `document.querySelector('[data-messenger-contact=${id}] [data-msn-action=wizz]').disabled`,
+      ),
+      true,
+    );
+  }
+  assert.deepEqual((await snapshot()).dialogues, {});
+  await capture('msn-initial-offline-contacts.png');
   assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
   console.log(
     'OK: persisted icon moves, two edited files, Start order, MSN/Wizz and game results; Non preserves data; repeated Oui clears all game data/records/preferences and restores initial tutorial, apps and layout; unrelated storage survives; no Electron.',
@@ -1282,6 +1326,143 @@ async function physicalDrag(selector, left, top) {
     button: 'left',
     clickCount: 1,
   });
+}
+
+async function verifyBuddy() {
+  const definition = JSON.parse(await readFile(path.join(root, 'src/config/buddy.json')));
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 1280,
+    height: 800,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  assert.equal(await evaluate("document.querySelector('.buddy').hidden"), true);
+  await click('#menu-play');
+  await until(() => evaluate("!!document.querySelector('.rules-confirm')"), 'initial rules');
+  await click('.rules-confirm');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'rhythm playing');
+  assert.equal(await evaluate("document.querySelector('.buddy').hidden"), true);
+  const openBuddy = async () => {
+    await click('#windows-start');
+    await click('#menu-buddy');
+  };
+  const text = () => evaluate("document.querySelector('.buddy-bubble p').textContent");
+  await openBuddy();
+  assert.equal(await text(), definition.introduction[0].text);
+  assert.equal(
+    await evaluate("document.querySelectorAll('.buddy input,.buddy textarea').length"),
+    0,
+  );
+  await capture('buddy-introduction.png');
+  await evaluate(
+    'window.__buddyNow=Date.now;window.__buddyOffset=0;Date.now=()=>window.__buddyNow()+window.__buddyOffset;',
+  );
+  for (let index = 1; index < definition.introduction.length; index++) {
+    await evaluate(`window.__buddyOffset+=${definition.introduction[index - 1].durationMs + 200}`);
+    await until(
+      async () => (await text()) === definition.introduction[index].text,
+      `Buddy bubble ${index + 1}`,
+    );
+  }
+  assert.equal(await evaluate('window.chaosDebug.snapshot().phase'), 'playing');
+  for (const [width, height] of [
+    [1280, 800],
+    [800, 600],
+  ]) {
+    await command('Emulation.setDeviceMetricsOverride', {
+      width,
+      height,
+      deviceScaleFactor: 1,
+      mobile: false,
+    });
+    const geometry =
+      await evaluate(`(()=>{const buddy=document.querySelector('.buddy'),r=buddy.getBoundingClientRect(),b=buddy.querySelector('.buddy-bubble').getBoundingClientRect();return {
+      left:r.left,top:r.top,right:r.right,bottom:r.bottom,taskbar:document.querySelector('.taskbar').getBoundingClientRect().top,
+      pointer:getComputedStyle(buddy).pointerEvents,bubblePointer:getComputedStyle(buddy.querySelector('.buddy-bubble')).pointerEvents,
+      animation:getComputedStyle(buddy.querySelector('.buddy-character')).animationName,bubbleLeft:b.left,bubbleRight:b.right};})()`);
+    assert.ok(
+      geometry.left >= 0 &&
+        geometry.top >= 0 &&
+        geometry.right <= width &&
+        geometry.bottom < geometry.taskbar,
+    );
+    assert.ok(geometry.bubbleLeft >= 0 && geometry.bubbleRight <= width);
+    assert.equal(geometry.pointer, 'none');
+    assert.equal(geometry.bubblePointer, 'none');
+    assert.equal(geometry.animation, 'buddy-celebrate');
+  }
+  await evaluate(`window.__buddyOffset+=${definition.introduction.at(-1).durationMs + 200}`);
+  await until(() => evaluate("document.querySelector('.buddy-bubble').hidden"), 'Buddy discreet');
+  await evaluate('Date.now=window.__buddyNow;');
+  const empty = await evaluate(
+    "(()=>{const r=document.querySelector('.buddy').getBoundingClientRect();return {x:r.left+6,y:r.top+6};})()",
+  );
+  await command('Input.dispatchMouseEvent', {
+    type: 'mousePressed',
+    x: empty.x,
+    y: empty.y,
+    button: 'left',
+    clickCount: 1,
+  });
+  await command('Input.dispatchMouseEvent', {
+    type: 'mouseMoved',
+    x: empty.x + 18,
+    y: empty.y + 18,
+    button: 'left',
+    buttons: 1,
+  });
+  assert.equal(await evaluate("!!document.querySelector('.desktop-selection')"), true);
+  await command('Input.dispatchMouseEvent', {
+    type: 'mouseReleased',
+    x: empty.x + 18,
+    y: empty.y + 18,
+    button: 'left',
+    clickCount: 1,
+  });
+  await physicalDrag('#desktop > .desktop-icons [data-shortcut=computer]', 260, 124);
+  assert.equal(
+    await evaluate(
+      "document.querySelector('#desktop > .desktop-icons [data-shortcut=computer]').style.left",
+    ),
+    '260px',
+  );
+  await doubleClick('#desktop > .desktop-icons [data-shortcut=folder]');
+  await until(() => evaluate("!!document.querySelector('.explorer-item')"), 'Explorer with Buddy');
+  await command('Page.reload');
+  await until(() => evaluate("window.chaosDebug?.snapshot().phase==='menu'"), 'Buddy restart');
+  assert.equal(await evaluate("document.querySelector('.buddy').hidden"), true);
+  await click('#menu-play');
+  await until(
+    () => evaluate("window.chaosDebug.snapshot().phase==='playing'"),
+    'resumed rhythm ready',
+  );
+  assert.equal(await evaluate("document.querySelector('.buddy').hidden"), false);
+  assert.equal(await evaluate("document.querySelector('.buddy-bubble').hidden"), true);
+  await click('.buddy-hide');
+  await until(() => evaluate("document.querySelector('.buddy').hidden"), 'mask Buddy');
+  await openBuddy();
+  assert.equal(await text(), definition.tips[0]);
+  await click('.buddy-close');
+  assert.equal(await evaluate("document.querySelector('.buddy-bubble').hidden"), true);
+  await click('#windows-start');
+  await click('#return-main-menu');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='menu'"), 'return menu');
+  await click('#menu-new-game');
+  await click('#menu-confirm-yes');
+  await until(
+    () => evaluate("window.chaosDebug.snapshot().phase==='rules'"),
+    'New Game Buddy reset',
+  );
+  assert.equal(
+    await evaluate("JSON.parse(localStorage.getItem('chaos-survival-story-v1')).buddy"),
+    undefined,
+  );
+  assert.equal(await evaluate("document.querySelector('.buddy').hidden"), true);
+  assert.ok(await evaluate("!!document.querySelector('#start-menu [data-start-app=buddy]')"));
+  assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
+  console.log(
+    'OK: Buddy manual activation, three timed bubbles, local animations, responsive bounds above taskbar, desktop selection/drag/clicks, restart, hide/relaunch and New Game; no Electron.',
+  );
 }
 
 async function verifyMiniGameLaunch() {
@@ -2338,6 +2519,29 @@ async function verifyMessengerWindows() {
   await click('#windows-start');
   await click('#menu-messenger');
   assert.ok(await evaluate(`!!document.querySelector('${roster} .messenger-contact-list')`));
+  const order = ['skater', 'luna', 'modem', 'pixelgirl', 'princess', 'offline', 'turbo'];
+  const assertOrder = async () => {
+    for (const online of ['true', 'false']) {
+      const ids = await evaluate(
+        `[...document.querySelectorAll('${roster} details[data-group="${online}"] [data-contact-id]')].map(row=>row.dataset.contactId)`,
+      );
+      assert.deepEqual(
+        ids,
+        order.filter((id) => ids.includes(id)),
+      );
+    }
+    assert.equal(
+      await evaluate(`document.querySelectorAll('${roster} [data-contact-id]').length`),
+      7,
+    );
+    assert.equal(
+      await evaluate(
+        `document.querySelector('${roster} .messenger-contact-list').textContent.includes('☺')`,
+      ),
+      false,
+    );
+  };
+  await assertOrder();
   await capture('messenger-contacts-list.png');
   const saved = await evaluate(
     "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).dialogues)",
@@ -2417,6 +2621,64 @@ async function verifyMessengerWindows() {
     'xX_PixelGirl_Xx',
   );
   await click('[data-messenger-view^="profile:"] .close-button');
+  const definitions = JSON.parse(await readFile(path.join(root, 'src/config/contacts.json')));
+  const introContact = JSON.parse(
+    await readFile(path.join(root, 'src/dialogues/pixelgirl-intro.json')),
+  ).contact;
+  for (const id of order) {
+    const contact = {
+      ...definitions.find((contact) => contact.id === id),
+      ...(id === 'pixelgirl' ? introContact : {}),
+    };
+    const { nickname, personalMessage: message, avatar } = contact;
+    await click(`[data-contact-id="${id}"]`);
+    await menuAction(roster, 'Contacts', 'Consulter le profil');
+    const selector = `[data-messenger-view="profile:${id}"]`;
+    await evaluate(
+      `document.querySelector(${JSON.stringify(selector)}).querySelector('.messenger-profile img').decode()`,
+    );
+    const profile =
+      await evaluate(`(() => {const panel=document.querySelector(${JSON.stringify(selector)}), image=panel.querySelector('.messenger-profile img'), row=document.querySelector('[data-contact-id="${id}"]');return {
+      nickname:panel.querySelector('h3').textContent,status:panel.querySelector('.profile-status').textContent,
+      message:panel.querySelector('.profile-message').textContent, hidden:panel.querySelector('.profile-message').hidden,
+      avatar:image.getAttribute('src'), loaded:image.naturalWidth>0, rowAvatar:row.querySelector('img').getAttribute('src'), rowText:row.textContent,
+      imagePerso:panel.textContent.includes('Image perso'),
+      gradient:getComputedStyle(panel.querySelector('.profile-header')).backgroundImage,
+      frame:getComputedStyle(panel.querySelector('.profile-avatar-frame')).borderStyle,
+      width:panel.offsetWidth,height:panel.offsetHeight,
+      overflow:panel.querySelector('.messenger-profile').scrollWidth>panel.querySelector('.messenger-profile').clientWidth,
+      fields:panel.querySelector('.messenger-profile').querySelectorAll('img,h3,p').length};})()`);
+    assert.equal(profile.nickname, nickname);
+    assert.equal(profile.status, id === 'pixelgirl' ? introContact.status : 'Hors ligne');
+    assert.equal(profile.message, message);
+    assert.equal(profile.hidden, !message);
+    assert.equal(profile.avatar, avatar);
+    assert.equal(profile.rowAvatar, profile.avatar);
+    assert.equal(profile.loaded, true);
+    assert.ok(profile.rowText.includes(message));
+    assert.equal(profile.imagePerso, false);
+    assert.ok(profile.gradient.includes('linear-gradient'));
+    assert.equal(profile.frame, 'solid');
+    assert.equal(profile.fields, 4);
+    assert.equal(profile.overflow, false);
+    assert.ok(profile.height < 260 && profile.width <= 430);
+    await menuAction(roster, 'Contacts', 'Consulter le profil');
+    assert.equal(
+      await evaluate(`document.querySelectorAll(${JSON.stringify(selector)}).length`),
+      1,
+    );
+    await capture(`messenger-profile-${id}.png`);
+    await physicalDrag(`${selector} .titlebar`, 500, 180);
+    assert.ok(
+      Math.abs(
+        (await evaluate(
+          `parseFloat(document.querySelector(${JSON.stringify(selector)}).style.left)`,
+        )) - 500,
+      ) < 6,
+    );
+    await click(`${selector} .close-button`);
+  }
+  await assertOrder();
   await menuAction(pixel, 'Actions', 'Émoticônes');
   await click('[data-messenger-view=emoticons] .messenger-emoticons button');
   assert.equal(await evaluate("document.querySelector('.emoticon-preview').textContent"), ':)');

@@ -48,6 +48,11 @@ dupliquer son historique. Fermer les contacts ne ferme pas les discussions.
 
 Un personnage narratif n'apparaît qu'après le déblocage de son dialogue.
 Le menu Contacts ouvre la liste et permet de consulter le profil sélectionné.
+Les profils affichent uniquement l'avatar local, le pseudonyme, le statut actuel
+et le message personnel. Les valeurs par défaut viennent des données des
+contacts ; un futur événement pourra remplacer le message via
+`progression.data.contactProfiles[id].personalMessage`, puis sauvegarder avec
+`progression.save()`. Ces remplacements sont effacés par New Game.
 Les menus Fichier, Actions, Outils et Aide proposent fermeture, aperçu des
 émoticônes, Wizz local, volume des effets et informations sur l'application.
 Les contacts hors ligne ne peuvent pas recevoir de Wizz ni de messages.

@@ -2,7 +2,7 @@
   "name": "chaos-survival",
   "private": true,
   "version": "0.1.0",
-  "description": "Chaos Survival, un jeu arcade musical sur un bureau de 2005.",
+  "description": "Chaos Survival, un jeu arcade musical sur un bureau de 2009.",
   "author": "Chaos Survival",
   "type": "module",
   "main": "electron/main.cjs",

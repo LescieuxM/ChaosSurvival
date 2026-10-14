@@ -1,0 +1,134 @@
+.buddy {
+  position: absolute;
+  right: 14px;
+  bottom: 48px;
+  width: min(300px, calc(100% - 28px));
+  max-height: calc(100% - 60px);
+  z-index: 550;
+  pointer-events: none;
+}
+.buddy-bubble {
+  position: relative;
+  padding: 14px 28px 14px 16px;
+  margin-bottom: 12px;
+  border: 1px solid #8e875a;
+  border-radius: 12px;
+  background: linear-gradient(#fffef1, #fff5be);
+  color: #3b3b2c;
+  box-shadow:
+    2px 3px 5px #0003,
+    inset 0 1px #fff;
+}
+.buddy-bubble::after {
+  content: '';
+  position: absolute;
+  right: 36px;
+  bottom: -7px;
+  width: 12px;
+  height: 12px;
+  background: #fff5be;
+  border-right: 1px solid #8e875a;
+  border-bottom: 1px solid #8e875a;
+  transform: rotate(45deg);
+}
+.buddy-bubble p {
+  margin: 0;
+  font:
+    12px/1.5 Tahoma,
+    sans-serif;
+  overflow-wrap: anywhere;
+}
+.buddy-figure {
+  position: relative;
+  width: 86px;
+  margin-left: auto;
+}
+.buddy-character {
+  display: block;
+  width: 76px;
+  height: 90px;
+  overflow: visible;
+  animation: buddy-idle 3s ease-in-out infinite;
+  transform-origin: 50% 80%;
+}
+.buddy-close,
+.buddy-hide {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid #aaa17b;
+  border-radius: 3px;
+  background: #fffdf0;
+  color: #6c6549;
+  pointer-events: auto;
+}
+.buddy-hide {
+  top: 0;
+  right: 0;
+}
+.buddy-eyes {
+  transform-origin: 24px 17px;
+  animation: buddy-blink 5s infinite;
+}
+.buddy[data-animation='presenting'] .buddy-character {
+  animation: buddy-present 1s ease-out;
+}
+.buddy[data-animation='explaining'] .buddy-character {
+  transform: rotate(-7deg);
+}
+.buddy[data-animation='explaining'] .buddy-pupils {
+  transform: translateY(-2px);
+}
+.buddy[data-animation='celebrating'] .buddy-character {
+  animation: buddy-celebrate 0.7s ease-in-out 2;
+}
+.buddy[data-animation='leaving'] .buddy-character {
+  animation: buddy-leave 0.3s ease-in forwards;
+}
+@keyframes buddy-idle {
+  50% {
+    transform: translateY(-3px) rotate(3deg);
+  }
+}
+@keyframes buddy-blink {
+  0%,
+  44%,
+  48%,
+  100% {
+    transform: scaleY(1);
+  }
+  46% {
+    transform: scaleY(0.08);
+  }
+}
+@keyframes buddy-present {
+  0% {
+    transform: scaleY(0.1) rotate(-20deg);
+  }
+  60% {
+    transform: scaleY(1.1) rotate(12deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes buddy-celebrate {
+  50% {
+    transform: translateY(-10px) rotate(14deg);
+  }
+}
+@keyframes buddy-leave {
+  to {
+    transform: scaleY(0.1) translateY(15px);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .buddy-character,
+  .buddy-eyes {
+    animation: none !important;
+  }
+}

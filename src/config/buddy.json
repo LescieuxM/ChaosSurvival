@@ -1,0 +1,25 @@
+{
+  "introduction": [
+    {
+      "text": "Bonjour ! Je suis Buddy, votre assistant Windows XD.",
+      "durationMs": 4000,
+      "animation": "presenting"
+    },
+    {
+      "text": "Je suis ici pour vous aider à profiter pleinement de votre ordinateur.",
+      "durationMs": 5500,
+      "animation": "explaining"
+    },
+    {
+      "text": "Vous pouvez me retrouver à tout moment depuis le menu Démarrer. Bonne utilisation !",
+      "durationMs": 6500,
+      "animation": "celebrating"
+    }
+  ],
+  "tips": [
+    "Astuce : vous pouvez déplacer les fenêtres en maintenant leur barre de titre.",
+    "Vous pouvez organiser les icônes de votre bureau comme vous le souhaitez.",
+    "Besoin d'une petite pause ? Plusieurs jeux sont disponibles sur cet ordinateur.",
+    "Votre ordinateur fonctionne normalement. Bonne continuation !"
+  ]
+}
