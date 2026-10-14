@@ -1,5 +1,4 @@
 import { textElement as node, internalLink as link } from '../../dom.js';
-import { playerIdentity } from '../../../ui/player-identity.js';
 import { HOTEL_URL, VIEW_WIDTH, VIEW_HEIGHT, project, screenCell, RoomWalk } from './model.js';
 import { drawRoom } from './draw.js';
 
@@ -28,18 +27,21 @@ export function renderHotelHome(_context, data) {
     node('h2', 'Pose tes valises'),
     node(
       'p',
-      "Le hall t'attend : choisis un coin pour te poser et passe saluer ReceptionXD à l'accueil.",
+      "Le hall t'attend : choisis un coin pour te poser et passe saluer ReceptionHotel à l'accueil.",
     ),
     node('p', 'Une souris, un clic, et te voilà dans le décor. Bonne visite !'),
   );
   root.append(banner, intro, node('small', 'Hopla Hotel · 2009', 'hotel-footer'));
   return root;
 }
-export function renderHotelRoom({ onDispose }, data, room = data.room) {
+export function renderHotelRoom({ onDispose, onResume, navigate }, data, room = data.room) {
   const root = shell(data);
   root.classList.add('hotel-room');
   const navigation = node('nav', undefined, 'hotel-room-nav');
-  navigation.append(node('h2', room.name), link("Retour à l'accueil", HOTEL_URL));
+  const browserButton = node('button', 'Navigateur', 'hotel-navigator-open');
+  browserButton.type = 'button';
+  browserButton.setAttribute('aria-expanded', 'false');
+  navigation.append(node('h2', room.name), browserButton, link("Retour à l'accueil", HOTEL_URL));
   root.append(navigation);
   const viewport = node('div', undefined, 'hotel-viewport');
   const stage = node('div', undefined, 'hotel-stage');
@@ -48,16 +50,39 @@ export function renderHotelRoom({ onDispose }, data, room = data.room) {
   canvas.height = VIEW_HEIGHT;
   canvas.setAttribute(
     'aria-label',
-    'Hall isométrique : cliquez sur le sol pour marcher, ou sur ReceptionXD pour le saluer.',
+    `${room.name} : cliquez sur le sol pour marcher, ou sur un personnage pour le saluer.`,
   );
   const bubble = node('div', undefined, 'hotel-bubble');
   bubble.setAttribute('role', 'status');
   bubble.hidden = true;
   stage.append(canvas, bubble);
   viewport.append(stage);
-  const status = node('p', 'Cliquez sur une case libre pour vous déplacer.', 'hotel-room-status');
-  const location = node('small', undefined, 'hotel-location');
-  root.append(viewport, status, location);
+  root.append(viewport);
+  const navigator = node('section', undefined, 'hotel-navigator');
+  navigator.setAttribute('role', 'dialog');
+  navigator.setAttribute('aria-label', 'Navigateur de salles');
+  navigator.hidden = true;
+  const panelHeader = node('header');
+  const close = node('button', 'Fermer', 'hotel-navigator-close');
+  close.type = 'button';
+  panelHeader.append(node('strong', 'Navigateur de salles'), close);
+  navigator.append(panelHeader);
+  for (const destination of [data.room, ...data.rooms]) {
+    const entry = node('div', undefined, 'hotel-room-entry');
+    const copy = node('div');
+    copy.append(node('h3', destination.name), node('p', destination.description));
+    const enter = node('button', 'Entrer');
+    enter.type = 'button';
+    enter.dataset.hotelRoom = destination.id;
+    enter.addEventListener('click', () => {
+      if (disposed || paused) return;
+      showNavigator(false);
+      navigate(`${HOTEL_URL}salle/${destination.id}`);
+    });
+    entry.append(copy, enter);
+    navigator.append(entry);
+  }
+  root.append(navigator);
   const ctx = canvas.getContext('2d'),
     walk = new RoomWalk(room);
   const observer = new ResizeObserver(() => {
@@ -69,6 +94,7 @@ export function renderHotelRoom({ onDispose }, data, room = data.room) {
   let frame = null,
     last = null,
     disposed = false,
+    paused = false,
     bubbleUntil = null,
     speaking = null;
   function positionBubble() {
@@ -83,11 +109,10 @@ export function renderHotelRoom({ onDispose }, data, room = data.room) {
   }
   function draw() {
     drawRoom(ctx, room, walk);
-    location.textContent = `${playerIdentity.nickname} · case ${walk.cell[0] + 1}, ${walk.cell[1] + 1}`;
   }
   function loop(now) {
     frame = null;
-    if (disposed) return;
+    if (disposed || paused || !navigator.hidden) return;
     if (!root.isConnected) {
       dispose();
       return;
@@ -109,10 +134,42 @@ export function renderHotelRoom({ onDispose }, data, room = data.room) {
     }
   }
   function wake() {
-    if (!disposed && !document.hidden && frame === null) frame = requestAnimationFrame(loop);
+    if (
+      !disposed &&
+      !paused &&
+      navigator.hidden &&
+      !document.hidden &&
+      frame === null &&
+      (walk.moving || bubbleUntil !== null)
+    )
+      frame = requestAnimationFrame(loop);
   }
+  function showNavigator(open) {
+    if (disposed || paused) return;
+    navigator.hidden = !open;
+    viewport.inert = open;
+    browserButton.setAttribute('aria-expanded', String(open));
+    cancelAnimationFrame(frame);
+    frame = last = null;
+    if (open) close.focus();
+    else {
+      browserButton.focus();
+      wake();
+    }
+  }
+  const toggleNavigator = () => showNavigator(navigator.hidden);
+  const closeNavigator = () => showNavigator(false);
+  const escapeNavigator = (event) => {
+    if (event.key !== 'Escape') return;
+    event.preventDefault();
+    event.stopPropagation();
+    closeNavigator();
+  };
+  browserButton.addEventListener('click', toggleNavigator);
+  close.addEventListener('click', closeNavigator);
+  navigator.addEventListener('keydown', escapeNavigator);
   function click(event) {
-    if (disposed || event.button !== 0) return;
+    if (disposed || paused || !navigator.hidden || event.button !== 0) return;
     const bounds = canvas.getBoundingClientRect();
     if (!bounds.width || !bounds.height) return;
     const x = ((event.clientX - bounds.left) * VIEW_WIDTH) / bounds.width;
@@ -129,17 +186,12 @@ export function renderHotelRoom({ onDispose }, data, room = data.room) {
       speaking = npc;
       positionBubble();
       bubbleUntil = performance.now() + 4500;
-      status.textContent = npc.name;
       wake();
       return;
     }
     const cell = screenCell(x, y, room);
     if (!cell) return;
-    if (!walk.moveTo(cell)) {
-      status.textContent = 'Cette case est inaccessible.';
-      return;
-    }
-    status.textContent = 'Cliquez sur une case libre pour vous déplacer.';
+    if (!walk.moveTo(cell)) return;
     wake();
   }
   function visibility() {
@@ -147,7 +199,13 @@ export function renderHotelRoom({ onDispose }, data, room = data.room) {
     frame = last = null;
     if (!document.hidden) wake();
   }
-  function dispose() {
+  function dispose(reason) {
+    if (reason === 'pause') {
+      paused = true;
+      cancelAnimationFrame(frame);
+      frame = last = null;
+      return;
+    }
     if (disposed) return;
     disposed = true;
     cancelAnimationFrame(frame);
@@ -155,10 +213,19 @@ export function renderHotelRoom({ onDispose }, data, room = data.room) {
     canvas.removeEventListener('click', click);
     document.removeEventListener('visibilitychange', visibility);
     observer.disconnect();
+    browserButton.removeEventListener('click', toggleNavigator);
+    close.removeEventListener('click', closeNavigator);
+    navigator.removeEventListener('keydown', escapeNavigator);
   }
   canvas.addEventListener('click', click);
   document.addEventListener('visibilitychange', visibility);
   onDispose?.(dispose);
+  onResume?.(() => {
+    if (disposed) return;
+    paused = false;
+    last = null;
+    wake();
+  });
   draw();
   return root;
 }

@@ -5,6 +5,7 @@
   "room": {
     "id": "hall",
     "name": "Hall de l'hôtel",
+    "description": "Le point de rendez-vous de l'hôtel, avec son accueil et ses canapés.",
     "width": 10,
     "height": 10,
     "spawn": [7, 7],
@@ -25,12 +26,218 @@
     "npcs": [
       {
         "id": "reception-xd",
-        "name": "ReceptionXD",
+        "name": "ReceptionHotel",
         "position": [5, 4],
         "blocking": true,
         "direction": "south",
         "dialogue": "Bienvenue sur Hopla Hotel ! Amuse-toi bien ;)"
       }
     ]
-  }
+  },
+  "rooms": [
+    {
+      "id": "cafe",
+      "name": "Café Hopla",
+      "description": "Des tables, une lumière chaleureuse et une pause entre deux discussions.",
+      "width": 10,
+      "height": 10,
+      "spawn": [7, 7],
+      "blocked": [],
+      "palette": {
+        "background": "#493b36",
+        "wallLeft": "#d79767",
+        "wallRight": "#b56f4d",
+        "tileBorder": "#9d7352",
+        "floorA": "#f5d8a2",
+        "floorB": "#e4bc8a"
+      },
+      "decor": { "posters": [{ "position": [0, 3], "text": "CAFE", "color": "#fff0c2" }] },
+      "furniture": [
+        { "id": "bar", "type": "counter", "position": [5, 1], "size": [3, 1], "blocking": true },
+        { "id": "table-a", "type": "table", "position": [1, 3], "blocking": true },
+        { "id": "chair-a", "type": "chair", "position": [1, 2], "blocking": true },
+        { "id": "chair-b", "type": "chair", "position": [2, 3], "blocking": true },
+        { "id": "table-b", "type": "table", "position": [2, 6], "blocking": true },
+        { "id": "chair-c", "type": "chair", "position": [1, 6], "blocking": true },
+        { "id": "chair-d", "type": "chair", "position": [2, 7], "blocking": true },
+        { "id": "plant", "type": "plant", "position": [0, 0], "blocking": true }
+      ],
+      "npcs": [
+        {
+          "id": "cafe-max",
+          "name": "CafeMax",
+          "position": [5, 4],
+          "blocking": true,
+          "direction": "south",
+          "dialogue": "Salut ! Ici, on prend le temps de faire une petite pause."
+        }
+      ]
+    },
+    {
+      "id": "discotheque",
+      "name": "Discothèque",
+      "description": "Une piste colorée, des enceintes et un coin salon pour refaire la soirée.",
+      "width": 10,
+      "height": 10,
+      "spawn": [7, 7],
+      "blocked": [],
+      "palette": {
+        "background": "#28243e",
+        "wallLeft": "#7b5798",
+        "wallRight": "#493e73",
+        "tileBorder": "#55445e",
+        "floorA": "#84759e",
+        "floorB": "#9a87b0"
+      },
+      "decor": {
+        "floorAreas": [
+          {
+            "position": [3, 3],
+            "size": [4, 4],
+            "colors": ["#ee88b2", "#75cbe3", "#eadf83", "#a698dd"]
+          }
+        ],
+        "posters": [{ "position": [0, 3], "text": "DANCE", "color": "#efa4d0" }],
+        "lights": [
+          { "position": [0, 1], "color": "#f08cbb" },
+          { "position": [3, 0], "color": "#80d8ef" },
+          { "position": [7, 0], "color": "#ecd66c" }
+        ]
+      },
+      "furniture": [
+        { "id": "speaker-a", "type": "speaker", "position": [1, 1], "blocking": true },
+        { "id": "speaker-b", "type": "speaker", "position": [8, 1], "blocking": true },
+        {
+          "id": "lounge",
+          "type": "sofa",
+          "position": [1, 7],
+          "size": [3, 1],
+          "blocking": true,
+          "color": "#a383c7"
+        },
+        { "id": "table", "type": "table", "position": [2, 5], "blocking": true }
+      ],
+      "npcs": [
+        {
+          "id": "dj-biscotte",
+          "name": "DJ_Biscotte",
+          "position": [7, 4],
+          "blocking": true,
+          "direction": "south",
+          "dialogue": "Jolie piste, hein ? J'ai passé plus de temps sur les couleurs que sur ma tenue."
+        }
+      ]
+    },
+    {
+      "id": "detente",
+      "name": "Salon détente",
+      "description": "Un salon tranquille, des tapis et un peu de verdure.",
+      "width": 10,
+      "height": 10,
+      "spawn": [7, 7],
+      "blocked": [],
+      "palette": {
+        "background": "#304442",
+        "wallLeft": "#8eaf98",
+        "wallRight": "#668a7c",
+        "tileBorder": "#b0a088",
+        "floorA": "#e5dcc5",
+        "floorB": "#d5cbb4"
+      },
+      "decor": {
+        "floorAreas": [{ "position": [2, 3], "size": [5, 3], "colors": ["#91b4b0", "#7fa19e"] }],
+        "posters": [{ "position": [0, 3], "text": "ZEN", "color": "#c6dec8" }]
+      },
+      "furniture": [
+        {
+          "id": "sofa-a",
+          "type": "sofa",
+          "position": [1, 6],
+          "size": [3, 1],
+          "blocking": true,
+          "color": "#7ea1ae"
+        },
+        {
+          "id": "sofa-b",
+          "type": "sofa",
+          "position": [5, 1],
+          "size": [3, 1],
+          "blocking": true,
+          "color": "#7ea1ae"
+        },
+        { "id": "table", "type": "table", "position": [3, 4], "size": [2, 1], "blocking": true },
+        { "id": "plant-a", "type": "plant", "position": [0, 0], "blocking": true },
+        { "id": "plant-b", "type": "plant", "position": [8, 2], "blocking": true }
+      ],
+      "npcs": [
+        {
+          "id": "pause-cafe",
+          "name": "PauseCafe",
+          "position": [6, 5],
+          "blocking": true,
+          "direction": "west",
+          "dialogue": "Je coupe un peu les écrans ce soir... enfin, après cette visite ;)"
+        }
+      ]
+    },
+    {
+      "id": "jeux",
+      "name": "Salle de jeux",
+      "description": "Des bornes rétro et des affiches pour les amateurs de pixels.",
+      "width": 10,
+      "height": 10,
+      "spawn": [7, 7],
+      "blocked": [],
+      "palette": {
+        "background": "#25374e",
+        "wallLeft": "#629bbd",
+        "wallRight": "#406987",
+        "tileBorder": "#788a9e",
+        "floorA": "#b3c7dd",
+        "floorB": "#d6e4ec"
+      },
+      "decor": {
+        "posters": [
+          { "position": [0, 3], "text": "PLAY", "color": "#f4d36d" },
+          { "position": [5, 0], "text": "PIXEL", "color": "#9fdcda" }
+        ]
+      },
+      "furniture": [
+        {
+          "id": "arcade-a",
+          "type": "arcade",
+          "position": [1, 1],
+          "blocking": true,
+          "color": "#bf5e79"
+        },
+        {
+          "id": "arcade-b",
+          "type": "arcade",
+          "position": [3, 1],
+          "blocking": true,
+          "color": "#558eae"
+        },
+        {
+          "id": "arcade-c",
+          "type": "arcade",
+          "position": [7, 1],
+          "blocking": true,
+          "color": "#b58f42"
+        },
+        { "id": "table", "type": "table", "position": [2, 5], "size": [2, 1], "blocking": true },
+        { "id": "chair", "type": "chair", "position": [2, 6], "blocking": true },
+        { "id": "plant", "type": "plant", "position": [0, 8], "blocking": true }
+      ],
+      "npcs": [
+        {
+          "id": "retro-fred",
+          "name": "RetroFred",
+          "position": [5, 4],
+          "blocking": true,
+          "direction": "south",
+          "dialogue": "Ces bornes, c'est juste pour le décor. Mais ça donne envie de ressortir sa vieille console !"
+        }
+      ]
+    }
+  ]
 }

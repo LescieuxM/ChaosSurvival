@@ -1358,7 +1358,7 @@ async function verifyHotel() {
     mobile: false,
   });
   const { project } = await import('../src/browser/sites/xdhotel/model.js');
-  const { hotelData } = await import('../src/browser/sites/xdhotel/index.js');
+  const { hotelData, hotelRooms } = await import('../src/browser/sites/xdhotel/index.js');
   const room = hotelData.room;
   await command('Page.enable');
   await command('Network.enable');
@@ -1420,7 +1420,35 @@ async function verifyHotel() {
     await evaluate("document.querySelector('.xdhotel h2').textContent"),
     "Hall de l'hôtel",
   );
-  const location = () => evaluate("document.querySelector('.hotel-location').textContent");
+  // Observe the avatar's original purple shirt in the Canvas, without a production counter.
+  const location = () =>
+    evaluate(`(()=>{
+      const c=document.querySelector('.hotel-canvas');
+      const pixels=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
+      let left=c.width,top=c.height;
+      for(let y=0;y<c.height;y++) for(let x=0;x<c.width;x++) {
+        const i=(y*c.width+x)*4;
+        if(pixels[i]===162&&pixels[i+1]===132&&pixels[i+2]===220) {
+          left=Math.min(left,x);top=Math.min(top,y);
+        }
+      }
+      if(left===c.width) return '';
+      const a=(left+10-c.width/2)/16,b=(top+26-90)/8;
+      return 'case '+(Math.round((a+b)/2)+1)+', '+(Math.round((b-a)/2)+1);
+    })()`);
+  const assertCleanClient = async () => {
+    assert.equal(
+      await evaluate("!!document.querySelector('.hotel-room-status, .hotel-location')"),
+      false,
+    );
+    assert.equal(
+      await evaluate(
+        "document.querySelector('.hotel-room').textContent.includes('Cliquez sur une case libre pour vous déplacer')",
+      ),
+      false,
+    );
+  };
+  await assertCleanClient();
   const floorClick = async (col, row, offsetY = 0) => {
     const point = project(col, row, room);
     const hit = await evaluate(
@@ -1443,10 +1471,7 @@ async function verifyHotel() {
   await floorClick(8, 7);
   await until(async () => (await location()).endsWith('case 9, 8'), 'avatar moves');
   await floorClick(2, 4);
-  assert.equal(
-    await evaluate("document.querySelector('.hotel-room-status').textContent"),
-    'Cette case est inaccessible.',
-  );
+  await wait(350);
   assert.ok((await location()).endsWith('case 9, 8'));
   await floorClick(9, 7);
   await floorClick(8, 8);
@@ -1477,18 +1502,67 @@ async function verifyHotel() {
     'bubble expires',
     6000,
   );
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 1280,
+    height: 800,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await click('.hotel-navigator-open');
+  assert.equal(await evaluate("document.querySelector('.hotel-navigator').hidden"), false);
+  assert.equal(await evaluate("document.querySelectorAll('[data-hotel-room]').length"), 5);
+  await capture('hopla-navigator.png');
+  await click('.hotel-navigator-close');
+  assert.equal(await evaluate("document.querySelector('.hotel-navigator').hidden"), true);
+  const enterRoom = async (id) => {
+    await click('.hotel-navigator-open');
+    await click(`[data-hotel-room="${id}"]`);
+    await ready();
+    assert.equal(await evaluate("document.querySelector('.hotel-navigator').hidden"), true);
+  };
+  for (const destination of hotelRooms.slice(1)) {
+    await floorClick(9, 8);
+    await enterRoom(destination.id);
+    assert.equal(
+      await evaluate("document.querySelector('.hotel-room h2').textContent"),
+      destination.name,
+    );
+    await assertCleanClient();
+    assert.ok((await location()).endsWith('case 8, 8'));
+    await wait(350);
+    assert.ok((await location()).endsWith('case 8, 8'), 'old walking path is cancelled');
+    await capture(`hopla-${destination.id}.png`);
+    await floorClick(8, 7);
+    await until(async () => (await location()).endsWith('case 9, 8'), `${destination.id} walks`);
+    const obstacle = destination.furniture.find((item) => item.type === 'table');
+    await floorClick(...obstacle.position);
+    await wait(350);
+    assert.ok((await location()).endsWith('case 9, 8'), `${destination.id} blocks furniture`);
+    await floorClick(...destination.npcs[0].position, -25);
+    assert.equal(
+      await evaluate("document.querySelector('.hotel-bubble').textContent"),
+      destination.npcs[0].dialogue,
+    );
+  }
+  for (const id of ['hall', 'cafe', 'hall']) await enterRoom(id);
+  await floorClick(8, 8);
+  await until(async () => (await location()).endsWith('case 9, 9'), 'first tab position');
   const first = await evaluate(
     "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).browser.active",
   );
   await click('[data-browser-action=new]');
   await ready();
-  await go('hoplahotel.fr/salle/hall');
+  await go('hoplahotel.fr/salle/cafe');
   assert.ok((await location()).endsWith('case 8, 8'));
   await floorClick(7, 8);
   await until(async () => (await location()).endsWith('case 8, 9'), 'second tab moves');
   await click(`[data-browser-action=select][data-tab-id="${first}"]`);
   await ready();
-  assert.ok((await location()).endsWith('case 8, 8'), 'returning to room resets its instance');
+  assert.ok((await location()).endsWith('case 9, 9'), 'first tab retains its own room position');
+  assert.equal(
+    await evaluate("document.querySelector('.hotel-room h2').textContent"),
+    "Hall de l'hôtel",
+  );
   await click('.xdhotel [data-browser-link="http://www.hoplahotel.fr/"]');
   await ready();
   await click('[data-browser-action=back]');
@@ -1499,6 +1573,11 @@ async function verifyHotel() {
   assert.ok(await evaluate("!!document.querySelector('.hotel-enter')"));
   await click(`[data-browser-action=close][data-tab-id="${first}"]`);
   await ready();
+  assert.equal(
+    await evaluate("document.querySelector('.hotel-room h2').textContent"),
+    'Café Hopla',
+  );
+  assert.ok((await location()).endsWith('case 8, 9'), 'second tab retains its own room position');
   await floorClick(9, 9);
   await click('.internet-adventurer .close-button');
   await doubleClick('#desktop > .desktop-icons [data-shortcut=browser]');
@@ -1519,7 +1598,7 @@ async function verifyHotel() {
     JSON.stringify(requests),
   );
   console.log(
-    'OK: Hopla Hotel home/search/directory, hall Canvas, movement/replacement/blocked floor, NPC bubble/expiry/resize, independent tabs, back/forward, close/reopen, unchanged story/save format, system apps and local requests; no Electron.',
+    'OK: Hopla Hotel five rooms, navigator open/close, repeated room changes, cancelled walking, decorations, per-room NPCs/collisions, bubble/resize, independent retained tabs, browser history, close/reopen, unchanged story/save and local requests; no Electron.',
   );
 }
 

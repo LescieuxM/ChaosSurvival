@@ -155,14 +155,8 @@
   border-bottom: 2px solid #293e50;
   transform: rotate(45deg);
 }
-.hotel-room-status {
-  margin: 8px 0;
-  min-height: 1.4em;
-}
-.hotel-location {
-  color: #526a7b;
-}
 .hotel-room {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -200,6 +194,55 @@
   margin: 0;
   flex-shrink: 0;
 }
-.hotel-room .hotel-room-status {
-  margin: 3px 0;
+.hotel-navigator-open,
+.hotel-navigator button {
+  border: 1px solid #41677e;
+  padding: 3px 9px;
+  background: linear-gradient(#fff8d8, #e6c671);
+  color: #23364c;
+  font:
+    bold 11px Tahoma,
+    sans-serif;
+  cursor: pointer;
+}
+.hotel-navigator {
+  position: absolute;
+  z-index: 2;
+  inset: 45px 12px 12px;
+  overflow: auto;
+  background: #f0f4ec;
+  border: 2px solid #41677e;
+  box-shadow: 3px 3px #23364c55;
+  padding: 8px;
+}
+.hotel-navigator[hidden] {
+  display: none;
+}
+.hotel-navigator > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px;
+  background: #b4d7df;
+  border-bottom: 1px solid #749cab;
+}
+.hotel-room-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 6px;
+  border-bottom: 1px solid #b7c8c6;
+}
+.hotel-room-entry h3 {
+  margin: 0 0 3px;
+  font:
+    bold 12px Tahoma,
+    sans-serif;
+  color: #244664;
+}
+.hotel-room-entry p {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.35;
 }

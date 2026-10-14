@@ -80,8 +80,15 @@ function furniture(ctx, room, item) {
     for (let x = 0; x < width; x++) {
       const point = project(item.position[0] + x, item.position[1] + y, room);
       if (item.type === 'sofa') {
-        block(ctx, point, 12, '#ea8665', '#944834', '#bc6045');
-        block(ctx, { x: point.x, y: point.y - 8 }, 22, '#ffab78', '#bb684b', '#d77e59');
+        block(ctx, point, 12, item.color ?? '#ea8665', '#944834', '#bc6045');
+        block(
+          ctx,
+          { x: point.x, y: point.y - 8 },
+          22,
+          item.color ?? '#ffab78',
+          '#bb684b',
+          '#d77e59',
+        );
       } else if (item.type === 'table') {
         ctx.fillStyle = '#6d5137';
         ctx.fillRect(point.x - 10, point.y - 12, 3, 16);
@@ -99,6 +106,29 @@ function furniture(ctx, room, item) {
         block(ctx, point, 25, '#f8d679', '#9c6b38', '#bb8b48');
         ctx.fillStyle = '#fff0bd';
         ctx.fillRect(point.x - 6, point.y - 21, 10, 2);
+      } else if (item.type === 'chair') {
+        block(ctx, point, 11, '#a87451', '#654936', '#80593e');
+        block(ctx, { x: point.x, y: point.y - 8 }, 22, '#d8a571', '#805b40', '#aa784b');
+      } else if (item.type === 'speaker') {
+        block(ctx, point, 35, '#536374', '#25303e', '#37414f');
+        ctx.fillStyle = '#111e2d';
+        ctx.fillRect(point.x - 6, point.y - 30, 12, 10);
+        ctx.fillRect(point.x - 6, point.y - 16, 12, 10);
+        ctx.fillStyle = '#90a3b1';
+        ctx.fillRect(point.x - 2, point.y - 27, 4, 4);
+        ctx.fillRect(point.x - 2, point.y - 13, 4, 4);
+      } else if (item.type === 'arcade') {
+        block(ctx, point, 39, item.color ?? '#558eae', '#314857', '#496b78');
+        ctx.fillStyle = '#18273a';
+        ctx.fillRect(point.x - 10, point.y - 32, 20, 13);
+        ctx.fillStyle = '#8ee5b2';
+        ctx.fillRect(point.x - 6, point.y - 29, 5, 5);
+        ctx.fillStyle = '#9ecff0';
+        ctx.fillRect(point.x + 2, point.y - 25, 4, 3);
+        ctx.fillStyle = '#e9bf6d';
+        ctx.fillRect(point.x - 8, point.y - 15, 3, 3);
+        ctx.fillStyle = '#f4a49c';
+        ctx.fillRect(point.x + 4, point.y - 15, 3, 3);
       }
     }
 }
@@ -118,8 +148,9 @@ export function depthOrder(room, walk) {
   ].sort((a, b) => a.depth - b.depth);
 }
 export function drawRoom(ctx, room, walk) {
+  const palette = room.palette ?? {};
   ctx.imageSmoothingEnabled = false;
-  ctx.fillStyle = '#172e48';
+  ctx.fillStyle = palette.background ?? '#172e48';
   ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
   const start = project(0, 0, room),
     left = project(0, room.height - 1, room),
@@ -132,7 +163,7 @@ export function drawRoom(ctx, room, walk) {
       [left.x - 16, left.y - 64],
       [start.x, start.y - 72],
     ],
-    '#57a9b4',
+    palette.wallLeft ?? '#57a9b4',
   );
   polygon(
     ctx,
@@ -142,20 +173,44 @@ export function drawRoom(ctx, room, walk) {
       [right.x + 16, right.y - 64],
       [start.x, start.y - 72],
     ],
-    '#387f99',
+    palette.wallRight ?? '#387f99',
   );
-  const sign = project(0, 3, room);
-  ctx.fillStyle = '#183e59';
-  ctx.fillRect(sign.x - 12, sign.y - 57, 26, 14);
-  ctx.fillStyle = '#ffe393';
-  ctx.font = 'bold 8px monospace';
-  ctx.fillText('HH', sign.x - 6, sign.y - 47);
+  for (const poster of room.decor?.posters ?? [
+    { position: [0, 3], text: 'HH', color: '#ffe393', width: 26, font: 8, offset: 6 },
+  ]) {
+    const sign = project(...poster.position, room);
+    ctx.fillStyle = '#183e59';
+    ctx.fillRect(
+      sign.x - (poster.width ? 12 : 17),
+      sign.y - 57,
+      poster.width ?? 36,
+      poster.width ? 14 : 16,
+    );
+    ctx.fillStyle = poster.color;
+    ctx.font = `bold ${poster.font ?? 7}px monospace`;
+    ctx.fillText(poster.text, sign.x - (poster.offset ?? 13), sign.y - 47);
+  }
+  for (const light of room.decor?.lights ?? []) {
+    const point = project(...light.position, room);
+    ctx.fillStyle = '#303147';
+    ctx.fillRect(point.x - 5, point.y - 59, 10, 7);
+    ctx.fillStyle = light.color;
+    ctx.fillRect(point.x - 3, point.y - 57, 6, 3);
+  }
   for (let depth = 0; depth < room.width + room.height - 1; depth++) {
     for (let x = 0; x < room.width; x++) {
       const y = depth - x;
       if (y < 0 || y >= room.height) continue;
       const point = project(x, y, room);
-      tile(ctx, point.x, point.y, '#bda776');
+      tile(ctx, point.x, point.y, palette.tileBorder ?? '#bda776');
+      const area = room.decor?.floorAreas?.find(
+        (area) =>
+          x >= area.position[0] &&
+          y >= area.position[1] &&
+          x < area.position[0] + area.size[0] &&
+          y < area.position[1] + area.size[1],
+      );
+      const colors = area?.colors ?? [palette.floorB ?? '#f4e5bc', palette.floorA ?? '#e9d6a1'];
       polygon(
         ctx,
         [
@@ -164,7 +219,7 @@ export function drawRoom(ctx, room, walk) {
           [point.x, point.y + 6],
           [point.x - 14, point.y],
         ],
-        (x + y) % 2 ? '#e9d6a1' : '#f4e5bc',
+        colors[(x + y) % colors.length],
       );
     }
   }

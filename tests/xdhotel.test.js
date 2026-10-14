@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { hotelData } from '../src/browser/sites/xdhotel/index.js';
+import { hotelData, hotelRooms } from '../src/browser/sites/xdhotel/index.js';
 import {
   HOTEL_URL,
   VIEW_WIDTH,
@@ -10,6 +10,8 @@ import {
   blockedCells,
   findPath,
   RoomWalk,
+  furnitureCells,
+  inside,
 } from '../src/browser/sites/xdhotel/model.js';
 import { depthOrder } from '../src/browser/sites/xdhotel/draw.js';
 import { renderHotelRoom } from '../src/browser/sites/xdhotel/render.js';
@@ -59,8 +61,54 @@ test('Hotel registration uses only local routes and existing directory/search', 
     assert.ok(localPages.search(query, {}).some((page) => page.url === HOTEL_URL));
   assert.equal(room.width, 10);
   assert.equal(room.height, 10);
-  assert.equal(room.npcs[0].name, 'ReceptionXD');
+  assert.equal(room.npcs[0].name, 'ReceptionHotel');
   assert.equal(room.npcs[0].dialogue, 'Bienvenue sur Hopla Hotel ! Amuse-toi bien ;)');
+});
+
+test('five data-driven rooms have unique IDs, unoccupied spawns, bounded obstacles and connected walkable areas', () => {
+  assert.deepEqual(
+    hotelRooms.map((room) => room.name),
+    ["Hall de l'hôtel", 'Café Hopla', 'Discothèque', 'Salon détente', 'Salle de jeux'],
+  );
+  assert.equal(new Set(hotelRooms.map((room) => room.id)).size, 5);
+  for (const definition of hotelRooms) {
+    const route = localPages.resolve(`${HOTEL_URL}salle/${definition.id}`, {});
+    assert.ok(route.page);
+    assert.equal(route.page.preserveOnTabSwitch, true);
+    assert.equal(
+      new Set(definition.furniture.map((item) => item.id)).size,
+      definition.furniture.length,
+    );
+    const occupied = new Set();
+    for (const cell of [
+      ...definition.furniture.flatMap(furnitureCells),
+      ...definition.npcs.map((npc) => npc.position),
+    ]) {
+      assert.ok(inside(definition, cell), `${definition.id}: ${cell}`);
+      assert.ok(!occupied.has(cell.join(':')), `${definition.id}: overlap ${cell}`);
+      occupied.add(cell.join(':'));
+    }
+    const blocked = blockedCells(definition);
+    assert.ok(inside(definition, definition.spawn));
+    assert.ok(!blocked.has(definition.spawn.join(':')));
+    let accessible = 0;
+    for (let x = 0; x < definition.width; x++)
+      for (let y = 0; y < definition.height; y++) {
+        const path = findPath(definition, definition.spawn, [x, y]);
+        if (blocked.has(`${x}:${y}`)) {
+          assert.equal(path, null);
+          continue;
+        }
+        assert.ok(path, `${definition.id}: disconnected ${x}:${y}`);
+        accessible++;
+        assert.ok(path.every((cell) => !blocked.has(cell.join(':'))));
+      }
+    assert.ok(accessible >= 70);
+    const walk = new RoomWalk(definition);
+    assert.ok(walk.moveTo([8, 7]));
+    for (let i = 0; i < 5; i++) walk.update(100);
+    assert.deepEqual(walk.cell, [8, 7]);
+  }
 });
 test('isometric projection and inverse hit tests agree across the floor and reject outside clicks', () => {
   for (let x = 0; x < room.width; x++)
@@ -154,13 +202,8 @@ function dom(t) {
   };
   const frames = new Map(),
     listeners = new Set();
+  const positions = new WeakMap();
   let serial = 0;
-  const ctx = Object.fromEntries(
-    ['beginPath', 'moveTo', 'lineTo', 'closePath', 'fill', 'fillRect', 'fillText'].map((name) => [
-      name,
-      () => {},
-    ]),
-  );
   globalThis.document = {
     hidden: false,
     addEventListener(_name, fn) {
@@ -170,7 +213,17 @@ function dom(t) {
       listeners.delete(fn);
     },
     createElement(tag) {
-      return {
+      const ctx = Object.fromEntries(
+        ['beginPath', 'moveTo', 'lineTo', 'closePath', 'fill', 'fillText'].map((name) => [
+          name,
+          () => {},
+        ]),
+      );
+      ctx.fillRect = (x, y, width, height) => {
+        if (ctx.fillStyle === '#a284dc' && width === 14 && height === 16)
+          positions.set(element, { x: x + 7, y: y + 26 });
+      };
+      const element = {
         tag,
         children: [],
         style: {},
@@ -182,6 +235,7 @@ function dom(t) {
           this.children.push(...items);
         },
         setAttribute() {},
+        focus() {},
         getContext() {
           return ctx;
         },
@@ -198,6 +252,7 @@ function dom(t) {
           throw new Error('Unsafe HTML');
         },
       };
+      return element;
     },
   };
   globalThis.requestAnimationFrame = (fn) => {
@@ -218,6 +273,7 @@ function dom(t) {
   return {
     frames,
     listeners,
+    position: (canvas) => positions.get(canvas),
     step(now) {
       const tasks = [...frames.values()];
       frames.clear();
@@ -252,8 +308,12 @@ test('room instances have independent motion/bubbles; scaled clicks, visibility 
   click(...Object.values(project(8, 7, room)));
   assert.equal(clock.frames.size, 1);
   for (let i = 0; i < 5; i++) clock.step(i * 100);
-  assert.match(find(a, 'hotel-location').textContent, /case 9, 8/);
-  assert.match(find(b, 'hotel-location').textContent, /case 8, 8/);
+  assert.deepEqual(clock.position(canvas), project(8, 7, room));
+  assert.deepEqual(clock.position(find(b, 'hotel-canvas')), project(...room.spawn, room));
+  for (const root of [a, b]) {
+    assert.equal(find(root, 'hotel-location'), undefined);
+    assert.equal(find(root, 'hotel-room-status'), undefined);
+  }
   assert.equal(clock.frames.size, 0);
   const npc = project(...room.npcs[0].position, room);
   click(npc.x, npc.y - 25);
@@ -274,4 +334,99 @@ test('room instances have independent motion/bubbles; scaled clicks, visibility 
   assert.equal(clock.frames.size, 0);
   assert.equal(clock.listeners.size, 0);
   assert.equal(canvas.handlers.click, undefined);
+});
+
+test('navigator opens/closes, cancels a moving instance on room changes and repeated mounts leave one listener', (t) => {
+  const clock = dom(t);
+  let active, cleanup;
+  const context = {
+    onDispose(fn) {
+      cleanup = fn;
+    },
+    navigate(url) {
+      cleanup();
+      active = localPages.resolve(url, {}).page.render(context);
+    },
+  };
+  active = renderHotelRoom(context, hotelData);
+  const find = (cls) => walkTree(active).find((item) => item.className === cls);
+  for (const definition of [...hotelRooms, ...hotelRooms].slice(1)) {
+    const point = project(8, 7, room);
+    find('hotel-canvas').handlers.click({
+      button: 0,
+      clientX: 20 + point.x * 2,
+      clientY: 30 + point.y * 2,
+    });
+    assert.equal(clock.frames.size, 1);
+    find('hotel-navigator-open').handlers.click();
+    assert.equal(find('hotel-navigator').hidden, false);
+    assert.equal(clock.frames.size, 0);
+    const buttons = walkTree(active).filter((item) => item.dataset.hotelRoom);
+    assert.equal(buttons.length, 5);
+    find('hotel-navigator-close').handlers.click();
+    assert.equal(find('hotel-navigator').hidden, true);
+    find('hotel-navigator-open').handlers.click();
+    buttons.find((button) => button.dataset.hotelRoom === definition.id).handlers.click();
+    assert.equal(find('hotel-navigator').hidden, true);
+    assert.equal(walkTree(active).find((item) => item.tag === 'h2').textContent, definition.name);
+    assert.deepEqual(
+      clock.position(find('hotel-canvas')),
+      project(...definition.spawn, definition),
+    );
+    assert.equal(find('hotel-location'), undefined);
+    assert.equal(find('hotel-room-status'), undefined);
+    assert.equal(clock.frames.size, 0);
+    assert.equal(clock.listeners.size, 1);
+    const npc = project(...definition.npcs[0].position, definition);
+    find('hotel-canvas').handlers.click({
+      button: 0,
+      clientX: 20 + npc.x * 2,
+      clientY: 30 + (npc.y - 25) * 2,
+    });
+    assert.equal(find('hotel-bubble').textContent, definition.npcs[0].dialogue);
+    clock.step(performance.now() + 5000);
+  }
+  cleanup();
+  assert.equal(clock.frames.size, 0);
+  assert.equal(clock.listeners.size, 0);
+});
+
+test('retained room stops frames while another tab is active, ignores visibility wakeups and resumes its own position', (t) => {
+  const clock = dom(t);
+  let cleanup, resume;
+  const root = renderHotelRoom(
+    {
+      onDispose(fn) {
+        cleanup = fn;
+      },
+      onResume(fn) {
+        resume = fn;
+      },
+    },
+    hotelData,
+  );
+  const find = (cls) => walkTree(root).find((item) => item.className === cls);
+  const point = project(8, 7, room);
+  find('hotel-canvas').handlers.click({
+    button: 0,
+    clientX: 20 + point.x * 2,
+    clientY: 30 + point.y * 2,
+  });
+  clock.step(0);
+  clock.step(100);
+  const before = clock.position(find('hotel-canvas'));
+  cleanup('pause');
+  assert.equal(clock.frames.size, 0);
+  document.hidden = false;
+  for (const listener of clock.listeners) listener();
+  assert.equal(clock.frames.size, 0);
+  resume();
+  assert.deepEqual(clock.position(find('hotel-canvas')), before);
+  assert.equal(clock.frames.size, 1);
+  for (let i = 0; i < 5; i++) clock.step(1000 + i * 100);
+  assert.deepEqual(clock.position(find('hotel-canvas')), project(8, 7, room));
+  cleanup();
+  resume();
+  assert.equal(clock.frames.size, 0);
+  assert.equal(clock.listeners.size, 0);
 });
