@@ -114,7 +114,7 @@
         "name": "readme.txt",
         "icon": "document",
         "detail": "Document texte",
-        "text": "La musique du jeu se lance depuis le fichier MP3 du bureau."
+        "text": "Le jeu se lance depuis ChaosSurvival.exe sur le bureau.\nSa musique : DJARTMUSIC__Best_Game_Console.mp3."
       }
     ]
   },

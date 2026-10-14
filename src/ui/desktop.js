@@ -1,5 +1,6 @@
 import { icon } from './icons.js';
 import { applicationName, trackIdentity } from './identity.js';
+import { arcadeLauncher } from './arcade-launcher.js';
 
 export function mountDesktop(root, best) {
   root.innerHTML = /* HTML */ ` <main class="desktop" id="desktop">
@@ -37,8 +38,8 @@ export function mountDesktop(root, best) {
       <button data-shortcut="msn">
         ${icon('msn')}<span>${applicationName('messenger')}</span>
       </button>
-      <button data-shortcut="music">
-        ${icon('music')}<span>${trackIdentity.displayName}</span>
+      <button data-shortcut="arcade">
+        ${icon(arcadeLauncher.icon)}<span>${arcadeLauncher.name}</span>
       </button>
       <button data-shortcut="bin">${icon('bin')}<span>Corbeille</span></button>
     </nav>

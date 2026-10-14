@@ -240,7 +240,7 @@ export async function verifyStoryUI({
   await evaluate("document.querySelector('.popup-narrative .close-button').click()");
   const beforeReplay = await saved();
   await evaluate(
-    "document.querySelector('[data-shortcut=music]').dispatchEvent(new MouseEvent('dblclick',{bubbles:true}))",
+    "document.querySelector('[data-shortcut=arcade]').dispatchEvent(new MouseEvent('dblclick',{bubbles:true}))",
   );
   await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'double clic MP3');
   assert.equal(Number(await evaluate("document.querySelector('#score').textContent")), 0);
@@ -270,7 +270,7 @@ export async function verifyStoryUI({
   assert.equal(await evaluate("document.querySelectorAll('.dialogue-choice').length"), 0);
   const pendingReply = await saved();
   await evaluate(
-    "document.querySelector('.popup-narrative .close-button').click();document.querySelector('[data-shortcut=music]').dispatchEvent(new MouseEvent('dblclick',{bubbles:true}))",
+    "document.querySelector('.popup-narrative .close-button').click();document.querySelector('[data-shortcut=arcade]').dispatchEvent(new MouseEvent('dblclick',{bubbles:true}))",
   );
   await until(
     () => evaluate("window.chaosDebug.snapshot().phase==='playing'"),
@@ -337,7 +337,7 @@ export async function verifyStoryUI({
   );
   assert.deepEqual(afterReplay.choices.slice(0, 4), beforeReplay.choices);
   await evaluate(
-    "document.querySelector('[data-shortcut=music]').dispatchEvent(new MouseEvent('dblclick',{bubbles:true}))",
+    "document.querySelector('[data-shortcut=arcade]').dispatchEvent(new MouseEvent('dblclick',{bubbles:true}))",
   );
   await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'second replay');
   assert.ok((await evaluate('window.chaosDebug.snapshot()')).audioTime < 1);

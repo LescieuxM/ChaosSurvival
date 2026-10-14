@@ -1,5 +1,6 @@
 import { brandIcons, applicationLogo } from './identity.js';
 const desktopIcons = {
+  'arcade-game': './icons/chaos-survival.svg',
   'menu-computer': './icons/menu-computer.svg',
   computer: './icons/computer.svg',
   folder: './icons/folder.svg',

@@ -18,10 +18,12 @@ import { DesktopFiles } from './ui/desktop-files.js';
 import { MiniGameLauncher } from './ui/minigame-launcher.js';
 import { DesktopIcons } from './ui/desktop-icons.js';
 import { DesktopApplications } from './ui/desktop-apps.js';
+import { arcadeLauncher } from './ui/arcade-launcher.js';
 import { createMusicDebug } from './ui/music-debug.js';
 import story from './config/story.json';
 import pixelgirlDialogue from './dialogues/pixelgirl-intro.json';
 import { Progression } from './story/progression.js';
+import { VirtualTextFiles } from './story/text-files.js';
 import { ConversationWindow } from './ui/conversation.js';
 import { Messenger } from './ui/messenger.js';
 import { ConversationThread } from './story/conversation-thread.js';
@@ -122,6 +124,8 @@ const desktopApplications = new DesktopApplications(
   manager,
   ui.desktop.querySelector('.taskbar'),
   syncSystemWindows,
+  replayLevelOne,
+  new VirtualTextFiles(progression),
 );
 const messenger = new Messenger({
   manager,
@@ -884,14 +888,14 @@ const shortcutActions = {
   computer: () => openSystemApplication('computer'),
   folder: () => openSystemApplication('folder'),
   bin: () => openSystemApplication('bin'),
-  music: replayLevelOne,
+  arcade: replayLevelOne,
 };
 ui.shortcuts.forEach((button) => {
   const activate = shortcutActions[button.dataset.shortcut];
   if (activate) bindFileActivation(button, activate);
 });
-const musicShortcut = ui.desktop.querySelector('[data-shortcut="music"]');
-musicShortcut.title = `${trackIdentity.displayName}\nSource : ${trackIdentity.source}\nDouble-cliquer pour jouer / rejouer le niveau 1`;
+const arcadeShortcut = ui.desktop.querySelector('[data-shortcut="arcade"]');
+arcadeShortcut.title = `${arcadeLauncher.name}\nDouble-cliquer pour jouer / rejouer le niveau 1\nMusique : ${trackIdentity.displayName}`;
 // Vite removes this entire import and handler from production builds.
 if (import.meta.env.DEV) {
   import('./dev/finish-shortcut.js').then(({ installDevelopmentVictoryShortcut }) => {

@@ -15,8 +15,15 @@ import { smileyIcon } from '../src/minigames/smiley-icons.js';
 const rulesOnly = process.argv.includes('--rules-only');
 const typingOnly = process.argv.includes('--typing-only');
 const messengerOnly = process.argv.includes('--messenger-only');
+const notepadOnly = process.argv.includes('--notepad-only');
+const movementOnly = process.argv.includes('--window-movement-only');
 const minigameOnly =
-  process.argv.includes('--minigame-only') || typingOnly || rulesOnly || messengerOnly;
+  process.argv.includes('--minigame-only') ||
+  typingOnly ||
+  rulesOnly ||
+  messengerOnly ||
+  notepadOnly ||
+  movementOnly;
 let browserServer;
 const root = fileURLToPath(new URL('../', import.meta.url));
 const output = path.join(root, '.qa');
@@ -95,6 +102,170 @@ const doubleClick = (selector) =>
   evaluate(
     `document.querySelector(${JSON.stringify(selector)}).dispatchEvent(new MouseEvent('dblclick', {bubbles:true}))`,
   );
+async function verifyNotepad() {
+  const story = JSON.parse(await readFile(path.join(root, 'src/config/story.json')));
+  const progression = new Progression(story);
+  progression.begin();
+  progression.complete('arcade-1');
+  progression.complete('pixelgirl-hello');
+  await command('Page.enable');
+  const injection = await command('Page.addScriptToEvaluateOnNewDocument', {
+    source: `localStorage.setItem('chaos-survival-story-v1',${JSON.stringify(JSON.stringify(progression.data))});window.__notepadFixture=true`,
+  });
+  await command('Page.reload');
+  await until(
+    () =>
+      evaluate("window.__notepadFixture&&window.chaosDebug?.snapshot().phase==='menu'").catch(
+        () => false,
+      ),
+    'notepad fixture',
+  );
+  await command('Page.removeScriptToEvaluateOnNewDocument', { identifier: injection.identifier });
+  async function desktop() {
+    await click('#menu-play');
+    await until(() => evaluate("window.chaosDebug.snapshot().phase==='desktop'"), 'desktop');
+    await doubleClick('[data-shortcut=folder]');
+  }
+  const names = ['devoir_final_v7_VRAIMENT_FINAL.txt', 'liens_trop_biens.txt'];
+  const selector = (name) => `[data-file-path="folder/${name}"]`;
+  const area = (name) => `${selector(name)} .notepad-content`;
+  const value = (name) => evaluate(`document.querySelector(${JSON.stringify(area(name))}).value`);
+  async function open(name) {
+    await evaluate(`(() => {
+      const row=[...document.querySelectorAll('.explorer-item')].find(row=>row.querySelector('strong').textContent===${JSON.stringify(name)});
+      row.dispatchEvent(new MouseEvent('dblclick',{bubbles:true}));
+    })()`);
+  }
+  async function edit(name, text) {
+    await evaluate(`(() => {
+      const editor=document.querySelector(${JSON.stringify(area(name))});
+      editor.value=${JSON.stringify(text)};editor.dispatchEvent(new Event('input',{bubbles:true}));editor.focus();
+    })()`);
+  }
+  async function ctrlS() {
+    await command('Input.dispatchKeyEvent', {
+      type: 'keyDown',
+      key: 's',
+      code: 'KeyS',
+      modifiers: 2,
+    });
+    await command('Input.dispatchKeyEvent', {
+      type: 'keyUp',
+      key: 's',
+      code: 'KeyS',
+      modifiers: 2,
+    });
+  }
+  const saved = () =>
+    evaluate("JSON.parse(localStorage.getItem('chaos-survival-story-v1')).textFiles");
+  const title = (name) =>
+    evaluate(
+      `document.querySelector(${JSON.stringify(selector(name) + ' .window-title > span')}).textContent`,
+    );
+  await desktop();
+  await open(names[0]);
+  const original = await value(names[0]);
+  const payload =
+    '<script>window.__notepadExecuted=true</script>\nnew Function("alert(1)")\nété 😃 日本語';
+  await edit(names[0], payload);
+  assert.ok((await title(names[0])).startsWith('*'));
+  await ctrlS();
+  assert.equal((await saved())[`folder/${names[0]}`].text, payload);
+  assert.ok(!(await title(names[0])).startsWith('*'));
+  assert.equal(await evaluate('window.__notepadExecuted===undefined'), true);
+  await click(selector(names[0]) + ' .close-button');
+  await open(names[0]);
+  assert.equal(await value(names[0]), payload);
+  await edit(names[0], 'discard me');
+  await click(selector(names[0]) + ' .close-button');
+  assert.equal(
+    await evaluate(
+      `document.querySelector(${JSON.stringify(selector(names[0]) + ' .notepad-confirm')}).hidden`,
+    ),
+    false,
+  );
+  await click(selector(names[0]) + ' [data-answer=cancel]');
+  assert.equal(await value(names[0]), 'discard me');
+  await click(selector(names[0]) + ' .close-button');
+  await capture('notepad-save-confirmation.png');
+  await click(selector(names[0]) + ' [data-answer=no]');
+  await open(names[0]);
+  assert.equal(await value(names[0]), payload);
+  await edit(names[0], 'saved with Yes');
+  // Exercise the real shared menu, including File > Quit.
+  await click(selector(names[0]) + ' .messenger-menu-group > button');
+  await evaluate(
+    `[...document.querySelectorAll(${JSON.stringify(selector(names[0]) + ' .messenger-dropdown button')})].find(b=>b.textContent==='Quitter').click()`,
+  );
+  await evaluate(
+    `window.__realTextSave=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key==='chaos-survival-story-v1')throw new Error('quota');return window.__realTextSave.call(this,key,value)}`,
+  );
+  await click(selector(names[0]) + ' [data-answer=yes]');
+  assert.equal(await value(names[0]), 'saved with Yes');
+  assert.ok((await title(names[0])).startsWith('*'));
+  assert.equal((await saved())[`folder/${names[0]}`].text, payload);
+  await evaluate('Storage.prototype.setItem=window.__realTextSave;delete window.__realTextSave');
+  await click(selector(names[0]) + ' [data-answer=yes]');
+  await open(names[0]);
+  assert.equal(await value(names[0]), 'saved with Yes');
+  await open(names[1]);
+  await edit(names[0], 'first dirty');
+  await edit(names[1], 'second saved');
+  await ctrlS();
+  assert.equal((await saved())[`folder/${names[0]}`].text, 'saved with Yes');
+  assert.equal((await saved())[`folder/${names[1]}`].text, 'second saved');
+  const boundary = '😃'.repeat(25600);
+  await edit(names[1], boundary);
+  await ctrlS();
+  await edit(names[1], boundary + 'é');
+  assert.equal(await value(names[1]), boundary);
+  assert.ok(
+    (
+      await evaluate(
+        `document.querySelector(${JSON.stringify(selector(names[1]) + ' .window-status')}).textContent`,
+      )
+    ).includes('refusée'),
+  );
+  await evaluate(`document.querySelector(${JSON.stringify(area(names[1]))}).select()`);
+  await command('Input.insertText', { text: 'x'.repeat(102401) });
+  assert.equal(await value(names[1]), boundary);
+  await edit(names[1], 'small again');
+  await click(selector(names[1]) + ' .messenger-menu-group > button');
+  await evaluate(
+    `[...document.querySelectorAll(${JSON.stringify(selector(names[1]) + ' .messenger-dropdown button')})].find(b=>b.textContent==='Enregistrer').click()`,
+  );
+  // An active explorer must not save a minimized or background Notepad.
+  await edit(names[1], 'not saved behind explorer');
+  await click(selector(names[1]) + ' .msn-minimize');
+  await doubleClick('[data-shortcut=folder]');
+  await ctrlS();
+  assert.equal((await saved())[`folder/${names[1]}`].text, 'small again');
+  await open(names[1]);
+  await capture('notepad-editor.png');
+  // A new JS context reloads the saved story, not the editors' unsaved buffers.
+  await evaluate('window.__notepadBeforeReload=true');
+  await command('Page.reload');
+  await until(
+    () =>
+      evaluate("!window.__notepadBeforeReload&&window.chaosDebug?.snapshot().phase==='menu'").catch(
+        () => false,
+      ),
+    'notepad restart',
+  );
+  await desktop();
+  await open(names[0]);
+  await open(names[1]);
+  assert.equal(await value(names[0]), 'saved with Yes');
+  assert.equal(await value(names[1]), 'small again');
+  assert.notEqual(original, 'saved with Yes');
+  assert.deepEqual(
+    await evaluate("JSON.parse(localStorage.getItem('chaos-survival-story-v1')).completed"),
+    ['arcade-1', 'pixelgirl-hello'],
+  );
+  console.log(
+    'Bloc-notes : édition, Ctrl+S actif, menus, Oui/Non/Annuler, Unicode, limite UTF-8, texte inerte et relance validés.',
+  );
+}
 async function capture(name) {
   await wait(250); // Capture settled windows, not their translucent opening animation.
   const shot = await command('Page.captureScreenshot');
@@ -130,7 +301,9 @@ try {
   await command('Emulation.setFocusEmulationEnabled', { enabled: true });
   await until(() => evaluate("window.chaosDebug?.snapshot().phase==='menu'"), 'menu');
   if (minigameOnly) {
-    if (messengerOnly) {
+    if (movementOnly) await verifyArcadeMovement();
+    else if (notepadOnly) await verifyNotepad();
+    else if (messengerOnly) {
       await verifyTypingIndicator();
       await verifyMessengerWindows();
     } else if (rulesOnly) await verifyRulesFlow();
@@ -284,7 +457,7 @@ try {
     await doubleClick('[data-contact-id=pixelgirl]');
     assert.equal(await evaluate("document.querySelectorAll('.dialogue-choice').length"), 3);
     await click('[data-messenger-contact=pixelgirl] .close-button');
-    await doubleClick('[data-shortcut=music]');
+    await doubleClick('[data-shortcut=arcade]');
     await until(
       () =>
         evaluate(
@@ -653,12 +826,22 @@ async function verifyMiniGameLaunch() {
     'computer after drag',
   );
   assert.equal(await evaluate("document.querySelectorAll('.desktop-app-task').length"), 1);
+  await verifyWindowOverIcons('.popup-desktopapp');
+  await evaluate(`(() => {
+    const enter = name => [...document.querySelectorAll('.popup-desktopapp .explorer-item')]
+      .find(row => row.querySelector('strong').textContent === name)
+      .dispatchEvent(new MouseEvent('dblclick', {bubbles:true}));
+    enter('Disque local (C:)'); enter('WINDOWS'); enter('win.ini');
+  })()`);
+  await verifyWindowOverIcons('.file-generic');
+  await physicalClick('.file-generic .close-button');
   await physicalClick('.popup-desktopapp .close-button');
   await physicalClick('[data-shortcut=msn]', true);
   await until(
     () => evaluate("document.querySelectorAll('.popup-narrative').length===1"),
     'Messenger double click',
   );
+  await verifyWindowOverIcons('[data-messenger-view=contacts]');
   const narrative = await evaluate(
     "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).dialogues)",
   );
@@ -683,6 +866,7 @@ async function verifyMiniGameLaunch() {
     ),
   );
   assert.equal(await evaluate("document.querySelectorAll('.popup-narrative').length"), 2);
+  await verifyWindowOverIcons('[data-messenger-contact=skater]');
   await physicalClick('[data-messenger-contact=skater] .msn-minimize');
   await physicalClick('[data-app=\"messenger:conversation:skater\"]');
   assert.equal(
@@ -709,14 +893,196 @@ async function verifyMiniGameLaunch() {
   );
   await click('#menu-play');
   await until(() => evaluate("window.chaosDebug.snapshot().phase==='desktop'"), 'desktop again');
-  await physicalClick('[data-shortcut=music]', true);
+  assert.equal(
+    await evaluate("document.querySelector('[data-shortcut=arcade] span').textContent"),
+    'ChaosSurvival.exe',
+  );
+  assert.equal(await evaluate("!!document.querySelector('[data-shortcut=music]')"), false);
+  const launches = await evaluate(
+    "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).level1Launches",
+  );
+  await physicalClick('[data-shortcut=arcade]', true);
   await until(
     () => evaluate("window.chaosDebug.snapshot().phase==='playing'"),
-    'rhythmic MP3 double click',
+    'rhythmic EXE double click',
+  );
+  await until(
+    () => evaluate('window.chaosDebug.snapshot().audioTime > 0'),
+    'level music advancing',
+  );
+  assert.equal(
+    await evaluate("JSON.parse(localStorage.getItem('chaos-survival-story-v1')).level1Launches"),
+    launches + 1,
   );
   assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
   console.log(
-    'OK: desktop grid, physical dragging, occupied cells, resize, saved positions, Smiley, applications, Messenger, Start/menu and rhythmic MP3; no Electron.',
+    'OK: desktop grid, icon selection/dragging, windows covering icons and releasing their clicks, taskbar access, saved positions, Smiley, applications, Messenger, Start/menu and rhythmic EXE; no Electron.',
+  );
+}
+
+async function verifyArcadeMovement() {
+  const story = JSON.parse(await readFile(path.join(root, 'src/config/story.json')));
+  const progression = new Progression(story);
+  progression.begin();
+  progression.complete('arcade-1');
+  progression.complete('pixelgirl-hello');
+  await command('Page.enable');
+  const injected = await command('Page.addScriptToEvaluateOnNewDocument', {
+    source: `localStorage.setItem('chaos-survival-story-v1',${JSON.stringify(JSON.stringify(progression.data))});window.__movementFixture=true`,
+  });
+  await command('Page.reload');
+  await until(
+    () =>
+      evaluate("window.__movementFixture&&window.chaosDebug?.snapshot().phase==='menu'").catch(
+        () => false,
+      ),
+    'movement fixture',
+  );
+  await command('Page.removeScriptToEvaluateOnNewDocument', { identifier: injected.identifier });
+  await click('#menu-play');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='desktop'"), 'desktop');
+  await physicalClick('[data-shortcut=arcade]', true);
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'arcade EXE');
+  await until(
+    () => evaluate("!!document.querySelector('#playfield > .popup:not(.preview-window)')"),
+    'rhythmic window',
+  );
+  const selector = await evaluate(
+    "'[data-window-id=\"'+document.querySelector('#playfield > .popup:not(.preview-window)').dataset.windowId+'\"]'",
+  );
+  const dimensions = await evaluate(
+    `({width:document.querySelector(${JSON.stringify(selector)}).offsetWidth,height:document.querySelector(${JSON.stringify(selector)}).offsetHeight})`,
+  );
+  await verifyWindowOverIcons(selector, true);
+  assert.deepEqual(
+    await evaluate(
+      `({width:document.querySelector(${JSON.stringify(selector)}).offsetWidth,height:document.querySelector(${JSON.stringify(selector)}).offsetHeight})`,
+    ),
+    dimensions,
+  );
+  assert.equal(await evaluate('window.chaosDebug.snapshot().phase'), 'playing');
+  const score = await evaluate("Number(document.querySelector('#score').textContent)");
+  await physicalClick(selector + ' .close-button');
+  assert.equal(await evaluate(`!!document.querySelector(${JSON.stringify(selector)})`), false);
+  assert.ok((await evaluate("Number(document.querySelector('#score').textContent)")) > score);
+  assert.ok(await evaluate('window.chaosDebug.snapshot().audioTime > 0'));
+  // The same manager also handles real desktop applications during a controlled pause.
+  await physicalClick('#windows-start');
+  await physicalClick('[data-system-app=computer]');
+  await until(() => evaluate("!!document.querySelector('.popup-desktopapp')"), 'explorer');
+  await verifyWindowOverIcons('.popup-desktopapp', true);
+  assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
+  console.log(
+    'OK: EXE launch, real arcade/explorer dragging across all desktop edges, icon/HUD coverage, taskbar hit testing, normal closing/score/audio; no Electron.',
+  );
+}
+
+async function verifyWindowOverIcons(selector, allEdges = false) {
+  await until(
+    () =>
+      evaluate(
+        `getComputedStyle(document.querySelector(${JSON.stringify(selector)})).transform === 'none'`,
+      ),
+    'window opening animation',
+  );
+  const saved = await evaluate(
+    "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).desktopIcons)",
+  );
+  const drag = async (left, top) => {
+    const start = await evaluate(`(() => {
+      const element = document.querySelector(${JSON.stringify(selector)});
+      const rect = element.getBoundingClientRect();
+      const bar = element.querySelector('.titlebar').getBoundingClientRect();
+      return { x: bar.left + 60, y: bar.top + bar.height/2, left: rect.left, top: rect.top };
+    })()`);
+    await command('Input.dispatchMouseEvent', {
+      type: 'mousePressed',
+      x: start.x,
+      y: start.y,
+      button: 'left',
+      clickCount: 1,
+    });
+    for (let step = 1; step <= 6; step++)
+      await command('Input.dispatchMouseEvent', {
+        type: 'mouseMoved',
+        x: start.x + ((left - start.left) * step) / 6,
+        y: start.y + ((top - start.top) * step) / 6,
+        button: 'left',
+        buttons: 1,
+      });
+    await command('Input.dispatchMouseEvent', {
+      type: 'mouseReleased',
+      x: start.x + left - start.left,
+      y: start.y + top - start.top,
+      button: 'left',
+      clickCount: 1,
+    });
+  };
+  const covered = () =>
+    evaluate(`(() => {
+    const icon = document.querySelector('[data-shortcut=${allEdges ? 'computer' : 'msn'}]');
+    const rect = icon.getBoundingClientRect();
+    return document.querySelector(${JSON.stringify(selector)}).contains(document.elementFromPoint(rect.left + rect.width/2, rect.top + rect.height/2));
+  })()`);
+  await drag(-20, -20);
+  assert.equal(
+    await evaluate(
+      `document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect().left`,
+    ),
+    0,
+  );
+  assert.equal(await covered(), true, `${selector} covers desktop icons`);
+  assert.equal(
+    await evaluate(
+      `(() => { const start = document.querySelector('#windows-start'); const rect=start.getBoundingClientRect(); return start.contains(document.elementFromPoint(rect.left+rect.width/2,rect.top+rect.height/2)); })()`,
+    ),
+    true,
+  );
+  if (allEdges) {
+    const edges = () =>
+      evaluate(`(() => {
+      const rect=document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect();
+      const desktop=document.querySelector('.desktop').getBoundingClientRect();
+      const task=document.querySelector('.taskbar').getBoundingClientRect();
+      const start=document.querySelector('#windows-start');const s=start.getBoundingClientRect();
+      return {left:rect.left,top:rect.top,right:rect.right,bottom:rect.bottom,desktopRight:desktop.right,taskTop:task.top,startClickable:start.contains(document.elementFromPoint(s.left+s.width/2,s.top+s.height/2)),taskClickable:!!document.elementFromPoint(task.right-20,task.top+task.height/2)?.closest('.taskbar')};
+    })()`);
+    assert.equal((await edges()).top, 0);
+    await drag(10000, -20);
+    let state = await edges();
+    assert.equal(state.right, state.desktopRight);
+    assert.equal(state.top, 0);
+    await drag(10000, 10000);
+    state = await edges();
+    assert.equal(state.bottom, state.taskTop);
+    assert.equal(state.startClickable, true);
+    assert.equal(state.taskClickable, true);
+    await drag(-10000, 10000);
+    state = await edges();
+    assert.equal(state.left, 0);
+    assert.equal(state.bottom, state.taskTop);
+    await drag(0, 0);
+    // The titlebar must really be hit-testable in the former HUD exclusion zone.
+    assert.equal(
+      await evaluate(
+        `(() => {const bar=document.querySelector(${JSON.stringify(selector + ' .titlebar')});const r=bar.getBoundingClientRect();return bar.contains(document.elementFromPoint(r.left+60,r.top+r.height/2));})()`,
+      ),
+      true,
+    );
+    return;
+  }
+  await drag(640, 0);
+  assert.equal(await covered(), false);
+  await physicalClick('[data-shortcut=msn]');
+  assert.equal(
+    await evaluate("document.querySelector('[data-shortcut=msn]').getAttribute('aria-pressed')"),
+    'true',
+  );
+  assert.equal(
+    await evaluate(
+      "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).desktopIcons)",
+    ),
+    saved,
   );
 }
 
@@ -978,7 +1344,7 @@ async function verifyMessengerWindows() {
     "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).conversations.pixelgirl.history.length",
   );
   await evaluate(
-    "document.querySelector('[data-shortcut=music]').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))",
+    "document.querySelector('[data-shortcut=arcade]').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))",
   );
   await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'replay started');
   await until(

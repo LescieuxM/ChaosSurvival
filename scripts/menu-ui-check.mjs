@@ -58,8 +58,8 @@ export async function verifyMenuUI({ evaluate, command, until, wait, restart, ou
     await evaluate("document.querySelector('.menu-titlebar').textContent.includes('Windows XD')"),
   );
   assert.equal(
-    await evaluate("document.querySelector('[data-shortcut=music] span').textContent"),
-    'DJARTMUSIC__Best_Game_Console.mp3',
+    await evaluate("document.querySelector('[data-shortcut=arcade] span').textContent"),
+    'ChaosSurvival.exe',
   );
   assert.ok(
     await evaluate(

@@ -42,6 +42,10 @@ test('text and picture viewers have independent windows and task controls withou
     addEventListener(type, callback) {
       this.handlers[type] = callback;
     },
+    removeEventListener(type) {
+      delete this.handlers[type];
+    },
+    focus() {},
     setAttribute(key, value) {
       this.attrs[key] = value;
     },
@@ -57,7 +61,7 @@ test('text and picture viewers have independent windows and task controls withou
       return [];
     },
   });
-  globalThis.document = { createElement: create };
+  globalThis.document = { createElement: create, addEventListener() {}, removeEventListener() {} };
   t.after(() => {
     if (previous === undefined) delete globalThis.document;
     else globalThis.document = previous;
@@ -74,6 +78,7 @@ test('text and picture viewers have independent windows and task controls withou
     },
     close(id) {
       const entry = this.windows.get(id);
+      if (entry.beforeClose?.() === false) return;
       entry.element.remove();
       this.windows.delete(id);
       entry.onDismiss();
@@ -87,7 +92,13 @@ test('text and picture viewers have independent windows and task controls withou
   assert.equal(explorer.current, location);
   assert.equal(explorer.element.isConnected, true);
   assert.equal(notepad.element.querySelector('.notepad-content').value, txt.text);
-  assert.match(manager.calls[1].content.body, /readonly/);
+  assert.doesNotMatch(manager.calls[1].content.body, /readonly/);
+  assert.equal(notepad.element.querySelector('.notepad-content').readOnly, false);
+  const largeText = 'é'.repeat(51201);
+  const large = app.openFile(location, { name: 'archive.txt', text: largeText });
+  assert.equal(large.element.querySelector('.notepad-content').readOnly, true);
+  assert.equal(large.element.querySelector('.notepad-content').value, largeText);
+  manager.close(large.id);
   assert.ok(notepad.element.querySelector('.window-title > span').textContent.includes(txt.name));
   assert.equal(app.openFile(location, txt), notepad);
   const images = explorerLocation('images');
@@ -114,6 +125,70 @@ test('text and picture viewers have independent windows and task controls withou
   assert.equal(unsafe.element.querySelector('.picture-content').hidden, true);
   assert.equal(unsafe.element.querySelector('.picture-error').hidden, false);
   assert.ok(manager.calls.every((call) => call.type === 'desktopapp' && call.preview));
+  // Follow the actual explorer double-click path for all existing non-folder files.
+  const filesystem = read('../src/config/filesystem.json');
+  const before = JSON.stringify(filesystem);
+  for (const [id, definition] of Object.entries(filesystem)) {
+    const current = { ...definition, id };
+    app.render(explorer, current);
+    const rows = explorer.element.querySelector('.explorer-items').children;
+    const history = [...explorer.history];
+    for (const [index, item] of current.items.entries()) {
+      if (item.location) continue;
+      rows[index].handlers.dblclick();
+      assert.equal(explorer.current, current, item.name);
+      assert.deepEqual(explorer.history, history, item.name);
+      assert.equal(explorer.element.querySelector('.explorer-items').children, rows);
+      const file = app.instances.get(`file:${id}/${item.name}`);
+      assert.ok(file.element.isConnected, item.name);
+      if (fileViewer(item) !== 'generic') continue;
+      assert.equal(file.element.querySelector('.window-title > span').textContent, item.name);
+      assert.equal(
+        file.element.querySelector('.generic-file-content pre').textContent,
+        item.text ?? '',
+      );
+      const z = manager.z;
+      assert.equal(app.openFile(current, item), file);
+      assert.ok(manager.z > z);
+      file.element.querySelector('.titlebar').children[0].handlers.click();
+      assert.equal(file.element.hidden, true);
+      file.task.handlers.click();
+      assert.equal(file.element.hidden, false);
+      manager.close(file.id);
+      assert.equal(file.task.isConnected, false);
+      assert.equal(explorer.element.isConnected, true);
+    }
+  }
+  assert.equal(JSON.stringify(filesystem), before);
+  const unknown = { name: 'new-file.unrecognized' };
+  const synthetic = { ...location, id: 'test', items: [unknown] };
+  app.render(explorer, synthetic);
+  explorer.element.querySelector('.explorer-items').children[0].handlers.dblclick();
+  const fallback = app.instances.get('file:test/new-file.unrecognized');
+  assert.equal(fallback.element.querySelector('.generic-file-content pre').textContent, '');
+  assert.equal(fallback.element.querySelector('.generic-file-unavailable').hidden, false);
+  assert.equal(explorer.current, synthetic);
+  let launches = 0;
+  app.onLaunchArcade = () => {
+    launches++;
+    return 'arcade-started';
+  };
+  const calls = manager.calls.length;
+  assert.equal(app.openFile(location, { name: 'ChaosSurvival.exe' }), 'arcade-started');
+  assert.equal(launches, 1);
+  assert.equal(manager.calls.length, calls); // Never open the generic viewer for this executable.
+  const launcherLocation = {
+    ...location,
+    id: 'launcher-test',
+    items: [{ name: 'ChaosSurvival.exe' }],
+  };
+  app.render(explorer, launcherLocation);
+  explorer.element.querySelector('.explorer-items').children[0].handlers.dblclick();
+  assert.equal(launches, 2);
+  assert.equal(manager.calls.length, calls);
+  app.openFile(location, { name: 'DJARTMUSIC__Best_Game_Console.mp3' });
+  app.openFile(location, { name: 'another.exe', text: 'message conservé' });
+  assert.equal(launches, 2);
 });
 
 test('every JPG has a bundled illustration and viewers reject host paths and remote images', () => {
@@ -127,7 +202,7 @@ test('every JPG has a bundled illustration and viewers reject host paths and rem
     }
   assert.equal(fileViewer({ name: 'notes.txt' }), 'notepad');
   assert.equal(fileViewer({ name: 'folder.txt', location: 'images' }), null);
-  assert.equal(fileViewer({ name: 'toolbar.exe' }), null);
+  assert.equal(fileViewer({ name: 'toolbar.exe' }), 'generic');
   for (const unsafe of [
     'file:///C:/Users/private.jpg',
     'https://example.com/image.jpg',

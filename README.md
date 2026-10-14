@@ -79,7 +79,7 @@ NEW GAME demande confirmation et archive la partie précédente.
 sessions. **Démarrer → Menu principal** permet de revenir au menu depuis le jeu ou le bureau.
 Voir [le fonctionnement des sauvegardes](docs/saves-and-menu.md).
 
-Sur le bureau XP, double-clique sur **DJARTMUSIC__Best_Game_Console.mp3** (ou appuie sur Entrée après
+Sur le bureau XP, double-clique sur **ChaosSurvival.exe** (ou appuie sur Entrée après
 l'avoir sélectionné) pour jouer ou rejouer le niveau 1. La musique, le score,
 les fenêtres et le chaos repartent de zéro. La progression narrative reste
 intacte ; une victoire en replay ne déclenche pas une nouvelle rencontre MSN.

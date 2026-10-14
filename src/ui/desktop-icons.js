@@ -119,7 +119,8 @@ export class DesktopIcons {
   id(button) {
     return button.dataset.fileId
       ? `file:${button.dataset.fileId}`
-      : `shortcut:${button.dataset.shortcut}`;
+      : // Keep the previous saved cell when the music launcher becomes an EXE.
+        `shortcut:${button.dataset.shortcut === 'arcade' ? 'music' : button.dataset.shortcut}`;
   }
   buttons() {
     return [...this.desktop.querySelectorAll('.desktop-icons button, .desktop-files button')];

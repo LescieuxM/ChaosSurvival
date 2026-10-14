@@ -8,6 +8,7 @@ export class WindowManager {
     this.field = field;
     this.onClose = onClose;
     this.windows = new Map();
+    this.dragged = new WeakSet();
     this.sequence = 0;
     this.z = 10;
     this.observer = new ResizeObserver(() => this.reposition());
@@ -61,6 +62,7 @@ export class WindowManager {
   close(id, x, y) {
     const item = this.windows.get(id);
     if (!item || this.field.inert) return;
+    if (item.beforeClose?.() === false) return;
     this.windows.delete(id);
     item.element.remove();
     item.onDismiss?.({ reason: 'close' });
@@ -76,31 +78,42 @@ export class WindowManager {
   reposition() {
     const occupied = [];
     for (const [id, { element, preview }] of this.windows) {
-      const position = preview
-        ? {
-            x: clamp(
-              parseFloat(element.style.left) || 0,
-              0,
-              this.field.clientWidth - element.offsetWidth,
-            ),
-            y: clamp(
-              parseFloat(element.style.top) || 0,
-              0,
-              this.field.clientHeight - element.offsetHeight,
-            ),
-          }
-        : chooseWindowPosition(
-            this.field.clientWidth,
-            this.field.clientHeight,
-            element.offsetWidth,
-            element.offsetHeight,
-            occupied,
-            id,
-          );
+      const bounds = this.movementBounds(element);
+      const position =
+        preview || this.dragged.has(element)
+          ? {
+              x: clamp(parseFloat(element.style.left) || 0, bounds.minX, bounds.maxX),
+              y: clamp(parseFloat(element.style.top) || 0, bounds.minY, bounds.maxY),
+            }
+          : chooseWindowPosition(
+              this.field.clientWidth,
+              this.field.clientHeight,
+              element.offsetWidth,
+              element.offsetHeight,
+              occupied,
+              id,
+            );
       element.style.left = `${position.x}px`;
       element.style.top = `${position.y}px`;
       occupied.push({ ...position, width: element.offsetWidth, height: element.offsetHeight });
     }
+  }
+  movementBounds(element) {
+    // Keep spawn coordinates in the playfield, but drag across the actual desktop.
+    // Negative local coordinates reach the space above the arcade's playfield.
+    const field = this.field.getBoundingClientRect();
+    const desktop = this.field.closest('.desktop');
+    const surface = desktop?.getBoundingClientRect() ?? field;
+    const bottom =
+      desktop?.querySelector('.taskbar')?.getBoundingClientRect().top ?? surface.bottom;
+    const minX = surface.left - field.left;
+    const minY = surface.top - field.top;
+    return {
+      minX,
+      minY,
+      maxX: Math.max(minX, surface.right - field.left - element.offsetWidth),
+      maxY: Math.max(minY, bottom - field.top - element.offsetHeight),
+    };
   }
   enableDrag(element) {
     const bar = element.querySelector('.titlebar');
@@ -117,8 +130,10 @@ export class WindowManager {
     });
     bar.addEventListener('pointermove', (event) => {
       if (!drag) return;
-      element.style.left = `${clamp(drag.left + event.clientX - drag.x, 0, this.field.clientWidth - element.offsetWidth)}px`;
-      element.style.top = `${clamp(drag.top + event.clientY - drag.y, 0, this.field.clientHeight - element.offsetHeight)}px`;
+      const bounds = this.movementBounds(element);
+      this.dragged.add(element);
+      element.style.left = `${clamp(drag.left + event.clientX - drag.x, bounds.minX, bounds.maxX)}px`;
+      element.style.top = `${clamp(drag.top + event.clientY - drag.y, bounds.minY, bounds.maxY)}px`;
     });
     const endDrag = () => {
       drag = null;

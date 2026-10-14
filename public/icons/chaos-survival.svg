@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="padGradient" x2="0" y2="1"><stop stop-color="#c9f9ff"/><stop offset=".45" stop-color="#69b8f2"/><stop offset="1" stop-color="#256bc4"/></linearGradient>
+    <linearGradient id="badgeGradient" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#c7d9eb"/></linearGradient>
+  </defs>
+  <path d="M15 11h18c6 0 9 7 11 17l1 8c0 5-5 8-9 4l-6-6H18l-6 6c-4 4-9 1-9-4l1-8c2-10 5-17 11-17Z" fill="url(#padGradient)" stroke="#1e457e" stroke-width="2"/>
+  <path d="M14 15h20" stroke="#e9ffff" stroke-width="3" stroke-linecap="round"/>
+  <path d="M12 20h5v5h5v5h-5v5h-5v-5H7v-5h5Z" fill="#24456c" stroke="#c5edff"/>
+  <circle cx="35" cy="22" r="3.5" fill="#ff67b4" stroke="#843772"/><circle cx="39" cy="29" r="3.5" fill="#a5f85e" stroke="#408043"/>
+  <path d="M22 27h5" stroke="#effaff" stroke-width="3" stroke-linecap="round"/>
+  <path d="m24 2 2 4 4 1-3 3v4l-3-2-4 2 1-4-3-3 4-1Z" fill="#ffe65a" stroke="#c89117"/>
+  <rect x="27" y="34" width="19" height="12" rx="2" fill="url(#badgeGradient)" stroke="#466888"/>
+  <path d="m32 37 6 3-6 3Z" fill="#43a042"/><path d="M40 38h3m-3 3h3" stroke="#5e83a5"/>
+</svg>

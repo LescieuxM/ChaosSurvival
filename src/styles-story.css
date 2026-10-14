@@ -197,6 +197,23 @@ button.messenger-contact-row:hover {
   white-space: pre;
   overflow: auto;
 }
+.generic-file-content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 18px;
+  background: #fff;
+  color: #263f5a;
+}
+.generic-file-content pre {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font:
+    12px Tahoma,
+    sans-serif;
+  line-height: 1.5;
+}
 .picture-stage {
   flex: 1;
   min-height: 0;
@@ -1115,4 +1132,47 @@ button.messenger-contact-row:hover {
 .desktop.story-desktop.icon-grid button.is-dragging {
   z-index: 1;
   opacity: 0.8;
+}
+
+/* Windows cover the icon columns; uncovered desktop space remains clickable.
+   Windows also cover the arcade HUD (400), but stay below the taskbar (800). */
+.desktop #playfield {
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 410;
+}
+.desktop #playfield > .popup {
+  pointer-events: auto;
+}
+.desktop:not(.rhythm-active) #playfield {
+  top: 0;
+  bottom: 36px;
+}
+.notepad-confirm {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(340px, calc(100% - 24px));
+  padding: 12px;
+  border: 2px solid #2258c4;
+  border-radius: 5px;
+  background: #ece9d8;
+  color: #111;
+  box-shadow: 3px 5px 12px #0005;
+}
+.notepad-confirm strong {
+  display: block;
+  color: #164aa8;
+}
+.notepad-confirm > div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.file-notepad .window-status {
+  white-space: normal;
 }

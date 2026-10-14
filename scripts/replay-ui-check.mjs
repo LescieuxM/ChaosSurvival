@@ -68,7 +68,7 @@ export async function verifyReplayUI({
   await evaluate("document.querySelector('#menu-play').click();");
   await until(() => evaluate("window.chaosDebug.snapshot().phase==='desktop'"), 'desktop');
   await evaluate(
-    "document.querySelector('[data-shortcut=music]').dispatchEvent(new MouseEvent('dblclick',{bubbles:true}))",
+    "document.querySelector('[data-shortcut=arcade]').dispatchEvent(new MouseEvent('dblclick',{bubbles:true}))",
   );
   await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'replay');
   const attempt = (await saved()).replayReactions.at(-1);
@@ -127,7 +127,7 @@ export async function verifyReplayUI({
   await evaluate("document.querySelector('#menu-play').click()");
   await until(() => evaluate("window.chaosDebug.snapshot().phase==='desktop'"), 'restored desktop');
   await evaluate(
-    "document.querySelector('[data-shortcut=music]').dispatchEvent(new MouseEvent('dblclick',{bubbles:true}))",
+    "document.querySelector('[data-shortcut=arcade]').dispatchEvent(new MouseEvent('dblclick',{bubbles:true}))",
   );
   await until(
     () => evaluate("window.chaosDebug.snapshot().phase==='playing'"),
@@ -189,7 +189,7 @@ export async function verifyReplayUI({
   );
   await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'resume');
   await evaluate(
-    "document.querySelector('[data-shortcut=music]').dispatchEvent(new MouseEvent('dblclick',{bubbles:true}))",
+    "document.querySelector('[data-shortcut=arcade]').dispatchEvent(new MouseEvent('dblclick',{bubbles:true}))",
   );
   await until(
     () =>

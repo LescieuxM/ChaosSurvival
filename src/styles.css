@@ -222,7 +222,7 @@ button svg {
   height: 40px;
   filter: drop-shadow(1px 3px 2px #15427366);
 }
-.desktop-icons [data-shortcut='music'] > span {
+.desktop-icons [data-shortcut='arcade'] > span {
   max-width: 100%;
   overflow-wrap: anywhere;
 }

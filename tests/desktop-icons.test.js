@@ -12,6 +12,21 @@ import {
 import { Progression } from '../src/story/progression.js';
 const story = JSON.parse(readFileSync(new URL('../src/config/story.json', import.meta.url)));
 
+test('the arcade EXE keeps the legacy music shortcut position without changing other saved icon IDs', () => {
+  assert.equal(
+    DesktopIcons.prototype.id.call({}, { dataset: { shortcut: 'arcade' } }),
+    'shortcut:music',
+  );
+  assert.equal(
+    DesktopIcons.prototype.id.call({}, { dataset: { shortcut: 'computer' } }),
+    'shortcut:computer',
+  );
+  assert.equal(
+    DesktopIcons.prototype.id.call({}, { dataset: { fileId: 'smiley' } }),
+    'file:smiley',
+  );
+});
+
 test('desktop icons fill the first column before the next and preserve existing custom cells', () => {
   const ids = ['computer', 'folder', 'msn', 'music', 'bin', 'game'];
   const grid = iconGrid(1280, 800);

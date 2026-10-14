@@ -2,6 +2,9 @@ import definitions from '../config/desktop-apps.json' with { type: 'json' };
 import filesystem from '../config/filesystem.json' with { type: 'json' };
 import { bindFileActivation } from '../utils/activation.js';
 import { icon } from './icons.js';
+import { isArcadeExecutable } from './arcade-launcher.js';
+import { VirtualTextFiles } from '../story/text-files.js';
+import { attachNotepad } from './notepad.js';
 
 export const desktopApps = definitions;
 
@@ -36,15 +39,22 @@ export function fileViewer(item) {
   if (item.location) return null;
   if (/\.txt$/i.test(item.name)) return 'notepad';
   if (/\.jpg$/i.test(item.name)) return 'image';
-  return null;
+  return 'generic';
 }
 export function localPicture(path) {
   return typeof path === 'string' && /^\.\/(?:wallpaper\.svg|covers\/[a-z0-9-]+\.svg)$/.test(path);
 }
 
 export class DesktopApplications {
-  constructor(manager, taskbar, onWindowState = () => {}) {
-    Object.assign(this, { manager, taskbar, onWindowState });
+  constructor(
+    manager,
+    taskbar,
+    onWindowState = () => {},
+    onLaunchArcade = null,
+    textFiles = new VirtualTextFiles({ data: {}, save: () => true }),
+  ) {
+    Object.assign(this, { manager, taskbar, onWindowState, onLaunchArcade });
+    this.textFiles = textFiles;
     this.instances = new Map();
   }
   open(kind) {
@@ -122,13 +132,17 @@ export class DesktopApplications {
   openFile(location, item) {
     const viewer = fileViewer(item);
     if (!viewer) return;
+    if (isArcadeExecutable(item) && this.onLaunchArcade) return this.onLaunchArcade();
     const key = `file:${location.id}/${item.name}`;
     const existing = this.instances.get(key);
     if (existing?.element.isConnected) {
       this.restore(existing);
       return existing;
     }
-    const title = `${item.name} — ${viewer === 'notepad' ? 'Bloc-notes' : 'Visionneuse d’images'}`;
+    const title =
+      viewer === 'generic'
+        ? item.name
+        : `${item.name} — ${viewer === 'notepad' ? 'Bloc-notes' : 'Visionneuse d’images'}`;
     const iconName = viewer === 'image' ? 'picture' : 'document';
     const id = this.manager.spawn('desktopapp', {
       preview: true,
@@ -136,11 +150,14 @@ export class DesktopApplications {
         title: 'Document',
         iconName,
         body:
-          viewer === 'notepad'
-            ? '<div class="explorer-menu file-menu">Fichier <span>Édition</span><span>Format</span><span>Affichage</span><span>Aide</span></div><textarea class="notepad-content" readonly aria-label="Contenu du fichier texte" spellcheck="false"></textarea><div class="window-status">Lecture seule</div>'
-            : '<div class="explorer-menu file-menu">Fichier <span>Affichage</span><span>Image</span><span>Aide</span></div><div class="picture-stage"><img class="picture-content" alt="" /><p class="picture-error" hidden>Aperçu non disponible pour cette image.</p></div><div class="picture-toolbar">▧ Ajuster à la fenêtre</div><div class="window-status">Visionneuse d’images Windows XD</div>',
+          viewer === 'generic'
+            ? '<div class="generic-file-content"><pre></pre><p class="generic-file-unavailable" hidden>Windows ne peut pas ouvrir ce fichier. Aucun contenu ni visualiseur spécifique n’est défini pour ce fichier fictif.</p></div><div class="window-status">Windows XD · Lecture seule</div>'
+            : viewer === 'notepad'
+              ? '<div class="msn-menu notepad-menu"></div><textarea class="notepad-content" aria-label="Contenu du fichier texte" spellcheck="false"></textarea><div class="window-status" role="status"></div><section class="notepad-confirm" role="dialog" aria-label="Bloc-notes : enregistrer les modifications" aria-modal="true" hidden><strong>Bloc-notes Windows XD</strong><p></p><div><button class="xp-button" data-answer="yes">Oui</button><button class="xp-button" data-answer="no">Non</button><button class="xp-button" data-answer="cancel">Annuler</button></div></section>'
+              : '<div class="explorer-menu file-menu">Fichier <span>Affichage</span><span>Image</span><span>Aide</span></div><div class="picture-stage"><img class="picture-content" alt="" /><p class="picture-error" hidden>Aperçu non disponible pour cette image.</p></div><div class="picture-toolbar">▧ Ajuster à la fenêtre</div><div class="window-status">Visionneuse d’images Windows XD</div>',
       },
       onDismiss: () => {
+        instance.disposeEditor?.();
         this.instances.delete(key);
         instance.task.remove();
         this.onWindowState();
@@ -151,7 +168,18 @@ export class DesktopApplications {
     element.classList.add(`file-${viewer}`);
     element.querySelector('.window-title > span').textContent = title;
     element.querySelector('.close-button').setAttribute('aria-label', `Fermer ${item.name}`);
-    if (viewer === 'notepad') element.querySelector('.notepad-content').value = item.text ?? '';
+    if (viewer === 'generic') {
+      element.querySelector('.generic-file-content pre').textContent = item.text ?? '';
+      element.querySelector('.generic-file-unavailable').hidden =
+        item.text !== undefined && item.text !== null;
+    } else if (viewer === 'notepad')
+      instance.disposeEditor = attachNotepad(
+        instance,
+        this.manager,
+        this.textFiles,
+        `${location.id}/${item.name}`,
+        item,
+      );
     else {
       const image = element.querySelector('.picture-content');
       const unavailable = () => {
@@ -203,9 +231,9 @@ export class DesktopApplications {
       detail.textContent = item.detail;
       button.append(label, detail);
       const activate = () =>
-        fileViewer(item)
-          ? this.openFile(definition, item)
-          : this.render(instance, explorerItem(definition, item));
+        item.location
+          ? this.render(instance, explorerItem(definition, item))
+          : this.openFile(definition, item);
       bindFileActivation(button, activate);
       content.append(button);
     }
