@@ -9,10 +9,10 @@ const validCell = (cell) =>
   cell.row >= 0;
 const same = (a, b) => a?.col === b?.col && a?.row === b?.row;
 
-export function iconGrid(width, height, taskbarHeight = 40) {
+export function iconGrid(width, height, taskbarHeight = 40, iconHeight = 90) {
   return {
     cols: Math.max(1, Math.floor((width - MARGIN * 2) / WIDTH)),
-    rows: Math.max(1, Math.floor((height - taskbarHeight - MARGIN * 2) / HEIGHT)),
+    rows: Math.max(1, 1 + Math.floor((height - taskbarHeight - MARGIN - iconHeight) / HEIGHT)),
   };
 }
 export function nearestIconCell(x, y, grid) {
@@ -28,7 +28,11 @@ export function layoutIconCells(ids, saved, grid) {
   const result = new Map();
   const free = (cell) => ![...result.values()].some((used) => same(used, cell));
   // Reserve existing custom positions before assigning newly unlocked icons.
-  for (const id of ids.filter((id) => Object.hasOwn(saved, id) && validCell(saved[id]))) {
+  const inside = (id) => saved[id].col < grid.cols && saved[id].row < grid.rows;
+  const stored = ids.filter((id) => Object.hasOwn(saved, id) && validCell(saved[id]));
+  // Valid cells keep priority over icons temporarily clamped after a resize.
+  stored.sort((a, b) => Number(inside(b)) - Number(inside(a)));
+  for (const id of stored) {
     const desired = {
       col: Math.min(saved[id].col, grid.cols - 1),
       row: Math.min(saved[id].row, grid.rows - 1),
@@ -45,6 +49,11 @@ export function layoutIconCells(ids, saved, grid) {
           )
           .find(free);
     if (cell) result.set(id, cell);
+  }
+  // Default bin placement is the first free cell. Personal cells always win.
+  if (ids.includes('shortcut:bin') && !result.has('shortcut:bin')) {
+    const cell = cells.find(free);
+    if (cell) result.set('shortcut:bin', cell);
   }
   for (const id of ids)
     if (!result.has(id)) {
@@ -81,6 +90,12 @@ export function groupIconCells(cells, ids, delta, grid) {
 }
 
 export class DesktopIcons {
+  reset() {
+    this.cancel();
+    this.suppressClick = null;
+    this.select(null);
+    this.refresh();
+  }
   constructor(desktop, progression) {
     this.desktop = desktop;
     this.progression = progression;
@@ -154,6 +169,7 @@ export class DesktopIcons {
       rect.width,
       rect.height,
       this.desktop.querySelector('.taskbar').getBoundingClientRect().height,
+      Math.max(0, ...buttons.map((button) => button.offsetHeight)),
     );
     this.cells = layoutIconCells(
       buttons.map((button) => this.id(button)),
@@ -182,17 +198,11 @@ export class DesktopIcons {
   }
   down(event) {
     this.suppressClick = null;
-    if (
-      event.button !== 0 ||
-      !this.desktop.classList.contains('story-desktop') ||
-      this.desktop.inert ||
-      this.drag ||
-      this.rectangle
-    )
-      return;
+    if (event.button !== 0 || this.desktop.inert || this.drag || this.rectangle) return;
     const button = this.button(event.target);
     if (!button) {
       if (!this.backgroundHit(event.target)) return;
+      event.preventDefault();
       this.select(null);
       this.rectangle = {
         pointer: event.pointerId,

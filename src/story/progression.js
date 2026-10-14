@@ -1,3 +1,4 @@
+import { replaceGameStorage } from './reset-game.js';
 const TYPES = ['arcade', 'conversation', 'minigame'];
 const STORAGE_KEY = 'chaos-survival-story-v1';
 export const HISTORY_KEY = 'chaos-survival-history-v1';
@@ -119,6 +120,15 @@ export class Progression {
       this.corrupt = true;
     }
     this.data.choiceOffers ??= {};
+    if (!record(this.data.contactConnections)) this.data.contactConnections = {};
+    for (const [id, connection] of Object.entries(this.data.contactConnections)) {
+      if (
+        !record(connection) ||
+        !['pending', 'online'].includes(connection.status) ||
+        (connection.status === 'pending' && !Number.isFinite(connection.dueAt))
+      )
+        delete this.data.contactConnections[id];
+    }
     if (!record(this.data.tutorials)) this.data.tutorials = {};
     this.data.files ??= {};
     this.data.anomalies ??= {};
@@ -129,6 +139,14 @@ export class Progression {
       this.data.choices.length ||
       Object.keys(this.data.dialogues).length,
     );
+    // An appended chapter resumes old completed runs without replaying their games.
+    const tail = story.sequences.find(
+      (item) =>
+        this.data.completed.includes(item.id) &&
+        !this.data.completed.includes(item.next) &&
+        story.sequences.some((next) => next.id === item.next && next.resumeAfterCompletion),
+    );
+    if (this.data.current === null && tail) this.data.current = tail.next;
     this.data.unlockedConversations = story.sequences
       .filter(
         (sequence) =>
@@ -159,24 +177,10 @@ export class Progression {
   }
   newGame() {
     const next = freshData(this.story);
-    next.started = true;
-    next.startedAt = new Date().toISOString();
-    next.chapter = this.story.sequences.find((item) => item.id === next.current)?.chapter ?? 1;
-    // Each setItem is atomic. Archive first; never replace the active run if either write fails.
-    if (this.storage) {
-      const history = JSON.parse(this.storage.getItem(HISTORY_KEY) ?? '{"version":1,"runs":[]}');
-      if (!record(history) || history.version !== 1 || !Array.isArray(history.runs))
-        throw new Error('Historique illisible. La partie active a été conservée.');
-      if (this.hasSave && !history.runs.some((run) => run.runId === this.data.runId)) {
-        history.runs.push({ ...structuredClone(this.data), archivedAt: new Date().toISOString() });
-        this.storage.setItem(HISTORY_KEY, JSON.stringify(history));
-      }
-      this.storage.setItem(STORAGE_KEY, JSON.stringify(next));
-    }
+    replaceGameStorage(this.storage, next);
     this.data = next;
     this.corrupt = false;
     this.persistenceError = false;
-    // Extension point for future narrative events; no event is registered today.
     this.onNewGame?.({ runId: next.runId });
   }
   get current() {

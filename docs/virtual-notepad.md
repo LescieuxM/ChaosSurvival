@@ -11,9 +11,9 @@ pas besoin d’être converties. Chaque entrée contient `text` et `original` : 
 JSON du système de fichiers restent intacts. Si le texte narratif d’origine
 change, la version du joueur reste prioritaire et le Bloc-notes affiche un avis.
 Un fichier supprimé du système virtuel n’est pas recréé par sa sauvegarde.
-Une nouvelle partie repart des documents d’origine et archive les anciennes
-éditions avec la partie précédente ; la suppression des données utilisateur
-efface aussi ces éditions et leurs archives.
+Une nouvelle partie repart des documents d’origine et efface les anciennes
+éditions et les archives des anciennes parties. La suppression des données
+utilisateur efface également les réglages et les autres données du jeu.
 
 La limite est de **102 400 octets UTF-8**, vérifiée à chaque saisie et à chaque
 enregistrement. Une édition trop grande est refusée entièrement, avec un message

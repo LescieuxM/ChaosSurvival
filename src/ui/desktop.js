@@ -123,10 +123,6 @@ export function mountDesktop(root, best) {
           aria-label="Volume de la musique"
       /></label>
     </section>
-    <div class="session-info">
-      <span class="session-dot"></span><span id="session-label">SYSTÈME OPÉRATIONNEL</span
-      ><small id="window-count">0 fenêtre ouverte</small>
-    </div>
     <div class="toast" id="toast" hidden>
       <header>
         ${icon('msn')} ${applicationName('messenger')}
@@ -208,8 +204,6 @@ export function mountDesktop(root, best) {
     chaosFill: select('#chaos-fill'),
     chaosMeter: select('.chaos-meter'),
     chaosCaption: select('#chaos-caption'),
-    windowCount: select('#window-count'),
-    sessionLabel: select('#session-label'),
     dialogTitle: select('#dialog-title'),
     dialogCopy: select('#dialog-copy'),
     dialogIcon: select('#dialog-icon'),

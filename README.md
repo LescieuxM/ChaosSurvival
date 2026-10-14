@@ -74,7 +74,8 @@ demande de droits administrateur.
 Le menu principal affiche **PLAY** au premier lancement, puis **CONTINUE** et
 **NEW GAME** lorsqu'une partie a commencé. CONTINUE reprend le dernier point de
 sauvegarde ; un niveau ou mini-jeu inachevé recommence au début de cette séquence.
-NEW GAME demande confirmation et archive la partie précédente.
+NEW GAME demande confirmation et efface intégralement la partie précédente,
+ses archives, ses modifications, ses records et ses personnalisations.
 **OPTIONS** conserve les volumes musique/bruitages et le plein écran entre les
 sessions. **Démarrer → Menu principal** permet de revenir au menu depuis le jeu ou le bureau.
 Voir [le fonctionnement des sauvegardes](docs/saves-and-menu.md).

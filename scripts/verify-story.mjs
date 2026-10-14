@@ -8,6 +8,11 @@ const root = new URL('../', import.meta.url);
 const story = JSON.parse(await readFile(new URL('src/config/story.json', root), 'utf8'));
 validateStory(story);
 const ids = new Set();
+const contacts = JSON.parse(await readFile(new URL('src/config/contacts.json', root), 'utf8'));
+for (const contact of contacts) {
+  assert.match(contact.avatar ?? './avatars/player.svg', /^\.\/avatars\/[a-z0-9-]+\.svg$/i);
+  if (contact.avatar) await access(new URL(`public/${contact.avatar.slice(2)}`, root));
+}
 const games = new Map();
 const chart = JSON.parse(await readFile(new URL('src/config/chart.json', root), 'utf8'));
 validateGameRules(chart);
@@ -34,6 +39,13 @@ for (const filename of await readdir(new URL('src/dialogues/', root))) {
   if (!filename.endsWith('.json')) continue;
   const dialogue = JSON.parse(await readFile(new URL(`src/dialogues/${filename}`, root), 'utf8'));
   validateDialogue(dialogue);
+  if (dialogue.completion?.connection)
+    assert.ok(
+      contacts.some(
+        (contact) => contact.id === dialogue.completion.connection.contactId && contact.connection,
+      ),
+      'Contact de connexion absent',
+    );
   assert.ok(!ids.has(dialogue.id), `Dialogue dupliqué : ${dialogue.id}`);
   ids.add(dialogue.id);
   for (const node of Object.values(dialogue.nodes))

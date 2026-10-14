@@ -40,6 +40,52 @@ test('desktop icons fill the first column before the next and preserve existing 
   assert.deepEqual(withNew.get('new-file'), { col: 0, row: 3 });
 });
 
+test('the bin defaults to top left while personal and legacy saved positions remain intact', () => {
+  const ids = [
+    'shortcut:computer',
+    'shortcut:folder',
+    'shortcut:msn',
+    'shortcut:music',
+    'shortcut:bin',
+  ];
+  const grid = iconGrid(1280, 800, 36, 78);
+  const fresh = layoutIconCells(ids, {}, grid);
+  assert.deepEqual(fresh.get('shortcut:bin'), { col: 0, row: 0 });
+  assert.deepEqual(fresh.get('shortcut:computer'), { col: 0, row: 1 });
+  assert.equal(
+    new Set([...fresh.values()].map((cell) => `${cell.col}:${cell.row}`)).size,
+    ids.length,
+  );
+  const saved = Object.fromEntries(fresh);
+  saved['shortcut:bin'] = { col: 2, row: 3 };
+  assert.deepEqual(layoutIconCells(ids, saved, grid).get('shortcut:bin'), saved['shortcut:bin']);
+  const legacy = Object.fromEntries(ids.map((id, row) => [id, { col: 0, row }]));
+  assert.deepEqual(Object.fromEntries(layoutIconCells(ids, legacy, grid)), legacy);
+});
+
+test('the final grid row fits real icon heights above the taskbar at every resolution', () => {
+  for (const height of [480, 600, 650, 768, 800, 1080])
+    for (const iconHeight of [62, 78, 90]) {
+      const grid = iconGrid(1280, height, 36, iconHeight);
+      const bottom = 20 + (grid.rows - 1) * 104 + iconHeight;
+      assert.ok(bottom <= height - 36);
+      assert.ok(bottom + 104 > height - 36, 'another complete row would overlap the taskbar');
+      assert.equal(nearestIconCell(20, height, grid).row, grid.rows - 1);
+    }
+  assert.equal(iconGrid(1280, 800, 36, 90).rows, 7);
+});
+test('temporarily out-of-bounds icons never displace valid personalized cells during resize', () => {
+  const saved = { a: { col: 0, row: 6 }, b: { col: 0, row: 3 }, c: { col: 1, row: 0 } };
+  const small = layoutIconCells(['a', 'b', 'c'], saved, { cols: 3, rows: 4 });
+  assert.deepEqual(small.get('b'), saved.b);
+  assert.deepEqual(small.get('c'), saved.c);
+  assert.notDeepEqual(small.get('a'), saved.b);
+  assert.deepEqual(
+    Object.fromEntries(layoutIconCells(['a', 'b', 'c'], saved, { cols: 3, rows: 7 })),
+    saved,
+  );
+});
+
 test('corrupt or colliding positions and resolution changes produce distinct bounded cells', () => {
   const saved = {
     a: { col: 99, row: 99 },
@@ -134,8 +180,9 @@ test('dragging snaps, persists, rejects occupied cells, suppresses accidental cl
     clientY: y,
     preventDefault() {},
   });
-  handlers.pointerdown(event(30, 342));
-  handlers.pointermove(event(32, 344));
+  const initialY = parseFloat(button.style.top) + 10;
+  handlers.pointerdown(event(30, initialY));
+  handlers.pointermove(event(32, initialY + 2));
   assert.equal(icons.drag.moved, false);
   handlers.pointermove(event(270, 134));
   assert.match(button.style.transform, /translate/);
@@ -252,12 +299,13 @@ test('empty-area dragging selects icons without moving them and clears the box o
       return { left, top, right: left + 100, bottom: top + 90 };
     },
   }));
+  let phaseClass = 'story-desktop';
   const desktop = {
     children: [],
     classList: {
       add() {},
       contains(name) {
-        return name === 'story-desktop';
+        return name === phaseClass;
       },
     },
     closest() {
@@ -282,16 +330,20 @@ test('empty-area dragging selects icons without moving them and clears the box o
     },
   };
   const icons = new DesktopIcons(desktop, progression);
+  let prevented = false;
   const event = (x, y, target = desktop) => ({
     button: 0,
     pointerId: 1,
     clientX: x,
     clientY: y,
     target,
-    preventDefault() {},
+    preventDefault() {
+      prevented = true;
+    },
   });
   const saved = JSON.stringify(progression.data.desktopIcons);
   icons.down(event(5, 5));
+  assert.equal(prevented, true, 'empty-area selection prevents native browser dragging');
   icons.move(event(8, 8));
   assert.equal(desktop.children.length, 0);
   icons.move(event(125, 216));
@@ -308,12 +360,39 @@ test('empty-area dragging selects icons without moving them and clears the box o
   icons.up(event(160, 40, buttons[0]));
   assert.deepEqual(progression.data.desktopIcons['shortcut:computer'], { col: 1, row: 0 });
   assert.deepEqual(progression.data.desktopIcons['shortcut:folder'], { col: 1, row: 1 });
+  phaseClass = 'rhythm-active';
+  icons.select(buttons[0]);
+  icons.down(event(160, 40, buttons[0]));
+  icons.move(event(280, 40, buttons[0]));
+  icons.up(event(280, 40, buttons[0]));
+  assert.deepEqual(progression.data.desktopIcons['shortcut:computer'], { col: 2, row: 0 });
+  phaseClass = 'story-desktop';
   const restored = new Progression(story, storage);
-  assert.deepEqual(restored.data.desktopIcons['shortcut:computer'], { col: 1, row: 0 });
+  assert.deepEqual(restored.data.desktopIcons['shortcut:computer'], { col: 2, row: 0 });
   assert.deepEqual(restored.data.desktopIcons['shortcut:folder'], { col: 1, row: 1 });
-  assert.equal(icons.selectedIds.size, 2);
+  assert.equal(icons.selectedIds.size, 1);
   icons.down(event(500, 500));
   icons.up(event(500, 500));
   assert.equal(icons.selectedIds.size, 0);
   assert.ok(buttons.every((button) => button.attrs['aria-pressed'] === 'false'));
+  phaseClass = 'rhythm-active';
+  icons.down(event(130, 5));
+  icons.move(event(250, 216));
+  assert.equal(icons.selectedIds.size, 1);
+  const rhythmicBox = desktop.children.at(-1);
+  icons.move(event(250, 900));
+  assert.equal(parseFloat(rhythmicBox.style.top) + parseFloat(rhythmicBox.style.height), 760);
+  icons.up(event(250, 900));
+  assert.equal(rhythmicBox.removed, true);
+  const windowOrTask = { closest: () => null };
+  icons.down(event(500, 500, windowOrTask));
+  assert.equal(icons.rectangle, null);
+  desktop.inert = true;
+  icons.down(event(500, 500));
+  assert.equal(icons.rectangle, null);
+  desktop.inert = false;
+  phaseClass = 'menu';
+  desktop.inert = true;
+  icons.down(event(500, 500));
+  assert.equal(icons.rectangle, null);
 });

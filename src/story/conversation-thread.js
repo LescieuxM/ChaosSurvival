@@ -55,6 +55,7 @@ export class ConversationThread {
         return !saved || saved.cursor < event.nodes[saved.node]?.messages.length;
       }) ??
       pending[0] ??
+      events.findLast((event) => event.completion?.stayOnline) ??
       events.at(-1)
     );
   }
@@ -122,7 +123,8 @@ export class ConversationThread {
     const message = session.nextMessage();
     if (!message) return;
     if (!Number.isFinite(session.state.receiveDueAt)) {
-      session.state.receiveDueAt = now + message.delayMs + message.typingMs;
+      session.state.receiveDueAt =
+        now + message.delayMs + message.typingMs + (message.typingPauseMs ?? 0);
       session.persist();
     }
   }
@@ -133,13 +135,14 @@ export class ConversationThread {
       if (!message || message.speaker !== 'contact' || !Number.isFinite(state.receiveDueAt))
         continue;
       const total = message.delayMs + message.typingMs;
+      const typingEndsAt = state.receiveDueAt - (message.typingPauseMs ?? 0);
       // Reuse the existing wait budget, including scripts with typingMs = 0.
       const typing =
         message.typingMs ||
         Math.min(total, Math.max(180, Math.min(900, (message.text?.length ?? 20) * 18)));
       if (
-        now >= state.receiveDueAt - typing &&
-        now < state.receiveDueAt &&
+        now >= typingEndsAt - typing &&
+        now < typingEndsAt &&
         event.contact.status !== 'Hors ligne' &&
         event.contact.online !== false
       )
@@ -167,15 +170,16 @@ export class ConversationThread {
         session.persist();
         break;
       }
-      dueAt += next.delayMs + next.typingMs;
+      dueAt += next.delayMs + next.typingMs + (next.typingPauseMs ?? 0);
       state.receiveDueAt = dueAt;
       session.persist();
     }
     return delivered;
   }
   isReceiving(id) {
-    const first = this.getEvents()[0];
     const scheduled = this.progression.data.dialogues[id];
+    if (Number.isFinite(scheduled?.receiveDueAt) && !scheduled.finished) return true;
+    const first = this.getEvents()[0];
     if (first?.id === id)
       return Boolean(Number.isFinite(scheduled?.receiveDueAt) && !scheduled.finished);
 
@@ -200,6 +204,15 @@ export class ConversationThread {
         continue;
       // Receive independently of other pending choices; only replies need the UI.
       const saved = this.progression.data.dialogues[event.id];
+      if (Number.isFinite(saved?.receiveDueAt)) {
+        if (this.receiveScheduled(event, now)) incoming.push(event);
+        continue;
+      }
+      if (!saved && !Number.isFinite(event.incomingAt)) {
+        this.schedule(event, now);
+        if (this.receiveScheduled(event, now)) incoming.push(event);
+        continue;
+      }
       if (saved) {
         const node = event.nodes[saved.node];
         if (node?.end && saved.cursor >= node.messages.length && !this.hasPendingFile(event.id)) {
@@ -216,14 +229,18 @@ export class ConversationThread {
         : (event.incomingAt ?? now) +
           event.nodes[event.start].messages
             .slice(1, session.state.cursor + 1)
-            .reduce((total, message) => total + message.delayMs + message.typingMs, 0);
+            .reduce(
+              (total, message) =>
+                total + message.delayMs + message.typingMs + (message.typingPauseMs ?? 0),
+              0,
+            );
       let delivered = false;
       while (session.nextMessage() && dueAt <= now) {
         session.deliver();
         delivered = true;
         const next = session.nextMessage();
         if (next) {
-          dueAt += next.delayMs + next.typingMs;
+          dueAt += next.delayMs + next.typingMs + (next.typingPauseMs ?? 0);
           session.state.receiveDueAt = dueAt;
           session.persist();
         }
@@ -242,5 +259,22 @@ export class ConversationThread {
     if (!this.state.unread.length) return;
     this.state.unread = [];
     this.progression.save();
+  }
+  appendWizz(speaker, nickname, eventId = crypto.randomUUID(), now = Date.now()) {
+    if (!['player', 'contact'].includes(speaker)) throw new Error('Expéditeur de Wizz invalide.');
+    this.sync();
+    const key = `wizz:${eventId}`;
+    if (this.state.history.some((entry) => entry.key === key)) return null;
+    const message = {
+      key,
+      type: 'wizz',
+      speaker,
+      receivedAt: now,
+      text: `${nickname} vous a envoyé un wizz !`,
+    };
+    this.state.history.push(message);
+    if (speaker === 'contact') this.state.unread.push(key);
+    this.progression.save();
+    return message;
   }
 }

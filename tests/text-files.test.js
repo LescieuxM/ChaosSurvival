@@ -32,17 +32,14 @@ test('virtual text edits persist by path without altering story, original docume
   assert.equal(globalThis.executed, undefined);
 });
 
-test('a new game resets document edits and preserves them only in the previous run archive', () => {
+test('a new game restores source documents and retains no previous editing archive', () => {
   const disk = storage();
   const progression = new Progression(story, disk);
   progression.begin();
   new VirtualTextFiles(progression).save('c/test.txt', 'edited', 'base');
   progression.newGame();
   assert.equal(new VirtualTextFiles(progression).read('c/test.txt', 'base').text, 'base');
-  assert.equal(
-    JSON.parse(disk.getItem(HISTORY_KEY)).runs[0].textFiles['c/test.txt'].text,
-    'edited',
-  );
+  assert.equal(disk.getItem(HISTORY_KEY), undefined);
 });
 
 test('strict UTF-8 limit accepts exactly 100 KiB and rejects whole oversized saves', () => {

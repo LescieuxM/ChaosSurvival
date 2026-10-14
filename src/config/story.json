@@ -19,6 +19,13 @@
       "id": "super-mega-game",
       "type": "minigame",
       "game": "smiley-catcher",
+      "next": "pixelgirl-smiley-win"
+    },
+    {
+      "id": "pixelgirl-smiley-win",
+      "type": "conversation",
+      "dialogue": "pixelgirl-smiley-victory",
+      "resumeAfterCompletion": true,
       "next": null
     }
   ]

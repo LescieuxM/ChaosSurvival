@@ -11,7 +11,7 @@ const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
 const story = JSON.parse(read('../src/config/story.json'));
 const definition = JSON.parse(read('../src/minigames/smiley-catcher.json'));
 
-function setup(progression, t, tutorials = false) {
+function setup(progression, t, tutorials = false, onVictory) {
   const element = () => ({
     style: {},
     dataset: {},
@@ -111,6 +111,7 @@ function setup(progression, t, tutorials = false) {
     context.sounds,
     undefined,
     rules,
+    onVictory,
   );
   context.rules = rules;
   const files = new DesktopFiles(
@@ -185,12 +186,14 @@ test('received mini-game launches only after transfer, closes and restarts from 
 test('finished mini-game stays single, can replay internally and from desktop after restart without repeating progression', (t) => {
   const { progression, storage, file } = savedRun();
   progression.finishTransfer(file.key);
-  const { context, manager } = setup(progression, t);
+  let victories = 0;
+  const { context, manager } = setup(progression, t, false, () => victories++);
   context.openDesktopFile(file);
   const game = context.game();
   finish(game);
   assert.equal(game.finished, true);
-  assert.equal(progression.current, null);
+  assert.equal(victories, 1);
+  assert.equal(progression.current.id, 'pixelgirl-smiley-win');
   const saved = JSON.stringify(progression.data);
   context.openDesktopFile(file);
   assert.equal(context.game(), game);
@@ -199,6 +202,7 @@ test('finished mini-game stays single, can replay internally and from desktop af
   assert.equal(game.elapsed, 0);
   assert.equal(game.result.hidden, true);
   finish(game);
+  assert.equal(victories, 1);
   assert.equal(JSON.stringify(progression.data), saved);
   game.element.querySelector('.flash-return').handlers.click();
   assert.equal(manager.windows.size, 0);
@@ -249,7 +253,7 @@ test('development shortcut finishes Smiley normally once, cleans up and allows a
   assert.equal(game.elapsed, definition.durationSeconds);
   assert.equal(game.targets.length, 0);
   assert.equal(visibility.size, 0);
-  assert.equal(progression.current, null);
+  assert.equal(progression.current.id, 'pixelgirl-smiley-win');
   const saved = JSON.stringify(progression.data);
   handler(key);
   game.tick(123456);

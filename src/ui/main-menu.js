@@ -93,17 +93,46 @@ export class MainMenu {
     `;
     root.append(this.element);
     const desktopBackdrop = document.createElement('div');
-    desktopBackdrop.className = 'menu-desktop-background';
+    desktopBackdrop.className = 'menu-desktop-background icon-grid';
     desktopBackdrop.inert = true;
     desktopBackdrop.setAttribute('aria-hidden', 'true');
-    for (const selector of ['.desktop-icons', '.taskbar']) {
-      const component = root.querySelector(`#desktop ${selector}`).cloneNode(true);
+    const desktop = root.querySelector('#desktop');
+    const copyComponent = (source) => {
+      const component = source.cloneNode(true);
       component.removeAttribute('id');
       component.querySelectorAll('[id]').forEach((node) => node.removeAttribute('id'));
       component.querySelectorAll('button').forEach((button) => {
         button.disabled = true;
         button.tabIndex = -1;
+        button.removeAttribute('aria-pressed');
+        button.classList.remove('is-dragging');
+        button.style.transform = '';
       });
+      return component;
+    };
+    // Copy the actual grid after layout, including saved cells and received files.
+    // The menu does not calculate or persist a second desktop arrangement.
+    this.syncDesktopIcons = () => {
+      for (const selector of ['.desktop-icons', '.desktop-files']) {
+        const source = desktop.querySelector(selector);
+        desktopBackdrop.querySelector(selector)?.remove();
+        if (source) desktopBackdrop.append(copyComponent(source));
+      }
+    };
+    this.desktopObserver = new MutationObserver(this.syncDesktopIcons);
+    for (const selector of ['.desktop-icons', '.desktop-files']) {
+      const source = desktop.querySelector(selector);
+      if (source)
+        this.desktopObserver.observe(source, {
+          subtree: true,
+          childList: true,
+          attributes: true,
+          attributeFilter: ['style', 'hidden'],
+        });
+    }
+    this.syncDesktopIcons();
+    for (const selector of ['.taskbar']) {
+      const component = copyComponent(desktop.querySelector(selector));
       if (selector === '.taskbar') component.classList.add('menu-desktop-taskbar');
       desktopBackdrop.append(component);
     }
@@ -128,9 +157,10 @@ export class MainMenu {
     );
     this.find('#menu-new-game').addEventListener('click', () =>
       this.confirm(
-        'Nouvelle partie ?',
-        'Recommencer depuis le début ? La progression active sera remplacée.',
+        'Commencer une nouvelle partie ?',
+        'Commencer une nouvelle partie ? Toute votre progression et vos modifications seront perdues.',
         () => this.actions.newGame(),
+        ['Oui', 'Non'],
       ),
     );
     this.find('#menu-options').addEventListener('click', () => this.options(true));
@@ -254,7 +284,9 @@ export class MainMenu {
     this.syncSettings();
     this.find(open ? '#option-music' : '#menu-play').focus();
   }
-  confirm(title, copy, action) {
+  confirm(title, copy, action, labels = ['CONFIRMER', 'ANNULER']) {
+    this.find('#menu-confirm-yes').textContent = labels[0];
+    this.find('#menu-confirm-no').textContent = labels[1];
     this.confirmAction = action;
     this.confirmFocus = document.activeElement;
     this.find('#menu-confirm-title').textContent = title;
@@ -269,6 +301,7 @@ export class MainMenu {
     this.confirmFocus?.focus();
   }
   show() {
+    this.syncDesktopIcons();
     this.render();
     this.options(false);
     this.element.hidden = false;

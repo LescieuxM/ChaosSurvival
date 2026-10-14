@@ -6,6 +6,7 @@ import { ConversationThread } from '../src/story/conversation-thread.js';
 import { Progression } from '../src/story/progression.js';
 import { visibleContacts } from '../src/ui/contacts.js';
 import { Messenger } from '../src/ui/messenger.js';
+import { playerIdentity } from '../src/ui/player-identity.js';
 import {
   desktopApps,
   explorerLocation,
@@ -19,6 +20,118 @@ import { ConversationWindow } from '../src/ui/conversation.js';
 
 const read = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url)));
 const intro = read('../src/dialogues/pixelgirl-intro.json');
+
+test('Wizz send events persist one chronological system entry for each sender without changing dialogues', async () => {
+  const values = new Map();
+  const storage = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, value),
+  };
+  const story = read('../src/config/story.json');
+  const progression = new Progression(story, storage);
+  progression.begin();
+  progression.complete('arcade-1');
+  const session = new DialogueSession(intro, progression);
+  session.deliver();
+  const thread = new ConversationThread('pixelgirl', progression, () => [intro]);
+  const narrative = JSON.stringify(progression.data.dialogues);
+  const classes = new Set();
+  let refreshes = 0,
+    notifications = 0,
+    sounds = 0;
+  const view = {
+    thread,
+    refresh: () => refreshes++,
+    element: {
+      isConnected: true,
+      hidden: false,
+      style: { zIndex: 1 },
+      classList: { add: (name) => classes.add(name), remove: (name) => classes.delete(name) },
+    },
+  };
+  const messenger = new Messenger({
+    manager: { windows: new Map() },
+    progression,
+    primary: () => view,
+    definitions: () => ({ [intro.id]: intro }),
+    sounds: { unlock: () => Promise.resolve(), play: () => sounds++ },
+    onMessage: () => notifications++,
+  });
+  const first = thread.state.history[0];
+  assert.equal(messenger.sendWizz('pixelgirl', { eventId: 'player-1' }), true);
+  assert.equal(messenger.sendWizz('pixelgirl', { eventId: 'player-1' }), false);
+  assert.equal(messenger.sendWizz('pixelgirl', { eventId: 'player-2' }), true);
+  view.element.isConnected = false;
+  assert.equal(messenger.receiveWizz('pixelgirl', 'npc-1'), true);
+  assert.equal(messenger.receiveWizz('pixelgirl', 'npc-1'), false);
+  assert.equal(messenger.sendWizz('skater'), false);
+  assert.equal(messenger.receiveWizz('missing'), false);
+  await Promise.resolve();
+  assert.ok(classes.has('messenger-wizz'));
+  assert.equal(refreshes, 3);
+  assert.equal(sounds, 3);
+  assert.equal(notifications, 1);
+  assert.equal(thread.state.history[0], first);
+  assert.deepEqual(
+    thread.state.history.slice(1).map((entry) => entry.text),
+    [
+      'JustMe vous a envoyé un wizz !',
+      'JustMe vous a envoyé un wizz !',
+      'xX_PixelGirl_Xx vous a envoyé un wizz !',
+    ],
+  );
+  assert.deepEqual(thread.state.unread, [first.key, 'wizz:npc-1']);
+  assert.equal(JSON.stringify(progression.data.dialogues), narrative);
+  const restored = new ConversationThread('pixelgirl', new Progression(story, storage), () => [
+    intro,
+  ]);
+  assert.deepEqual(restored.state.history, thread.state.history);
+  assert.equal(restored.sync().length, 4);
+  restored.markRead();
+  assert.equal(restored.state.unread.length, 0);
+  assert.equal(restored.state.history.length, 4);
+});
+
+test('Wizz rows use system presentation without an author or emoticon parsing', (t) => {
+  const previous = globalThis.document;
+  const row = { dataset: {} };
+  globalThis.document = { createElement: () => row };
+  t.after(() => {
+    if (previous === undefined) delete globalThis.document;
+    else globalThis.document = previous;
+  });
+  const rows = [];
+  let scrolled = false;
+  const view = {
+    flow: { append: (item) => rows.push(item) },
+    scrollLatest: () => (scrolled = true),
+  };
+  ConversationWindow.prototype.appendMessage.call(view, {
+    type: 'wizz',
+    key: 'wizz:1',
+    speaker: 'contact',
+    text: 'PixelGirl vous a envoyé un wizz !',
+  });
+  assert.equal(row.className, 'conversation-message conversation-system');
+  assert.equal(row.dataset.messageKey, 'wizz:1');
+  assert.equal(row.textContent, 'PixelGirl vous a envoyé un wizz !');
+  assert.deepEqual(rows, [row]);
+  assert.equal(scrolled, true);
+  const legacy = { type: 'wizz', speaker: 'player', text: 'Moi vous a envoyé un wizz !' };
+  ConversationWindow.prototype.appendMessage.call(view, legacy);
+  assert.equal(row.textContent, 'JustMe vous a envoyé un wizz !');
+  assert.equal(legacy.text, 'Moi vous a envoyé un wizz !', 'saved historical data is unchanged');
+});
+
+test('Messenger and conversation views share the central player profile instead of authored legacy names', () => {
+  const progression = new Progression(read('../src/config/story.json'));
+  const messenger = new Messenger({});
+  const conversation = new ConversationWindow({}, intro, progression, {});
+  assert.equal(playerIdentity.nickname, 'JustMe');
+  assert.equal(messenger.player, playerIdentity);
+  assert.equal(conversation.player, playerIdentity);
+  assert.equal(intro.player.nickname, 'Moi', 'narrative JSON is not rewritten');
+});
 
 test('text and picture viewers have independent windows and task controls without replacing the explorer', (t) => {
   const previous = globalThis.document;
@@ -593,6 +706,11 @@ test('offline contacts reuse the conversation window, remain empty and preserve 
     z: 10,
     spawn(type, options) {
       const node = element();
+      assert.doesNotMatch(
+        options.content.body,
+        /data-msn-action="emoticons"|read-latest|conversation-reader|Dernier(?:s)? message|Choisis une réponse ci-dessous/,
+      );
+      assert.match(options.content.body, /data-msn-action="wizz"/);
       node.dataset.windowId = ++spawns;
       this.windows.set(spawns, { element: node, options });
       return spawns;

@@ -32,10 +32,14 @@ dossier de l'exécutable portable :
 - `chaos-survival-settings-v1` : volumes musique/bruitages et plein écran.
 
 Chaque écriture localStorage remplace atomiquement un document JSON complet.
-NEW GAME écrit l'archive avant la nouvelle partie active : si une écriture échoue,
-la partie active reste intacte. Les archives utilisent l'identifiant de partie
-pour éviter les doublons lors d'une nouvelle tentative. Un historique corrompu
-n'est pas remplacé silencieusement. Une sauvegarde active invalide ramène au menu
+NEW GAME demande Oui/Non puis arrête les jeux et événements de la session.
+`resetGameToInitialState` coordonne la reconstruction de la progression, du bureau,
+des fenêtres, des réglages, du menu Démarrer, de MSN et des scores. Aucune archive
+de l'ancienne partie n'est conservée. Les seules clés supprimées appartiennent
+aux espaces `chaos-survival-` et `chaos-sync-` ; aucune donnée extérieure n'est touchée.
+Un échec d'écriture ou de suppression restaure le stockage précédent. Le marqueur
+`chaos-survival-reset-pending` permet de terminer une réinitialisation interrompue
+avant le chargement des préférences au prochain lancement. Une sauvegarde active invalide ramène au menu
 PLAY, avec un message explicatif, sans planter le jeu.
 
 **OPTIONS → Effacer toutes mes données…** exige une confirmation, puis supprime
@@ -69,7 +73,7 @@ CONTINUE. Le bureau réel est inerte tant que le menu est affiché.
 
 Les lancements du niveau 1 et les réactions de PixelGirl sont enregistrés avec
 la partie active, séparément des victoires. Les tentatives abandonnées comptent
-également. Une nouvelle partie archive ces données avec l'historique puis
+également. Une nouvelle partie efface ces données et l'historique puis
 recommence son propre compteur. Voir `MSN-dialogues.md` pour les réactions JSON.
 
 ```powershell

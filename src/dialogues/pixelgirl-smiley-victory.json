@@ -1,0 +1,1388 @@
+{
+  "id": "pixelgirl-smiley-victory",
+  "version": 1,
+  "revision": 1,
+  "contact": {
+    "id": "PixelGirl",
+    "name": "PixelGirl",
+    "nickname": "xX_PixelGirl_Xx",
+    "status": "En ligne",
+    "personalMessage": "☆ don't forget me ☆",
+    "avatar": "./avatars/pixelgirl.svg"
+  },
+  "player": {
+    "nickname": "Moi",
+    "avatar": "./avatars/player.svg"
+  },
+  "start": "s1",
+  "completion": {
+    "stayOnline": true,
+    "connection": {
+      "contactId": "turbo",
+      "delayMs": 2200
+    }
+  },
+  "nodes": {
+    "s1": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "AAAAAA",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "ALOOOOORS ???",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "t'as survécu à l'attaque des smileys ????",
+          "delayMs": 250,
+          "typingMs": 574
+        }
+      ],
+      "choices": [
+        {
+          "id": "smiley-s1-q1-a",
+          "text": "évidemment, trop facile 😎",
+          "next": "s1-q1-a"
+        },
+        {
+          "id": "smiley-s1-q1-b",
+          "text": "j'ai perdu 15 ans d'espérance de vie",
+          "next": "s1-q1-b"
+        },
+        {
+          "id": "smiley-s1-q1-c",
+          "text": "c'était quoi ce jeu éclaté MDR",
+          "next": "s1-q1-c"
+        }
+      ]
+    },
+    "s1-q1-a": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "MDRRRR",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "monsieur est un professionnel apparemment",
+          "delayMs": 250,
+          "typingMs": 574
+        },
+        {
+          "speaker": "contact",
+          "text": "attention hein jvais t'inscrire aux championnats du monde de smiley catcher",
+          "delayMs": 250,
+          "typingMs": 800
+        }
+      ],
+      "next": "s2"
+    },
+    "s1-q1-b": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "PTDRRR",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "mais non 😭",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "faut pas mourir avant d'avoir vu le prochain jeu nul que je trouve !!",
+          "delayMs": 250,
+          "typingMs": 800
+        }
+      ],
+      "next": "s2"
+    },
+    "s1-q1-c": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "MAIS ???",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "il est INCROYABLE ce jeu",
+          "delayMs": 250,
+          "typingMs": 336
+        },
+        {
+          "speaker": "contact",
+          "text": "bon ok il est nul",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "mais il est nul avec du TALENT",
+          "delayMs": 250,
+          "typingMs": 420
+        }
+      ],
+      "next": "s2"
+    },
+    "s2": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "j'adore trouver des jeux comme ça",
+          "delayMs": 250,
+          "typingMs": 462
+        },
+        {
+          "speaker": "contact",
+          "text": "tu sais les trucs que personne connaît",
+          "delayMs": 250,
+          "typingMs": 532
+        },
+        {
+          "speaker": "contact",
+          "text": "avec des graphismes faits en 4 minutes sur paint",
+          "delayMs": 250,
+          "typingMs": 672
+        },
+        {
+          "speaker": "contact",
+          "text": "et une musique qui te reste dans la tête pendant 3 jours",
+          "delayMs": 250,
+          "typingMs": 784
+        }
+      ],
+      "choices": [
+        {
+          "id": "smiley-s2-q1-a",
+          "text": "t'as une collection de jeux pourris ?",
+          "next": "s2-q1-a"
+        },
+        {
+          "id": "smiley-s2-q1-b",
+          "text": "en vrai j'aime bien ce genre de trucs",
+          "next": "s2-q1-b"
+        },
+        {
+          "id": "smiley-s2-q1-c",
+          "text": "donc tu passes ton temps à fouiller internet ?",
+          "next": "s2-q1-c"
+        }
+      ]
+    },
+    "s2-q1-a": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "NON",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "j'ai une collection de CHEFS D'OEUVRE",
+          "delayMs": 250,
+          "typingMs": 518
+        },
+        {
+          "speaker": "contact",
+          "text": "respecte mon patrimoine culturel stp",
+          "delayMs": 250,
+          "typingMs": 504
+        }
+      ],
+      "next": "s2-common-1"
+    },
+    "s2-q1-b": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "AAAAH",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "ENFIN QUELQU'UN QUI COMPREND",
+          "delayMs": 250,
+          "typingMs": 392
+        },
+        {
+          "speaker": "contact",
+          "text": "les gens ont aucun goût c'est désespérant :')",
+          "delayMs": 250,
+          "typingMs": 630
+        }
+      ],
+      "next": "s2-common-1"
+    },
+    "s2-q1-c": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "...",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "oui",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "mais dit comme ça j'ai l'impression d'avoir un problème MDR",
+          "delayMs": 250,
+          "typingMs": 800
+        }
+      ],
+      "next": "s2-common-1"
+    },
+    "s2-common-1": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "en vrai c'est un pote qui m'a filé celui-là",
+          "delayMs": 250,
+          "typingMs": 602
+        },
+        {
+          "speaker": "contact",
+          "text": "j'ai même pas compris pourquoi il l'avait sur son pc",
+          "delayMs": 250,
+          "typingMs": 728
+        },
+        {
+          "speaker": "contact",
+          "text": "mais bon",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "j'allais pas refuser un jeu avec des smileys qui tombent du ciel",
+          "delayMs": 250,
+          "typingMs": 800
+        },
+        {
+          "speaker": "contact",
+          "text": "question de principes",
+          "delayMs": 250,
+          "typingMs": 294
+        }
+      ],
+      "next": "s3"
+    },
+    "s3": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "att 2 sec",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "bon",
+          "delayMs": 350,
+          "typingMs": 650,
+          "typingPauseMs": 2300
+        },
+        {
+          "speaker": "contact",
+          "text": "j'ai ouvert mes documents pour retrouver un truc",
+          "delayMs": 250,
+          "typingMs": 672
+        },
+        {
+          "speaker": "contact",
+          "text": "et je suis tombée sur un dossier qui s'appelle \"NOUVEAU DOSSIER (7)\"",
+          "delayMs": 250,
+          "typingMs": 800
+        },
+        {
+          "speaker": "contact",
+          "text": "dedans ya un dossier \"TRUCS\"",
+          "delayMs": 250,
+          "typingMs": 392
+        },
+        {
+          "speaker": "contact",
+          "text": "et dedans ya \"TRUCS A TRIER\"",
+          "delayMs": 250,
+          "typingMs": 392
+        },
+        {
+          "speaker": "contact",
+          "text": "je crois que j'ai perdu le contrôle de ma vie numérique",
+          "delayMs": 250,
+          "typingMs": 770
+        }
+      ],
+      "choices": [
+        {
+          "id": "smiley-s3-q1-a",
+          "text": "ton ordinateur est un site archéologique",
+          "next": "s3-q1-a"
+        },
+        {
+          "id": "smiley-s3-q1-b",
+          "text": "faut tout ranger dans des dossiers bien nommés",
+          "next": "s3-q1-b"
+        },
+        {
+          "id": "smiley-s3-q1-c",
+          "text": "moi j'aurais appelé ça TRUCS FINAL V2",
+          "next": "s3-q1-c"
+        }
+      ]
+    },
+    "s3-q1-a": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "PTDRRR",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "un jour des scientifiques vont retrouver mon pc",
+          "delayMs": 250,
+          "typingMs": 658
+        },
+        {
+          "speaker": "contact",
+          "text": "ils vont rien comprendre à notre civilisation",
+          "delayMs": 250,
+          "typingMs": 630
+        }
+      ],
+      "next": "s4"
+    },
+    "s3-q1-b": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "oui maman :')",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "j'ai essayé hein",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "mais après j'ai eu la flemme",
+          "delayMs": 250,
+          "typingMs": 392
+        },
+        {
+          "speaker": "contact",
+          "text": "et j'ai créé un dossier \"A RANGER PLUS TARD\"",
+          "delayMs": 250,
+          "typingMs": 616
+        }
+      ],
+      "next": "s4"
+    },
+    "s3-q1-c": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "ATTENDS",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "j'ai un fichier qui s'appelle \"dessin_final_v2_vraimentfinal.bmp\"",
+          "delayMs": 250,
+          "typingMs": 800
+        },
+        {
+          "speaker": "contact",
+          "text": "arrête de fouiller dans mon ordinateur stp",
+          "delayMs": 250,
+          "typingMs": 588
+        }
+      ],
+      "next": "s4"
+    },
+    "s4": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "AH",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "j'ai retrouvé ce que je cherchais",
+          "delayMs": 250,
+          "typingMs": 462
+        },
+        {
+          "speaker": "contact",
+          "text": "enfin non",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "mais j'ai retrouvé autre chose",
+          "delayMs": 250,
+          "typingMs": 420
+        },
+        {
+          "speaker": "contact",
+          "text": "un dossier \"MUSIQUES TRISTES\"",
+          "delayMs": 250,
+          "typingMs": 406
+        },
+        {
+          "speaker": "contact",
+          "text": "ya genre 40 chansons dedans",
+          "delayMs": 250,
+          "typingMs": 378
+        },
+        {
+          "speaker": "contact",
+          "text": "dont la moitié sont pas tristes du tout MDR",
+          "delayMs": 250,
+          "typingMs": 602
+        }
+      ],
+      "choices": [
+        {
+          "id": "smiley-s4-q1-a",
+          "text": "pourquoi elles sont dans ce dossier alors ?",
+          "next": "s4-q1-a"
+        },
+        {
+          "id": "smiley-s4-q1-b",
+          "text": "c'est quoi la chanson la plus triste du monde selon toi ?",
+          "next": "s4-q1-b"
+        },
+        {
+          "id": "smiley-s4-q1-c",
+          "text": "je suis sûr que t'as du Evanescence là-dedans",
+          "next": "s4-q1-c"
+        }
+      ]
+    },
+    "s4-q1-a": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "bah jsp",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "elles étaient tristes quand je les ai mises dedans",
+          "delayMs": 250,
+          "typingMs": 700
+        },
+        {
+          "speaker": "contact",
+          "text": "c'est pas ma faute si elles ont changé d'avis",
+          "delayMs": 250,
+          "typingMs": 630
+        }
+      ],
+      "next": "s5"
+    },
+    "s4-q1-b": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "OULAAAA",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "question dangereuse",
+          "delayMs": 250,
+          "typingMs": 266
+        },
+        {
+          "speaker": "contact",
+          "text": "ça dépend de l'heure",
+          "delayMs": 250,
+          "typingMs": 280
+        },
+        {
+          "speaker": "contact",
+          "text": "à 16h je peux écouter une chanson et rien ressentir",
+          "delayMs": 250,
+          "typingMs": 714
+        },
+        {
+          "speaker": "contact",
+          "text": "à 2h du matin la MÊME chanson me détruit MDR",
+          "delayMs": 250,
+          "typingMs": 616
+        }
+      ],
+      "next": "s5"
+    },
+    "s4-q1-c": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "...",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "j'invoque mon droit au silence",
+          "delayMs": 250,
+          "typingMs": 420
+        },
+        {
+          "speaker": "contact",
+          "text": "et puis bring me to life c'est une chanson profonde ok",
+          "delayMs": 250,
+          "typingMs": 756
+        }
+      ],
+      "next": "s5"
+    },
+    "s5": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "tiens en parlant de trucs que j'ai jamais rangés",
+          "delayMs": 250,
+          "typingMs": 672
+        },
+        {
+          "speaker": "contact",
+          "text": "tu dessines des fois ?",
+          "delayMs": 250,
+          "typingMs": 308
+        }
+      ],
+      "choices": [
+        {
+          "id": "smiley-s5-q1-a",
+          "text": "ouais un peu",
+          "next": "s5-q1-a",
+          "set": {
+            "pixelgirlDrawingHabit": "smiley-s5-q1-a"
+          }
+        },
+        {
+          "id": "smiley-s5-q1-b",
+          "text": "non je suis nul",
+          "next": "s5-q1-b",
+          "set": {
+            "pixelgirlDrawingHabit": "smiley-s5-q1-b"
+          }
+        },
+        {
+          "id": "smiley-s5-q1-c",
+          "text": "uniquement des bonshommes bâtons de qualité",
+          "next": "s5-q1-c",
+          "set": {
+            "pixelgirlDrawingHabit": "smiley-s5-q1-c"
+          }
+        }
+      ]
+    },
+    "s5-q1-a": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "OOOOH",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "FAUDRA QUE TU ME MONTRES",
+          "delayMs": 250,
+          "typingMs": 336
+        },
+        {
+          "speaker": "contact",
+          "text": "moi j'ai commencé genre 40 dessins sur paint",
+          "delayMs": 250,
+          "typingMs": 616
+        }
+      ],
+      "next": "s5-common-1"
+    },
+    "s5-q1-b": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "bah moi aussi MDR",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "enfin",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "je dessine beaucoup pour quelqu'un qui sait pas dessiner",
+          "delayMs": 250,
+          "typingMs": 784
+        }
+      ],
+      "next": "s5-common-1"
+    },
+    "s5-q1-c": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "les bonshommes bâtons c'est sous-coté",
+          "delayMs": 250,
+          "typingMs": 518
+        },
+        {
+          "speaker": "contact",
+          "text": "tu peux faire des scènes d'action incroyables avec 5 traits",
+          "delayMs": 250,
+          "typingMs": 800
+        },
+        {
+          "speaker": "contact",
+          "text": "et si c'est moche tu dis que c'est ton style artistique",
+          "delayMs": 250,
+          "typingMs": 770
+        }
+      ],
+      "next": "s5-common-1"
+    },
+    "s5-common-1": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "moi j'aime trop faire des avatars",
+          "delayMs": 250,
+          "typingMs": 462
+        },
+        {
+          "speaker": "contact",
+          "text": "des petits personnages",
+          "delayMs": 250,
+          "typingMs": 308
+        },
+        {
+          "speaker": "contact",
+          "text": "des montages avec des étoiles partout",
+          "delayMs": 250,
+          "typingMs": 518
+        },
+        {
+          "speaker": "contact",
+          "text": "le problème c'est que je commence 3000 trucs",
+          "delayMs": 250,
+          "typingMs": 616
+        },
+        {
+          "speaker": "contact",
+          "text": "et j'en finis environ",
+          "delayMs": 250,
+          "typingMs": 294
+        },
+        {
+          "speaker": "contact",
+          "text": "2",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "et encore faut voir la tête des 2 MDR",
+          "delayMs": 250,
+          "typingMs": 518
+        }
+      ],
+      "choices": [
+        {
+          "id": "smiley-s5-q2-a",
+          "text": "bah montre quand même, je suis curieux",
+          "next": "s5-q2-a",
+          "set": {
+            "pixelgirlDrawingReaction": "smiley-s5-q2-a"
+          }
+        },
+        {
+          "id": "smiley-s5-q2-b",
+          "text": "c'est déjà mieux que de rien faire",
+          "next": "s5-q2-b",
+          "set": {
+            "pixelgirlDrawingReaction": "smiley-s5-q2-b"
+          }
+        },
+        {
+          "id": "smiley-s5-q2-c",
+          "text": "donc t'es une artiste incomprise quoi",
+          "next": "s5-q2-c",
+          "set": {
+            "pixelgirlDrawingReaction": "smiley-s5-q2-c"
+          }
+        }
+      ]
+    },
+    "s5-q2-a": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "AAAA NON",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "pas maintenant",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "ils sont dans un état catastrophique",
+          "delayMs": 250,
+          "typingMs": 504
+        },
+        {
+          "speaker": "contact",
+          "text": "mais promis un jour :3",
+          "delayMs": 250,
+          "typingMs": 308
+        }
+      ],
+      "next": "s6"
+    },
+    "s5-q2-b": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "ouais c'est vrai",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "j'aime bien les faire en vrai",
+          "delayMs": 250,
+          "typingMs": 406
+        },
+        {
+          "speaker": "contact",
+          "text": "même si je les finis jamais",
+          "delayMs": 250,
+          "typingMs": 378
+        }
+      ],
+      "next": "s6"
+    },
+    "s5-q2-c": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "EXACTEMENT",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "je souffre pour mon art",
+          "delayMs": 250,
+          "typingMs": 322
+        },
+        {
+          "speaker": "contact",
+          "text": "principalement parce que paint plante quand je fais trop de trucs",
+          "delayMs": 250,
+          "typingMs": 800
+        }
+      ],
+      "next": "s6"
+    },
+    "s6": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "att",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "j'ai une question très importante",
+          "delayMs": 250,
+          "typingMs": 462
+        },
+        {
+          "speaker": "contact",
+          "text": "genre VRAIMENT importante",
+          "delayMs": 250,
+          "typingMs": 350
+        },
+        {
+          "speaker": "contact",
+          "text": "si tu devais être un smiley MSN",
+          "delayMs": 250,
+          "typingMs": 434
+        },
+        {
+          "speaker": "contact",
+          "text": "tu serais lequel",
+          "delayMs": 250,
+          "typingMs": 250
+        }
+      ],
+      "choices": [
+        {
+          "id": "smiley-s6-q1-a",
+          "text": ":D",
+          "next": "s6-q1-a",
+          "set": {
+            "pixelgirlSmiley": ":D"
+          }
+        },
+        {
+          "id": "smiley-s6-q1-b",
+          "text": ":|",
+          "next": "s6-q1-b",
+          "set": {
+            "pixelgirlSmiley": ":|"
+          }
+        },
+        {
+          "id": "smiley-s6-q1-c",
+          "text": ">:)",
+          "next": "s6-q1-c",
+          "set": {
+            "pixelgirlSmiley": ">:)"
+          }
+        },
+        {
+          "id": "smiley-s6-q1-d",
+          "text": "pourquoi tu me poses cette question MDR",
+          "next": "s6-q1-d",
+          "set": {
+            "pixelgirlSmiley": "pourquoi tu me poses cette question MDR"
+          }
+        }
+      ]
+    },
+    "s6-q1-a": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "classique",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "efficace",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "une valeur sûre",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "t'es le pain au chocolat des smileys",
+          "delayMs": 250,
+          "typingMs": 504
+        }
+      ],
+      "next": "s6-common-1"
+    },
+    "s6-q1-b": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "MDRRR",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "le smiley qui juge tout le monde en silence",
+          "delayMs": 250,
+          "typingMs": 602
+        },
+        {
+          "speaker": "contact",
+          "text": "j'adore",
+          "delayMs": 250,
+          "typingMs": 250
+        }
+      ],
+      "next": "s6-common-1"
+    },
+    "s6-q1-c": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "AH",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "donc t'es un VILAIN",
+          "delayMs": 250,
+          "typingMs": 266
+        },
+        {
+          "speaker": "contact",
+          "text": "j'aurais dû me méfier depuis le début",
+          "delayMs": 250,
+          "typingMs": 518
+        }
+      ],
+      "next": "s6-common-1"
+    },
+    "s6-q1-d": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "parce que c'est IMPORTANT",
+          "delayMs": 250,
+          "typingMs": 350
+        },
+        {
+          "speaker": "contact",
+          "text": "ça en dit long sur une personne",
+          "delayMs": 250,
+          "typingMs": 434
+        },
+        {
+          "speaker": "contact",
+          "text": "beaucoup plus que son signe astrologique LOL",
+          "delayMs": 250,
+          "typingMs": 616
+        }
+      ],
+      "next": "s6-common-1"
+    },
+    "s6-common-1": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "moi c'est :3",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "mais ça tu t'en doutais sûrement",
+          "delayMs": 250,
+          "typingMs": 448
+        },
+        {
+          "speaker": "contact",
+          "text": "jcrois que je l'utilise trop",
+          "delayMs": 250,
+          "typingMs": 392
+        },
+        {
+          "speaker": "contact",
+          "text": ":3",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "...",
+          "delayMs": 250,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "oups",
+          "delayMs": 250,
+          "typingMs": 250
+        }
+      ],
+      "next": "s7"
+    },
+    "s7": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "en vrai c'est cool de discuter comme ça",
+          "delayMs": 600,
+          "typingMs": 741
+        },
+        {
+          "speaker": "contact",
+          "text": "ça fait longtemps que j'avais pas parlé autant de trucs inutiles MDR",
+          "delayMs": 600,
+          "typingMs": 1000
+        }
+      ],
+      "choices": [
+        {
+          "id": "smiley-s7-q1-a",
+          "text": "les discussions inutiles c'est les meilleures",
+          "next": "s7-q1-a"
+        },
+        {
+          "id": "smiley-s7-q1-b",
+          "text": "ouais c'était sympa :D",
+          "next": "s7-q1-b"
+        },
+        {
+          "id": "smiley-s7-q1-c",
+          "text": "tu parles beaucoup quand même",
+          "next": "s7-q1-c"
+        }
+      ]
+    },
+    "s7-q1-a": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "MAIS OUI",
+          "delayMs": 600,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "les discussions sérieuses c'est surfait",
+          "delayMs": 600,
+          "typingMs": 741
+        },
+        {
+          "speaker": "contact",
+          "text": "fin pas toujours",
+          "delayMs": 600,
+          "typingMs": 304
+        },
+        {
+          "speaker": "contact",
+          "text": "mais j'aime bien quand on peut raconter n'importe quoi",
+          "delayMs": 600,
+          "typingMs": 1000
+        }
+      ],
+      "next": "s7-common-1"
+    },
+    "s7-q1-b": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": ":3",
+          "delayMs": 600,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "ouais",
+          "delayMs": 600,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "j'aime bien aussi",
+          "delayMs": 600,
+          "typingMs": 323
+        }
+      ],
+      "next": "s7-common-1"
+    },
+    "s7-q1-c": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "MDR",
+          "delayMs": 600,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "ouais je sais :')",
+          "delayMs": 600,
+          "typingMs": 323
+        },
+        {
+          "speaker": "contact",
+          "text": "des fois je commence à raconter un truc",
+          "delayMs": 600,
+          "typingMs": 741
+        },
+        {
+          "speaker": "contact",
+          "text": "et je sais même plus où je voulais en venir",
+          "delayMs": 600,
+          "typingMs": 817
+        }
+      ],
+      "next": "s7-common-1"
+    },
+    "s7-common-1": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "jsuis contente que t'aies répondu tout à l'heure :3",
+          "delayMs": 2400,
+          "typingMs": 969
+        }
+      ],
+      "choices": [
+        {
+          "id": "smiley-s7-q2-a",
+          "text": "pourquoi j'aurais pas répondu ?",
+          "next": "s7-q2-a",
+          "set": {
+            "pixelgirlMeetingReaction": "smiley-s7-q2-a"
+          }
+        },
+        {
+          "id": "smiley-s7-q2-b",
+          "text": "moi aussi je suis content de t'avoir rencontrée",
+          "next": "s7-q2-b",
+          "set": {
+            "pixelgirlMeetingReaction": "smiley-s7-q2-b"
+          }
+        },
+        {
+          "id": "smiley-s7-q2-c",
+          "text": "c'était surtout pour récupérer d'autres jeux nuls",
+          "next": "s7-q2-c",
+          "set": {
+            "pixelgirlMeetingReaction": "smiley-s7-q2-c"
+          }
+        }
+      ]
+    },
+    "s7-q2-a": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "bah jsp MDR",
+          "delayMs": 600,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "des fois les gens répondent pas",
+          "delayMs": 600,
+          "typingMs": 589
+        },
+        {
+          "speaker": "contact",
+          "text": "et puis voilà",
+          "delayMs": 600,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "fin bref",
+          "delayMs": 600,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "c'est cool quoi :3",
+          "delayMs": 600,
+          "typingMs": 342
+        }
+      ],
+      "next": "s8"
+    },
+    "s7-q2-b": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "awww",
+          "delayMs": 600,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "c'est gentil ça :')",
+          "delayMs": 600,
+          "typingMs": 361
+        },
+        {
+          "speaker": "contact",
+          "text": "moi aussi :3",
+          "delayMs": 600,
+          "typingMs": 250
+        }
+      ],
+      "next": "s8"
+    },
+    "s7-q2-c": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "AH",
+          "delayMs": 600,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "JE VOIS",
+          "delayMs": 600,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "on m'utilise pour mon incroyable catalogue de jeux vidéo",
+          "delayMs": 600,
+          "typingMs": 1000
+        },
+        {
+          "speaker": "contact",
+          "text": "oki",
+          "delayMs": 600,
+          "typingMs": 250
+        }
+      ],
+      "next": "s8"
+    },
+    "s8": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "bon",
+          "delayMs": 600,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "jvais essayer de retrouver mon dessin",
+          "delayMs": 600,
+          "typingMs": 703
+        },
+        {
+          "speaker": "contact",
+          "text": "celui que j'ai commencé ya 3 semaines",
+          "delayMs": 600,
+          "typingMs": 703
+        },
+        {
+          "speaker": "contact",
+          "text": "et que j'ai oublié de finir",
+          "delayMs": 600,
+          "typingMs": 513
+        }
+      ],
+      "choices": [
+        {
+          "id": "smiley-s8-q1-a",
+          "text": "bon courage dans tes fouilles archéologiques",
+          "next": "s8-q1-a"
+        },
+        {
+          "id": "smiley-s8-q1-b",
+          "text": "tu me montreras si tu le retrouves",
+          "next": "s8-q1-b"
+        },
+        {
+          "id": "smiley-s8-q1-c",
+          "text": "essaie de pas te perdre dans NOUVEAU DOSSIER (7)",
+          "next": "s8-q1-c"
+        }
+      ]
+    },
+    "s8-q1-a": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "merci",
+          "delayMs": 600,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "si je reviens pas appelle les secours",
+          "delayMs": 600,
+          "typingMs": 703
+        },
+        {
+          "speaker": "contact",
+          "text": "dis leur que j'étais dans mes documents",
+          "delayMs": 600,
+          "typingMs": 741
+        }
+      ],
+      "next": "s8-common-1"
+    },
+    "s8-q1-b": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "peut-être :3",
+          "delayMs": 600,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "si je le retrouve ET si j'ai pas trop honte MDR",
+          "delayMs": 600,
+          "typingMs": 893
+        }
+      ],
+      "next": "s8-common-1"
+    },
+    "s8-q1-c": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "PTDRRR",
+          "delayMs": 600,
+          "typingMs": 250
+        },
+        {
+          "speaker": "contact",
+          "text": "je vais laisser des miettes de pain pour retrouver la sortie",
+          "delayMs": 600,
+          "typingMs": 1000
+        }
+      ],
+      "next": "s8-common-1"
+    },
+    "s8-common-1": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "bon jreviens :3",
+          "delayMs": 600,
+          "typingMs": 285
+        }
+      ],
+      "end": true
+    }
+  }
+}

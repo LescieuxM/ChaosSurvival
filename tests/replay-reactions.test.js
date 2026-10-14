@@ -98,7 +98,7 @@ test('closed Messenger and relaunch preserve message-only replays and narrative 
     [],
   );
 });
-test('later reactions rotate through all variants and NEW GAME resets only the active counter', () => {
+test('later reactions rotate through all variants and NEW GAME discards every old replay record', () => {
   const { storage, progression, reactions } = setup();
   reactions.launch(0);
   meet(progression);
@@ -113,9 +113,7 @@ test('later reactions rotate through all variants and NEW GAME resets only the a
   progression.newGame();
   assert.equal(progression.data.level1Launches, 0);
   assert.deepEqual(progression.data.replayReactions, []);
-  const history = JSON.parse(storage.getItem('chaos-survival-history-v1'));
-  assert.equal(history.runs[0].level1Launches, 9);
-  assert.equal(history.runs[0].replayReactions.length, 8);
+  assert.equal(storage.getItem('chaos-survival-history-v1'), null);
   reactions.launch(100000);
   assert.equal(progression.data.level1Launches, 1);
   assert.deepEqual(reactions.flush(106000), []);

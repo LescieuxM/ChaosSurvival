@@ -1,6 +1,7 @@
 import { DialogueSession } from '../story/dialogue.js';
 import { ConversationThread } from '../story/conversation-thread.js';
 import { applicationName } from './identity.js';
+import { playerIdentity } from './player-identity.js';
 
 import { appendMessageText } from './message-text.js';
 export { appendMessageText } from './message-text.js';
@@ -21,12 +22,13 @@ export class ConversationWindow {
       onContactsRequested,
       manageWindow,
       onDispose,
+      player = playerIdentity,
     } = {},
   ) {
     this.onContactsRequested = onContactsRequested;
     this.manageWindow = manageWindow;
     this.onDispose = onDispose;
-    this.player = dialogue.player;
+    this.player = player;
     this.manager = manager;
     this.dialogue = dialogue;
     this.progression = progression;
@@ -99,26 +101,19 @@ export class ConversationWindow {
                 aria-live="polite"
                 aria-relevant="additions"
               >
-                <div class="conversation-flow">
-                  <div class="contact-typing" role="status" aria-live="polite" hidden></div>
-                </div>
+                <div class="conversation-flow"></div>
               </div>
+              <div class="contact-typing" role="status" aria-live="polite" hidden></div>
             </div>
             <div class="conversation-portraits">
               <img class="story-avatar contact-avatar" alt="Avatar du contact" /><img
                 class="story-avatar player-avatar"
                 alt="Votre avatar"
-              /><small>Image perso</small>
+              />
             </div>
           </div>
           <div class="msn-tools">
-            <button class="text-button" data-msn-action="emoticons" aria-label="Émoticônes">
-              ☺</button
-            ><button class="text-button" data-msn-action="wizz">Wizz !</button
-            ><small>Choisis une réponse ci-dessous</small>
-          </div>
-          <div class="conversation-reader">
-            <button class="text-button" id="read-latest">Derniers messages ↓</button>
+            <button class="text-button" data-msn-action="wizz">Wizz !</button>
           </div>
           <div class="dialogue-choices" aria-label="Réponses possibles"></div>
           <div class="window-status dialogue-typing" role="status"></div>
@@ -135,7 +130,10 @@ export class ConversationWindow {
       },
     });
     this.element = this.manager.windows.get(id).element;
-    this.element.classList.toggle('contact-offline', Boolean(this.offlineContact));
+    this.element.classList.toggle(
+      'contact-offline',
+      Boolean(this.offlineContact && !this.offlineContact.online),
+    );
     if (this.manageWindow) this.manageWindow(this);
     else {
       const minimize = document.createElement('button');
@@ -168,7 +166,7 @@ export class ConversationWindow {
       `${this.dialogue.contact.status} · ${this.dialogue.contact.personalMessage ?? ''}`;
     for (const [selector, path] of [
       ['.contact-avatar', this.dialogue.contact.avatar],
-      ['.player-avatar', this.dialogue.player.avatar],
+      ['.player-avatar', this.player.avatar],
     ]) {
       if (!/^\.\/avatars\/[a-z0-9-]+\.svg$/i.test(path)) throw new Error('Avatar local invalide.');
       this.element.querySelectorAll(selector).forEach((image) => {
@@ -186,10 +184,6 @@ export class ConversationWindow {
     this.log.addEventListener('scroll', () => {
       if (this.log !== log || !log.isConnected) return;
       this.followLatest = log.scrollHeight - log.clientHeight - log.scrollTop < 24;
-    });
-    this.element.querySelector('#read-latest').addEventListener('click', () => {
-      this.followLatest = true;
-      this.scrollLatest();
     });
     this.logObserver = new ResizeObserver(() => {
       if (this.element?.isConnected) this.scrollLatest();
@@ -263,13 +257,22 @@ export class ConversationWindow {
     const row = document.createElement('div');
     row.className = `conversation-message ${message.speaker === 'player' ? 'from-player' : 'from-contact'}`;
     if (message.key) row.dataset.messageKey = message.key;
+    if (message.type === 'wizz') {
+      row.className = 'conversation-message conversation-system';
+      row.textContent =
+        message.speaker === 'player'
+          ? `${(this.player ?? playerIdentity).nickname} vous a envoyé un wizz !`
+          : message.text;
+      (this.flow ?? this.log).append(row);
+      this.scrollLatest();
+      return row;
+    }
     const author = document.createElement('small');
-    author.textContent = `${message.speaker === 'player' ? this.dialogue.player.nickname : this.dialogue.contact.nickname} dit :`;
+    author.textContent = `${message.speaker === 'player' ? (this.player ?? playerIdentity).nickname : this.dialogue.contact.nickname} dit :`;
     const copy = document.createElement('p');
     appendMessageText(copy, message.text);
     row.append(author, copy);
     if (message.type === 'file') this.renderTransfer(row, message.fileKey);
-    this.typingIndicator?.remove();
     (this.flow ?? this.log).append(row);
     this.scrollLatest();
     return row;
@@ -328,8 +331,9 @@ export class ConversationWindow {
   pump() {
     if (this.offlineContact) {
       this.choices.replaceChildren();
-      this.typing.textContent =
-        'Ce contact est hors ligne. L\u2019envoi de messages est indisponible.';
+      this.typing.textContent = this.offlineContact.online
+        ? 'Ce contact n’a pas encore envoyé de message.'
+        : 'Ce contact est hors ligne. L\u2019envoi de messages est indisponible.';
       if (this.typingIndicator) this.typingIndicator.hidden = true;
       return;
     }
@@ -338,7 +342,7 @@ export class ConversationWindow {
     this.receiving = this.thread.isReceiving(this.session.dialogue.id);
     if (this.receiving) {
       this.pending = null;
-      this.typing.textContent = 'Dernier message reçu · connexion à 56k';
+      this.typing.textContent = '';
       this.renderTyping();
       return;
     }
@@ -349,16 +353,20 @@ export class ConversationWindow {
         this.receiving = true;
         this.pending = null;
         this.renderTyping();
-        this.typing.textContent = 'Dernier message reçu · connexion à 56k';
+        this.typing.textContent = '';
         this.scrollLatest();
         return;
       }
       if (this.session.advance()) continue;
       if (this.session.state.finished) {
-        this.element.classList.add('contact-away');
-        this.typing.textContent = `${this.dialogue.contact.name} est absente · à tout à l’heure !`;
-        this.element.querySelector('.contact-status').textContent =
-          'Partie choisir une image perso';
+        const stayOnline = this.dialogue.completion?.stayOnline;
+        this.element.classList.toggle('contact-away', !stayOnline);
+        this.typing.textContent = stayOnline
+          ? ''
+          : `${this.dialogue.contact.name} est absente · à tout à l’heure !`;
+        this.element.querySelector('.contact-status').textContent = stayOnline
+          ? `${this.dialogue.contact.status} · ${this.dialogue.contact.personalMessage ?? ''}`
+          : 'Partie choisir une image perso';
         const button = document.createElement('button');
         button.className = 'xp-button';
         button.classList.add('conversation-return');
@@ -404,15 +412,6 @@ export class ConversationWindow {
     if (changed) this.typingIndicator.textContent = text;
     this.typingIndicator.classList.toggle('is-typing', Boolean(contact));
     this.typingIndicator.hidden = !contact;
-    if (!contact) {
-      this.typingIndicator.remove();
-      return;
-    }
-    const flow = this.flow ?? this.log;
-    if (this.typingIndicator.parentNode !== flow) {
-      flow.append(this.typingIndicator);
-      this.scrollLatest();
-    }
   }
   renderResponses() {
     if (this.offlineContact) return;

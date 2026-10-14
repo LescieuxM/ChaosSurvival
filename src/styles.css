@@ -1160,37 +1160,6 @@ h1 .title-star {
   accent-color: #3171c4;
   cursor: pointer;
 }
-.session-info {
-  position: absolute;
-  bottom: 81px;
-  right: 31px;
-  display: grid;
-  grid-template-columns: 8px auto;
-  gap: 7px 8px;
-  align-items: center;
-  color: #fff;
-  text-shadow: 1px 1px 1px #34592d88;
-  font-family: 'Courier New', monospace;
-  z-index: 2;
-}
-.session-info > span:nth-child(2) {
-  font-size: 11px;
-  font-weight: bold;
-  letter-spacing: 1px;
-}
-.session-info small {
-  grid-column: 2;
-  font-family: Tahoma, sans-serif;
-  font-size: 10px;
-  color: #eff8e4;
-}
-.session-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #d6f49a;
-  box-shadow: 0 0 5px #d6f49a;
-}
 /* Notifications and feedback */
 .toast {
   position: absolute;
@@ -1767,9 +1736,6 @@ h1 .title-star {
   .desktop-note {
     display: none;
   }
-  .session-info {
-    right: 25px;
-  }
   .task-msn {
     width: 180px;
   }
@@ -1961,9 +1927,6 @@ h1 .title-star {
   }
   .volume-control input {
     width: 40px;
-  }
-  .session-info {
-    display: none;
   }
   .task-msn {
     display: none;

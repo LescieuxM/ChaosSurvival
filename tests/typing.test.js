@@ -138,7 +138,7 @@ test('the view uses the real nickname, does not announce unchanged text repeated
   assert.equal(active, false);
 });
 
-test('typing follows the final message without forcing the scroll position while reading history', (t) => {
+test('typing stays outside the scrolling messages through messages, Wizz spam, hiding and transcript rebuilds', (t) => {
   const previous = globalThis.document;
   const node = () => ({
     children: [],
@@ -177,7 +177,7 @@ test('typing follows the final message without forcing the scroll position while
   log.scrollTop = 0;
   const indicator = node();
   const history = node();
-  history.append(log);
+  history.append(log, indicator);
   const view = {
     log,
     history,
@@ -192,24 +192,44 @@ test('typing follows the final message without forcing the scroll position while
     text: 'hello',
   });
   ConversationWindow.prototype.renderTyping.call(view, 0);
-  assert.deepEqual(log.children, [first, indicator]);
-  assert.deepEqual(history.children, [log]);
+  assert.deepEqual(log.children, [first]);
+  assert.deepEqual(history.children, [log, indicator]);
   assert.equal(indicator.hidden, false);
   assert.equal(log.scrollTop, 500);
   view.followLatest = false;
   log.scrollTop = 80;
   const next = ConversationWindow.prototype.appendMessage.call(view, {
-    speaker: 'contact',
+    speaker: 'player',
     text: 'another message',
   });
+  assert.equal(next.children[0].textContent, 'JustMe dit :');
   assert.deepEqual(log.children, [first, next]);
   ConversationWindow.prototype.renderTyping.call(view, 1);
-  assert.deepEqual(log.children, [first, next, indicator]);
-  assert.deepEqual(history.children, [log]);
+  assert.deepEqual(log.children, [first, next]);
+  assert.deepEqual(history.children, [log, indicator]);
+  assert.equal(log.scrollTop, 80);
+  for (let i = 0; i < 10; i++)
+    ConversationWindow.prototype.appendMessage.call(view, {
+      key: `wizz:${i}`,
+      type: 'wizz',
+      speaker: 'player',
+      text: 'JustMe vous a envoyé un wizz !',
+    });
+  assert.equal(log.children.length, 12);
+  assert.deepEqual(history.children, [log, indicator]);
+  assert.equal(indicator.hidden, false);
   assert.equal(log.scrollTop, 80);
   view.thread.typingContact = () => null;
   ConversationWindow.prototype.renderTyping.call(view, 2);
-  assert.deepEqual(log.children, [first, next]);
+  assert.equal(log.children.length, 12);
+  assert.deepEqual(history.children, [log, indicator]);
   assert.equal(indicator.hidden, true);
   assert.equal(log.scrollTop, 80);
+  log.replaceChildren = () => {
+    log.children = [];
+  };
+  view.appendHistory = () => {};
+  ConversationWindow.prototype.renderTranscript.call(view);
+  assert.deepEqual(log.children, []);
+  assert.deepEqual(history.children, [log, indicator]);
 });

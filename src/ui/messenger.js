@@ -2,6 +2,7 @@ import { visibleContacts } from './contacts.js';
 import { MessengerContacts } from './messenger-contacts.js';
 import { messengerMenu } from './messenger-menu.js';
 import { applicationName } from './identity.js';
+import { playerIdentity } from './player-identity.js';
 
 export class Messenger {
   constructor({
@@ -9,7 +10,7 @@ export class Messenger {
     applications,
     progression,
     sounds,
-    player,
+    player = playerIdentity,
     definitions,
     primary,
     createConversation,
@@ -34,7 +35,12 @@ export class Messenger {
     this.views = new Map();
   }
   contacts() {
-    return visibleContacts(this.definitions(), this.progression.data.unlockedConversations);
+    return visibleContacts(
+      this.definitions(),
+      this.progression.data.unlockedConversations,
+      undefined,
+      this.progression.data.contactConnections,
+    );
   }
   open() {
     const existing = this.views.get('contacts');
@@ -170,18 +176,42 @@ export class Messenger {
       list.append(button);
     }
   }
+  sendWizz(contactId, { speaker = 'player', eventId, now } = {}) {
+    const contact = this.contacts().find((entry) => entry.id === contactId);
+    if (
+      !contact ||
+      contact.kind === 'decorative' ||
+      contact.online === false ||
+      contact.status === 'Hors ligne'
+    )
+      return false;
+    let view = contactId === 'pixelgirl' ? this.primary() : this.conversations.get(contactId);
+    if (!view) {
+      view = this.createConversation(contact);
+      this.conversations.set(contactId, view);
+    }
+    const sender = speaker === 'player' ? this.player : contact;
+    if (!view.thread.appendWizz(speaker, sender.nickname, eventId, now)) return false;
+    view.refresh();
+    const element = view.element;
+    if (element?.isConnected) {
+      element.classList.remove('messenger-wizz');
+      void element.offsetWidth;
+      element.classList.add('messenger-wizz');
+    }
+    this.sounds.unlock().then(() => this.sounds.play('wizz'));
+    if (speaker === 'contact' && !this.isVisible(view)) this.onMessage(contact);
+    return true;
+  }
+  receiveWizz(contactId, eventId) {
+    return this.sendWizz(contactId, { speaker: 'contact', eventId });
+  }
   installMenus(element, contact, offline = () => false) {
     element.disposeMenu?.();
     const wizz = () => {
       if (offline() || element.classList.contains('messenger-roster')) return;
-      element.classList.remove('messenger-wizz');
-      void element.offsetWidth;
-      element.classList.add('messenger-wizz');
-      this.sounds.unlock().then(() => this.sounds.play('wizz'));
+      this.sendWizz(element.dataset.messengerContact);
     };
-    element
-      .querySelector('[data-msn-action="emoticons"]')
-      ?.addEventListener('click', () => this.emoticons());
     const wizzButton = element.querySelector('[data-msn-action="wizz"]');
     if (wizzButton) {
       wizzButton.disabled = offline();

@@ -148,6 +148,7 @@ test('rhythm HUD follows the real phase through loading, pauses, results, deskto
     },
   };
   const ui = mountDesktop(root, 0);
+  assert.doesNotMatch(root.innerHTML, /session-info|session-label|window-count|session-dot/);
   assert.match(root.innerHTML, /<header class="hud" hidden /);
   ui.desktop.classList = {
     toggle(name, enabled) {
@@ -216,7 +217,6 @@ test('development shortcut uses arcade victory and never duplicates results or s
       playfield: {},
       desktop: { classList: { remove() {} } },
       best: {},
-      sessionLabel: {},
     },
     debug: { render() {} },
     localStorage: { setItem() {} },

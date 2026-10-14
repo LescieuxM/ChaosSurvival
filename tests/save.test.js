@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Progression, HISTORY_KEY } from '../src/story/progression.js';
 import { UserSettings, SETTINGS_KEY, deleteUserData } from '../src/settings.js';
+import { resetGameToInitialState, recoverGameReset, RESET_KEY } from '../src/story/reset-game.js';
 const story = JSON.parse(readFileSync(new URL('../src/config/story.json', import.meta.url)));
 const ACTIVE = 'chaos-survival-story-v1';
 function memory() {
@@ -46,7 +47,7 @@ test('completed sequences are restored without replay, including unlocked conver
   assert.equal(next.data.results['arcade-1'].score, 1500);
   assert.equal(next.data.files[file.key].status, 'complete');
 });
-test('NEW GAME archives choices and unselected responses separately, preserving preferences', () => {
+test('NEW GAME deletes all game customizations, records and archives while preserving unrelated storage', () => {
   const storage = memory();
   const settings = new UserSettings(storage);
   settings.update({ musicVolume: 0.23, effectsVolume: 0.81, fullscreen: true });
@@ -59,6 +60,16 @@ test('NEW GAME archives choices and unselected responses separately, preserving 
     { id: 'b', text: 'B' },
   ]);
   progression.save();
+  progression.data.desktopIcons = { 'shortcut:bin': { col: 4, row: 5 } };
+  progression.data.virtualFilesystem = { deleted: ['c/a.txt'], created: ['c/b.txt'] };
+  progression.data.installedApps = ['custom'];
+  progression.data.contactConnections = { turbo: { status: 'online' } };
+  progression.save();
+  storage.setItem(HISTORY_KEY, '{"version":1,"runs":[{"runId":"past"}]}');
+  storage.setItem('chaos-survival-best', '5000');
+  storage.setItem('chaos-survival-custom-apps', '["custom"]');
+  storage.setItem('chaos-sync-track', '0.2');
+  storage.setItem('another-app', 'keep');
   let events = 0;
   progression.onNewGame = () => events++;
   progression.newGame();
@@ -66,15 +77,21 @@ test('NEW GAME archives choices and unselected responses separately, preserving 
   assert.notEqual(progression.data.runId, oldId);
   assert.equal(progression.current.id, 'arcade-1');
   assert.deepEqual(progression.data.choices, []);
-  const history = JSON.parse(storage.getItem(HISTORY_KEY));
-  assert.equal(history.runs.length, 1);
-  assert.equal(history.runs[0].runId, oldId);
-  assert.equal(history.runs[0].choices[0].unselected[0].text, 'B');
-  assert.equal(history.runs[0].choiceOffers['dialogue:choice'].length, 2);
-  assert.deepEqual(new UserSettings(storage).data, settings.data);
+  assert.equal(progression.hasSave, false);
+  assert.equal(progression.data.desktopIcons, undefined);
+  assert.equal(progression.data.virtualFilesystem, undefined);
+  assert.equal(progression.data.installedApps, undefined);
+  assert.equal(progression.data.contactConnections, undefined);
+  assert.equal(storage.getItem(HISTORY_KEY), null);
+  assert.equal(storage.getItem(RESET_KEY), null);
+  assert.equal(storage.length, 2);
+  assert.equal(storage.getItem('another-app'), 'keep');
+  settings.reset();
+  assert.deepEqual(settings.data, settings.defaults);
+  assert.deepEqual(new UserSettings(storage).data, settings.defaults);
 });
-test('failed archive or active writes never replace the active run; retries do not duplicate history', () => {
-  for (const failKey of [HISTORY_KEY, ACTIVE]) {
+test('failed reset writes never replace the active run and retries discard the old history', () => {
+  for (const failKey of [RESET_KEY, ACTIVE]) {
     const storage = memory();
     const progression = new Progression(story, storage);
     progression.begin();
@@ -90,7 +107,7 @@ test('failed archive or active writes never replace the active run; retries do n
     assert.equal(storage.getItem(ACTIVE), oldBytes);
     storage.setItem = setItem;
     progression.newGame();
-    assert.equal(JSON.parse(storage.getItem(HISTORY_KEY)).runs.length, 1);
+    assert.equal(storage.getItem(HISTORY_KEY), null);
   }
 });
 test('malformed JSON and malformed nested data safely return to first-launch state', () => {
@@ -114,15 +131,86 @@ test('malformed JSON and malformed nested data safely return to first-launch sta
     assert.equal(new Progression(story, storage).hasSave, true);
   }
 });
-test('corrupt history does not silently erase prior runs on NEW GAME', () => {
+test('confirmed NEW GAME also discards corrupt archives rather than restoring stale data', () => {
   const storage = memory();
   const progression = new Progression(story, storage);
   progression.begin();
   const oldId = progression.data.runId;
   storage.setItem(HISTORY_KEY, '{broken');
-  assert.throws(() => progression.newGame());
+  progression.newGame();
+  assert.notEqual(progression.data.runId, oldId);
+  assert.equal(storage.getItem(HISTORY_KEY), null);
+});
+
+test('a failed ancillary deletion rolls back the persisted and in-memory game', () => {
+  const storage = memory();
+  const progression = new Progression(story, storage);
+  progression.begin();
+  storage.setItem(HISTORY_KEY, 'history');
+  storage.setItem(SETTINGS_KEY, 'settings');
+  const before = storage.getItem(ACTIVE),
+    oldId = progression.data.runId,
+    remove = storage.removeItem;
+  storage.removeItem = (key) => {
+    if (key === SETTINGS_KEY) throw new Error('locked');
+    remove(key);
+  };
+  assert.throws(() => progression.newGame(), /locked/);
+  assert.equal(storage.getItem(ACTIVE), before);
+  assert.equal(storage.getItem(HISTORY_KEY), 'history');
+  assert.equal(storage.getItem(SETTINGS_KEY), 'settings');
+  assert.equal(storage.getItem(RESET_KEY), null);
   assert.equal(progression.data.runId, oldId);
-  assert.equal(storage.getItem(HISTORY_KEY), '{broken');
+});
+
+test('an interrupted committed reset cleans remaining game data before any subsystem can load it', () => {
+  const storage = memory();
+  const progression = new Progression(story, storage);
+  progression.newGame();
+  storage.setItem(RESET_KEY, progression.data.runId);
+  storage.setItem(SETTINGS_KEY, 'old');
+  storage.setItem('chaos-sync-track', 'old');
+  storage.setItem(HISTORY_KEY, 'old');
+  storage.setItem('another-app', 'keep');
+  recoverGameReset(storage);
+  assert.equal(storage.length, 2);
+  assert.equal(storage.getItem('another-app'), 'keep');
+  assert.equal(new Progression(story, storage).hasSave, false);
+  storage.setItem(RESET_KEY, 'uncommitted');
+  storage.setItem(SETTINGS_KEY, 'keep existing');
+  recoverGameReset(storage);
+  assert.equal(storage.getItem(SETTINGS_KEY), 'keep existing');
+  assert.equal(storage.getItem(RESET_KEY), null);
+});
+
+test('reset orchestration stops first, commits before rebuilding, then restarts once', async () => {
+  const order = [];
+  await resetGameToInitialState({
+    progression: {
+      newGame() {
+        order.push('commit');
+      },
+    },
+    stop: async () => order.push('stop'),
+    rebuild: async () => order.push('rebuild'),
+    restart: () => order.push('restart'),
+  });
+  assert.deepEqual(order, ['stop', 'commit', 'rebuild', 'restart']);
+  order.length = 0;
+  await assert.rejects(
+    resetGameToInitialState({
+      progression: {
+        newGame() {
+          throw new Error('write');
+        },
+      },
+      stop: () => order.push('stop'),
+      rebuild: () => order.push('rebuild'),
+      restart: () => order.push('restart'),
+    }),
+    /write/,
+  );
+  assert.deepEqual(order, ['stop']);
 });
 test('preferences validate corrupt values and complete deletion removes active and historical data', () => {
   const storage = memory();

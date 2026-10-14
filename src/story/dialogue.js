@@ -43,6 +43,14 @@ export function matches(condition, flags, choices = []) {
 }
 export function validateDialogue(dialogue) {
   if (
+    dialogue.completion &&
+    (typeof dialogue.completion.stayOnline !== 'boolean' ||
+      (dialogue.completion.connection &&
+        (typeof dialogue.completion.connection.contactId !== 'string' ||
+          !validDelay(dialogue.completion.connection.delayMs))))
+  )
+    throw new Error('Fin de dialogue invalide.');
+  if (
     dialogue.version !== 1 ||
     typeof dialogue.id !== 'string' ||
     !dialogue.contact?.nickname ||
@@ -80,6 +88,7 @@ export function validateDialogue(dialogue) {
           (message.type !== undefined && !['text', 'file'].includes(message.type)) ||
           !validDelay(message.delayMs) ||
           !validDelay(message.typingMs) ||
+          (message.typingPauseMs !== undefined && !validDelay(message.typingPauseMs)) ||
           !validCondition(message.when),
       )
     )

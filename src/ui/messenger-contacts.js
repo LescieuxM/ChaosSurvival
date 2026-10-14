@@ -10,7 +10,12 @@ export class MessengerContacts {
     const list = this.element?.querySelector('.messenger-contact-list');
     if (!list) return;
     const definitions = this.getContactDefinitions();
-    const contacts = visibleContacts(definitions, this.progression.data.unlockedConversations);
+    const contacts = visibleContacts(
+      definitions,
+      this.progression.data.unlockedConversations,
+      undefined,
+      this.progression.data.contactConnections,
+    );
     const unreadFor = (contact) => this.getUnread?.(contact) ?? this.thread.state.unread.length;
     const signature = JSON.stringify(contacts);
     if (signature === this.contactsSignature) {

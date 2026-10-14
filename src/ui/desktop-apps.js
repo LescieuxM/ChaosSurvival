@@ -106,6 +106,7 @@ export class DesktopApplications {
     const task = document.createElement('button');
     task.className = 'task-tab desktop-app-task';
     task.dataset.app = kind;
+    task.dataset.windowId = String(id);
     task.innerHTML = icon(iconName);
     const label = document.createElement('span');
     label.textContent = title;

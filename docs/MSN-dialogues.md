@@ -1,5 +1,32 @@
 # Conversations MSN
 
+## Après la première victoire à Smiley Catcher
+
+`src/dialogues/pixelgirl-smiley-victory.json` contient huit séquences, dix choix
+et 31 réponses possibles. Les branches rejoignent leurs troncs communs dans
+le même historique de PixelGirl. Les choix sur les dessins, le smiley MSN et
+la rencontre renseignent aussi `pixelgirlDrawingReaction`, `pixelgirlSmiley`
+et `pixelgirlMeetingReaction` dans les flags sauvegardés.
+
+La séquence `pixelgirl-smiley-win` suit `super-mega-game` dans `story.json`.
+Les replays ne complètent pas une seconde fois cette séquence de mini-jeu et
+ne redémarrent pas la conversation. `resumeAfterCompletion` permet aux anciennes
+parties ayant déjà terminé Smiley de découvrir la suite sans perdre leurs données.
+
+Le champ facultatif `typingPauseMs` ménage un silence **après** une saisie brève,
+avant l'envoi du message : il ne crée aucune entrée fictive dans l'historique.
+Les autres dialogues conservent leurs délais. Les délais absolus `receiveDueAt`
+permettent aussi aux branches de continuer lorsque MSN est fermé ou réduit.
+
+`completion.stayOnline` conserve le contact en ligne à la fin. Le champ
+`completion.connection` programme la connexion d'un contact, ici TURBO après
+2,2 secondes. `DialogueEvents` sauvegarde ce délai puis son état dans
+`contactConnections`, sans lancer de conversation. Un contact avec
+`connection: true` dans le catalogue n'apparaît qu'après cet événement ; il
+peut être consulté mais ne possède encore aucun dialogue narratif.
+
+## Première rencontre et fonctionnalités communes
+
 `src/dialogues/pixelgirl-intro.json` contient le scénario fourni : quatre choix
 de trois réponses, avec branches qui rejoignent la conversation commune. Chaque
 réponse a un identifiant unique. Les messages ne sont jamais effacés et aucune
@@ -139,8 +166,8 @@ anciennes sauvegardes sont fusionnées automatiquement, sans modifier les textes
 ni les choix. Cette migration est idempotente : relancer le jeu ne duplique pas
 les messages. Messenger fermé ou réduit conserve les messages et les réponses
 en attente ; les événements sont déclenchés par le jeu et jamais choisis dans
-l'interface. NEW GAME archive la partie puis réinitialise ce fil et le compteur.
-Effacer les données utilisateur supprime également les archives.
+l'interface. NEW GAME efface la partie, les anciennes archives, ce fil et le compteur.
+Effacer les données utilisateur supprime également toutes les préférences.
 
 ## Remplacer le mini-jeu
 

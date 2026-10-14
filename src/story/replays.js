@@ -39,6 +39,9 @@ export class ReplayReactions {
     if (migrated) progression.save();
     this.thread = new ConversationThread('pixelgirl', progression, () => [
       definitions['pixelgirl-intro'],
+      ...progression.data.unlockedConversations
+        .filter((id) => id !== 'pixelgirl-intro' && definitions[id]?.contact.name === 'PixelGirl')
+        .map((id) => definitions[id]),
       ...this.dialogues,
     ]);
   }

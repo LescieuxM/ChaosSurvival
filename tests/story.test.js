@@ -142,7 +142,7 @@ test('refusing repeatedly remains playable and accepting later unlocks the file'
   progression.complete('pixelgirl-hello');
   assert.equal(progression.current.type, 'minigame');
   progression.complete('super-mega-game', { score: 100 });
-  assert.equal(progression.current, null);
+  assert.equal(progression.current.id, 'pixelgirl-smiley-win');
 });
 
 test('a new app session resumes partial messages, choices, offered alternatives and transfers', () => {

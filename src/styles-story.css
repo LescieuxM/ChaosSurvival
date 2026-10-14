@@ -389,10 +389,6 @@ button.messenger-contact-row:hover {
 .story-desktop .music-player {
   display: none;
 }
-.story-desktop .session-info {
-  bottom: 67px;
-  pointer-events: none;
-}
 .story-desktop .equalizer {
   display: none;
 }
@@ -407,13 +403,6 @@ button.messenger-contact-row:hover {
   width: 620px;
   height: 530px;
   max-height: 100%;
-}
-.conversation-reader {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  padding: 4px 10px;
-  flex-shrink: 0;
 }
 .msn-minimize {
   width: 24px;
@@ -430,10 +419,6 @@ button.messenger-contact-row:hover {
 }
 .popup-narrative .msn-minimize + .close-button {
   margin-left: 4px;
-}
-.conversation-reader .xp-button {
-  font-size: 10px;
-  padding: 3px 8px;
 }
 .conversation-message {
   animation: msn-message-in 0.15s ease-out;
@@ -488,9 +473,6 @@ button.messenger-contact-row:hover {
 .desktop-file:hover {
   background: #4b7cd355;
   outline: 1px dotted white;
-}
-.desktop:not(.story-desktop) .desktop-files {
-  display: none;
 }
 .popup-minigame {
   width: 660px;
@@ -633,9 +615,6 @@ button.messenger-contact-row:hover {
     font-size: 10px;
     padding: 5px 8px;
   }
-  .popup-narrative .conversation-reader {
-    padding: 2px 10px;
-  }
 }
 .popup-narrative .window-body {
   display: flex;
@@ -672,6 +651,7 @@ button.messenger-contact-row:hover {
   min-height: 0;
   background: #fff;
   border: 1px solid #b4c3d0;
+  padding-bottom: 28px;
 }
 .conversation-log {
   flex: 1;
@@ -696,6 +676,12 @@ button.messenger-contact-row:hover {
 .conversation-message.from-player p {
   color: #24415d;
 }
+.conversation-system {
+  text-align: center;
+  color: #756498;
+  font-size: 11px;
+  line-height: 1.5;
+}
 .conversation-portraits {
   display: flex;
   flex-direction: column;
@@ -707,10 +693,6 @@ button.messenger-contact-row:hover {
 .conversation-portraits .story-avatar {
   width: 88px;
   height: 88px;
-}
-.conversation-portraits small {
-  color: #7b91a8;
-  font-size: 9px;
 }
 .popup-narrative .msn-tools {
   align-items: center;
@@ -727,17 +709,6 @@ button.messenger-contact-row:hover {
   background: linear-gradient(#fff, #e4edf8);
   color: #315778;
   text-decoration: none;
-}
-.conversation-reader .text-button {
-  width: auto;
-  padding: 0;
-  margin-left: auto;
-}
-.popup-narrative .msn-tools small {
-  white-space: nowrap;
-  margin-left: auto;
-  font-size: 9px;
-  color: #7991a5;
 }
 .dialogue-choices {
   display: flex;
@@ -758,11 +729,21 @@ button.messenger-contact-row:hover {
   flex-shrink: 0;
   color: #577591;
 }
+.dialogue-typing:empty {
+  display: none;
+}
 .contact-typing {
+  position: absolute;
+  left: 10px;
+  right: 22px;
+  bottom: 6px;
   display: block;
   min-height: 20px;
   padding: 2px 0;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: #fff;
   pointer-events: none;
   color: #65788a;
   font:
@@ -825,6 +806,12 @@ button.messenger-contact-row:hover {
 .messenger-menu-group:nth-last-child(-n + 2) .messenger-dropdown {
   left: auto;
   right: 0;
+}
+/* Notepad has one File menu, not Messenger's trailing right-aligned menus. */
+.file-notepad .messenger-menu-group .messenger-dropdown {
+  top: 100%;
+  left: 0;
+  right: auto;
 }
 .messenger-dropdown button:hover:not(:disabled),
 .messenger-dropdown button:focus-visible {
@@ -1110,26 +1097,31 @@ button.messenger-contact-row:hover {
   }
 }
 
-/* One desktop grid for shortcuts and received files; the menu clone stays unchanged. */
-.desktop.story-desktop.icon-grid .desktop-icons,
-.desktop.story-desktop.icon-grid .desktop-files {
+/* The menu mirrors the same grid coordinates as the interactive desktop. */
+.desktop.icon-grid .desktop-icons,
+.desktop.icon-grid .desktop-files,
+.menu-desktop-background.icon-grid .desktop-icons,
+.menu-desktop-background.icon-grid .desktop-files {
   inset: 0;
   display: block;
   pointer-events: none;
 }
-.desktop.story-desktop.icon-grid .desktop-icons button,
-.desktop.story-desktop.icon-grid .desktop-file {
+.desktop.icon-grid .desktop-icons button,
+.desktop.icon-grid .desktop-file,
+.menu-desktop-background.icon-grid .desktop-icons button,
+.menu-desktop-background.icon-grid .desktop-file {
   position: absolute;
   width: 100px;
   pointer-events: auto;
   touch-action: none;
   user-select: none;
 }
-.desktop.story-desktop.icon-grid [aria-pressed='true'] {
+.desktop.icon-grid .desktop-icons [aria-pressed='true'],
+.desktop.icon-grid .desktop-files [aria-pressed='true'] {
   background: #4b7cd355;
   outline: 1px dotted white;
 }
-.desktop.story-desktop.icon-grid button.is-dragging {
+.desktop.icon-grid button.is-dragging {
   z-index: 1;
   opacity: 0.8;
 }
@@ -1175,4 +1167,37 @@ button.messenger-contact-row:hover {
 }
 .file-notepad .window-status {
   white-space: normal;
+}
+.start-menu > [data-start-app] {
+  touch-action: none;
+  user-select: none;
+}
+.start-menu > .start-menu-reordering {
+  background: #d9eafd;
+  outline: 1px dotted #316ac5;
+  opacity: 0.45;
+}
+.start-menu > .start-menu-drag-preview {
+  position: absolute;
+  left: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: #edf4fc;
+  box-shadow: 0 2px 5px #17375e44;
+}
+.taskbar > button.task-tab {
+  touch-action: none;
+  user-select: none;
+}
+.taskbar > .taskbar-reordering {
+  opacity: 0.45;
+  outline: 1px dotted white;
+}
+.taskbar > .taskbar-drag-preview {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+  pointer-events: none;
+  margin: 0;
 }

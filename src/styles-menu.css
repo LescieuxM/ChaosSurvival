@@ -5,13 +5,17 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: safe center;
   overflow: auto;
+  scrollbar-width: none;
   padding: 20px 24px 56px;
   color: #153468;
   background: #75c7f2 url('/wallpaper.svg') center/cover no-repeat;
   font-family: Tahoma, sans-serif;
   isolation: isolate;
+}
+.main-menu::-webkit-scrollbar {
+  display: none;
 }
 .menu-desktop-background {
   position: fixed;
@@ -23,7 +27,7 @@
   position: fixed;
   bottom: 0;
 }
-.menu-desktop-background button:disabled {
+.main-menu .menu-desktop-background button:disabled {
   opacity: 1;
   cursor: default;
 }
@@ -418,36 +422,88 @@
     padding: 12px 12px 48px;
   }
   .menu-content {
-    padding: 18px 36px 14px;
+    padding: 8px 36px;
   }
   .menu-logo {
-    font-size: 60px;
+    font-size: 38px;
   }
   .menu-edition {
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
   .menu-tagline {
-    margin: 16px 0 12px;
+    margin: 10px 0;
   }
   .menu-badges {
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
   .menu-big {
-    padding: 13px;
+    padding: 10px;
     font-size: 24px;
   }
   .menu-secondary {
-    padding: 10px;
+    padding: 8px;
     font-size: 18px;
   }
   .menu-checkpoint {
-    margin-top: 16px;
-  }
-  .menu-bottom {
     margin-top: 12px;
   }
+  .menu-bottom {
+    display: none;
+  }
+  .menu-footer {
+    padding: 8px 15px;
+  }
   .menu-options-panel > label {
-    margin: 10px 0;
+    margin: 6px 0;
+  }
+  .menu-options-panel h2 {
+    margin-bottom: 8px;
+  }
+  .menu-options-panel input[type='range'] {
+    margin-top: 4px;
+  }
+  .menu-fullscreen {
+    padding: 8px;
+  }
+  .menu-delete {
+    margin-top: 10px;
+  }
+  .menu-application-logos {
+    margin-top: 8px;
+  }
+  .menu-application-logos .icon {
+    width: 24px;
+    height: 24px;
+  }
+}
+@media (max-height: 850px) {
+  .main-menu {
+    padding-top: 12px;
+    padding-bottom: 40px;
+  }
+  .menu-music-credit,
+  .menu-bottom {
+    margin-top: 8px;
+  }
+  .main-menu:has(.menu-options-panel:not([hidden])) .menu-logo {
+    font-size: 44px;
+  }
+  .main-menu:has(.menu-options-panel:not([hidden])) .menu-content {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+}
+@media (max-height: 690px) {
+  .main-menu:has(.menu-options-panel:not([hidden])) .menu-edition,
+  .main-menu:has(.menu-options-panel:not([hidden])) .menu-tagline {
+    display: none;
+  }
+  .main-menu:has(.menu-options-panel:not([hidden])) .menu-logo {
+    font-size: 32px;
+  }
+  .main-menu:has(.menu-options-panel:not([hidden])) .menu-content {
+    padding-top: 8px;
+    padding-bottom: 8px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

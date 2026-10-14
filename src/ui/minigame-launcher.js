@@ -2,8 +2,24 @@ import { createMiniGame } from './minigame-registry.js';
 
 // Received fictional files unlock engines; the launcher never executes host programs.
 export class MiniGameLauncher {
-  constructor(definitions, progression, manager, sounds, beforeOpen = () => {}, rules) {
-    Object.assign(this, { definitions, progression, manager, sounds, beforeOpen, rules });
+  constructor(
+    definitions,
+    progression,
+    manager,
+    sounds,
+    beforeOpen = () => {},
+    rules,
+    onVictory = () => {},
+  ) {
+    Object.assign(this, {
+      definitions,
+      progression,
+      manager,
+      sounds,
+      beforeOpen,
+      rules,
+      onVictory,
+    });
     this.active = null;
   }
   open(file) {
@@ -26,8 +42,13 @@ export class MiniGameLauncher {
     if (!this.active?.element?.isConnected || this.active.definition.id !== definition.id)
       this.active = createMiniGame(definition, this.manager, this.sounds, (result) => {
         const sequence = this.progression.current;
-        if (sequence?.type === 'minigame' && sequence.game === definition.id)
-          this.progression.complete(sequence.id, result);
+        if (
+          sequence?.type === 'minigame' &&
+          sequence.game === definition.id &&
+          result.won !== false &&
+          this.progression.complete(sequence.id, result)
+        )
+          this.onVictory(sequence, result);
       });
     this.active.showRules = () => {
       if (!this.rules) return;

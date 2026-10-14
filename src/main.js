@@ -17,6 +17,8 @@ import { GameRules } from './ui/game-rules.js';
 import { DesktopFiles } from './ui/desktop-files.js';
 import { MiniGameLauncher } from './ui/minigame-launcher.js';
 import { DesktopIcons } from './ui/desktop-icons.js';
+import { StartMenuOrder } from './ui/start-menu-order.js';
+import { TaskbarOrder } from './ui/taskbar-order.js';
 import { DesktopApplications } from './ui/desktop-apps.js';
 import { arcadeLauncher } from './ui/arcade-launcher.js';
 import { createMusicDebug } from './ui/music-debug.js';
@@ -41,21 +43,30 @@ import {
 } from './story/arcade.js';
 import replayConfig from './config/replay-reactions.json';
 import { ReplayReactions } from './story/replays.js';
+import { DialogueEvents } from './story/dialogue-events.js';
+import { resetGameToInitialState as resetSession, recoverGameReset } from './story/reset-game.js';
 import { applicationName, trackIdentity } from './ui/identity.js';
 
 const BEST_SCORE_KEY = 'chaos-survival-best';
 const DEFAULT_VOLUME = 0.55;
 const SYNC_OFFSET_KEY = `chaos-sync-${music.source.sha256}`;
+let storyStorage;
+try {
+  storyStorage = localStorage;
+  recoverGameReset(storyStorage);
+} catch {
+  storyStorage = undefined;
+}
 let syncOffset = 0;
 try {
-  syncOffset = Math.max(-0.5, Math.min(0.5, Number(localStorage.getItem(SYNC_OFFSET_KEY)) || 0));
+  syncOffset = Math.max(-0.5, Math.min(0.5, Number(storyStorage?.getItem(SYNC_OFFSET_KEY)) || 0));
 } catch {
   /* Calibration is optional. */
 }
 
 let best = 0;
 try {
-  best = Number(localStorage.getItem(BEST_SCORE_KEY)) || 0;
+  best = Number(storyStorage?.getItem(BEST_SCORE_KEY)) || 0;
 } catch {
   /* Storage can be unavailable in private browsing. */
 }
@@ -64,12 +75,6 @@ const ui = mountDesktop(document.getElementById('app'), best);
 
 const state = new GameState(chart.gameplay);
 const audio = new AudioEngine(chart.volume);
-let storyStorage;
-try {
-  storyStorage = localStorage;
-} catch {
-  /* Optional persistence. */
-}
 const progression = new Progression(story, storyStorage);
 const replayReactions = new ReplayReactions(progression, dialogues, replayConfig);
 const settings = new UserSettings(storyStorage, chart.volume);
@@ -111,7 +116,9 @@ let action = () => {};
 let secondaryAction = () => {};
 let previousVolume = chart.volume;
 const manager = new WindowManager(ui.playfield, ({ preview, x, y, openedAt }) => {
-  if (preview || phase !== 'playing') return;
+  // System applications leave arcade windows interactive during their controlled pause.
+  // Retire every actual closure, including the asynchronous resume transition.
+  if (preview || !['playing', 'paused', 'resuming'].includes(phase)) return;
   const onBeat = isOnBeat(audio.time - syncOffset, chart, music);
   director.closed(audio.time, openedAt);
   const points = state.close(onBeat);
@@ -132,7 +139,6 @@ const messenger = new Messenger({
   applications: desktopApplications,
   progression,
   sounds,
-  player: pixelgirlDialogue.player,
   definitions: () => dialogues,
   primary: () => conversation,
   settings,
@@ -167,13 +173,29 @@ const miniGameLauncher = new MiniGameLauncher(
   manager,
   sounds,
   () => {
-    if (progression.current?.type === 'conversation')
+    if (progression.current?.dialogue === pixelgirlDialogue.id)
       progression.complete(progression.current.id, { dialogue: activeDialogue.id });
     if (conversation.element?.isConnected)
       manager.close(Number(conversation.element.dataset.windowId));
   },
   rules,
+  () => {
+    if (progression.current?.type === 'conversation')
+      activeDialogue = dialogues[progression.current.dialogue];
+  },
 );
+const dialogueEvents = new DialogueEvents(progression, dialogues, (contactId) => {
+  const contact = messenger.contacts().find((entry) => entry.id === contactId);
+  if (!contact) return;
+  ui.toastContact.textContent = contact.nickname;
+  ui.toastMessage.textContent = 'est maintenant en ligne.';
+  toastUntil = audio.time + 6;
+  ui.toast.hidden = false;
+  ui.toastOpen.hidden = true;
+  ui.toast.classList.add('story-toast');
+  storyToastAction = null;
+  sounds.unlock().then(() => sounds.play('online'));
+});
 let restoringStory = false;
 function createConversation(dialogue, contactId = 'pixelgirl', thread = replayReactions.thread) {
   return new ConversationWindow(
@@ -186,14 +208,11 @@ function createConversation(dialogue, contactId = 'pixelgirl', thread = replayRe
         progression.complete(progression.current.id, { dialogue: id });
         if (progression.current) progression.enterCurrent().catch(showStoryError);
       }
-      if (!progression.current)
-        ui.sessionLabel.textContent = `À TOUT À L’HEURE, ${dialogue.contact.name.toUpperCase()}`;
     },
     renderDesktopFiles,
     (id) => {
       if (progression.current?.type === 'conversation' && progression.current.dialogue === id) {
-        progression.complete(progression.current.id, { dialogue: dialogue.id });
-        ui.sessionLabel.textContent = 'SUPER_MEGA_GAME.exe T’ATTEND';
+        progression.complete(progression.current.id, { dialogue: id });
       }
     },
     {
@@ -222,7 +241,6 @@ progression.register('conversation', (sequence) => {
 });
 progression.register('minigame', () => {
   showStoryDesktop(false);
-  ui.sessionLabel.textContent = 'SUPER_MEGA_GAME.exe T’ATTEND';
 });
 
 function previewWindows() {
@@ -271,7 +289,7 @@ function setSyncOffset(value) {
   if (!Number.isFinite(value)) return;
   syncOffset = Math.max(-0.5, Math.min(0.5, value));
   try {
-    localStorage.setItem(SYNC_OFFSET_KEY, String(syncOffset));
+    storyStorage?.setItem(SYNC_OFFSET_KEY, String(syncOffset));
   } catch {
     /* Optional. */
   }
@@ -280,12 +298,10 @@ function setSyncOffset(value) {
 }
 const debug = createMusicDebug(ui.desktop, music, debugSnapshot, setSyncOffset);
 let deletingUserData = false;
+let resettingGame = false;
 const menu = new MainMenu(document.getElementById('app'), progression, settings, sounds, {
   play: continueFromMenu,
-  newGame: async () => {
-    progression.newGame();
-    await continueFromMenu();
-  },
+  newGame: resetGameToInitialState,
   settingsChanged: () => setVolume(settings.data.musicVolume),
   fullscreen: setFullscreen,
   deleteData: async () => {
@@ -307,6 +323,73 @@ const desktopFiles = new DesktopFiles(ui.desktop, progression, openDesktopFile, 
 const returnMenu = ui.menuPlay;
 returnMenu.id = 'return-main-menu';
 returnMenu.innerHTML = `${icon('menu-computer')}<span>Menu principal<small>Continuer / nouvelle partie / options</small></span>`;
+const startMenuOrder = new StartMenuOrder(ui.startMenu, settings);
+const taskbarOrder = new TaskbarOrder(ui.desktop.querySelector('.taskbar'));
+async function resetGameToInitialState() {
+  if (resettingGame) return;
+  resettingGame = true;
+  try {
+    await resetSession({
+      progression,
+      stop: () => {
+        clearTimeout(msnArrivalTimer);
+        pauseGeneration++;
+        cancelAnimationFrame(frame);
+        audio.stop(true);
+        menuMusic.stop();
+        cancelVictory();
+        rules.hide();
+        setStartMenuOpen(false);
+        desktopIcons.cancel();
+        taskbarOrder.cancel();
+        manager.clear();
+        miniGameLauncher.reset();
+        storyToastAction = null;
+        ui.toast.hidden = true;
+        action = secondaryAction = () => {};
+        clearEffects();
+      },
+      rebuild: async () => {
+        settings.reset();
+        messenger.conversations.clear();
+        messenger.views.clear();
+        messenger.roster = null;
+        activeDialogue = pixelgirlDialogue;
+        conversation = createConversation(activeDialogue);
+        state.reset();
+        timeline?.reset();
+        director?.reset();
+        best = syncOffset = lastTime = maxLateness = 0;
+        lastLateness = null;
+        duration = chart.durationSeconds;
+        arcadeSequenceId = story.start;
+        arcadeReplay = false;
+        notifiedMessages = '';
+        toastUntil = 0;
+        ui.best.textContent = '000000';
+        manager.sequence = 0;
+        manager.z = 10;
+        desktopApplications.instances.clear();
+        taskbarOrder.reset();
+        startMenuOrder.reset();
+        renderDesktopFiles();
+        desktopIcons.reset();
+        ui.desktop.style.backgroundImage = '';
+        ui.desktop.classList.remove('story-desktop', 'is-playing', 'on-beat');
+        previousVolume = settings.defaults.musicVolume;
+        setVolume(settings.defaults.musicVolume);
+        menu.syncSettings();
+        renderStats();
+        debug.render();
+        await setFullscreen(false);
+      },
+      restart: continueFromMenu,
+    });
+  } finally {
+    resettingGame = false;
+    if (phase === 'menu') menuMusic.start();
+  }
+}
 async function setFullscreen(value) {
   try {
     if (window.chaosWindow) await window.chaosWindow.setFullscreen(value);
@@ -321,14 +404,15 @@ async function setFullscreen(value) {
   }
 }
 window.chaosWindow?.onFullscreenChanged(async () => {
-  if (deletingUserData) return;
+  if (deletingUserData || resettingGame) return;
+  const runId = progression.data.runId;
   const value = await window.chaosWindow.getFullscreen();
-  if (deletingUserData) return;
+  if (deletingUserData || resettingGame || runId !== progression.data.runId) return;
   settings.update({ fullscreen: value });
   menu.syncSettings();
 });
 document.addEventListener('fullscreenchange', () => {
-  if (!window.chaosWindow && !deletingUserData) {
+  if (!window.chaosWindow && !deletingUserData && !resettingGame) {
     settings.update({ fullscreen: Boolean(document.fullscreenElement) });
     menu.syncSettings();
   }
@@ -488,7 +572,7 @@ function tick() {
   lastTime = now;
   const time = now - chart.offsetSeconds - syncOffset;
   if (!lost) timeline.advance(time, (event) => emitEvent(event, time));
-  const { beat, section, intensity } = musicAt(time, music);
+  const { beat, intensity } = musicAt(time, music);
   ui.desktop.style.setProperty('--music-intensity', intensity);
   ui.desktop.classList.toggle('on-beat', Boolean(beat && time - beat.time < 0.12));
   ui.desktop.classList.toggle('music-accent', Boolean(beat?.accent && time - beat.time < 0.1));
@@ -497,10 +581,6 @@ function tick() {
   if (now >= wizzUntil) {
     ui.desktop.classList.remove('wizz');
     ui.wizzLabel.hidden = true;
-  }
-  if (section) {
-    ui.sessionLabel.textContent = section.label;
-    ui.sessionLabel.title = section.name;
   }
   renderStats();
   debug.render();
@@ -542,7 +622,6 @@ function renderStats() {
       : state.chaos >= 35
         ? 'Ça commence à faire beaucoup…'
         : 'Tout va bien. Pour l’instant.';
-  ui.windowCount.textContent = `${state.open} fenêtre${state.open === 1 ? '' : 's'} ouverte${state.open === 1 ? '' : 's'}`;
 }
 
 async function pauseGame() {
@@ -602,12 +681,11 @@ function finishGame(won) {
   const newRecord = state.score > best;
   best = Math.max(best, state.score);
   try {
-    localStorage.setItem(BEST_SCORE_KEY, String(best));
+    storyStorage?.setItem(BEST_SCORE_KEY, String(best));
   } catch {
     /* Best score is optional. */
   }
   ui.best.textContent = String(best).padStart(6, '0');
-  ui.sessionLabel.textContent = won ? 'BUREAU SAUVÉ' : 'LE SYSTÈME A CRAQUÉ';
   if (won) {
     const result = queueArcadeVictory(progression, arcadeSequenceId, {
       score: state.score,
@@ -741,9 +819,6 @@ function showStoryDesktop(announce) {
   state.chaos = 0;
   renderStats();
   ui.chaosCaption.textContent = 'Le bureau est calme. Place aux amis.';
-  ui.sessionLabel.textContent = progression.current
-    ? `${activeDialogue.contact.name.toUpperCase()} EST EN LIGNE`
-    : 'CONVERSATION ENREGISTRÉE';
   if (announce) {
     ui.toastContact.textContent = activeDialogue.contact.nickname;
     ui.toastMessage.textContent = 'vient de se connecter. Clique pour lui dire bonjour :)';
@@ -805,6 +880,7 @@ function formatTime(value) {
 }
 
 function setStartMenuOpen(open) {
+  if (!open) startMenuOrder.cancel();
   ui.startMenu.hidden = !open;
   ui.windowsStart.setAttribute('aria-expanded', String(open));
 }
@@ -927,7 +1003,12 @@ function updateClock() {
 updateClock();
 let notifiedMessages = '';
 function receiveReplayReactions() {
+  if (resettingGame) {
+    requestAnimationFrame(receiveReplayReactions);
+    return;
+  }
   const incoming = replayReactions.flush();
+  dialogueEvents.update(Date.now(), phase !== 'menu');
   messenger.update();
   const visible = !conversation.offlineContact && messenger.isVisible(conversation);
   const unread = replayReactions.thread.state.unread;

@@ -23,5 +23,14 @@
     "personalMessage": "ma mère utilise le téléphone :'(",
     "avatar": "./avatars/contact-modem.svg"
   },
-  { "id": "pixelgirl", "kind": "narrative", "dialogue": "pixelgirl-intro" }
+  { "id": "pixelgirl", "kind": "narrative", "dialogue": "pixelgirl-intro" },
+  {
+    "id": "turbo",
+    "kind": "decorative",
+    "connection": true,
+    "nickname": "xX_TURBO_59_Xx",
+    "status": "En ligne",
+    "personalMessage": "",
+    "avatar": "./avatars/turbo.svg"
+  }
 ]
