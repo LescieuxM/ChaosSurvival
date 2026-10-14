@@ -1,0 +1,36 @@
+{
+  "name": "Hopla Hotel",
+  "description": "Un hôtel virtuel pour se retrouver et explorer des salons en pixel art.",
+  "welcome": "Retrouve tes amis, explore les salons et fais de nouvelles rencontres !",
+  "room": {
+    "id": "hall",
+    "name": "Hall de l'hôtel",
+    "width": 10,
+    "height": 10,
+    "spawn": [7, 7],
+    "blocked": [],
+    "furniture": [
+      { "id": "sofa", "type": "sofa", "position": [1, 6], "size": [3, 1], "blocking": true },
+      { "id": "table", "type": "table", "position": [2, 4], "size": [2, 1], "blocking": true },
+      { "id": "plant-left", "type": "plant", "position": [0, 0], "size": [1, 1], "blocking": true },
+      {
+        "id": "plant-right",
+        "type": "plant",
+        "position": [8, 0],
+        "size": [1, 1],
+        "blocking": true
+      },
+      { "id": "reception", "type": "counter", "position": [4, 1], "size": [3, 1], "blocking": true }
+    ],
+    "npcs": [
+      {
+        "id": "reception-xd",
+        "name": "ReceptionXD",
+        "position": [5, 4],
+        "blocking": true,
+        "direction": "south",
+        "dialogue": "Bienvenue sur Hopla Hotel ! Amuse-toi bien ;)"
+      }
+    ]
+  }
+}

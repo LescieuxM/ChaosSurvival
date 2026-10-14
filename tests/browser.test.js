@@ -98,6 +98,7 @@ test('site directory derives only available implemented homepages and picks up f
       'http://www.flashzone.fr/',
       'http://www.videotube.fr/',
       'http://www.wiki.fr/',
+      'http://www.hoplahotel.fr/',
     ],
   );
   const registry = new PageRegistry();

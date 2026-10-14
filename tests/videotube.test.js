@@ -90,6 +90,7 @@ test('home links go only to internal watch pages; metadata and comments are text
     const nodes = walk(tree);
     assert.ok(nodes.some((n) => n.textContent === video.title));
     assert.equal(find(tree, 'videotube-watch').disabled, !video.youtubeUrl);
+    assert.equal(find(tree, 'videotube-watch').textContent, 'Voir sur VideoTube');
     assert.equal(find(tree, 'videotube-comments').children.length, video.comments.length + 1);
     assert.equal(find(tree, 'videotube-stars')['aria-label'], `Note : ${video.rating} sur 5`);
     for (const n of [...walk(home), ...nodes]) {

@@ -72,7 +72,7 @@
       "id":"consoles","name":"Consoles","description":"PS3, Xbox 360, Wii et les vieilles consoles qui refusent de mourir.",
       "topics":[
         {"id":"ps3-xbox360","title":"PS3 VS XBOX 360","date":"2009-01-20","posts":[
-          {"author":"PadSansFil","time":"18:00","text":"j'ai économisé. je prends laquelle ? j'aime les courses et gta"},
+          {"author":"PadSansFil","time":"18:00","text":"ma 360 est partie au SAV, j'hésite à changer de console. j'ai économisé, vous prendriez une PS3 ou une autre 360 ? j'aime les courses et GTA"},
           {"author":"xX_TURBO_59_Xx","time":"18:02","text":"360. forza 2. débat terminé merci bonsoir"},
           {"author":"BluRayMan","time":"18:03","text":"ps3, pas besoin de payer pour jouer en ligne"},
           {"author":"PadSansFil","time":"18:05","text":"mes potes ont les deux ça aide pas"},
@@ -114,7 +114,7 @@
       ]
     },
     {
-      "id":"informatique","name":"Informatique","description":"Windows XP, installations, virus et matériel. Les questions qui finissent en redémarrage.",
+      "id":"informatique","name":"Informatique","description":"Windows XD, installations, virus et matériel. Les questions qui finissent en redémarrage.",
       "topics":[
         {"id":"pc-rame","title":"mon PC rame depuis que j'ai installé un truc","date":"2009-01-05","posts":[
           {"author":"Disquette44","time":"17:02","text":"une barre pour avoir des smileys et maintenant mon navigateur prend tout l'écran"},
@@ -122,7 +122,7 @@
           {"author":"Disquette44","time":"17:09","text":"j'ai désinstallé la barre dans le panneau de config, ça va déjà mieux"},
           {"author":"LeModemEnPLS","time":"17:12","text":"les smileys qui coûtent une demi fenêtre, quelle affaire"}
         ]},
-        {"id":"virus-xp","title":"comment enlever un virus sur Windows XP","date":"2009-01-11","posts":[
+        {"id":"virus-xp","title":"comment enlever un virus sur Windows XD","date":"2009-01-11","posts":[
           {"author":"LeModemEnPLS","time":"19:01","text":"un site me dit que j'ai 450 virus et veut ma carte bancaire. l'antivirus installé dit rien"},
           {"author":"CartoucheGrise","time":"19:04","text":"ne paie pas ce site. ferme la page et lance une analyse avec ton antivirus habituel à jour"},
           {"author":"LeModemEnPLS","time":"19:08","text":"ok. analyse en cours. j'ai pas téléchargé leur logiciel"},
@@ -130,13 +130,13 @@
           {"author":"LeModemEnPLS","time":"19:22","text":"rien détecté. j'ai surtout eu 450 sueurs froides"}
         ]},
         {"id":"vista","title":"Vista c'est vraiment de la merde ?","date":"2009-01-16","posts":[
-          {"author":"BluRayMan","time":"18:04","text":"nouveau pc avec vista. tout le monde me dit de remettre xp mais chez moi ça marche"},
+          {"author":"BluRayMan","time":"18:04","text":"nouveau pc avec vista. tout le monde me dit de remettre xd mais chez moi ça marche"},
           {"author":"CartoucheGrise","time":"18:08","text":"si ça marche garde-le. les problèmes dépendent aussi des pilotes et de la config"},
           {"author":"Disquette44","time":"18:11","text":"sur mon vieux pc c'était lent. j'ai pas exactement une machine de compétition"},
           {"author":"BluRayMan","time":"18:15","text":"bon je vais pas casser un truc qui marche pour gagner une dispute"}
         ]},
-        {"id":"ie-plante","title":"Internet Explorer plante tout le temps","date":"2009-01-21","posts":[
-          {"author":"LeModemEnPLS","time":"17:01","text":"ie7 se ferme quand j'ouvre trop d'onglets. j'ai encore une barre d'outils de trop ?"},
+        {"id":"ie-plante","title":"Internet Adventurer plante tout le temps","date":"2009-01-21","posts":[
+          {"author":"LeModemEnPLS","time":"17:01","text":"internet adventurer se ferme quand j'ouvre trop d'onglets. j'ai encore une barre d'outils de trop ?"},
           {"author":"CartoucheGrise","time":"17:05","text":"essaie sans les modules complémentaires pour voir si ça vient de là"},
           {"author":"LeModemEnPLS","time":"17:14","text":"sans le module du vieux lecteur ça marche. j'aurais dû commencer par ça au lieu d'insulter le clavier"}
         ]}

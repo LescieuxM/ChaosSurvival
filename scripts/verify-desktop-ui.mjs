@@ -1,4 +1,4 @@
-﻿// Focused UI check against the local production build; no portable packaging.
+// Focused UI check against the local production build; no portable packaging.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
@@ -29,6 +29,7 @@ const skyPageOnly = process.argv.includes('--skypage-only');
 const flashZoneOnly = process.argv.includes('--flashzone-only');
 const videoTubeOnly = process.argv.includes('--videotube-only');
 const wikiOnly = process.argv.includes('--wiki-only');
+const hotelOnly = process.argv.includes('--xdhotel-only');
 const minigameOnly =
   process.argv.includes('--minigame-only') ||
   typingOnly ||
@@ -46,6 +47,7 @@ const minigameOnly =
   flashZoneOnly ||
   videoTubeOnly ||
   wikiOnly ||
+  hotelOnly ||
   stabilityOnly;
 let browserServer;
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -560,7 +562,8 @@ try {
   if (browserSecurityElectron) {
     await verifyBrowser();
   } else if (minigameOnly) {
-    if (wikiOnly) await verifyWiki();
+    if (hotelOnly) await verifyHotel();
+    else if (wikiOnly) await verifyWiki();
     else if (videoTubeOnly) await verifyVideoTube();
     else if (flashZoneOnly) await verifyFlashZone();
     else if (skyPageOnly) await verifySkyPage();
@@ -1347,6 +1350,179 @@ async function physicalDrag(selector, left, top) {
   });
 }
 
+async function verifyHotel() {
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 1280,
+    height: 800,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  const { project } = await import('../src/browser/sites/xdhotel/model.js');
+  const { hotelData } = await import('../src/browser/sites/xdhotel/index.js');
+  const room = hotelData.room;
+  await command('Page.enable');
+  await command('Network.enable');
+  const requests = [];
+  socket.addEventListener('message', ({ data }) => {
+    const message = JSON.parse(data);
+    if (message.method === 'Network.requestWillBeSent') requests.push(message.params.request.url);
+  });
+  await click('#menu-play');
+  await until(() => evaluate("!!document.querySelector('.rules-confirm')"), 'first rules');
+  await click('.rules-confirm');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'playing');
+  await doubleClick('#desktop > .desktop-icons [data-shortcut=browser]');
+  const ready = () =>
+    until(
+      () =>
+        evaluate("document.querySelector('.browser-page')?.getAttribute('aria-busy')==='false'"),
+      'hotel page ready',
+    );
+  const go = async (url) => {
+    await evaluate(
+      `document.querySelector('.browser-address input').value=${JSON.stringify(url)};document.querySelector('.browser-address').requestSubmit()`,
+    );
+    await ready();
+  };
+  const narrative = () =>
+    evaluate(
+      "(()=>{const s=JSON.parse(localStorage.getItem('chaos-survival-story-v1'));return JSON.stringify([s.current,s.completed,s.dialogues,s.choices,s.files]);})()",
+    );
+  await ready();
+  const before = await narrative();
+  assert.ok(
+    await evaluate(
+      '!!document.querySelector(\'.xd-sites [data-browser-link="http://www.hoplahotel.fr/"]\')',
+    ),
+  );
+  for (const query of ['hopla hotel', 'hotel virtuel']) {
+    await go(`xdsearch.fr/?q=${encodeURIComponent(query)}`);
+    assert.ok(
+      await evaluate(
+        '!!document.querySelector(\'.xd-search-result [data-browser-link="http://www.hoplahotel.fr/"]\')',
+      ),
+    );
+  }
+  await go('www.xdhotel.fr');
+  assert.equal(
+    await evaluate("document.querySelector('.browser-address input').value"),
+    'http://www.hoplahotel.fr/',
+  );
+  await go('www.hoplahotel.fr');
+  assert.equal(
+    await evaluate("document.querySelector('.xdhotel h1').textContent"),
+    'Bienvenue à Hopla Hotel !',
+  );
+  await capture('xdhotel-home.png');
+  await click('.hotel-enter');
+  await ready();
+  assert.equal(
+    await evaluate("document.querySelector('.xdhotel h2').textContent"),
+    "Hall de l'hôtel",
+  );
+  const location = () => evaluate("document.querySelector('.hotel-location').textContent");
+  const floorClick = async (col, row, offsetY = 0) => {
+    const point = project(col, row, room);
+    const hit = await evaluate(
+      `(()=>{const c=document.querySelector('.hotel-canvas');c.scrollIntoView({block:'center'});const r=c.getBoundingClientRect();return {x:r.left+${point.x}/c.width*r.width,y:r.top+${point.y + offsetY}/c.height*r.height};})()`,
+    );
+    await command('Input.dispatchMouseEvent', {
+      type: 'mousePressed',
+      button: 'left',
+      clickCount: 1,
+      ...hit,
+    });
+    await command('Input.dispatchMouseEvent', {
+      type: 'mouseReleased',
+      button: 'left',
+      clickCount: 1,
+      ...hit,
+    });
+  };
+  assert.ok((await location()).endsWith('case 8, 8'));
+  await floorClick(8, 7);
+  await until(async () => (await location()).endsWith('case 9, 8'), 'avatar moves');
+  await floorClick(2, 4);
+  assert.equal(
+    await evaluate("document.querySelector('.hotel-room-status').textContent"),
+    'Cette case est inaccessible.',
+  );
+  assert.ok((await location()).endsWith('case 9, 8'));
+  await floorClick(9, 7);
+  await floorClick(8, 8);
+  await until(async () => (await location()).endsWith('case 9, 9'), 'replace destination');
+  await floorClick(...room.npcs[0].position, -25);
+  assert.equal(
+    await evaluate("document.querySelector('.hotel-bubble').textContent"),
+    room.npcs[0].dialogue,
+  );
+  assert.equal(await evaluate("document.querySelector('.hotel-bubble').hidden"), false);
+  await capture('xdhotel-hall.png');
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 800,
+    height: 600,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await wait(100);
+  const npcTop = project(...room.npcs[0].position, room).y - 40;
+  assert.ok(
+    await evaluate(
+      `(()=>{const s=document.querySelector('.hotel-stage').getBoundingClientRect(),c=document.querySelector('.hotel-canvas').getBoundingClientRect(),b=document.querySelector('.hotel-bubble').getBoundingClientRect();return b.left>=s.left&&b.right<=s.right&&b.top>=s.top&&b.bottom<=s.bottom&&b.bottom<=c.top+${npcTop}/300*c.height;})()`,
+    ),
+  );
+  await capture('xdhotel-small.png');
+  await until(
+    () => evaluate("document.querySelector('.hotel-bubble').hidden"),
+    'bubble expires',
+    6000,
+  );
+  const first = await evaluate(
+    "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).browser.active",
+  );
+  await click('[data-browser-action=new]');
+  await ready();
+  await go('hoplahotel.fr/salle/hall');
+  assert.ok((await location()).endsWith('case 8, 8'));
+  await floorClick(7, 8);
+  await until(async () => (await location()).endsWith('case 8, 9'), 'second tab moves');
+  await click(`[data-browser-action=select][data-tab-id="${first}"]`);
+  await ready();
+  assert.ok((await location()).endsWith('case 8, 8'), 'returning to room resets its instance');
+  await click('.xdhotel [data-browser-link="http://www.hoplahotel.fr/"]');
+  await ready();
+  await click('[data-browser-action=back]');
+  await ready();
+  assert.ok(await evaluate("!!document.querySelector('.hotel-canvas')"));
+  await click('[data-browser-action=forward]');
+  await ready();
+  assert.ok(await evaluate("!!document.querySelector('.hotel-enter')"));
+  await click(`[data-browser-action=close][data-tab-id="${first}"]`);
+  await ready();
+  await floorClick(9, 9);
+  await click('.internet-adventurer .close-button');
+  await doubleClick('#desktop > .desktop-icons [data-shortcut=browser]');
+  await ready();
+  assert.ok((await location()).endsWith('case 8, 8'));
+  assert.equal(await narrative(), before);
+  assert.equal(
+    await evaluate(
+      "Object.hasOwn(JSON.parse(localStorage.getItem('chaos-survival-story-v1')),'xdhotel')",
+    ),
+    false,
+  );
+  await doubleClick('#desktop > .desktop-icons [data-shortcut=computer]');
+  assert.ok(await evaluate("!!document.querySelector('.explorer-items')"));
+  assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
+  assert.ok(
+    requests.every((url) => url.startsWith(gameUrl)),
+    JSON.stringify(requests),
+  );
+  console.log(
+    'OK: Hopla Hotel home/search/directory, hall Canvas, movement/replacement/blocked floor, NPC bubble/expiry/resize, independent tabs, back/forward, close/reopen, unchanged story/save format, system apps and local requests; no Electron.',
+  );
+}
+
 async function verifyWiki() {
   await command('Emulation.setDeviceMetricsOverride', {
     width: 1280,
@@ -1983,6 +2159,7 @@ async function verifySkyPage() {
       'http://www.flashzone.fr/',
       'http://www.videotube.fr/',
       'http://www.wiki.fr/',
+      'http://www.hoplahotel.fr/',
     ],
   );
   await capture('xd-search-sites.png');

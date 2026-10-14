@@ -8,6 +8,7 @@ import './browser/sites/forumjeu/styles.css';
 import './browser/sites/flashzone/styles.css';
 import './browser/sites/videotube/styles.css';
 import './browser/sites/wiki/styles.css';
+import './browser/sites/xdhotel/styles.css';
 import { InternetAdventurer } from './ui/browser.js';
 import { Buddy } from './ui/buddy.js';
 import chart from './config/chart.json';

@@ -60,7 +60,7 @@ export function renderVideo({ onDispose }, video, homeUrl) {
     node('p', `${author(video)} · ${video.year} · ${views(video)}`, 'videotube-meta'),
   );
   const player = node('div', undefined, 'videotube-player');
-  const watch = node('button', 'Regarder sur YouTube', 'videotube-watch');
+  const watch = node('button', 'Voir sur VideoTube', 'videotube-watch');
   watch.type = 'button';
   watch.disabled = !video.youtubeUrl;
   player.append(thumbnail(video), watch);

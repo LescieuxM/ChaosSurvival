@@ -113,7 +113,7 @@
           "title": "Poste de travail et dossiers",
           "paragraphs": [
             "Le Poste de travail présente les périphériques et une arborescence de dossiers, avec des commandes pour revenir en arrière ou remonter au dossier parent.",
-            "Le Poste de travail présente un disque local, un lecteur CD/DVD vide et une clé USB. Les dossiers s'ouvrent dans l'explorateur et le chemin courant reste visible. Un lecteur vide affiche une indication adaptée ; il ne présente pas un contenu qui n'est pas disponible."
+            "Parmi les périphériques disponibles figurent un disque local, un lecteur CD/DVD vide et une clé USB. Les dossiers s'ouvrent dans l'explorateur et le chemin courant reste visible. Un lecteur vide affiche une indication adaptée ; il ne présente pas un contenu qui n'est pas disponible."
           ]
         },
         {
@@ -159,13 +159,7 @@
           "title": "Messages et expression",
           "paragraphs": [
             "Le texte constitue le support principal. Les émoticônes complètent les mots pour suggérer une expression ou préciser le ton d'une phrase. Les abréviations sont fréquentes dans les échanges familiers, mais leur sens dépend des habitudes du groupe. Une conversation écrite ne transmet pas automatiquement toutes les nuances d'une conversation orale.",
-            "Certains logiciels indiquent qu'un interlocuteur prépare un message. Des notifications attirent l'attention sur un nouvel échange et des fonctions comme le Wizz peuvent accompagner la discussion."
-          ]
-        },
-        {
-          "id": "historique",
-          "title": "Continuité des échanges",
-          "paragraphs": [
+            "Certains logiciels indiquent qu'un interlocuteur prépare un message. Des notifications attirent l'attention sur un nouvel échange et des fonctions comme le Wizz peuvent accompagner la discussion.",
             "L'historique rassemble les messages envoyés et reçus, ce qui permet de relire un passage ou de poursuivre un échange après avoir fermé sa fenêtre."
           ]
         },
@@ -450,7 +444,7 @@
         ["Famille", "Félidés"],
         ["Nom scientifique", "Felis catus"]
       ],
-      "related": ["primates", "photographie-numerique"]
+      "related": ["primates"]
     },
     {
       "id": "tour-eiffel",
@@ -543,7 +537,7 @@
         ["Planètes", "8"],
         ["Satellite de la Terre", "Lune"]
       ],
-      "related": ["photographie-numerique", "dinosaures"]
+      "related": ["photographie-numerique"]
     },
     {
       "id": "dinosaures",
@@ -581,7 +575,7 @@
           ]
         }
       ],
-      "related": ["primates", "systeme-solaire"]
+      "related": ["primates"]
     },
     {
       "id": "photographie-numerique",
