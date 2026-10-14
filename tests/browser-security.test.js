@@ -25,6 +25,23 @@ test('all hostile addresses resolve to fictitious errors, never an executable ro
   for (const value of attacks) assert.ok(localPages.resolve(value, {}).error, value);
 });
 
+test('oversized, malformed and lookalike addresses never select an allowed site', () => {
+  for (const value of [
+    'x'.repeat(1000000),
+    'http://[',
+    'http://www.wiki.fr.evil.example/',
+    'http://www.wiki.fr@evil.example/',
+    'http://evil.example@www.wiki.fr/',
+    'http://www.wiki.fr%00.evil.example/',
+    'http://www.wiki.fr:81/',
+    'http://www.wіki.fr/', // Cyrillic i, not the registered Latin hostname.
+    'http://www.wiki.fr/\u0000',
+    'http://www.wiki.fr/%3Cscript%3Ealert(1)%3C/script%3E',
+  ])
+    assert.ok(localPages.resolve(value, {}).error);
+  assert.equal(localPages.resolve('https://WIKI.FR/', {}).page.title, 'Wiki');
+});
+
 test('search renders attacks only as text, without HTML sinks or native URL links', (t) => {
   const previous = globalThis.document;
   globalThis.document = {

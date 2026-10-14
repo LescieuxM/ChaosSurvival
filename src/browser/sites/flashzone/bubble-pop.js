@@ -1,10 +1,5 @@
+import { textElement as node } from '../../dom.js';
 import { BubbleRound, bestScore, saveBestScore } from './bubble-round.js';
-function node(tag, text, className) {
-  const element = document.createElement(tag);
-  if (text !== undefined) element.textContent = text;
-  if (className) element.className = className;
-  return element;
-}
 export function renderBubblePop({ progression, onDispose }, game) {
   const root = node('section', undefined, 'bubble-pop');
   const intro = node('div', undefined, 'bubble-intro');

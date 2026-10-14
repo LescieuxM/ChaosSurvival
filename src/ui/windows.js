@@ -119,7 +119,7 @@ export class WindowManager {
     const bar = element.querySelector('.titlebar');
     let drag = null;
     bar.addEventListener('pointerdown', (event) => {
-      if (event.target.closest('button')) return;
+      if (event.button !== 0 || event.target.closest('button')) return;
       drag = {
         x: event.clientX,
         y: event.clientY,

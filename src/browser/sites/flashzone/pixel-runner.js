@@ -1,3 +1,4 @@
+import { textElement as node } from '../../dom.js';
 import {
   RunnerRound,
   RUNNER_WIDTH,
@@ -8,12 +9,6 @@ import {
   bestDistance,
   saveBestDistance,
 } from './runner-round.js';
-function node(tag, text, className) {
-  const n = document.createElement(tag);
-  if (text !== undefined) n.textContent = text;
-  if (className) n.className = className;
-  return n;
-}
 export function renderPixelRunner({ progression, onDispose, onResume }, game) {
   const root = node('section', undefined, 'pixel-runner'),
     intro = node('div', undefined, 'runner-intro'),

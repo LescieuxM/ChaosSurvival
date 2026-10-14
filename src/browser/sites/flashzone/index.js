@@ -1,3 +1,4 @@
+import { textElement as node, internalLink as link } from '../../dom.js';
 import catalog from './catalog.json' with { type: 'json' };
 import { renderBubblePop } from './bubble-pop.js';
 import { renderAvoidSquares } from './avoid-the-squares.js';
@@ -9,18 +10,6 @@ const components = {
   'avoid-the-squares': renderAvoidSquares,
   'pixel-runner': renderPixelRunner,
 };
-function node(tag, text, className) {
-  const element = document.createElement(tag);
-  if (text !== undefined) element.textContent = text;
-  if (className) element.className = className;
-  return element;
-}
-function link(text, url) {
-  const element = node('a', text);
-  element.href = '#';
-  element.dataset.browserLink = url;
-  return element;
-}
 function shell() {
   const root = node('section', undefined, 'flashzone');
   const header = node('header', undefined, 'flashzone-header');

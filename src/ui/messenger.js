@@ -43,6 +43,10 @@ export class Messenger {
       this.progression.data.contactProfiles,
     );
   }
+  unreadCount(contact) {
+    const unread = this.progression.data.conversations?.[contact.id]?.unread;
+    return Array.isArray(unread) ? unread.filter((key) => typeof key === 'string').length : 0;
+  }
   open() {
     const existing = this.views.get('contacts');
     if (existing?.element.isConnected) {
@@ -64,7 +68,7 @@ export class Messenger {
       thread: this.primary().thread,
       getContactDefinitions: this.definitions,
       onContactSelected: (contact) => this.openContact(contact),
-      getUnread: (contact) => this.progression.data.conversations?.[contact.id]?.unread.length ?? 0,
+      getUnread: (contact) => this.unreadCount(contact),
     });
     this.installMenus(instance.element, () => this.roster.selectedContact);
     this.roster.renderContacts();

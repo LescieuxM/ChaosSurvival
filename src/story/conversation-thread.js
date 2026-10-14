@@ -24,9 +24,7 @@ export class ConversationThread {
           typeof entry?.key === 'string' &&
           typeof entry.text === 'string' &&
           ['contact', 'player'].includes(entry.speaker),
-      ) ||
-      !Array.isArray(saved.unread) ||
-      !saved.unread.every((key) => typeof key === 'string')
+      )
     )
       data.conversations[this.contactId] = {
         version: 1,
@@ -35,6 +33,11 @@ export class ConversationThread {
         activeEvent: null,
         pendingEvents: [],
       };
+    // Read markers are independent metadata, not grounds for erasing messages.
+    const state = data.conversations[this.contactId];
+    if (!Array.isArray(state.unread)) state.unread = [];
+    else if (state.unread.some((key) => typeof key !== 'string'))
+      state.unread = state.unread.filter((key) => typeof key === 'string');
     return data.conversations[this.contactId];
   }
   hasPendingFile(id) {

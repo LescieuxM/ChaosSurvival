@@ -1,9 +1,6 @@
 import { renderSearch } from './pages/xd-search.js';
-import { skyPages } from './sites/skypage/index.js';
-import { forumPages } from './sites/forumjeu/index.js';
-import { flashPages } from './sites/flashzone/index.js';
-import { videoPages } from './sites/videotube/index.js';
-import { wikiPages } from './sites/wiki/index.js';
+import { foldText as fold } from './text.js';
+import { sitePages } from './sites/index.js';
 
 export const HOME_URL = 'http://www.xdsearch.fr/';
 export function normalizeUrl(input) {
@@ -22,7 +19,6 @@ export function normalizeUrl(input) {
     return null;
   }
 }
-const fold = (text) => String(text).normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 export class PageRegistry {
   constructor() {
     this.pages = new Map();
@@ -100,8 +96,4 @@ localPages.register({
   keywords: ['recherche', 'internet', 'moteur', '2009'],
   render: renderSearch,
 });
-for (const page of skyPages) localPages.register(page);
-for (const page of forumPages) localPages.register(page);
-for (const page of flashPages) localPages.register(page);
-for (const page of videoPages) localPages.register(page);
-for (const page of wikiPages) localPages.register(page);
+for (const page of sitePages) localPages.register(page);

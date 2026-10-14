@@ -37,7 +37,7 @@ export function matches(condition, flags, choices = []) {
     if (!record) return false;
     return query.selected
       ? record.choice === query.id
-      : Boolean(record.unselected?.some((item) => item.id === query.id));
+      : Array.isArray(record.unselected) && record.unselected.some((item) => item?.id === query.id);
   }
   return flags[condition.flag] === condition.equals;
 }

@@ -1238,7 +1238,8 @@ async function verifySmileyDialogue() {
       `document.querySelector('${pixel} .contact-status').textContent.includes('En ligne')`,
     ),
   );
-  assert.equal(await evaluate("!!document.querySelector('[data-contact-id=turbo]')"), false);
+  assert.equal(await evaluate("document.querySelectorAll('[data-contact-id=turbo]').length"), 1);
+  assert.equal(await evaluate("!!document.querySelector('[data-contact-id=turbo].online')"), false);
   const due = await evaluate(
     "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).contactConnections.turbo.dueAt",
   );
@@ -1980,6 +1981,8 @@ async function verifySkyPage() {
       'http://www.skypage.fr/',
       'http://www.forumjeu.fr/',
       'http://www.flashzone.fr/',
+      'http://www.videotube.fr/',
+      'http://www.wiki.fr/',
     ],
   );
   await capture('xd-search-sites.png');
@@ -2207,12 +2210,13 @@ async function verifyBrowser() {
     "document.querySelector('.xd-search-form input').value='INTERNET';document.querySelector('.xd-search-form').requestSubmit()",
   );
   await ready();
-  assert.equal(await evaluate("document.querySelectorAll('.xd-search-result').length"), 1);
+  assert.ok((await evaluate("document.querySelectorAll('.xd-search-result').length")) >= 1);
+  const searchHome = '.xd-search-result a[data-browser-link="http://www.xdsearch.fr/"]';
   assert.equal(
-    await evaluate("document.querySelector('.xd-search-result a').getAttribute('href')"),
+    await evaluate(`document.querySelector(${JSON.stringify(searchHome)}).getAttribute('href')`),
     '#',
   );
-  await click('.xd-search-result a');
+  await click(searchHome);
   await ready();
   assert.equal(await url(), 'http://www.xdsearch.fr/');
   await click('[data-browser-action=back]');
@@ -2221,6 +2225,20 @@ async function verifyBrowser() {
   await click('[data-browser-action=forward]');
   await ready();
   assert.equal(await url(), 'http://www.xdsearch.fr/');
+  await go('forumjeu.fr');
+  assert.ok((await evaluate("document.querySelectorAll('.forum-categories tbody tr').length")) > 0);
+  await click('.forum-categories tbody tr:first-child td:first-child a');
+  await ready();
+  assert.ok((await evaluate("document.querySelectorAll('.forum-topics tbody tr').length")) > 0);
+  await click('.forum-topics tbody tr:first-child a');
+  await ready();
+  assert.ok((await evaluate("document.querySelectorAll('.forum-message').length")) > 0);
+  await click('.forum-breadcrumb a');
+  await ready();
+  assert.equal(await url(), 'http://www.forumjeu.fr/');
+  console.log(
+    'OK: ForumJeu home, category, discussion messages and return link through internal navigation.',
+  );
   await go('xdsearch.fr/page-inexistante');
   assert.ok(
     await evaluate("document.querySelector('.browser-error').textContent.includes('Erreur 404')"),

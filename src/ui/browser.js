@@ -2,6 +2,7 @@ import { applicationName } from './identity.js';
 import { BrowserSession } from '../browser/session.js';
 import { HOME_URL, localPages } from '../browser/registry.js';
 import { renderError, pageErrors } from '../browser/pages/error.js';
+import { renderBrowserTabs } from './browser-tabs.js';
 
 export function openLocalUrl(url) {
   document.dispatchEvent(new CustomEvent('windows-xd:open-url', { detail: { url } }));
@@ -109,31 +110,7 @@ export class InternetAdventurer {
     this.load();
   }
   tabs() {
-    const list = this.instance.element.querySelector('.browser-tabs');
-    list.replaceChildren();
-    for (const tab of this.session.tabs) {
-      const group = document.createElement('div');
-      group.className = 'browser-tab';
-      group.setAttribute('role', 'tab');
-      group.setAttribute('aria-selected', String(tab.id === this.session.active));
-      const select = document.createElement('button');
-      select.dataset.browserAction = 'select';
-      select.dataset.tabId = tab.id;
-      select.textContent = tab.title;
-      select.title = tab.title;
-      const close = document.createElement('button');
-      close.dataset.browserAction = 'close';
-      close.dataset.tabId = tab.id;
-      close.textContent = '×';
-      close.setAttribute('aria-label', `Fermer l'onglet ${tab.title}`);
-      group.append(select, close);
-      list.append(group);
-    }
-    const add = document.createElement('button');
-    add.dataset.browserAction = 'new';
-    add.textContent = '+';
-    add.setAttribute('aria-label', 'Nouvel onglet');
-    list.append(add);
+    renderBrowserTabs(this.instance.element.querySelector('.browser-tabs'), this.session);
   }
   load(reason = 'navigate') {
     this.disposePage(reason);

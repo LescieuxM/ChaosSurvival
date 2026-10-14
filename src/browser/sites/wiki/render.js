@@ -1,16 +1,5 @@
+import { textElement as node, internalLink as link } from '../../dom.js';
 import { WIKI_URL, articleUrl, findArticles, randomArticle } from './model.js';
-function node(tag, text, className) {
-  const n = document.createElement(tag);
-  if (text !== undefined) n.textContent = text;
-  if (className) n.className = className;
-  return n;
-}
-function link(text, url) {
-  const n = node('a', text);
-  n.href = '#';
-  n.dataset.browserLink = url;
-  return n;
-}
 function randomButton(context, data) {
   const button = node('button', 'Article au hasard', 'wiki-random');
   button.type = 'button';

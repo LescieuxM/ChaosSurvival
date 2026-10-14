@@ -1,6 +1,7 @@
+import { foldText } from '../../text.js';
 export const WIKI_URL = 'http://www.wiki.fr/';
 export const articleUrl = (article) => `${WIKI_URL}article/${article.id}`;
-const fold = (text) => String(text).normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
+const fold = (text) => foldText(text).trim();
 export function findArticles(articles, query) {
   const value = fold(query);
   return articles.filter((article) => fold(article.title).includes(value));

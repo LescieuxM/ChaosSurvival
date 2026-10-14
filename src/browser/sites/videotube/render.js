@@ -1,15 +1,4 @@
-function node(tag, text, className) {
-  const n = document.createElement(tag);
-  if (text !== undefined) n.textContent = text;
-  if (className) n.className = className;
-  return n;
-}
-function link(text, url) {
-  const n = node('a', text);
-  n.href = '#';
-  n.dataset.browserLink = url;
-  return n;
-}
+import { textElement as node, internalLink as link } from '../../dom.js';
 function thumbnail(video) {
   if (!/^\.\/videotube\/[a-z0-9-]+\.svg$/.test(video.thumbnail))
     throw new Error('Invalid local thumbnail');

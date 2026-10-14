@@ -1,3 +1,4 @@
+import { textElement as node } from '../../dom.js';
 import {
   SquaresRound,
   ARENA_WIDTH,
@@ -7,12 +8,6 @@ import {
   bestTime,
   saveBestTime,
 } from './squares-round.js';
-function node(tag, text, className) {
-  const element = document.createElement(tag);
-  if (text !== undefined) element.textContent = text;
-  if (className) element.className = className;
-  return element;
-}
 export function renderAvoidSquares({ progression, onDispose }, game) {
   const root = node('section', undefined, 'avoid-squares'),
     intro = node('div', undefined, 'squares-intro');
