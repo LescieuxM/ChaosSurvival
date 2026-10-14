@@ -15,7 +15,7 @@ test('Buddy defaults immediately below the fixed main-menu command while saved m
   const defaults = [
     ...html.matchAll(/data-start-app="([^"]+)"|data-system-app="([^"]+)"|id="menu-messenger"/g),
   ].map((match) => match[1] ?? match[2] ?? 'menu-messenger');
-  assert.deepEqual(defaults, ['buddy', 'menu-messenger', 'computer', 'folder', 'bin']);
+  assert.deepEqual(defaults, ['buddy', 'menu-messenger', 'browser', 'computer', 'folder', 'bin']);
   assert.equal([...html.matchAll(/id="menu-buddy"/g)].length, 1);
   const values = new Map();
   const storage = {
@@ -27,7 +27,10 @@ test('Buddy defaults immediately below the fixed main-menu command while saved m
   const custom = ['folder', 'menu-messenger', 'computer', 'buddy', 'bin'];
   preferences.update({ startMenuOrder: custom });
   const restored = new UserSettings(storage);
-  assert.deepEqual(resolveStartMenuOrder(restored.data.startMenuOrder, defaults), custom);
+  assert.deepEqual(resolveStartMenuOrder(restored.data.startMenuOrder, defaults), [
+    ...custom,
+    'browser',
+  ]);
   restored.reset();
   assert.deepEqual(resolveStartMenuOrder(restored.data.startMenuOrder, defaults), defaults);
 });

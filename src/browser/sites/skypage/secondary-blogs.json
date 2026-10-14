@@ -1,0 +1,226 @@
+[
+  {
+    "id": "sk8er_du_93",
+    "nickname": "Sk8er_du_93",
+    "theme": "skater",
+    "avatar": "./avatars/contact-skater.svg",
+    "subtitle": "du grip, des bleus et encore un essai",
+    "description": "Sk8er_du_93 : skateboard, kickflip, spot derrière le gymnase et baskets usées.",
+    "keywords": ["sk8er_du_93", "skate", "skateboard", "kickflip", "baskets", "shoes", "gymnase"],
+    "articles": [
+      {
+        "id": "kickflip",
+        "title": "ENFIN PLAQUÉ MON KICKFLIP !!!",
+        "date": "2009-01-05",
+        "paragraphs": [
+          "après environ 800 essais et un lacet sacrifié : LES DEUX PIEDS SUR LA PLANCHE. j'ai crié comme si j'avais gagné les x games mdr",
+          "les potes disent que c'est juste un kickflip. ouais bah c'est MON kickflip. la planche a pris cher mais elle roule encore, respect."
+        ],
+        "image": "./skypage/skater-board.jpg",
+        "imageAlt": "Photo amateur d'une planche usée sur le béton",
+        "comments": [
+          {
+            "author": "LeModemEnPLS",
+            "date": "2009-01-06",
+            "text": "gg ! moi je galère déjà à rester dessus à l'arrêt"
+          },
+          {
+            "author": "Sk8er_du_93",
+            "date": "2009-01-06",
+            "text": "c'est une discipline aussi tkt"
+          }
+        ]
+      },
+      {
+        "id": "spot",
+        "title": "le spot derrière le gymnase",
+        "date": "2009-01-11",
+        "paragraphs": [
+          "3 marches, une rambarde et un mur plein de tags. pas besoin de traverser toute la ville pour rider.",
+          "on y va après les cours quand c'est sec. le coin à droite est plein de graviers, j'ai testé pour vous : ça freine très très bien..."
+        ],
+        "image": "./skypage/skater-spot.jpg",
+        "imageAlt": "Photo d'un escalier et d'une rambarde devant un mur couvert de graffitis",
+        "comments": []
+      },
+      {
+        "id": "shoes",
+        "title": "mes shoes sont MORTES",
+        "date": "2009-01-19",
+        "paragraphs": [
+          "le grip a gagné. on voit mes chaussettes à travers, c'est pas une nouvelle mode.",
+          "vous prenez quoi comme baskets qui tiennent un peu ? j'ai mis de la colle sur celles-là mais là c'est plus une réparation c'est de l'archéologie."
+        ],
+        "image": "./skypage/skater-shoes.jpg",
+        "imageAlt": "Photo au flash de baskets en toile déchirées",
+        "comments": [
+          {
+            "author": "Oo_bubble-princess_oO",
+            "date": "2009-01-20",
+            "text": "au moins tes chaussettes prennent l'air xD"
+          }
+        ]
+      },
+      {
+        "id": "gamelle",
+        "title": "VIDEO DE MA GAMELLE MDR",
+        "date": "2009-01-23",
+        "paragraphs": [
+          "mon pote a filmé au téléphone. on distingue 4 pixels de moi et 2 de la planche mais le bruit fait tout le travail.",
+          "rien de cassé sauf ma dignité. j'ai fini assis, la planche a continué sa carrière sans moi. je mets une capture parce que le fichier veut pas passer."
+        ],
+        "image": "./skypage/skater-fall.jpg",
+        "imageAlt": "Capture floue d'une chute sans gravité filmée au téléphone",
+        "comments": [
+          {
+            "author": "LeModemEnPLS",
+            "date": "2009-01-23",
+            "text": "ta planche a clairement un meilleur équilibre que nous"
+          },
+          {
+            "author": "Sk8er_du_93",
+            "date": "2009-01-24",
+            "text": "elle s'entraîne pendant que je fais mes devoirs"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "oo_bubble-princess_oo",
+    "nickname": "Oo_bubble-princess_oO",
+    "theme": "princess",
+    "avatar": "./avatars/contact-bubble.svg",
+    "subtitle": "bulles, strass & bonbons <3",
+    "description": "Oo_bubble-princess_oO : mode, accessoires, bonbons, test de princesse et coque de téléphone.",
+    "keywords": [
+      "oo_bubble-princess_oo",
+      "bonbons",
+      "princesse",
+      "mode",
+      "coque",
+      "téléphone",
+      "accessoires",
+      "personnalité"
+    ],
+    "articles": [
+      {
+        "id": "moi",
+        "title": "100% MOI !!!",
+        "date": "2009-01-04",
+        "paragraphs": [
+          "un questionnaire piqué sur un blog, fallait bien inaugurer le mien ^^",
+          "Couleur préférée ? turquoise ET rose, j'arrive pas à choisir. Sucré ou salé ? sucré, mais les frites comptent aussi.",
+          "Ton plus gros défaut ? je dis j'arrive et je suis encore en train de chercher mes bracelets. Ton rêve ? une boutique d'accessoires avec ma meilleure amie <3",
+          "Ton parfum de glace préféré ? fraise. oui même quand y'a 25 autres parfums. voilà vous savez tout, enfin presque xD"
+        ],
+        "comments": [
+          {
+            "author": "xX_PixelGirl_Xx",
+            "date": "2009-01-05",
+            "text": "j'arrive = encore 20 minutes minimum, je confirme :DDD"
+          }
+        ]
+      },
+      {
+        "id": "bonbons",
+        "title": "MON TOP 5 DES BONBONS",
+        "date": "2009-01-13",
+        "paragraphs": [
+          "classement officiel après des recherches TRÈS sérieuses dans mon sachet.",
+          "5 — les oursons : fiables, jamais déçue. 4 — les rubans acides : ça pique mais j'y retourne.",
+          "3 — les petites fraises : le goût du mercredi. 2 — les bouteilles cola qui piquent : impossible d'en manger une seule.",
+          "1 — les guimauves torsadées !!! moelleuses, jolies, imbattables. les gens qui disent que c'est du coton on peut plus être amis (je plaisante... un peu)."
+        ],
+        "image": "./skypage/princess-candy.jpg",
+        "imageAlt": "Montage coloré de cinq sortes de bonbons sur une table rose et turquoise",
+        "comments": [
+          {
+            "author": "Oo_bubble-princess_oO",
+            "date": "2009-01-14",
+            "text": "le jury a parlé, mais accepte les échantillons gratuits"
+          }
+        ]
+      },
+      {
+        "id": "rangement",
+        "title": "MISSION : retrouver mon bureau",
+        "date": "2009-01-16",
+        "paragraphs": [
+          "j'avais plus la place de poser mon cahier donc grand rangement aujourd'hui. j'ai retrouvé une règle, 3 stylos sans capuchon et le ticket de bus que je cherchais depuis lundi.",
+          "j'ai mis des étiquettes sur mes boîtes. ça fait super organisé ^^ sauf la boîte divers qui contient presque tout. mais on voit le bois du bureau, c'est déjà une victoire !"
+        ],
+        "comments": [
+          {
+            "author": "°•.LuNa.°•",
+            "date": "2009-01-17",
+            "text": "j'ai aussi une boîte divers. elle commence à demander une deuxième boîte."
+          }
+        ]
+      },
+      {
+        "id": "test",
+        "title": "TEST : QUELLE PRINCESSE ES-TU ?",
+        "date": "2009-01-20",
+        "paragraphs": [
+          "note tes lettres sur un papier, c'est un test maison donc le résultat est scientifiquement douteux xD",
+          "1. Pour sortir : A un bracelet brillant / B des baskets / C ce qui est propre. 2. Ton goûter : A des bonbons / B un sandwich / C j'ai oublié l'heure.",
+          "3. En retard : A je cherche ma barrette / B je rate le bus / C je pensais qu'on était dimanche.",
+          "Majorité de A : princesse des paillettes, tu brilles même à la cantine. Majorité de B : princesse en baskets, le carrosse peut attendre. Majorité de C : princesse du dimanche, ton royaume a besoin d'un réveil.",
+          "égalité ? princesse du mélange, prends une couronne ET un sandwich. j'ai eu A mais ça étonne personne <3"
+        ],
+        "comments": [
+          {
+            "author": "°•.LuNa.°•",
+            "date": "2009-01-21",
+            "text": "C. surtout la question du dimanche."
+          },
+          {
+            "author": "Oo_bubble-princess_oO",
+            "date": "2009-01-21",
+            "text": "bienvenue dans le royaume des réveils éteints ^^"
+          }
+        ]
+      },
+      {
+        "id": "coque",
+        "title": "ma nouvelle coque de téléphone <3",
+        "date": "2009-01-24",
+        "paragraphs": [
+          "j'ai collé les strass un par un hier. résultat : mon téléphone brille ET mon bureau aussi, j'en retrouve partout.",
+          "la photo au flash lui rend pas justice mais regardez le petit pendentif !!! vous en pensez quoi ? ma mère dit que bientôt il sera plus lourd que mon sac."
+        ],
+        "image": "./skypage/princess-phone.jpg",
+        "imageAlt": "Photo au flash d'un téléphone rose décoré de strass et d'un pendentif",
+        "comments": [
+          {
+            "author": "Oo_bubble-princess_oO",
+            "date": "2009-01-25",
+            "text": "oui mais apporte les strass, j'ai vidé ma boîte :')"
+          }
+        ]
+      },
+      {
+        "id": "photo-classe",
+        "title": "photo de classe & mèche rebelle",
+        "date": "2009-01-27",
+        "paragraphs": [
+          "j'avais préparé mon haut hier soir pour la photo de classe. ce matin tout allait bien jusqu'au vent devant le collège. ma mèche a décidé de partir vivre sa vie.",
+          "j'ai essayé de la remettre avec de l'eau aux toilettes, résultat un côté tout plat et l'autre en vacances xD j'espère au moins avoir les yeux ouverts. le photographe a dit naturel donc techniquement j'ai respecté la consigne ^^"
+        ],
+        "comments": [
+          {
+            "author": "Sk8er_du_93",
+            "date": "2009-01-28",
+            "text": "sur la mienne j'ai le sourire de quelqu'un qui vient de marcher dans une flaque"
+          },
+          {
+            "author": "Oo_bubble-princess_oO",
+            "date": "2009-01-28",
+            "text": "on va dire que c'est notre période artistique mdr"
+          }
+        ]
+      }
+    ]
+  }
+]

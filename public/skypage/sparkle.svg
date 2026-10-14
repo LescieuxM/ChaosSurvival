@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" shape-rendering="crispEdges">
+  <path d="M12 2h6v6h6v6h6v6H20v10h-6V20H4v-6h8z" fill="#ffe36b" stroke="#b77aaf"/>
+  <path d="M14 8h2v8h8v2h-8v8h-2v-8H8v-2h6z" fill="#fffad3">
+    <animate attributeName="opacity" values=".2;1;.2" dur="1.2s" repeatCount="indefinite"/>
+  </path>
+</svg>

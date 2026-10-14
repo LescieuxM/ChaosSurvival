@@ -2,6 +2,9 @@ import './styles.css';
 import './styles-story.css';
 import './styles-menu.css';
 import './styles-buddy.css';
+import './styles-browser.css';
+import './browser/sites/skypage/styles.css';
+import { InternetAdventurer } from './ui/browser.js';
 import { Buddy } from './ui/buddy.js';
 import chart from './config/chart.json';
 import music from './config/music-lvl1.analysis.json';
@@ -138,6 +141,7 @@ const desktopApplications = new DesktopApplications(
   replayLevelOne,
   new VirtualTextFiles(progression),
 );
+const browser = new InternetAdventurer(manager, desktopApplications, progression);
 const messenger = new Messenger({
   manager,
   applications: desktopApplications,
@@ -356,6 +360,7 @@ async function resetGameToInitialState() {
       },
       rebuild: async () => {
         buddy.restore();
+        browser.reset();
         settings.reset();
         messenger.conversations.clear();
         messenger.views.clear();
@@ -863,6 +868,15 @@ async function openMessenger() {
   ui.playfield.inert = false;
   messenger.open();
 }
+async function openBrowser(url) {
+  if (['menu', 'loading', 'resuming'].includes(phase)) return;
+  if (phase === 'playing') await pauseGame();
+  ui.playfield.inert = false;
+  return browser.open(url);
+}
+document.addEventListener('windows-xd:open-url', (event) => {
+  if (typeof event.detail?.url === 'string') openBrowser(event.detail.url);
+});
 function replayLevelOne() {
   if (!['desktop', 'idle', 'ended', 'playing', 'paused'].includes(phase)) return;
   cancelAnimationFrame(frame);
@@ -920,6 +934,10 @@ ui.menuMessenger.addEventListener('click', () => {
   setStartMenuOpen(false);
   openMessenger();
 });
+ui.desktop.querySelector('#menu-browser').addEventListener('click', () => {
+  setStartMenuOpen(false);
+  openBrowser();
+});
 ui.volume.addEventListener('input', (event) => {
   setVolume(Number(event.target.value) / 100);
 });
@@ -971,6 +989,7 @@ ui.desktop.querySelectorAll('[data-system-app]').forEach((button) =>
 );
 const shortcutActions = {
   msn: () => openMessenger(),
+  browser: () => openBrowser(),
   computer: () => openSystemApplication('computer'),
   folder: () => openSystemApplication('folder'),
   bin: () => openSystemApplication('bin'),

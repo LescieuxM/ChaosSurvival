@@ -1,0 +1,378 @@
+.skypage {
+  --sky-border: #7196bf;
+  --sky-panel: #fff;
+  --sky-comments: #edf4fb;
+  --sky-link: #174f94;
+  padding: 10px;
+  min-height: 100%;
+  background: #e4edf6;
+  color: #203b59;
+  font:
+    12px/1.5 Arial,
+    sans-serif;
+}
+.skypage h2,
+.skypage h3,
+.skypage h4 {
+  margin: 0;
+  font-family: Verdana, Arial, sans-serif;
+  font-style: normal;
+  font-weight: bold;
+  line-height: 1.4;
+  letter-spacing: 0;
+  text-shadow: none;
+  color: inherit;
+}
+.skypage h2 {
+  font-size: 17px;
+}
+.skypage h3 {
+  font-size: 14px;
+}
+.skypage h4 {
+  font-size: 12px;
+}
+.skypage p {
+  margin: 8px 0;
+}
+.skypage a {
+  color: var(--sky-link);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.skypage a:hover {
+  text-decoration: none;
+}
+.sky-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 10px 14px;
+  background: linear-gradient(#379ada, #13538f);
+  color: #fff;
+  border: 1px solid #255e94;
+  border-bottom: 3px solid #ee9d37;
+}
+.skypage .sky-logo {
+  color: #fff;
+  font:
+    bold 29px Verdana,
+    sans-serif;
+  text-decoration: none;
+  letter-spacing: -1px;
+  text-shadow: 1px 2px #194977;
+}
+.sky-slogan {
+  font-size: 11px;
+}
+.sky-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 5px 10px;
+  border: 1px solid var(--sky-border);
+  background: #fff3d7;
+}
+.sky-welcome {
+  margin-top: 12px;
+}
+.sky-box {
+  background: #fff;
+  border: 1px solid var(--sky-border);
+  padding: 10px;
+}
+.sky-box > h2 {
+  margin: -10px -10px 10px;
+  padding: 5px 10px;
+  background: linear-gradient(#ffe3ae, #ffc475);
+  color: #654517;
+  border-bottom: 1px solid #d09c4e;
+  font-size: 14px;
+}
+.sky-home-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+.sky-friends {
+  margin-top: 12px;
+}
+.sky-friends ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 28px;
+}
+.sky-friends a {
+  overflow-wrap: anywhere;
+}
+.sky-discovery {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px dotted var(--sky-border);
+}
+.sky-discovery > div {
+  min-width: 0;
+}
+.sky-discovery a {
+  font-weight: bold;
+}
+.sky-discovery p {
+  font-size: 11px;
+}
+.sky-latest {
+  padding: 8px 0;
+  border-bottom: 1px dotted var(--sky-border);
+}
+.sky-latest small {
+  display: block;
+  color: #5d6e82;
+}
+.sky-footer {
+  padding: 12px 0 2px;
+  text-align: center;
+  font-size: 10px;
+}
+.sky-blog-title {
+  padding: 14px 8px;
+  margin-top: 10px;
+  text-align: center;
+  border: 1px solid var(--sky-border);
+  background: var(--sky-panel);
+}
+.sky-blog-title h2 {
+  font-size: 20px;
+}
+.sky-decoration {
+  width: 24px;
+  height: 24px;
+  margin: 0 5px;
+  vertical-align: middle;
+}
+.sky-blog-layout {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+.sky-sidebar {
+  align-self: start;
+  padding: 10px;
+  border: 1px solid var(--sky-border);
+  background: var(--sky-panel);
+  text-align: center;
+}
+.sky-avatar {
+  display: block;
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  padding: 3px;
+  border: 1px solid var(--sky-border);
+  margin: 0 auto 8px;
+  background: var(--sky-panel);
+  flex-shrink: 0;
+}
+.sky-discovery .sky-avatar {
+  width: 48px;
+  height: 48px;
+  margin: 0;
+}
+.sky-sidebar h3 {
+  font-size: 12px;
+}
+.sky-sidebar p {
+  font-size: 10px;
+}
+.sky-sidebar > a {
+  display: block;
+  margin: 6px 0;
+}
+.sky-archive {
+  border-top: 1px solid var(--sky-border);
+  margin-top: 12px;
+  padding-top: 10px;
+  text-align: left;
+}
+.sky-archive a {
+  display: block;
+  padding: 5px 0;
+  font-size: 11px;
+}
+.sky-post {
+  border: 1px solid var(--sky-border);
+  background: var(--sky-panel);
+  margin-bottom: 14px;
+}
+.sky-post-header {
+  border-bottom: 1px solid var(--sky-border);
+  padding: 8px 10px;
+  background: var(--sky-comments);
+}
+.sky-post-header time {
+  font-size: 10px;
+}
+.sky-post-body {
+  padding: 6px 12px 12px;
+}
+.sky-illustration {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 12px auto 0;
+  border: 1px solid var(--sky-border);
+}
+.sky-comments {
+  padding: 8px 10px;
+  border-top: 1px solid var(--sky-border);
+  background: var(--sky-comments);
+}
+.sky-comment {
+  padding: 8px 0;
+  border-bottom: 1px dotted var(--sky-border);
+}
+.sky-comment strong {
+  font-size: 11px;
+}
+.sky-comment small {
+  font-size: 10px;
+  margin-left: 8px;
+}
+.sky-comment p {
+  margin-bottom: 0;
+}
+.sky-pixelgirl {
+  --sky-border: #bb74bb;
+  --sky-panel: #fff4fd;
+  --sky-comments: #f3d7f4;
+  --sky-link: #882c88;
+  color: #54256d;
+  background: repeating-linear-gradient(45deg, #f5bfe6 0 10px, #e7b1e2 10px 20px);
+}
+.sky-pixelgirl .sky-header {
+  background: linear-gradient(#c282dc, #743aa6);
+  border-color: #9146a5;
+  border-bottom-color: #f384cb;
+}
+.sky-pixelgirl .sky-nav {
+  background: #fad8f0;
+}
+.sky-pixelgirl .sky-blog-title {
+  background: linear-gradient(#ffecfa, #edb9e6);
+}
+.sky-pixelgirl .sky-post-header {
+  color: #8a298c;
+}
+.sky-pixelgirl .sky-post-body p {
+  text-align: center;
+}
+.sky-luna {
+  --sky-border: #695d8c;
+  --sky-panel: #292742;
+  --sky-comments: #34304f;
+  --sky-link: #c4bded;
+  color: #e2dcef;
+  background: radial-gradient(ellipse at top, #38305e, #181d35);
+}
+.sky-luna .sky-header {
+  background: linear-gradient(#41436e, #242a4b);
+  border-color: #6b648a;
+  border-bottom-color: #8581b5;
+}
+.sky-luna .sky-nav {
+  background: #292b4b;
+}
+.sky-luna .sky-blog-title {
+  background: #2e2c50;
+}
+.sky-luna .sky-post-header {
+  color: #d4d2ee;
+}
+@media (max-width: 650px) {
+  .sky-blog-layout {
+    grid-template-columns: 110px minmax(0, 1fr);
+    gap: 8px;
+  }
+}
+.sky-skater {
+  --sky-border: #637349;
+  --sky-panel: #242624;
+  --sky-comments: #30352b;
+  --sky-link: #b5f46b;
+  color: #e0e4d9;
+  background: repeating-linear-gradient(17deg, #171a17 0 2px, #20231f 2px 6px);
+}
+.sky-skater .sky-header {
+  background: linear-gradient(#484c42, #161a16);
+  border-color: #626a56;
+  border-bottom-color: #97e845;
+}
+.sky-skater .sky-nav {
+  background: #292e25;
+}
+.sky-skater .sky-blog-title {
+  background: repeating-linear-gradient(-12deg, #343b2e 0 8px, #292e25 8px 10px);
+  border: 3px double #94c74e;
+}
+.sky-skater .sky-blog-title h2 {
+  color: #bcff68;
+  font-family: Impact, 'Arial Black', sans-serif;
+  letter-spacing: 1px;
+  transform: rotate(-2deg);
+}
+.sky-skater .sky-post-header {
+  color: #b5f46b;
+}
+.sky-princess {
+  --sky-border: #42b8c4;
+  --sky-panel: #fff7fb;
+  --sky-comments: #e2f8f8;
+  --sky-link: #aa1760;
+  color: #6b2a50;
+  background-color: #ffb9df;
+  background-image:
+    radial-gradient(circle at 12px 12px, #fff9 0 5px, #39cbd5 6px 7px, transparent 8px),
+    radial-gradient(circle at 28px 32px, #fff 0 1px, transparent 2px);
+  background-size: 46px 46px;
+}
+.sky-princess .sky-header {
+  background: linear-gradient(#65dfdf, #238b9e);
+  border-color: #2ba4b5;
+  border-bottom-color: #fa79bd;
+}
+.sky-princess .sky-nav {
+  background: #fff5fb;
+}
+.sky-princess .sky-blog-title {
+  background: linear-gradient(#fff, #ffe5f4);
+  border: 3px dotted #f36cb2;
+}
+.sky-princess .sky-blog-title h2 {
+  color: #b91c71;
+}
+.sky-princess .sky-post {
+  border: 3px double #40bac4;
+}
+.sky-princess .sky-post-header {
+  color: #b32276;
+  background: linear-gradient(#fff, #c9f3f2);
+}
+.sky-princess .sky-post-body p {
+  text-align: center;
+}
+.sky-skater .sky-sidebar h3,
+.sky-princess .sky-sidebar h3,
+.sky-nav a {
+  overflow-wrap: anywhere;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sky-decoration {
+    visibility: hidden;
+  }
+}

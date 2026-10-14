@@ -23,6 +23,9 @@ const menuLayoutOnly = process.argv.includes('--menu-layout-only');
 const smileyDialogueOnly = process.argv.includes('--smiley-dialogue-only');
 const newGameOnly = process.argv.includes('--new-game-only');
 const buddyOnly = process.argv.includes('--buddy-only');
+const browserOnly = process.argv.includes('--browser-only');
+const browserSecurityElectron = process.argv.includes('--browser-security-electron');
+const skyPageOnly = process.argv.includes('--skypage-only');
 const minigameOnly =
   process.argv.includes('--minigame-only') ||
   typingOnly ||
@@ -35,6 +38,8 @@ const minigameOnly =
   smileyDialogueOnly ||
   newGameOnly ||
   buddyOnly ||
+  browserOnly ||
+  skyPageOnly ||
   stabilityOnly;
 let browserServer;
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -546,8 +551,12 @@ try {
     ),
     0,
   );
-  if (minigameOnly) {
-    if (buddyOnly) await verifyBuddy();
+  if (browserSecurityElectron) {
+    await verifyBrowser();
+  } else if (minigameOnly) {
+    if (skyPageOnly) await verifySkyPage();
+    else if (browserOnly) await verifyBrowser();
+    else if (buddyOnly) await verifyBuddy();
     else if (newGameOnly) await verifyNewGame();
     else if (smileyDialogueOnly) await verifySmileyDialogue();
     else if (menuLayoutOnly) await verifyMenuLayout();
@@ -1326,6 +1335,460 @@ async function physicalDrag(selector, left, top) {
     button: 'left',
     clickCount: 1,
   });
+}
+
+async function verifySkyPage() {
+  await command('Page.enable');
+  await command('Network.enable');
+  const requests = [];
+  socket.addEventListener('message', ({ data }) => {
+    const message = JSON.parse(data);
+    if (message.method === 'Network.requestWillBeSent') requests.push(message.params.request.url);
+  });
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 1280,
+    height: 800,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await click('#menu-play');
+  await until(() => evaluate("!!document.querySelector('.rules-confirm')"), 'first rules');
+  await click('.rules-confirm');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'first level');
+  await doubleClick('#desktop > .desktop-icons [data-shortcut=browser]');
+  const ready = () =>
+    until(
+      () =>
+        evaluate(
+          "document.querySelector('.internet-adventurer .browser-page')?.getAttribute('aria-busy')==='false'",
+        ),
+      'SkyPage ready',
+    );
+  const go = async (address) => {
+    await evaluate(
+      `document.querySelector('.browser-address input').value=${JSON.stringify(address)};document.querySelector('.browser-address').requestSubmit()`,
+    );
+    await ready();
+  };
+  const page = () => evaluate("document.querySelector('.browser-page').textContent");
+  const openLink = async (url) => {
+    await evaluate(
+      `([...document.querySelectorAll('.skypage [data-browser-link]')].find(link=>link.dataset.browserLink===${JSON.stringify(url)})).click()`,
+    );
+    await ready();
+  };
+  await ready();
+  const narrative = await evaluate(
+    "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).dialogues)",
+  );
+  assert.deepEqual(
+    await evaluate(
+      "[...document.querySelectorAll('.xd-sites a')].map(link=>link.dataset.browserLink)",
+    ),
+    ['http://www.xdsearch.fr/', 'http://www.skypage.fr/'],
+  );
+  await capture('xd-search-sites.png');
+  await click('.xd-sites [data-browser-link="http://www.skypage.fr/"]');
+  await ready();
+  assert.ok((await page()).includes('Bienvenue sur SkyPage !'));
+  assert.deepEqual(
+    await evaluate("[...document.querySelectorAll('.sky-friends a')].map(link=>link.textContent)"),
+    ['xX_PixelGirl_Xx', '°•.LuNa.°•', 'Sk8er_du_93', 'Oo_bubble-princess_oO'],
+  );
+  assert.equal(await evaluate("document.querySelectorAll('.sky-discovery').length"), 0);
+  assert.ok((await page()).includes('Aucun blog visité récemment.'));
+  assert.equal(await evaluate("document.querySelector('.sky-nav').textContent"), 'Accueil');
+  await capture('skypage-home.png');
+  await openLink('http://www.skypage.fr/pixelgirl');
+  assert.equal(await evaluate("document.querySelectorAll('.sky-post').length"), 6);
+  assert.ok((await page()).includes('Bring Me to Life'));
+  assert.ok(await evaluate("document.querySelectorAll('.sky-comment').length>0"));
+  await evaluate(
+    "Promise.all([...document.querySelectorAll('.skypage img')].map(image=>image.decode()))",
+  );
+  await capture('skypage-pixelgirl.png');
+  await openLink('http://www.skypage.fr/pixelgirl?article=paint');
+  assert.equal(await evaluate("document.querySelectorAll('.sky-post').length"), 1);
+  await evaluate("document.querySelector('.sky-illustration').decode()");
+  assert.equal(await evaluate("document.querySelectorAll('.sky-comment').length"), 2);
+  await capture('skypage-pixelgirl-paint.png');
+  await click('[data-browser-action=back]');
+  await ready();
+  assert.equal(await evaluate("document.querySelectorAll('.sky-post').length"), 6);
+  await click('[data-browser-action=forward]');
+  await ready();
+  assert.equal(await evaluate("document.querySelectorAll('.sky-post').length"), 1);
+  await openLink('http://www.skypage.fr/');
+  await go('skypage.fr/luna');
+  assert.equal(await evaluate("document.querySelectorAll('.sky-post').length"), 5);
+  assert.ok((await page()).includes('somewhere only we know'));
+  await evaluate(
+    "Promise.all([...document.querySelectorAll('.skypage img')].map(image=>image.decode()))",
+  );
+  await capture('skypage-luna.png');
+  await openLink('http://www.skypage.fr/luna?article=photos');
+  await evaluate("document.querySelector('.sky-illustration').decode()");
+  await capture('skypage-luna-night.png');
+  assert.equal(
+    await evaluate(
+      "document.querySelectorAll('.skypage input,.skypage textarea,.skypage button').length",
+    ),
+    0,
+  );
+  for (const [query, address] of [
+    ['pixelgirl', 'http://www.skypage.fr/pixelgirl'],
+    ['luna', 'http://www.skypage.fr/luna'],
+    ['evanescence', 'http://www.skypage.fr/pixelgirl'],
+    ['kickflip', 'http://www.skypage.fr/sk8er_du_93'],
+    ['coque téléphone', 'http://www.skypage.fr/oo_bubble-princess_oo'],
+  ]) {
+    await go('xdsearch.fr');
+    await evaluate(
+      `document.querySelector('.xd-search-form input').value=${JSON.stringify(query)};document.querySelector('.xd-search-form').requestSubmit()`,
+    );
+    await ready();
+    assert.ok(
+      await evaluate(
+        `!!document.querySelector('.xd-search-result [data-browser-link="${address}"]')`,
+      ),
+    );
+    await click(`.xd-search-result [data-browser-link="${address}"]`);
+    await ready();
+    assert.ok(await evaluate("!!document.querySelector('.sky-blog-layout')"));
+  }
+  for (const [id, nickname] of [
+    ['sk8er_du_93', 'Sk8er_du_93'],
+    ['oo_bubble-princess_oo', 'Oo_bubble-princess_oO'],
+  ]) {
+    await go(`skypage.fr/${id}`);
+    assert.equal(
+      await evaluate("document.querySelector('.sky-blog-title h2').textContent"),
+      nickname,
+    );
+    assert.equal(
+      await evaluate("document.querySelectorAll('.sky-post').length"),
+      id === 'sk8er_du_93' ? 4 : 6,
+    );
+    await evaluate(
+      "Promise.all([...document.querySelectorAll('.skypage img')].map(image=>image.decode()))",
+    );
+    await evaluate("document.querySelector('.sky-illustration').scrollIntoView({block:'center'})");
+    await capture(`skypage-${id}.png`);
+    await go('skypage.fr');
+    assert.equal(
+      await evaluate("document.querySelector('.sky-discovery a').textContent"),
+      nickname,
+    );
+  }
+  await click('[data-browser-action=new]');
+  await ready();
+  await go('skypage.fr/luna');
+  assert.equal(await evaluate("document.querySelectorAll('.browser-tab').length"), 2);
+  await go('skypage.fr/turbo');
+  assert.ok((await page()).includes('Erreur 404'));
+  await go('skypage.fr/luna');
+  await evaluate(
+    "document.querySelector('.internet-adventurer').style.width='440px';document.querySelector('.internet-adventurer').style.height='380px'",
+  );
+  await wait(100);
+  const fits = await evaluate(
+    "(()=>{const page=document.querySelector('.browser-page');return {width:page.clientWidth,content:page.scrollWidth};})()",
+  );
+  assert.equal(fits.width, fits.content);
+  await capture('skypage-luna-small.png');
+  assert.equal(
+    await evaluate(
+      "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).dialogues)",
+    ),
+    narrative,
+  );
+  const tabs = await evaluate(
+    "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).browser.tabs)",
+  );
+  await command('Page.reload');
+  await until(() => evaluate("window.chaosDebug?.snapshot().phase==='menu'"), 'SkyPage restart');
+  await click('#menu-play');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'resumed game');
+  await click('#windows-start');
+  await click('#menu-browser');
+  await ready();
+  assert.ok((await page()).includes('°•.LuNa.°•'));
+  assert.equal(
+    await evaluate(
+      "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).browser.tabs)",
+    ),
+    tabs,
+  );
+  await click('#windows-start');
+  await click('#return-main-menu');
+  await click('#menu-new-game');
+  await click('#menu-confirm-yes');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='rules'"), 'SkyPage New Game');
+  await click('.rules-confirm');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'fresh game');
+  await click('#windows-start');
+  await click('#menu-browser');
+  await ready();
+  await go('skypage.fr');
+  assert.equal(await evaluate("document.querySelectorAll('.sky-discovery').length"), 0);
+  await go('skypage.fr/pixelgirl');
+  assert.equal(await evaluate("document.querySelectorAll('.sky-post').length"), 6);
+  assert.ok(
+    requests.every(
+      (address) => !/^https?:/.test(address) || new URL(address).origin === new URL(gameUrl).origin,
+    ),
+    JSON.stringify(requests),
+  );
+  assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
+  console.log(
+    'OK: five SkyPage routes from fresh game, twenty-one posts/comments, local photos/decorations, recent visits, article links, back/forward, XD Search, tabs, small window, restart/New Game, unchanged dialogues and no external requests; no Electron.',
+  );
+}
+
+async function verifyBrowser() {
+  await command('Page.enable');
+  await command('Network.enable');
+  const requests = [];
+  socket.addEventListener('message', ({ data }) => {
+    const message = JSON.parse(data);
+    if (message.method === 'Network.requestWillBeSent') requests.push(message.params.request.url);
+  });
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 1280,
+    height: 800,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  assert.ok(
+    await evaluate("!!document.querySelector('#desktop > .desktop-icons [data-shortcut=browser]')"),
+  );
+  await click('#menu-play');
+  await until(() => evaluate("!!document.querySelector('.rules-confirm')"), 'first rules');
+  await click('.rules-confirm');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'first level');
+  await doubleClick('#desktop > .desktop-icons [data-shortcut=browser]');
+  const ready = () =>
+    until(
+      () =>
+        evaluate(
+          "document.querySelector('.internet-adventurer .browser-page')?.getAttribute('aria-busy')==='false'",
+        ),
+      'browser page ready',
+    );
+  const url = () => evaluate("document.querySelector('.browser-address input').value");
+  const save = () =>
+    evaluate("JSON.parse(localStorage.getItem('chaos-survival-story-v1')).browser");
+  const go = async (address) => {
+    await evaluate(
+      `document.querySelector('.browser-address input').value=${JSON.stringify(address)};document.querySelector('.browser-address').requestSubmit()`,
+    );
+    await ready();
+  };
+  await ready();
+  assert.equal(await url(), 'http://www.xdsearch.fr/');
+  assert.equal(await evaluate("document.querySelectorAll('.internet-adventurer').length"), 1);
+  await capture('internet-adventurer-xd-search.png');
+  await evaluate(
+    "document.querySelector('.browser-address input').value='inconnu.fr';document.querySelector('.browser-address').requestSubmit();document.querySelector('.browser-address input').value='xdsearch.fr';document.querySelector('.browser-address').requestSubmit()",
+  );
+  await ready();
+  assert.ok(await evaluate("!!document.querySelector('.xd-search-logo')"));
+  for (const address of ['www.xdsearch.fr', 'xdsearch.fr', 'http://www.xdsearch.fr']) {
+    await go(address);
+    assert.equal(await url(), 'http://www.xdsearch.fr/');
+  }
+  await evaluate(
+    "document.querySelector('.xd-search-form input').value='zebragalactique';document.querySelector('.xd-search-form').requestSubmit()",
+  );
+  await ready();
+  assert.ok(
+    await evaluate(
+      "document.querySelector('.browser-page').textContent.includes('Aucun résultat trouvé pour « zebragalactique ».')",
+    ),
+  );
+  assert.equal(await evaluate("document.querySelectorAll('.xd-search-result').length"), 0);
+  await evaluate(
+    "document.querySelector('.xd-search-form input').value='INTERNET';document.querySelector('.xd-search-form').requestSubmit()",
+  );
+  await ready();
+  assert.equal(await evaluate("document.querySelectorAll('.xd-search-result').length"), 1);
+  assert.equal(
+    await evaluate("document.querySelector('.xd-search-result a').getAttribute('href')"),
+    '#',
+  );
+  await click('.xd-search-result a');
+  await ready();
+  assert.equal(await url(), 'http://www.xdsearch.fr/');
+  await click('[data-browser-action=back]');
+  await ready();
+  assert.ok((await url()).includes('?q=INTERNET'));
+  await click('[data-browser-action=forward]');
+  await ready();
+  assert.equal(await url(), 'http://www.xdsearch.fr/');
+  await go('xdsearch.fr/page-inexistante');
+  assert.ok(
+    await evaluate("document.querySelector('.browser-error').textContent.includes('Erreur 404')"),
+  );
+  await go('site-inconnu.fr');
+  assert.ok(
+    await evaluate(
+      "document.querySelector('.browser-error').textContent.includes('ne peut pas afficher cette page Web')",
+    ),
+  );
+  const count = (await save()).tabs[0].history.length;
+  await click('[data-browser-action=reload]');
+  await ready();
+  assert.equal((await save()).tabs[0].history.length, count);
+  await click('[data-browser-action=home]');
+  await ready();
+  assert.equal(await url(), 'http://www.xdsearch.fr/');
+  const first = (await save()).active;
+  await click('[data-browser-action=new]');
+  await ready();
+  await go('xdsearch.fr/autre');
+  assert.equal((await save()).tabs.length, 2);
+  await click(`[data-browser-action=select][data-tab-id="${first}"]`);
+  await ready();
+  assert.equal(await url(), 'http://www.xdsearch.fr/');
+  await evaluate(
+    "document.dispatchEvent(new CustomEvent('windows-xd:open-url',{detail:{url:'http://www.flashzone.fr/jeux/mon-jeu'}}))",
+  );
+  await ready();
+  assert.equal((await save()).tabs.length, 3);
+  assert.equal(await evaluate("document.querySelectorAll('.internet-adventurer').length"), 1);
+  assert.equal(await url(), 'http://www.flashzone.fr/jeux/mon-jeu');
+  await go('javascript:window.__browserAttack=true');
+  assert.equal(await evaluate('window.__browserAttack'), undefined);
+  await go('file:///C:/Windows/system.ini');
+  assert.ok(await evaluate("!!document.querySelector('.browser-error')"));
+  // Exercise the actual form and DOM, rather than merely testing URL parsing.
+  await evaluate('window.__inputExecuted=0;window.alert=()=>window.__inputExecuted++');
+  const attacks = [
+    '<script>alert(1)</script>',
+    '<img src=x onerror=alert(1)>',
+    'javascript:alert(1)',
+    'data:text/html,<script>alert(1)</script>',
+    'file:///C:/Windows/',
+    '../../../../',
+    'devtools://devtools/',
+  ];
+  for (const attack of attacks) {
+    await go(attack);
+    assert.ok(await evaluate("!!document.querySelector('.browser-error')"));
+    await go('xdsearch.fr');
+    await evaluate(
+      `document.querySelector('.xd-search-form input').value=${JSON.stringify(attack)};document.querySelector('.xd-search-form').requestSubmit()`,
+    );
+    await ready();
+    assert.equal(await evaluate("document.querySelector('.xd-search-form input').value"), attack);
+    assert.equal(
+      await evaluate(
+        "document.querySelectorAll('.browser-page script,.browser-page iframe,.browser-page webview,.browser-page [onerror]').length",
+      ),
+      0,
+    );
+    assert.equal(await evaluate('window.__inputExecuted'), 0);
+  }
+  if (browserSecurityElectron) {
+    assert.equal(await evaluate('typeof require'), 'undefined');
+    assert.equal(await evaluate('typeof process'), 'undefined');
+    assert.deepEqual(await evaluate('Object.keys(window.chaosWindow).sort()'), [
+      'getFullscreen',
+      'onFullscreenChanged',
+      'setFullscreen',
+    ]);
+    assert.equal(await evaluate('window.chaosWindow.getFullscreen()'), false);
+    assert.equal(await evaluate('window.chaosWindow.setFullscreen(false)'), false);
+    await evaluate(
+      "const script=document.createElement('script');script.textContent='window.__inputExecuted++';document.body.append(script);script.remove()",
+    );
+    assert.equal(await evaluate('window.__inputExecuted'), 0);
+    console.log(
+      'OK: Electron production CSP blocks inline scripts, no renderer Node.js, restricted fullscreen preload works, hostile address/search inputs stay inert.',
+    );
+  }
+  const active = (await save()).active;
+  await click(`[data-browser-action=close][data-tab-id="${active}"]`);
+  await ready();
+  assert.equal((await save()).tabs.length, 2);
+  await go('xdsearch.fr/?q=<script>alert(1)</script>');
+  assert.equal(
+    await evaluate("document.querySelectorAll('.browser-page script,.browser-page iframe').length"),
+    0,
+  );
+  await capture('internet-adventurer-tabs.png');
+  await physicalDrag('.internet-adventurer .titlebar', 0, 20);
+  await evaluate(
+    "const w=document.querySelector('.internet-adventurer');w.style.width='560px';w.style.height='340px'",
+  );
+  await wait(100);
+  const geometry = await evaluate(
+    "(()=>{const w=document.querySelector('.internet-adventurer'),r=w.getBoundingClientRect();return {left:r.left,top:r.top,width:r.width,height:r.height,bottom:r.bottom,taskbar:document.querySelector('.taskbar').getBoundingClientRect().top,resize:getComputedStyle(w).resize};})()",
+  );
+  assert.ok(geometry.left >= 0 && geometry.top >= 0 && geometry.bottom <= geometry.taskbar);
+  assert.equal(geometry.width, 560);
+  assert.equal(geometry.height, 340);
+  assert.equal(geometry.resize, 'both');
+  await click('.internet-adventurer .msn-minimize');
+  assert.equal(await evaluate("document.querySelector('.internet-adventurer').hidden"), true);
+  await click('[data-app=browser]');
+  assert.equal(await evaluate("document.querySelector('.internet-adventurer').hidden"), false);
+  const retained = await save();
+  await click('.internet-adventurer .close-button');
+  assert.equal(await evaluate("!!document.querySelector('[data-app=browser]')"), false);
+  await click('#windows-start');
+  await click('#menu-browser');
+  await ready();
+  assert.deepEqual(await save(), retained);
+  await command('Page.reload');
+  await until(() => evaluate("window.chaosDebug?.snapshot().phase==='menu'"), 'browser restart');
+  await click('#menu-play');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'resume level');
+  await click('#windows-start');
+  await click('#menu-browser');
+  await ready();
+  assert.deepEqual(await save(), retained);
+  // Closing the final tab closes the same Windows XD application.
+  for (const tab of (await save()).tabs) {
+    await click(`[data-browser-action=close][data-tab-id="${tab.id}"]`);
+    if (await evaluate("!!document.querySelector('.internet-adventurer')")) await ready();
+  }
+  assert.equal(await evaluate("!!document.querySelector('.internet-adventurer')"), false);
+  await click('#windows-start');
+  await click('#menu-browser');
+  await ready();
+  assert.equal((await save()).tabs.length, 1);
+  assert.equal(await url(), 'http://www.xdsearch.fr/');
+  await click('#windows-start');
+  await click('#return-main-menu');
+  await click('#menu-new-game');
+  await click('#menu-confirm-yes');
+  await until(
+    () => evaluate("window.chaosDebug.snapshot().phase==='rules'"),
+    'browser New Game reset',
+  );
+  assert.equal(
+    await evaluate("JSON.parse(localStorage.getItem('chaos-survival-story-v1')).browser"),
+    undefined,
+  );
+  await click('.rules-confirm');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'new level');
+  await click('#windows-start');
+  await click('#menu-browser');
+  await ready();
+  assert.equal((await save()).tabs.length, 1);
+  assert.equal((await save()).tabs[0].history.length, 1);
+  assert.equal(await url(), 'http://www.xdsearch.fr/');
+  assert.ok(
+    requests.every(
+      (address) => !/^https?:/.test(address) || new URL(address).origin === new URL(gameUrl).origin,
+    ),
+    JSON.stringify(requests),
+  );
+  assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
+  console.log(
+    `OK: local browser launch, XD Search/results/errors, URL aliases, independent tab histories, link API, reload/home, window drag/resize/taskbar, session persistence, last-tab closure, New Game and zero external requests; ${browserSecurityElectron ? 'Electron production document' : 'no Electron'}.`,
+  );
 }
 
 async function verifyBuddy() {

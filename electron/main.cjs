@@ -1,11 +1,12 @@
-const { app, BrowserWindow, dialog, ipcMain, Menu, net, protocol, session } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, Menu, protocol, session } = require('electron');
 const path = require('node:path');
-const { pathToFileURL } = require('node:url');
+const { readFile } = require('node:fs/promises');
 const { resolveLocalAsset } = require('./local-assets.cjs');
+const { developmentUrl, securityPolicy, protectSession, protectWindow } = require('./security.cjs');
 
-const productionUrl = 'chaos://game/index.html';
 // A packaged executable always loads its own bundled game.
-const devUrl = !app.isPackaged ? process.env.CHAOS_DEV_URL : undefined;
+const devUrl = !app.isPackaged ? developmentUrl(process.env.CHAOS_DEV_URL) : undefined;
+const policy = securityPolicy(devUrl);
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
 protocol.registerSchemesAsPrivileged([
@@ -31,6 +32,8 @@ async function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
+      webviewTag: false,
+      webSecurity: true,
     },
   });
 
@@ -44,10 +47,7 @@ async function createWindow() {
     window.on(event, () => {
       window.webContents.send('chaos:fullscreen-changed', window.isFullScreen());
     });
-  window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
-  window.webContents.on('will-navigate', (event, url) => {
-    if (url !== (devUrl || productionUrl)) event.preventDefault();
-  });
+  protectWindow(window.webContents);
   window.webContents.on('before-input-event', (event, input) => {
     if (input.type !== 'keyDown' || input.isAutoRepeat) return;
     if (input.key === 'F11' || (input.alt && input.key === 'Enter')) {
@@ -60,7 +60,7 @@ async function createWindow() {
     }
   });
 
-  await window.loadURL(devUrl || productionUrl);
+  await window.loadURL(policy.documentUrl);
 }
 
 app
@@ -68,9 +68,12 @@ app
   .then(async () => {
     ipcMain.handle(
       'chaos:get-fullscreen',
-      (event) => BrowserWindow.fromWebContents(event.sender)?.isFullScreen() ?? false,
+      (event) =>
+        policy.trustedSender(event) &&
+        (BrowserWindow.fromWebContents(event.sender)?.isFullScreen() ?? false),
     );
     ipcMain.handle('chaos:set-fullscreen', async (event, value) => {
+      if (!policy.trustedSender(event) || typeof value !== 'boolean') return false;
       const window = BrowserWindow.fromWebContents(event.sender);
       if (window) await window.chaosReady;
       if (window && typeof value === 'boolean') window.setFullScreen(value);
@@ -78,18 +81,7 @@ app
     });
     Menu.setApplicationMenu(null);
     app.setAppUserModelId('com.chaossurvival.game');
-    session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) =>
-      callback(false),
-    );
-    session.defaultSession.setPermissionCheckHandler(() => false);
-
-    if (!devUrl) {
-      // The shipped game only needs bundled files, even when Windows is online.
-      session.defaultSession.webRequest.onBeforeRequest(
-        { urls: ['<all_urls>'] },
-        (details, callback) => callback({ cancel: /^(https?|wss?|ftp):/i.test(details.url) }),
-      );
-    }
+    protectSession(session.defaultSession, policy);
 
     const assetRoot = path.join(app.getAppPath(), 'dist');
     protocol.handle('chaos', async (request) => {
@@ -97,7 +89,32 @@ app
       try {
         const filename = resolveLocalAsset(assetRoot, request.url);
         if (!filename) return new Response('Forbidden', { status: 403 });
-        return await net.fetch(pathToFileURL(filename).href);
+        // Read only the resolved bundle path; do not allow file: requests from the renderer.
+        const types = {
+          '.html': 'text/html',
+          '.js': 'text/javascript',
+          '.css': 'text/css',
+          '.json': 'application/json',
+          '.svg': 'image/svg+xml',
+          '.png': 'image/png',
+          '.jpg': 'image/jpeg',
+          '.jpeg': 'image/jpeg',
+          '.gif': 'image/gif',
+          '.bmp': 'image/bmp',
+          '.ico': 'image/x-icon',
+          '.mp3': 'audio/mpeg',
+          '.wav': 'audio/wav',
+          '.woff': 'font/woff',
+          '.woff2': 'font/woff2',
+        };
+        return new Response(await readFile(filename), {
+          headers: {
+            'Content-Type':
+              types[path.extname(filename).toLowerCase()] || 'application/octet-stream',
+            'Content-Security-Policy': policy.csp,
+            'X-Content-Type-Options': 'nosniff',
+          },
+        });
       } catch {
         return new Response('Not found', { status: 404 });
       }

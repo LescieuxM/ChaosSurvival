@@ -1,0 +1,238 @@
+.desktop .popup.internet-adventurer {
+  width: min(740px, 100%);
+  height: 470px;
+  min-width: min(320px, 100%);
+  min-height: 240px;
+  max-height: 100%;
+  resize: both;
+  overflow: hidden;
+}
+.internet-adventurer > .window-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #fff;
+}
+.browser-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  background: linear-gradient(#f9fcff, #dce8f3);
+  border-bottom: 1px solid #a1b3c5;
+  flex-shrink: 0;
+}
+.browser-toolbar button {
+  padding: 4px 7px;
+  border: 1px solid #94abc1;
+  background: linear-gradient(#fff, #e2eaf2);
+}
+.browser-toolbar button:disabled {
+  cursor: default;
+}
+.browser-address {
+  display: flex;
+  flex: 1;
+  gap: 4px;
+  min-width: 0;
+}
+.browser-address label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+}
+.browser-address input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #7f9db9;
+  padding: 4px;
+  background: #fff;
+  font:
+    12px Tahoma,
+    sans-serif;
+}
+.browser-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 3px;
+  padding: 4px 5px 0;
+  background: #e3edf5;
+  border-bottom: 1px solid #a1b3c5;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+.browser-tab {
+  display: flex;
+  min-width: 100px;
+  max-width: 210px;
+  border: 1px solid #9baec1;
+  border-bottom: 0;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(#f0f5fa, #cddcea);
+}
+.browser-tab[aria-selected='true'] {
+  background: #fff;
+  border-top: 2px solid #e9ad41;
+}
+.browser-tab button {
+  border: 0;
+  padding: 5px;
+  background: transparent;
+  white-space: nowrap;
+}
+.browser-tab [data-browser-action='select'] {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.browser-tab [data-browser-action='close'] {
+  margin-left: auto;
+}
+.browser-tabs > button {
+  border: 1px solid #9baec1;
+  background: #f2f7fc;
+  padding: 0 9px;
+}
+.browser-page {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: #fff;
+  color: #111;
+  overflow-wrap: anywhere;
+  font:
+    13px Arial,
+    sans-serif;
+}
+.browser-statusbar {
+  display: flex;
+  justify-content: space-between;
+  min-height: 23px;
+  flex-shrink: 0;
+}
+.browser-progress {
+  width: 90px;
+  height: 12px;
+}
+.xd-search {
+  padding: 38px 20px;
+  text-align: center;
+}
+.xd-search-logo {
+  margin: 0 0 20px;
+  font:
+    bold 42px Georgia,
+    serif;
+  color: #225bb2;
+  letter-spacing: 0;
+  line-height: 1.15;
+  text-shadow: none;
+}
+.xd-search-logo span:nth-child(2) {
+  color: #d38427;
+}
+.xd-search-logo span:nth-child(3) {
+  color: #338537;
+  font-size: 34px;
+}
+.xd-search-form {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin: 0 auto;
+  max-width: 520px;
+}
+.xd-search-form input {
+  width: min(360px, 100%);
+  padding: 5px;
+  border: 1px solid #7f9db9;
+  font:
+    14px Arial,
+    sans-serif;
+}
+.xd-search-footer {
+  margin-top: 38px;
+  font-size: 11px;
+  color: #777;
+}
+.xd-sites {
+  max-width: 520px;
+  margin: 24px auto 0;
+  text-align: left;
+  border-top: 1px solid #d5ddeb;
+  padding-top: 12px;
+}
+.xd-sites h2 {
+  margin: 0 0 8px;
+  font:
+    bold 14px Arial,
+    sans-serif;
+  color: #33577e;
+  letter-spacing: 0;
+  text-shadow: none;
+}
+.xd-sites ul {
+  margin: 0;
+  padding-left: 18px;
+}
+.xd-sites li {
+  margin: 10px 0;
+}
+.xd-sites a {
+  color: #00c;
+  text-decoration: underline;
+}
+.xd-sites p {
+  margin: 3px 0;
+  color: #555;
+  font-size: 12px;
+}
+.xd-search-results {
+  text-align: left;
+  padding: 20px;
+}
+.xd-search-results .xd-search-logo {
+  font-size: 27px;
+}
+.xd-search-results .xd-search-logo span:nth-child(3) {
+  font-size: 25px;
+}
+.xd-search-results .xd-search-form {
+  justify-content: flex-start;
+  margin: 0 0 24px;
+}
+.xd-search-result {
+  margin: 20px 0;
+}
+.xd-search-result a {
+  color: #00c;
+  text-decoration: underline;
+  font-size: 17px;
+  cursor: pointer;
+}
+.xd-search-result a:hover {
+  color: #551a8b;
+}
+.xd-result-url {
+  color: #008000;
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+}
+.xd-search-result p {
+  margin: 3px 0;
+  line-height: 1.4;
+}
+.browser-error {
+  padding: 28px;
+}
+.browser-error h2 {
+  color: #304f6b;
+  font-size: 20px;
+}

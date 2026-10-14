@@ -750,6 +750,64 @@ button.messenger-contact-row:hover {
     11px Tahoma,
     sans-serif;
 }
+/* Conversation palette only; roster, profiles and other applications keep their styles. */
+.popup-narrative:has(.conversation-content) .window-body {
+  background: linear-gradient(#eef7ff, #d6e9fb);
+}
+.popup-narrative:has(.conversation-content) .msn-menu {
+  background: linear-gradient(#f0f8ff, #cfe3f8);
+  border-color: #91b5d6;
+  color: #274c6f;
+}
+.popup-narrative:has(.conversation-content) .msn-contact {
+  background: linear-gradient(#e6f5ff, #c7e3f8);
+  border-color: #91b5d6;
+}
+.popup-narrative:has(.conversation-content) .conversation-history,
+.popup-narrative:has(.conversation-content) .contact-typing {
+  background: #f3f9ff;
+  border-color: #91b5d6;
+}
+.popup-narrative:has(.conversation-content) .conversation-message small,
+.popup-narrative:has(.conversation-content) .contact-typing {
+  color: #526f8d;
+}
+.popup-narrative:has(.conversation-content) .conversation-system {
+  color: #49678d;
+}
+.popup-narrative:has(.conversation-content) .story-avatar {
+  background: #e4f2ff;
+  border-color: #8cb9df;
+}
+.popup-narrative:has(.conversation-content) .dialogue-choices {
+  background: #daeaff;
+}
+.popup-narrative:has(.conversation-content) .dialogue-choice,
+.popup-narrative:has(.conversation-content) .msn-tools .text-button {
+  background: linear-gradient(#eef8ff, #c7def5);
+  border-color: #89acd0;
+  color: #254c75;
+}
+.popup-narrative:has(.conversation-content) .dialogue-choice:hover,
+.popup-narrative:has(.conversation-content) .msn-tools .text-button:hover {
+  background: linear-gradient(#d9efff, #accff1);
+}
+.popup-narrative:has(.conversation-content) .messenger-dropdown {
+  background: #eef6ff;
+  border-color: #89accc;
+}
+.popup-narrative:has(.conversation-content) .window-status {
+  background: linear-gradient(#dfeffe, #bed6ed);
+  border-color: #8faec8;
+  color: #395f83;
+}
+.popup-narrative:has(.conversation-content) .close-button {
+  background: linear-gradient(#83b9ed, #286ac0);
+  text-shadow: 1px 1px #164885;
+}
+.popup-narrative:has(.conversation-content) button:focus-visible {
+  outline-color: #68a3df;
+}
 .messenger-panel {
   width: 360px;
   height: 330px;
