@@ -150,7 +150,7 @@ export function depthOrder(room, walk) {
 export function drawRoom(ctx, room, walk) {
   const palette = room.palette ?? {};
   ctx.imageSmoothingEnabled = false;
-  ctx.fillStyle = palette.background ?? '#172e48';
+  ctx.fillStyle = '#000000';
   ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
   const start = project(0, 0, room),
     left = project(0, room.height - 1, room),

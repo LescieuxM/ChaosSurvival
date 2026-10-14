@@ -10,6 +10,7 @@ import './browser/sites/videotube/styles.css';
 import './browser/sites/wiki/styles.css';
 import './browser/sites/xdhotel/styles.css';
 import { InternetAdventurer } from './ui/browser.js';
+import { HotelClient } from './browser/sites/xdhotel/client.js';
 import { Buddy } from './ui/buddy.js';
 import chart from './config/chart.json';
 import music from './config/music-lvl1.analysis.json';
@@ -146,7 +147,12 @@ const desktopApplications = new DesktopApplications(
   replayLevelOne,
   new VirtualTextFiles(progression),
 );
-const browser = new InternetAdventurer(manager, desktopApplications, progression);
+const hotel = new HotelClient(manager, desktopApplications, () =>
+  openBrowser('http://www.hoplahotel.fr/'),
+);
+const browser = new InternetAdventurer(manager, desktopApplications, progression, undefined, () =>
+  hotel.open(),
+);
 const messenger = new Messenger({
   manager,
   applications: desktopApplications,

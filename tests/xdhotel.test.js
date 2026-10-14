@@ -15,6 +15,8 @@ import {
 } from '../src/browser/sites/xdhotel/model.js';
 import { depthOrder } from '../src/browser/sites/xdhotel/draw.js';
 import { renderHotelRoom } from '../src/browser/sites/xdhotel/render.js';
+import { HotelClient } from '../src/browser/sites/xdhotel/client.js';
+import { WindowManager } from '../src/ui/windows.js';
 import { localPages } from '../src/browser/registry.js';
 import { BrowserSession } from '../src/browser/session.js';
 const room = hotelData.room;
@@ -74,7 +76,7 @@ test('five data-driven rooms have unique IDs, unoccupied spawns, bounded obstacl
   for (const definition of hotelRooms) {
     const route = localPages.resolve(`${HOTEL_URL}salle/${definition.id}`, {});
     assert.ok(route.page);
-    assert.equal(route.page.preserveOnTabSwitch, true);
+    assert.equal(route.page.preserveOnTabSwitch, undefined);
     assert.equal(
       new Set(definition.furniture.map((item) => item.id)).size,
       definition.furniture.length,
@@ -234,6 +236,15 @@ function dom(t) {
         append(...items) {
           this.children.push(...items);
         },
+        replaceChildren(...items) {
+          this.children = items;
+        },
+        querySelector(selector) {
+          return walkTree(this).find((item) => item.className === selector.slice(1));
+        },
+        remove() {
+          this.isConnected = false;
+        },
         setAttribute() {},
         focus() {},
         getContext() {
@@ -282,6 +293,123 @@ function dom(t) {
   };
 }
 const walkTree = (node) => [node, ...node.children.flatMap(walkTree)];
+
+test('site and legacy room pages only request the desktop client and never mount it in the browser', (t) => {
+  dom(t);
+  let launches = 0;
+  for (const address of [HOTEL_URL, ...hotelRooms.map((room) => `${HOTEL_URL}salle/${room.id}`)]) {
+    const root = localPages.resolve(address, {}).page.render({ openHotel: () => launches++ });
+    assert.equal(root.querySelector('.hotel-canvas'), undefined);
+    assert.equal(root.querySelector('.hotel-intro'), undefined);
+    assert.ok(!walkTree(root).some((item) => item.textContent?.includes('Pose tes valises')));
+    const enter = root.querySelector('.hotel-enter');
+    assert.equal(enter.dataset.browserLink, undefined);
+    enter.handlers.click({ preventDefault() {} });
+  }
+  assert.equal(launches, 6);
+});
+
+test('desktop Hotel is a singleton, fits actual bounds, preserves minimized motion and cleans up on close/clear', (t) => {
+  const clock = dom(t);
+  const original = structuredClone(hotelData);
+  const bounds = { minX: 0, minY: -120, maxX: 1000, maxY: 580 };
+  const manager = {
+    windows: new Map(),
+    dragged: new WeakSet(),
+    z: 10,
+    field: { closest: () => document.createElement('div') },
+    spawn(_kind, options) {
+      const id = this.windows.size + 1;
+      const element = document.createElement('article');
+      element.append(Object.assign(document.createElement('div'), { className: 'window-body' }));
+      this.windows.set(id, { element, options, onDismiss: options.onDismiss });
+      return id;
+    },
+    movementBounds(element) {
+      return {
+        ...bounds,
+        maxX: bounds.maxX - (element.offsetWidth ?? 0),
+        maxY: bounds.maxY - (element.offsetHeight ?? 0),
+      };
+    },
+    close(id) {
+      const item = this.windows.get(id);
+      item.element.remove();
+      item.options.onDismiss();
+      this.windows.delete(id);
+    },
+  };
+  const applications = {
+    instances: new Map(),
+    onWindowState() {},
+    attachWindow(kind, id) {
+      const instance = {
+        id,
+        element: manager.windows.get(id).element,
+        task: document.createElement('button'),
+      };
+      this.instances.set(kind, instance);
+      return instance;
+    },
+    restore(instance) {
+      instance.element.hidden = false;
+      instance.element.style.zIndex = ++manager.z;
+      instance.onRestore?.();
+    },
+  };
+  let homes = 0;
+  const client = new HotelClient(manager, applications, () => homes++);
+  const first = client.open();
+  assert.equal(first.element.style.width, '940px');
+  assert.equal(first.element.style.height, '658px');
+  assert.equal(first.element.style.top, '-99px');
+  assert.equal(client.open(), first);
+  assert.equal(manager.windows.size, 1);
+  const canvas = () => first.element.querySelector('.hotel-canvas');
+  const move = () => {
+    const point = project(8, 7, hotelData.room);
+    canvas().handlers.click({ button: 0, clientX: 20 + point.x * 2, clientY: 30 + point.y * 2 });
+  };
+  for (const room of hotelRooms) {
+    client.showRoom(room);
+    assert.deepEqual(clock.position(canvas()), project(...room.spawn, room));
+    move();
+    clock.step(0);
+    clock.step(100);
+    const before = clock.position(canvas());
+    first.element.hidden = true;
+    first.onMinimize();
+    assert.equal(clock.frames.size, 0);
+    assert.equal(client.open(), first);
+    assert.equal(first.element.hidden, false);
+    assert.deepEqual(clock.position(canvas()), before);
+    for (let i = 0; i < 6; i++) clock.step(1000 + i * 100);
+    assert.deepEqual(clock.position(canvas()), project(8, 7, room));
+  }
+  first.element.handlers.click({
+    target: { closest: () => ({ dataset: { browserLink: HOTEL_URL } }) },
+    preventDefault() {},
+  });
+  assert.equal(homes, 1);
+  move();
+  manager.close(first.id);
+  assert.equal(client.instance, null);
+  assert.equal(clock.frames.size, 0);
+  assert.equal(clock.listeners.size, 0);
+  assert.equal(applications.instances.size, 0);
+  const second = client.open();
+  assert.notEqual(second, first);
+  assert.deepEqual(
+    clock.position(second.element.querySelector('.hotel-canvas')),
+    project(...hotelData.room.spawn, hotelData.room),
+  );
+  WindowManager.prototype.clear.call(manager);
+  assert.equal(client.instance, null);
+  assert.equal(clock.frames.size, 0);
+  assert.equal(clock.listeners.size, 0);
+  assert.equal(applications.instances.size, 0);
+  assert.deepEqual(hotelData, original);
+});
 test('room instances have independent motion/bubbles; scaled clicks, visibility and disposal clean up all resources', (t) => {
   const clock = dom(t);
   let disposeA, disposeB;
@@ -345,7 +473,8 @@ test('navigator opens/closes, cancels a moving instance on room changes and repe
     },
     navigate(url) {
       cleanup();
-      active = localPages.resolve(url, {}).page.render(context);
+      const definition = hotelRooms.find((item) => url === `${HOTEL_URL}salle/${item.id}`);
+      active = renderHotelRoom(context, hotelData, definition);
     },
   };
   active = renderHotelRoom(context, hotelData);
@@ -369,6 +498,8 @@ test('navigator opens/closes, cancels a moving instance on room changes and repe
     buttons.find((button) => button.dataset.hotelRoom === definition.id).handlers.click();
     assert.equal(find('hotel-navigator').hidden, true);
     assert.equal(walkTree(active).find((item) => item.tag === 'h2').textContent, definition.name);
+    assert.equal(find('hotel-room-nav').children.length, 2);
+    assert.ok(!walkTree(active).some((item) => item.textContent === "Retour à l'accueil"));
     assert.deepEqual(
       clock.position(find('hotel-canvas')),
       project(...definition.spawn, definition),

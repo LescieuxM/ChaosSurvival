@@ -122,6 +122,7 @@ export class DesktopApplications {
     minimize.addEventListener('click', () => {
       element.hidden = true;
       task.setAttribute('aria-pressed', 'false');
+      instance.onMinimize?.();
       this.onWindowState();
     });
     element
@@ -199,6 +200,7 @@ export class DesktopApplications {
     instance.element.hidden = false;
     instance.element.style.zIndex = ++this.manager.z;
     instance.task.setAttribute('aria-pressed', 'true');
+    instance.onRestore?.();
     this.onWindowState();
   }
   home(instance) {

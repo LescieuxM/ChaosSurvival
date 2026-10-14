@@ -102,12 +102,6 @@
 .hotel-enter:focus-visible {
   background: #ffe286;
 }
-.hotel-intro {
-  border: 1px solid #96b3c7;
-  background: #fff;
-  padding: 10px 15px;
-  margin: 12px 0;
-}
 .hotel-footer {
   display: block;
   text-align: center;
@@ -119,7 +113,7 @@
   max-width: 800px;
   margin: 10px auto;
   border: 2px solid #476783;
-  background: #172e48;
+  background: #000000;
 }
 .hotel-canvas {
   display: block;
@@ -208,7 +202,9 @@
 .hotel-navigator {
   position: absolute;
   z-index: 2;
-  inset: 45px 12px 12px;
+  inset: 45px 12px auto;
+  max-height: calc(100% - 57px);
+  box-sizing: border-box;
   overflow: auto;
   background: #f0f4ec;
   border: 2px solid #41677e;
@@ -245,4 +241,24 @@
   margin: 0;
   font-size: 11px;
   line-height: 1.35;
+}
+.desktop .popup.hopla-hotel-client {
+  resize: both;
+  overflow: hidden;
+  max-height: none;
+}
+.hopla-hotel-client > .window-body {
+  padding: 0;
+  overflow: hidden;
+}
+.hopla-hotel-client .hotel-room {
+  min-height: 0;
+  min-width: 0;
+  padding: 4px;
+}
+.hopla-hotel-client .hotel-stage {
+  max-width: none;
+}
+.hopla-hotel-client .hotel-viewport {
+  min-height: 0;
 }

@@ -8,8 +8,8 @@ export function openLocalUrl(url) {
   document.dispatchEvent(new CustomEvent('windows-xd:open-url', { detail: { url } }));
 }
 export class InternetAdventurer {
-  constructor(manager, applications, progression, registry = localPages) {
-    Object.assign(this, { manager, applications, progression, registry });
+  constructor(manager, applications, progression, registry = localPages, openHotel = () => {}) {
+    Object.assign(this, { manager, applications, progression, registry, openHotel });
     this.session = new BrowserSession(progression);
     this.generation = 0;
     this.retainedPages = new Map();
@@ -158,6 +158,7 @@ export class InternetAdventurer {
                   this.pageResume = resume;
                 },
                 navigate: (url) => this.navigate(url),
+                openHotel: this.openHotel,
               })
             : renderError(current.error),
       );

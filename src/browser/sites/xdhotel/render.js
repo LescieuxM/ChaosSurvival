@@ -12,26 +12,22 @@ function shell(data) {
   root.append(header);
   return root;
 }
-export function renderHotelHome(_context, data) {
+export function renderHotelHome({ openHotel }, data) {
   const root = shell(data);
   const banner = node('div', undefined, 'hotel-banner');
   const skyline = node('div', undefined, 'hotel-skyline');
   skyline.setAttribute('aria-hidden', 'true');
   for (let i = 0; i < 5; i++) skyline.append(node('span'));
   banner.append(node('h1', 'Bienvenue à Hopla Hotel !'), node('p', data.welcome), skyline);
-  const enter = link("Entrer dans l'hôtel", `${HOTEL_URL}salle/${data.room.id}`);
+  const enter = node('a', "Entrer dans l'hôtel");
+  enter.href = '#';
+  enter.addEventListener('click', (event) => {
+    event.preventDefault();
+    openHotel?.();
+  });
   enter.className = 'hotel-enter';
   banner.append(enter);
-  const intro = node('div', undefined, 'hotel-intro');
-  intro.append(
-    node('h2', 'Pose tes valises'),
-    node(
-      'p',
-      "Le hall t'attend : choisis un coin pour te poser et passe saluer ReceptionHotel à l'accueil.",
-    ),
-    node('p', 'Une souris, un clic, et te voilà dans le décor. Bonne visite !'),
-  );
-  root.append(banner, intro, node('small', 'Hopla Hotel · 2009', 'hotel-footer'));
+  root.append(banner, node('small', 'Hopla Hotel · 2009', 'hotel-footer'));
   return root;
 }
 export function renderHotelRoom({ onDispose, onResume, navigate }, data, room = data.room) {
@@ -41,7 +37,7 @@ export function renderHotelRoom({ onDispose, onResume, navigate }, data, room = 
   const browserButton = node('button', 'Navigateur', 'hotel-navigator-open');
   browserButton.type = 'button';
   browserButton.setAttribute('aria-expanded', 'false');
-  navigation.append(node('h2', room.name), browserButton, link("Retour à l'accueil", HOTEL_URL));
+  navigation.append(node('h2', room.name), browserButton);
   root.append(navigation);
   const viewport = node('div', undefined, 'hotel-viewport');
   const stage = node('div', undefined, 'hotel-stage');

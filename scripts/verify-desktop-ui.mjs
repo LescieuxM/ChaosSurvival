@@ -1414,10 +1414,56 @@ async function verifyHotel() {
     'Bienvenue à Hopla Hotel !',
   );
   await capture('xdhotel-home.png');
+  assert.equal(await evaluate("!!document.querySelector('.browser-page .hotel-intro')"), false);
+  assert.ok(
+    await evaluate(
+      "!document.querySelector('.browser-page').textContent.includes('Pose tes valises')",
+    ),
+  );
+  const browserHistory = await evaluate(
+    "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).browser)",
+  );
   await click('.hotel-enter');
-  await ready();
+  await until(
+    () => evaluate("!!document.querySelector('.hopla-hotel-client .hotel-canvas')"),
+    'desktop Hotel opens',
+  );
   assert.equal(
-    await evaluate("document.querySelector('.xdhotel h2').textContent"),
+    await evaluate(
+      "document.querySelector('.hopla-hotel-client .window-title > span').textContent",
+    ),
+    'Hopla Hotel',
+  );
+  assert.equal(
+    await evaluate(
+      "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).browser)",
+    ),
+    browserHistory,
+  );
+  assert.equal(
+    await evaluate("document.querySelectorAll('.browser-page .hotel-canvas').length"),
+    0,
+  );
+  assert.ok(await evaluate("!!document.querySelector('.browser-page .hotel-enter')"));
+  assert.ok(await evaluate("!!document.querySelector('.task-tab[data-app=hopla-hotel]')"));
+  await until(
+    () =>
+      evaluate(
+        "getComputedStyle(document.querySelector('.hopla-hotel-client')).transform==='none'",
+      ),
+    'Hotel opening animation',
+  );
+  assert.ok(
+    await evaluate(
+      `(()=>{const h=document.querySelector('.hopla-hotel-client'),b=document.querySelector('.internet-adventurer'),d=document.querySelector('.desktop').getBoundingClientRect(),t=document.querySelector('.taskbar').getBoundingClientRect(),r=h.getBoundingClientRect();const ratio=r.width*r.height/(d.width*(t.top-d.top));return ratio>=.85&&ratio<=.9&&r.left>=d.left&&r.top>=d.top&&r.right<=d.right&&r.bottom<=t.top&&r.width>b.offsetWidth&&r.height>b.offsetHeight&&Number(h.style.zIndex)>Number(b.style.zIndex);})()`,
+    ),
+  );
+  await evaluate(
+    "for(let i=0;i<5;i++)document.querySelector('.browser-page .hotel-enter').click()",
+  );
+  assert.equal(await evaluate("document.querySelectorAll('.hopla-hotel-client').length"), 1);
+  assert.equal(
+    await evaluate("document.querySelector('.hotel-room h2').textContent"),
     "Hall de l'hôtel",
   );
   // Observe the avatar's original purple shirt in the Canvas, without a production counter.
@@ -1437,6 +1483,23 @@ async function verifyHotel() {
       return 'case '+(Math.round((a+b)/2)+1)+', '+(Math.round((b-a)/2)+1);
     })()`);
   const assertCleanClient = async () => {
+    assert.ok(
+      await evaluate(`(()=>{
+      const c=document.querySelector('.hotel-canvas'),ctx=c.getContext('2d');
+      return [[0,0],[c.width-1,0],[0,c.height-1],[c.width-1,c.height-1]].every(([x,y])=>{
+        const p=ctx.getImageData(x,y,1,1).data;return p[0]===0&&p[1]===0&&p[2]===0&&p[3]===255;
+      })&&getComputedStyle(document.querySelector('.hotel-stage')).backgroundColor==='rgb(0, 0, 0)'
+        &&getComputedStyle(document.querySelector('.hotel-navigator')).backgroundColor==='rgb(240, 244, 236)'
+        &&getComputedStyle(document.querySelector('.browser-page .xdhotel')).backgroundColor==='rgb(228, 238, 244)';
+    })()`),
+      'black render background only, in every room',
+    );
+    assert.equal(await evaluate("document.querySelector('.hotel-room-nav').children.length"), 2);
+    assert.ok(
+      await evaluate(
+        `!document.querySelector('.hotel-room').textContent.includes("Retour à l'accueil")`,
+      ),
+    );
     assert.equal(
       await evaluate("!!document.querySelector('.hotel-room-status, .hotel-location')"),
       false,
@@ -1483,6 +1546,55 @@ async function verifyHotel() {
   );
   assert.equal(await evaluate("document.querySelector('.hotel-bubble').hidden"), false);
   await capture('xdhotel-hall.png');
+  const assertSceneFits = async () => {
+    assert.ok(
+      await evaluate(
+        `(()=>{const w=document.querySelector('.hopla-hotel-client .window-body').getBoundingClientRect(),c=document.querySelector('.hotel-canvas').getBoundingClientRect(),h=document.querySelector('.hopla-hotel-client').getBoundingClientRect(),d=document.querySelector('.desktop').getBoundingClientRect(),t=document.querySelector('.taskbar').getBoundingClientRect();return Math.abs(c.width/c.height-4/3)<.01&&c.left>=w.left&&c.right<=w.right&&c.top>=w.top&&c.bottom<=w.bottom&&h.left>=d.left&&h.top>=d.top&&h.right<=d.right+.5&&h.bottom<=t.top+.5&&getComputedStyle(document.querySelector('.hotel-canvas')).imageRendering==='pixelated';})()`,
+      ),
+    );
+  };
+  await assertSceneFits();
+  const rect = (selector) =>
+    evaluate(
+      `(()=>{const r=document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,width:r.width,height:r.height};})()`,
+    );
+  // Exercise the same titlebar drag and CSS resize handles as the other desktop windows.
+  const drag = async (start, dx, dy) => {
+    await command('Input.dispatchMouseEvent', {
+      type: 'mousePressed',
+      button: 'left',
+      buttons: 1,
+      clickCount: 1,
+      ...start,
+    });
+    await command('Input.dispatchMouseEvent', {
+      type: 'mouseMoved',
+      button: 'left',
+      buttons: 1,
+      x: start.x + dx,
+      y: start.y + dy,
+    });
+    await command('Input.dispatchMouseEvent', {
+      type: 'mouseReleased',
+      button: 'left',
+      buttons: 0,
+      x: start.x + dx,
+      y: start.y + dy,
+    });
+    await wait(100);
+  };
+  const windowBefore = await rect('.hopla-hotel-client');
+  const bar = await rect('.hopla-hotel-client .titlebar');
+  await drag({ x: bar.x, y: bar.y }, 10, 10);
+  const moved = await rect('.hopla-hotel-client');
+  assert.ok(moved.x > windowBefore.x && moved.y > windowBefore.y);
+  assert.equal(
+    await evaluate("getComputedStyle(document.querySelector('.hopla-hotel-client')).resize"),
+    'both',
+  );
+  await drag({ x: moved.x + moved.width / 2 - 8, y: moved.y + moved.height / 2 - 8 }, -150, -100);
+  assert.ok((await rect('.hopla-hotel-client')).width < moved.width, 'native CSS resize handle');
+  await assertSceneFits();
   await command('Emulation.setDeviceMetricsOverride', {
     width: 800,
     height: 600,
@@ -1490,6 +1602,13 @@ async function verifyHotel() {
     mobile: false,
   });
   await wait(100);
+  await assertSceneFits();
+  await floorClick(8, 7);
+  await until(
+    async () => (await location()).endsWith('case 9, 8'),
+    'scaled clicks after desktop shrink',
+  );
+  await floorClick(...room.npcs[0].position, -25);
   const npcTop = project(...room.npcs[0].position, room).y - 40;
   assert.ok(
     await evaluate(
@@ -1511,6 +1630,37 @@ async function verifyHotel() {
   await click('.hotel-navigator-open');
   assert.equal(await evaluate("document.querySelector('.hotel-navigator').hidden"), false);
   assert.equal(await evaluate("document.querySelectorAll('[data-hotel-room]').length"), 5);
+  const panelSize = () =>
+    evaluate(`(()=>{
+    const p=document.querySelector('.hotel-navigator'),r=p.getBoundingClientRect(),
+      room=document.querySelector('.hotel-room').getBoundingClientRect(),
+      rows=[...p.querySelectorAll('.hotel-room-entry')].filter(row=>getComputedStyle(row).display!=='none'),
+      last=rows.at(-1).getBoundingClientRect(),w=document.querySelector('.hopla-hotel-client').getBoundingClientRect();
+    return {height:r.height,tail:r.bottom-last.bottom,scroll:p.scrollHeight>p.clientHeight,
+      bounded:r.top>=room.top&&r.bottom<=room.bottom&&r.left>=room.left&&r.right<=room.right,
+      window:[w.width,w.height]};
+  })()`);
+  const fullPanel = await panelSize();
+  assert.ok(fullPanel.bounded && !fullPanel.scroll);
+  assert.ok(fullPanel.tail >= 8 && fullPanel.tail <= 12, 'panel ends just after its content');
+  await evaluate(
+    "[...document.querySelectorAll('.hotel-room-entry')].slice(1).forEach(row=>row.style.display='none')",
+  );
+  const oneRoom = await panelSize();
+  assert.ok(oneRoom.height < fullPanel.height, 'panel shrinks with fewer rooms');
+  assert.ok(oneRoom.bounded && oneRoom.tail <= 12);
+  await evaluate(
+    "document.querySelectorAll('.hotel-room-entry').forEach(row=>row.style.display='')",
+  );
+  // Extra rows exist only in this isolated layout check, never in room data.
+  await evaluate(
+    `(()=>{const p=document.querySelector('.hotel-navigator'),row=p.querySelector('.hotel-room-entry');for(let i=0;i<30;i++){const clone=row.cloneNode(true);clone.dataset.layoutProbe='true';p.append(clone);}})()`,
+  );
+  const manyRooms = await panelSize();
+  assert.ok(manyRooms.bounded && manyRooms.scroll, 'long list scrolls inside the available height');
+  assert.deepEqual(manyRooms.window, fullPanel.window, 'panel never resizes the client window');
+  await evaluate("document.querySelectorAll('[data-layout-probe]').forEach(row=>row.remove())");
+  assert.deepEqual((await panelSize()).window, fullPanel.window);
   await capture('hopla-navigator.png');
   await click('.hotel-navigator-close');
   assert.equal(await evaluate("document.querySelector('.hotel-navigator').hidden"), true);
@@ -1546,43 +1696,63 @@ async function verifyHotel() {
   }
   for (const id of ['hall', 'cafe', 'hall']) await enterRoom(id);
   await floorClick(8, 8);
-  await until(async () => (await location()).endsWith('case 9, 9'), 'first tab position');
-  const first = await evaluate(
-    "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).browser.active",
-  );
-  await click('[data-browser-action=new]');
-  await ready();
-  await go('hoplahotel.fr/salle/cafe');
-  assert.ok((await location()).endsWith('case 8, 8'));
+  await until(async () => (await location()).endsWith('case 9, 9'), 'client position');
+  await wait(350);
+  await click('.hopla-hotel-client .msn-minimize');
+  assert.equal(await evaluate("document.querySelector('.hopla-hotel-client').hidden"), true);
+  await click('.task-tab[data-app=hopla-hotel]');
+  assert.equal(await evaluate("document.querySelector('.hopla-hotel-client').hidden"), false);
+  assert.ok((await location()).endsWith('case 9, 9'), 'taskbar restoration preserves position');
+  await enterRoom('cafe');
   await floorClick(7, 8);
-  await until(async () => (await location()).endsWith('case 8, 9'), 'second tab moves');
-  await click(`[data-browser-action=select][data-tab-id="${first}"]`);
-  await ready();
-  assert.ok((await location()).endsWith('case 9, 9'), 'first tab retains its own room position');
-  assert.equal(
-    await evaluate("document.querySelector('.hotel-room h2').textContent"),
-    "Hall de l'hôtel",
-  );
-  await click('.xdhotel [data-browser-link="http://www.hoplahotel.fr/"]');
-  await ready();
-  await click('[data-browser-action=back]');
-  await ready();
-  assert.ok(await evaluate("!!document.querySelector('.hotel-canvas')"));
-  await click('[data-browser-action=forward]');
-  await ready();
-  assert.ok(await evaluate("!!document.querySelector('.hotel-enter')"));
-  await click(`[data-browser-action=close][data-tab-id="${first}"]`);
-  await ready();
+  await until(async () => (await location()).endsWith('case 8, 9'), 'cafe position');
+  await wait(350);
+  await click('.hopla-hotel-client .msn-minimize');
+  await evaluate("document.querySelector('.browser-page .hotel-enter').click()");
+  assert.equal(await evaluate("document.querySelector('.hopla-hotel-client').hidden"), false);
+  assert.ok((await location()).endsWith('case 8, 9'), 'site restoration preserves position');
   assert.equal(
     await evaluate("document.querySelector('.hotel-room h2').textContent"),
     'Café Hopla',
   );
-  assert.ok((await location()).endsWith('case 8, 9'), 'second tab retains its own room position');
-  await floorClick(9, 9);
+  await click('.task-tab[data-app=browser]');
+  await click('[data-browser-action=new]');
+  await ready();
+  await go('hoplahotel.fr');
+  await click('.browser-page .hotel-enter');
+  assert.equal(await evaluate("document.querySelectorAll('.hopla-hotel-client').length"), 1);
+  assert.ok(
+    (await location()).endsWith('case 8, 9'),
+    'launching from another tab preserves the same client',
+  );
+  await click('.task-tab[data-app=browser]');
+  await ready();
+  assert.ok(await evaluate("!!document.querySelector('.browser-page .hotel-enter')"));
+  await click('[data-browser-action=back]');
+  await ready();
+  await click('[data-browser-action=forward]');
+  await ready();
+  assert.ok(await evaluate("!!document.querySelector('.browser-page .hotel-enter')"));
   await click('.internet-adventurer .close-button');
+  assert.ok((await location()).endsWith('case 8, 9'), 'closing browser leaves client intact');
+  await click('.hopla-hotel-client .close-button');
+  assert.equal(
+    await evaluate(
+      "document.querySelectorAll('.hopla-hotel-client, .task-tab[data-app=hopla-hotel]').length",
+    ),
+    0,
+  );
   await doubleClick('#desktop > .desktop-icons [data-shortcut=browser]');
   await ready();
+  await click('.browser-page .hotel-enter');
   assert.ok((await location()).endsWith('case 8, 8'));
+  assert.equal(
+    await evaluate("document.querySelector('.hotel-room h2').textContent"),
+    "Hall de l'hôtel",
+  );
+  await capture('hopla-desktop-window.png');
+  await click('.hopla-hotel-client .close-button');
+  assert.ok(await evaluate("!!document.querySelector('.browser-page .hotel-enter')"));
   assert.equal(await narrative(), before);
   assert.equal(
     await evaluate(
@@ -1592,13 +1762,41 @@ async function verifyHotel() {
   );
   await doubleClick('#desktop > .desktop-icons [data-shortcut=computer]');
   assert.ok(await evaluate("!!document.querySelector('.explorer-items')"));
+  await evaluate("document.querySelector('.browser-page .hotel-enter').click()");
+  await click('#windows-start');
+  await click('#return-main-menu');
+  await until(
+    () => evaluate("window.chaosDebug.snapshot().phase==='menu'"),
+    'Hotel desktop teardown',
+  );
+  assert.equal(
+    await evaluate(
+      "document.querySelectorAll('.hopla-hotel-client, .task-tab[data-app=hopla-hotel]').length",
+    ),
+    0,
+  );
+  await click('#menu-new-game');
+  await click('#menu-confirm-yes');
+  await until(
+    () => evaluate("window.chaosDebug.snapshot().phase==='rules'"),
+    'Hotel New Game reset',
+  );
+  await click('.rules-confirm');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'Hotel fresh run');
+  await doubleClick('#desktop > .desktop-icons [data-shortcut=browser]');
+  await ready();
+  await go('hoplahotel.fr');
+  await click('.browser-page .hotel-enter');
+  assert.equal(await evaluate("document.querySelectorAll('.hopla-hotel-client').length"), 1);
+  assert.ok((await location()).endsWith('case 8, 8'), 'fresh client after New Game');
+  await click('.hopla-hotel-client .close-button');
   assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
   assert.ok(
     requests.every((url) => url.startsWith(gameUrl)),
     JSON.stringify(requests),
   );
   console.log(
-    'OK: Hopla Hotel five rooms, navigator open/close, repeated room changes, cancelled walking, decorations, per-room NPCs/collisions, bubble/resize, independent retained tabs, browser history, close/reopen, unchanged story/save and local requests; no Electron.',
+    'OK: single desktop Hotel window, unchanged browser homepage/history, large bounded dimensions, titlebar drag/CSS resize, minimize/taskbar/site restoration, five rooms, scaled clicks/collisions/NPCs, repeated room changes, independent browser lifetime, close/relaunch, menu teardown/New Game, unchanged story/save and local requests; no Electron.',
   );
 }
 
