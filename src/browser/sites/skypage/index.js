@@ -1,9 +1,10 @@
 import data from './data.json' with { type: 'json' };
 import secondaryBlogs from './secondary-blogs.json' with { type: 'json' };
+import forumBlogs from './forum-blogs.json' with { type: 'json' };
 import { renderSkyHome, renderSkyBlog } from './render.js';
 import { SKY_URL, blogUrl } from './urls.js';
 export { SKY_URL, blogUrl, articleUrl } from './urls.js';
-export const skyPageData = { ...data, blogs: [...data.blogs, ...secondaryBlogs] };
+export const skyPageData = { ...data, blogs: [...data.blogs, ...secondaryBlogs, ...forumBlogs] };
 export const skyPages = [
   {
     url: SKY_URL,

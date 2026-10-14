@@ -1,4 +1,8 @@
 import { SKY_URL as HOME, blogUrl, articleUrl } from './urls.js';
+import contacts from '../../../config/contacts.json' with { type: 'json' };
+const contactIds = new Set(
+  contacts.filter((contact) => contact.id !== 'turbo').map((contact) => contact.id),
+);
 function node(tag, className, text) {
   const element = document.createElement(tag);
   if (className) element.className = className;
@@ -41,10 +45,11 @@ export function renderSkyHome(context, data) {
   const welcome = node('section', 'sky-box sky-welcome');
   welcome.append(node('h2', '', data.welcome), node('p', '', data.description));
   root.append(welcome);
+  const contactBlogs = data.blogs.filter((blog) => contactIds.has(blog.contactId));
   const friends = node('section', 'sky-box sky-friends');
   friends.append(node('h2', '', 'Vos ami(e)s'));
   const friendList = node('ul');
-  for (const blog of data.blogs) {
+  for (const blog of contactBlogs) {
     const item = node('li');
     item.append(link(blog.nickname, blogUrl(blog)));
     friendList.append(item);
@@ -71,7 +76,7 @@ export function renderSkyHome(context, data) {
   }
   const latest = node('section', 'sky-box');
   latest.append(node('h2', '', 'Derniers articles'));
-  const articles = data.blogs
+  const articles = contactBlogs
     .flatMap((blog) => blog.articles.map((article) => ({ blog, article })))
     .sort((a, b) => b.article.date.localeCompare(a.article.date))
     .slice(0, 4);

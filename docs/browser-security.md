@@ -17,7 +17,8 @@ les chemins de ses images dans les répertoires locaux avatars/skypage.
 `electron/security.cjs` centralise les protections natives :
 
 - Node désactivé, isolation du contexte et sandbox conservés ; webview désactivé.
-- Preload limité au plein écran, sans fichiers, commandes ou IPC générique.
+- Preload limité au plein écran et à l'ouverture des vidéos VideoTube par
+  identifiant fixe, sans fichiers, commandes ou IPC générique.
   Les handlers IPC vérifient le document et la frame principale de l’émetteur.
 - Nouvelles fenêtres, navigations du document/des frames, redirections,
   webviews, téléchargements et permissions refusés.
@@ -37,6 +38,15 @@ les chemins de ses images dans les répertoires locaux avatars/skypage.
   supplémentaire retire cette exception.
 
 Ces mécanismes suivent les [recommandations de sécurité Electron](https://www.electronjs.org/docs/latest/tutorial/security/).
+
+VideoTube ajoute une exception explicite à l'ouverture externe : le bouton
+« Regarder sur YouTube » envoie seulement l'identifiant au handler
+`chaos:open-video`. `electron/video-links.cjs` résout l'URL dans le catalogue
+livré, vérifie son format HTTPS YouTube exact et l'émetteur IPC avant d'appeler
+`shell.openExternal`. Aucune adresse saisie ou URL du renderer n'est acceptée.
+L'ouverture se fait dans le navigateur système ; la CSP et les restrictions
+réseau de Chaos Survival ne sont pas assouplies. Détails et liens documentés
+dans [videotube.md](videotube.md).
 
 ## Ajouter un site
 

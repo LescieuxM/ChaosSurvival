@@ -1,0 +1,118 @@
+{
+  "name": "VideoTube",
+  "description": "Les vidéos dont tout le monde parle, à partager avec vos amis.",
+  "videos": [
+    {
+      "id": "numa-numa",
+      "title": "Numa Numa Dance",
+      "author": "Gary Brolsma",
+      "year": 2004,
+      "description": "Une webcam, une chanson entraînante et une danse qui donne envie de bouger sur sa chaise.",
+      "thumbnail": "./videotube/numa-numa.svg",
+      "views": 18524000,
+      "rating": 5,
+      "youtubeUrl": "https://www.youtube.com/watch?v=Cqd1Gvq-RBY",
+      "comments": [
+        { "author": "xX_TURBO_59_Xx", "text": "avec le caisson à fond c encore mieux !!!" },
+        { "author": "WebcamDuDimanche", "text": "ma chaise fait la choré maintenant" },
+        { "author": "Modem56k", "text": "3 minutes pour charger et je recommence xD" }
+      ]
+    },
+    {
+      "id": "chocolate-rain",
+      "title": "Chocolate Rain",
+      "author": "Tay Zonday",
+      "year": 2007,
+      "description": "Une voix grave, un micro et un refrain qu'on reconnaît dès les premières notes.",
+      "thumbnail": "./videotube/chocolate-rain.svg",
+      "views": 32481000,
+      "rating": 5,
+      "youtubeUrl": "https://www.youtube.com/watch?v=EwTZ2xpQwpA",
+      "comments": [
+        { "author": "LeModemEnPLS", "text": "comment il fait pour avoir cette voix ????" },
+        { "author": "xX_TURBO_59_Xx", "text": "mes enceintes vibrent toutes seules mdr" },
+        { "author": "OreilleDroite", "text": "oui mais écoutez les paroles aussi" }
+      ]
+    },
+    {
+      "id": "leave-britney-alone",
+      "title": "LEAVE BRITNEY ALONE!",
+      "author": "Chris Crocker",
+      "year": 2007,
+      "description": "Un plaidoyer passionné devant la webcam pour qu'on laisse Britney Spears tranquille.",
+      "thumbnail": "./videotube/leave-britney-alone.svg",
+      "views": 21457000,
+      "rating": 4,
+      "youtubeUrl": "https://www.youtube.com/watch?v=ElXi7yDHyWo",
+      "comments": [
+        { "author": "Oo_bubble-princess_oO", "text": "laissez la tranquille sérieux <3" },
+        { "author": "CapsLockCoincé", "text": "POURQUOI TOUT LE MONDE CRIE" },
+        { "author": "FanDuMardi", "text": "on peut aimer sa musique sans lire tous les magazines" }
+      ]
+    },
+    {
+      "id": "dramatic-chipmunk",
+      "title": "Dramatic Chipmunk",
+      "author": "magnets99 (montage)",
+      "year": 2007,
+      "description": "Un chien de prairie se retourne. Avec une musique dramatique, tout devient beaucoup plus sérieux.",
+      "thumbnail": "./videotube/dramatic-chipmunk.svg",
+      "views": 11823000,
+      "rating": 5,
+      "youtubeUrl": "https://www.youtube.com/watch?v=y8Kyi0WNg40",
+      "comments": [
+        { "author": "Sk8er_du_93", "text": "moi quand je vois le trottoir arriver" },
+        { "author": "RonGeUr", "text": "c pas un écureuil les gars" },
+        { "author": "ZoomMan", "text": "5 secondes et plus de suspense que mon dvd" }
+      ]
+    },
+    {
+      "id": "laughing-baby",
+      "title": "Laughing Baby",
+      "author": "spacelord72",
+      "year": 2006,
+      "description": "Le rire contagieux d'un bébé qui trouve les bruits de son papa absolument irrésistibles.",
+      "thumbnail": "./videotube/laughing-baby.svg",
+      "views": 9421000,
+      "rating": 5,
+      "youtubeUrl": "https://www.youtube.com/watch?v=HttF5HVYtlQ",
+      "comments": [
+        { "author": "xX_PixelGirl_Xx", "text": "jrigole alors que ya même pas de blague :DDD" },
+        { "author": "DodoPasDodo", "text": "il me faut ça comme réveil" },
+        { "author": "PasLePremier", "text": "preums !!! enfin presque" }
+      ]
+    },
+    {
+      "id": "sneezing-baby-panda",
+      "title": "Sneezing Baby Panda",
+      "author": null,
+      "year": 2006,
+      "description": "Un bébé panda éternue et surprend sa mère en plein repas. Une toute petite scène, un très grand sursaut.",
+      "thumbnail": "./videotube/sneezing-baby-panda.svg",
+      "views": 15893000,
+      "rating": 5,
+      "youtubeUrl": "https://www.youtube.com/watch?v=8d6voO-na6w",
+      "comments": [
+        { "author": "°•.LuNa.°•", "text": "le petit bruit et puis le grand bond :')" },
+        { "author": "BambouEnSolde", "text": "la maman a raté une bouchée" },
+        { "author": "InspecteurGadget", "text": "FAKE ... non en fait j'ai juste sursauté aussi" }
+      ]
+    },
+    {
+      "id": "what-what",
+      "title": "What What (In the Butt)",
+      "author": "Samwell / Brownmark Films",
+      "year": 2007,
+      "description": "Un clip musical exubérant de Samwell, réalisé par Bobby Ciraldo et Andrew Swant. Couleurs vives et refrain improbable.",
+      "thumbnail": "./videotube/what-what.svg",
+      "views": 17428000,
+      "rating": 4,
+      "youtubeUrl": "https://www.youtube.com/watch?v=fbGkxcY7YFU",
+      "comments": [
+        { "author": "DiscoDisquette", "text": "les couleurs ont gagné contre mon écran" },
+        { "author": "PauseCafé", "text": "j'aurais pas dû mettre le son au bureau lol" },
+        { "author": "AvisTrèsImportant", "text": "nul. bon allez je regarde encore une fois" }
+      ]
+    }
+  ]
+}

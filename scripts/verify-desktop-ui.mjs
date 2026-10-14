@@ -26,6 +26,9 @@ const buddyOnly = process.argv.includes('--buddy-only');
 const browserOnly = process.argv.includes('--browser-only');
 const browserSecurityElectron = process.argv.includes('--browser-security-electron');
 const skyPageOnly = process.argv.includes('--skypage-only');
+const flashZoneOnly = process.argv.includes('--flashzone-only');
+const videoTubeOnly = process.argv.includes('--videotube-only');
+const wikiOnly = process.argv.includes('--wiki-only');
 const minigameOnly =
   process.argv.includes('--minigame-only') ||
   typingOnly ||
@@ -40,6 +43,9 @@ const minigameOnly =
   buddyOnly ||
   browserOnly ||
   skyPageOnly ||
+  flashZoneOnly ||
+  videoTubeOnly ||
+  wikiOnly ||
   stabilityOnly;
 let browserServer;
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -554,7 +560,10 @@ try {
   if (browserSecurityElectron) {
     await verifyBrowser();
   } else if (minigameOnly) {
-    if (skyPageOnly) await verifySkyPage();
+    if (wikiOnly) await verifyWiki();
+    else if (videoTubeOnly) await verifyVideoTube();
+    else if (flashZoneOnly) await verifyFlashZone();
+    else if (skyPageOnly) await verifySkyPage();
     else if (browserOnly) await verifyBrowser();
     else if (buddyOnly) await verifyBuddy();
     else if (newGameOnly) await verifyNewGame();
@@ -1337,6 +1346,583 @@ async function physicalDrag(selector, left, top) {
   });
 }
 
+async function verifyWiki() {
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 1280,
+    height: 800,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await command('Page.enable');
+  await command('Network.enable');
+  const requests = [];
+  socket.addEventListener('message', ({ data }) => {
+    const m = JSON.parse(data);
+    if (m.method === 'Network.requestWillBeSent') requests.push(m.params.request.url);
+  });
+  await click('#menu-play');
+  await until(() => evaluate("!!document.querySelector('.rules-confirm')"), 'first rules');
+  await click('.rules-confirm');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'playing');
+  await doubleClick('#desktop > .desktop-icons [data-shortcut=browser]');
+  const ready = () =>
+    until(
+      () =>
+        evaluate("document.querySelector('.browser-page')?.getAttribute('aria-busy')==='false'"),
+      'page ready',
+    );
+  const go = async (url) => {
+    await evaluate(
+      `document.querySelector('.browser-address input').value=${JSON.stringify(url)};document.querySelector('.browser-address').requestSubmit()`,
+    );
+    await ready();
+  };
+  await ready();
+  const saved = JSON.parse(await evaluate("localStorage.getItem('chaos-survival-story-v1')"));
+  await click('.xd-sites [data-browser-link="http://www.wiki.fr/"]');
+  await ready();
+  assert.equal(
+    await evaluate("document.querySelector('.wiki h1').textContent"),
+    'Bienvenue sur Wiki',
+  );
+  assert.deepEqual(
+    await evaluate(
+      "(()=>{const s=getComputedStyle(document.querySelector('.wiki h1'));return [s.color,s.fontStyle,s.textShadow];})()",
+    ),
+    ['rgb(17, 17, 17)', 'normal', 'none'],
+  );
+  await capture('wiki-home.png');
+  await click('.wiki-sidebar [data-browser-link="http://www.wiki.fr/articles"]');
+  await ready();
+  const articles = await evaluate(
+    "[...document.querySelectorAll('.wiki-content [data-browser-link]')].map(a=>({title:a.textContent,url:a.dataset.browserLink}))",
+  );
+  assert.equal(articles.length, 16);
+  for (const article of articles) {
+    await go('wiki.fr/articles');
+    await click(`.wiki-content [data-browser-link="${article.url}"]`);
+    await ready();
+    assert.equal(await evaluate("document.querySelector('.wiki h1').textContent"), article.title);
+    assert.equal(await evaluate("document.querySelectorAll('.wiki-article-section').length"), 3);
+    await click('.wiki-toc li:last-child a');
+    assert.ok(await evaluate("document.querySelector('.browser-page').scrollTop>0"));
+    assert.equal(
+      await evaluate("document.querySelector('.browser-address input').value"),
+      article.url,
+    );
+    await go(`xdsearch.fr/?q=${encodeURIComponent(article.title)}`);
+    assert.ok(
+      await evaluate(
+        `!!document.querySelector('.xd-search-result [data-browser-link="${article.url}"]')`,
+      ),
+    );
+  }
+  await go('wiki.fr/article/internet');
+  await click('.wiki-content [data-browser-link="http://www.wiki.fr/article/blog"]');
+  await ready();
+  assert.equal(await evaluate("document.querySelector('.wiki h1').textContent"), 'Blog');
+  await click('[data-browser-action=back]');
+  await ready();
+  assert.equal(await evaluate("document.querySelector('.wiki h1').textContent"), 'Internet');
+  await click('[data-browser-action=forward]');
+  await ready();
+  assert.equal(await evaluate("document.querySelector('.wiki h1').textContent"), 'Blog');
+  await evaluate(
+    "document.querySelector('.wiki-search input').value='MUSIQUE ELECTRONIQUE';document.querySelector('.wiki-search').requestSubmit()",
+  );
+  await ready();
+  await click(
+    '.wiki-content [data-browser-link="http://www.wiki.fr/article/musique-electronique"]',
+  );
+  await ready();
+  assert.equal(
+    await evaluate("document.querySelector('.wiki h1').textContent"),
+    'Musique électronique',
+  );
+  await click('.wiki-sidebar .wiki-random');
+  await ready();
+  assert.ok(
+    articles
+      .map((article) => article.url)
+      .includes(await evaluate("document.querySelector('.browser-address input').value")),
+  );
+  assert.ok(
+    articles
+      .map((article) => article.title)
+      .includes(await evaluate("document.querySelector('.wiki h1').textContent")),
+  );
+  for (const query of [
+    '<script>alert(1)</script>',
+    '<img src=x onerror=alert(1)>',
+    'javascript:alert(1)',
+    'data:text/html,<script>alert(1)</script>',
+    'file:///C:/Windows/',
+    '../../../../',
+  ]) {
+    await evaluate(
+      `document.querySelector('.wiki-search input').value=${JSON.stringify(query)};document.querySelector('.wiki-search').requestSubmit()`,
+    );
+    await ready();
+    assert.ok(await evaluate("!!document.querySelector('.wiki-empty')"));
+    assert.equal(await evaluate("document.querySelector('.wiki-search input').value"), query);
+    assert.equal(
+      await evaluate("document.querySelectorAll('.wiki script,.wiki iframe,.wiki webview').length"),
+      0,
+    );
+  }
+  await go('wiki.fr/article/primates');
+  await capture('wiki-article.png');
+  await evaluate("document.querySelector('.internet-adventurer').style.width='500px'");
+  await capture('wiki-narrow.png');
+  assert.ok(
+    await evaluate(
+      "(()=>{const p=document.querySelector('.browser-page'),r=p.getBoundingClientRect();return p.scrollWidth<=p.clientWidth+1&&[...document.querySelectorAll('.wiki-infobox,.wiki-toc')].every(n=>{const b=n.getBoundingClientRect();return b.right<=r.right&&b.left>=r.left;});})()",
+    ),
+  );
+  const after = JSON.parse(await evaluate("localStorage.getItem('chaos-survival-story-v1')"));
+  delete saved.browser;
+  delete after.browser;
+  assert.deepEqual(after, saved);
+  assert.ok(
+    requests.every(
+      (url) => !/^https?:/.test(url) || new URL(url).origin === new URL(gameUrl).origin,
+    ),
+  );
+  assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
+  console.log(
+    'OK: Wiki home/catalogue, 16 articles and search indexing, TOCs, internal links, back/forward, title search, random article, hostile searches, resize, unchanged narrative/save and local requests; no Electron.',
+  );
+}
+
+async function verifyVideoTube() {
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 1280,
+    height: 800,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await command('Page.enable');
+  await command('Network.enable');
+  const requests = [];
+  socket.addEventListener('message', ({ data }) => {
+    const m = JSON.parse(data);
+    if (m.method === 'Network.requestWillBeSent') requests.push(m.params.request.url);
+  });
+  await click('#menu-play');
+  await until(() => evaluate("!!document.querySelector('.rules-confirm')"), 'first rules');
+  await click('.rules-confirm');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'playing');
+  await doubleClick('#desktop > .desktop-icons [data-shortcut=browser]');
+  const ready = () =>
+    until(
+      () =>
+        evaluate("document.querySelector('.browser-page')?.getAttribute('aria-busy')==='false'"),
+      'page ready',
+    );
+  const go = async (url) => {
+    await evaluate(
+      `document.querySelector('.browser-address input').value=${JSON.stringify(url)};document.querySelector('.browser-address').requestSubmit()`,
+    );
+    await ready();
+  };
+  await ready();
+  const saved = await evaluate("localStorage.getItem('chaos-survival-story-v1')");
+  assert.ok(
+    await evaluate(
+      '!!document.querySelector(\'.xd-sites [data-browser-link="http://www.videotube.fr/"]\')',
+    ),
+  );
+  await click('.xd-sites [data-browser-link="http://www.videotube.fr/"]');
+  await ready();
+  assert.equal(await evaluate("document.querySelectorAll('.videotube-card').length"), 7);
+  await evaluate(
+    "Promise.all([...document.querySelectorAll('.videotube img')].map(img=>img.decode()))",
+  );
+  await capture('videotube-home.png');
+  const ids = [
+    'numa-numa',
+    'chocolate-rain',
+    'leave-britney-alone',
+    'dramatic-chipmunk',
+    'laughing-baby',
+    'sneezing-baby-panda',
+    'what-what',
+  ];
+  const titles = [
+    'Numa Numa Dance',
+    'Chocolate Rain',
+    'LEAVE BRITNEY ALONE!',
+    'Dramatic Chipmunk',
+    'Laughing Baby',
+    'Sneezing Baby Panda',
+    'What What (In the Butt)',
+  ];
+  await evaluate(
+    'window.__videoIds=[];window.chaosVideo={open:async id=>{window.__videoIds.push(id);return {ok:true};}}',
+  );
+  for (let index = 0; index < ids.length; index++) {
+    if (index) await go('videotube.fr');
+    await click(
+      `.videotube-card [data-browser-link="http://www.videotube.fr/watch/${ids[index]}"]`,
+    );
+    await ready();
+    assert.equal(
+      await evaluate("document.querySelector('.videotube h2').textContent"),
+      titles[index],
+    );
+    assert.equal(
+      await evaluate("document.querySelectorAll('.videotube-comments article').length"),
+      3,
+    );
+    assert.ok(
+      await evaluate(
+        "/Note : [1-5] sur 5/.test(document.querySelector('.videotube-stars').getAttribute('aria-label'))",
+      ),
+    );
+    assert.equal(await evaluate("document.querySelector('.videotube-watch').disabled"), false);
+    await evaluate("document.querySelector('.videotube-player img').decode()");
+    {
+      const address = await evaluate("document.querySelector('.browser-address input').value");
+      const tabs = await evaluate("document.querySelectorAll('.browser-tab').length");
+      await click('.videotube-watch');
+      await until(
+        () =>
+          evaluate(
+            "document.querySelector('.videotube-open-status').textContent.startsWith('Vidéo ouverte')",
+          ),
+        'external button response',
+      );
+      assert.equal(
+        await evaluate("document.querySelector('.browser-address input').value"),
+        address,
+      );
+      assert.equal(await evaluate("document.querySelectorAll('.browser-tab').length"), tabs);
+    }
+    if (index === 1) {
+      await capture('videotube-watch.png');
+      await evaluate('window.chaosVideo.open=async()=>{throw new Error("Simulated failure")};');
+      await click('.videotube-watch');
+      await until(
+        () =>
+          evaluate(
+            "document.querySelector('.videotube-open-status').textContent.startsWith('Impossible')",
+          ),
+        'external error',
+      );
+      await evaluate(
+        'window.chaosVideo.open=async id=>{window.__videoIds.push(id);return {ok:true};};',
+      );
+      await evaluate("document.querySelector('.internet-adventurer').style.width='500px'");
+      assert.ok(
+        await evaluate(
+          "(()=>{const r=document.querySelector('.videotube-player').getBoundingClientRect(),p=document.querySelector('.browser-page').getBoundingClientRect();return r.left>=p.left&&r.right<=p.right;})()",
+        ),
+      );
+    }
+    await go(`xdsearch.fr/?q=${encodeURIComponent(titles[index])}`);
+    assert.ok(
+      await evaluate(
+        `!!document.querySelector('.xd-search-result [data-browser-link="http://www.videotube.fr/watch/${ids[index]}"]')`,
+      ),
+    );
+  }
+  assert.deepEqual(await evaluate('window.__videoIds'), ids);
+  for (const url of [
+    'javascript:alert(1)',
+    'data:text/html,<script>alert(1)</script>',
+    'file:///C:/Windows/',
+  ]) {
+    await go(url);
+    assert.ok(await evaluate("!!document.querySelector('.browser-error')"));
+  }
+  const before = JSON.parse(saved),
+    after = JSON.parse(await evaluate("localStorage.getItem('chaos-survival-story-v1')"));
+  delete before.browser;
+  delete after.browser;
+  assert.deepEqual(after, before);
+  assert.ok(
+    requests.every(
+      (url) => !/^https?:/.test(url) || new URL(url).origin === new URL(gameUrl).origin,
+    ),
+  );
+  assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
+  console.log(
+    'OK: VideoTube 7 cards/pages/images/comments/ratings, internal links/search, external-ID bridge simulated with success/failure, all watch buttons enabled, resize, hostile URLs, unchanged narrative/save and local requests; no Electron or real browser opened.',
+  );
+}
+
+async function verifyFlashZone() {
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 1280,
+    height: 800,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await command('Page.enable');
+  await command('Network.enable');
+  const requests = [];
+  socket.addEventListener('message', ({ data }) => {
+    const m = JSON.parse(data);
+    if (m.method === 'Network.requestWillBeSent') requests.push(m.params.request.url);
+  });
+  await click('#menu-play');
+  await until(() => evaluate("!!document.querySelector('.rules-confirm')"), 'first rules');
+  await click('.rules-confirm');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'playing');
+  await doubleClick('#desktop > .desktop-icons [data-shortcut=browser]');
+  const ready = () =>
+    until(
+      () =>
+        evaluate("document.querySelector('.browser-page')?.getAttribute('aria-busy')==='false'"),
+      'page ready',
+    );
+  const go = async (url) => {
+    await evaluate(
+      `document.querySelector('.browser-address input').value=${JSON.stringify(url)};document.querySelector('.browser-address').requestSubmit()`,
+    );
+    await ready();
+  };
+  await ready();
+  const narrative = await evaluate(
+    "JSON.stringify([JSON.parse(localStorage.getItem('chaos-survival-story-v1')).dialogues,JSON.parse(localStorage.getItem('chaos-survival-story-v1')).completed])",
+  );
+  assert.ok(
+    await evaluate(
+      '!!document.querySelector(\'.xd-sites [data-browser-link="http://www.flashzone.fr/"]\')',
+    ),
+  );
+  await click('.xd-sites [data-browser-link="http://www.flashzone.fr/"]');
+  await ready();
+  assert.equal(await evaluate("document.querySelectorAll('.flashzone-card').length"), 3);
+  await evaluate(
+    "Promise.all([...document.querySelectorAll('.flashzone img')].map(img=>img.decode()))",
+  );
+  await capture('flashzone-home.png');
+  await click('.flashzone-card [data-browser-link="http://www.flashzone.fr/jeux/bubble-pop"]');
+  await ready();
+  await evaluate(
+    'window.__bubbleShift=0;window.__bubbleRaf=requestAnimationFrame;window.__bubbleNow=performance.now.bind(performance);window.requestAnimationFrame=fn=>window.__bubbleRaf(t=>fn(t+window.__bubbleShift));performance.now=()=>window.__bubbleNow()+window.__bubbleShift',
+  );
+  await click('.bubble-play');
+  await until(() => evaluate("document.querySelectorAll('.bubble-target').length>0"), 'bubbles');
+  await click('.bubble-target');
+  assert.equal(
+    await evaluate("document.querySelector('.bubble-stats strong').textContent"),
+    'Score : 10',
+  );
+  await capture('flashzone-bubble-playing.png');
+  await evaluate('window.__bubbleShift+=30001');
+  await until(
+    () => evaluate("!document.querySelector('.bubble-result').hidden"),
+    '30 second result',
+  );
+  assert.equal(
+    await evaluate("document.querySelector('.bubble-result strong').textContent"),
+    'Score final : 10',
+  );
+  assert.equal(
+    await evaluate(
+      "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).flashzone.bestScores['bubble-pop']",
+    ),
+    10,
+  );
+  await capture('flashzone-bubble-result.png');
+  await click('.bubble-replay');
+  assert.equal(
+    await evaluate("document.querySelector('.bubble-stats strong').textContent"),
+    'Score : 0',
+  );
+  await click('[data-browser-action=new]');
+  await ready();
+  await go('flashzone.fr/jeux/bubble-pop');
+  assert.equal(await evaluate("document.querySelector('.bubble-intro').hidden"), false);
+  await click('.bubble-play');
+  await click('.bubble-target');
+  await click('.internet-adventurer .close-button');
+  await evaluate('window.__bubbleShift+=60000');
+  await click('#windows-start');
+  await click('#menu-browser');
+  await ready();
+  assert.equal(await evaluate("document.querySelector('.bubble-intro').hidden"), false);
+  assert.equal(
+    await evaluate(
+      "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).flashzone.bestScores['bubble-pop']",
+    ),
+    10,
+  );
+  await go('xdsearch.fr/?q=bubble%20pop');
+  assert.ok(
+    await evaluate(
+      '!!document.querySelector(\'.xd-search-result [data-browser-link="http://www.flashzone.fr/jeux/bubble-pop"]\')',
+    ),
+  );
+  await evaluate(
+    "document.dispatchEvent(new CustomEvent('windows-xd:open-url',{detail:{url:'http://www.flashzone.fr/jeux/bubble-pop'}}))",
+  );
+  await ready();
+  assert.ok(await evaluate("!!document.querySelector('.bubble-play')"));
+  await evaluate('window.__bubbleShift=0');
+  await go('flashzone.fr/jeux/avoid-the-squares');
+  assert.equal(await evaluate("document.querySelector('.squares-intro').hidden"), false);
+  await click('.squares-play');
+  assert.equal(await evaluate("document.querySelectorAll('.squares-enemy').length"), 2);
+  await evaluate(
+    "(()=>{const a=document.querySelector('.squares-arena'),r=a.getBoundingClientRect();a.dispatchEvent(new PointerEvent('pointermove',{clientX:r.left+100,clientY:r.top+100,bubbles:true}));})()",
+  );
+  const startPosition = await evaluate("document.querySelector('.squares-player').style.left");
+  assert.ok(parseFloat(startPosition) > 0 && parseFloat(startPosition) < 40);
+  await capture('flashzone-squares-playing.png');
+  await wait(1100);
+  await evaluate(
+    "(()=>{const a=document.querySelector('.squares-arena'),e=document.querySelector('.squares-enemy').getBoundingClientRect();a.dispatchEvent(new PointerEvent('pointermove',{clientX:e.left+e.width/2,clientY:e.top+e.height/2,bubbles:true}));})()",
+  );
+  await until(
+    () => evaluate("!document.querySelector('.squares-result').hidden"),
+    'squares collision',
+  );
+  const squaresBest = await evaluate(
+    "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).flashzoneBestTimes['avoid-the-squares']",
+  );
+  assert.ok(squaresBest >= 750);
+  await capture('flashzone-squares-result.png');
+  await click('.squares-replay');
+  assert.equal(await evaluate("document.querySelector('.squares-result').hidden"), true);
+  await evaluate("document.querySelector('.internet-adventurer').style.width='500px'");
+  const squareSize = await evaluate(
+    "(()=>{const r=document.querySelector('.squares-player').getBoundingClientRect();return {w:r.width,h:r.height};})()",
+  );
+  assert.ok(Math.abs(squareSize.w - squareSize.h) < 0.2);
+  await click('[data-browser-action=new]');
+  await ready();
+  await go('flashzone.fr/jeux/avoid-the-squares');
+  assert.equal(await evaluate("document.querySelector('.squares-intro').hidden"), false);
+  await go('xdsearch.fr/?q=avoid%20the%20squares');
+  assert.ok(
+    await evaluate(
+      '!!document.querySelector(\'.xd-search-result [data-browser-link="http://www.flashzone.fr/jeux/avoid-the-squares"]\')',
+    ),
+  );
+  assert.equal(
+    await evaluate(
+      "JSON.stringify([JSON.parse(localStorage.getItem('chaos-survival-story-v1')).dialogues,JSON.parse(localStorage.getItem('chaos-survival-story-v1')).completed])",
+    ),
+    narrative,
+  );
+  await go('flashzone.fr');
+  await click('.flashzone-card [data-browser-link="http://www.flashzone.fr/jeux/pixel-runner"]');
+  await ready();
+  await click('.runner-play');
+  assert.ok(await evaluate("document.activeElement===document.querySelector('.runner-canvas')"));
+  for (const code of ['Space', 'ArrowUp']) {
+    assert.equal(
+      await evaluate(
+        `(()=>{const c=document.querySelector('.runner-canvas');const e=new KeyboardEvent('keydown',{code:'${code}',cancelable:true});c.dispatchEvent(e);return e.defaultPrevented;})()`,
+      ),
+      true,
+    );
+  }
+  assert.equal(
+    await evaluate(
+      "(()=>{const i=document.querySelector('.browser-address input');i.focus();const e=new KeyboardEvent('keydown',{code:'Space',cancelable:true});i.dispatchEvent(e);return e.defaultPrevented;})()",
+    ),
+    false,
+  );
+  await wait(250);
+  const runnerTab = await evaluate(
+    "document.querySelector('.browser-tab[aria-selected=true] [data-browser-action=select]').dataset.tabId",
+  );
+  await evaluate("window.__runnerRoot=document.querySelector('.pixel-runner')");
+  await click('[data-browser-action=new]');
+  const pausedDistance = await evaluate(
+    "window.__runnerRoot.querySelector('.runner-distance').textContent",
+  );
+  await ready();
+  assert.equal(
+    await evaluate("window.__runnerRoot.querySelector('.runner-distance').textContent"),
+    pausedDistance,
+  );
+  await go('flashzone.fr/jeux/pixel-runner');
+  assert.equal(await evaluate("document.querySelector('.runner-intro').hidden"), false);
+  const otherRunnerTab = await evaluate(
+    "document.querySelector('.browser-tab[aria-selected=true] [data-browser-action=select]').dataset.tabId",
+  );
+  await click(`.browser-tab [data-browser-action=select][data-tab-id="${runnerTab}"]`);
+  await ready();
+  assert.equal(await evaluate("document.querySelector('.runner-intro').hidden"), true);
+  await click(`.browser-tab [data-browser-action=close][data-tab-id="${otherRunnerTab}"]`);
+  await wait(250);
+  assert.ok(await evaluate("document.querySelector('.pixel-runner')===window.__runnerRoot"));
+  const resumedDistance = await evaluate("document.querySelector('.runner-distance').textContent");
+  assert.notEqual(resumedDistance, 'Distance : 0 m');
+  await capture('flashzone-runner-playing.png');
+  await until(
+    () => evaluate("!document.querySelector('.runner-result').hidden"),
+    'runner collision',
+    15000,
+  );
+  const runnerBest = await evaluate(
+    "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).flashzoneBestDistances['pixel-runner']",
+  );
+  assert.ok(runnerBest > 400);
+  await capture('flashzone-runner-result.png');
+  await click('.runner-replay');
+  assert.equal(await evaluate("document.querySelector('.runner-result').hidden"), true);
+  await go('xdsearch.fr/?q=pixel%20runner');
+  assert.ok(
+    await evaluate(
+      '!!document.querySelector(\'.xd-search-result [data-browser-link="http://www.flashzone.fr/jeux/pixel-runner"]\')',
+    ),
+  );
+  await command('Page.reload');
+  await until(() => evaluate("window.chaosDebug?.snapshot().phase==='menu'"), 'restart');
+  assert.equal(
+    await evaluate(
+      "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).flashzone.bestScores['bubble-pop']",
+    ),
+    10,
+  );
+  await click('#menu-new-game');
+  assert.equal(
+    await evaluate(
+      "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).flashzoneBestDistances['pixel-runner']",
+    ),
+    runnerBest,
+  );
+  assert.equal(
+    await evaluate(
+      "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).flashzoneBestTimes['avoid-the-squares']",
+    ),
+    squaresBest,
+  );
+  await click('#menu-confirm-yes');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='rules'"), 'New Game');
+  assert.equal(
+    await evaluate("JSON.parse(localStorage.getItem('chaos-survival-story-v1')).flashzone"),
+    undefined,
+  );
+  assert.equal(
+    await evaluate(
+      "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).flashzoneBestTimes",
+    ),
+    undefined,
+  );
+  assert.equal(
+    await evaluate(
+      "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).flashzoneBestDistances",
+    ),
+    undefined,
+  );
+  assert.ok(
+    requests.every(
+      (url) => !/^https?:/.test(url) || new URL(url).origin === new URL(gameUrl).origin,
+    ),
+  );
+  assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
+  console.log(
+    'OK: FlashZone three games, keyboard/pointer controls, collision/replay/resize, Runner tab suspension/resume, browser close/reopen, search, independent records/restart/New Game, unchanged narrative and local requests; no Electron.',
+  );
+}
+
 async function verifySkyPage() {
   await command('Page.enable');
   await command('Network.enable');
@@ -1385,7 +1971,12 @@ async function verifySkyPage() {
     await evaluate(
       "[...document.querySelectorAll('.xd-sites a')].map(link=>link.dataset.browserLink)",
     ),
-    ['http://www.xdsearch.fr/', 'http://www.skypage.fr/'],
+    [
+      'http://www.xdsearch.fr/',
+      'http://www.skypage.fr/',
+      'http://www.forumjeu.fr/',
+      'http://www.flashzone.fr/',
+    ],
   );
   await capture('xd-search-sites.png');
   await click('.xd-sites [data-browser-link="http://www.skypage.fr/"]');
@@ -1456,23 +2047,24 @@ async function verifySkyPage() {
     await ready();
     assert.ok(await evaluate("!!document.querySelector('.sky-blog-layout')"));
   }
-  for (const [id, nickname] of [
-    ['sk8er_du_93', 'Sk8er_du_93'],
-    ['oo_bubble-princess_oo', 'Oo_bubble-princess_oO'],
+  for (const [id, nickname, count] of [
+    ['sk8er_du_93', 'Sk8er_du_93', 4],
+    ['oo_bubble-princess_oo', 'Oo_bubble-princess_oO', 6],
+    ['cartouchegrise', 'CartoucheGrise', 5],
+    ['grillepain_92', 'GrillePain_92', 4],
+    ['disquette44', 'Disquette44', 6],
+    ['padsansfil', 'PadSansFil', 4],
   ]) {
     await go(`skypage.fr/${id}`);
     assert.equal(
       await evaluate("document.querySelector('.sky-blog-title h2').textContent"),
       nickname,
     );
-    assert.equal(
-      await evaluate("document.querySelectorAll('.sky-post').length"),
-      id === 'sk8er_du_93' ? 4 : 6,
-    );
+    assert.equal(await evaluate("document.querySelectorAll('.sky-post').length"), count);
     await evaluate(
       "Promise.all([...document.querySelectorAll('.skypage img')].map(image=>image.decode()))",
     );
-    await evaluate("document.querySelector('.sky-illustration').scrollIntoView({block:'center'})");
+    await evaluate("document.querySelector('.sky-illustration')?.scrollIntoView({block:'center'})");
     await capture(`skypage-${id}.png`);
     await go('skypage.fr');
     assert.equal(
@@ -1541,7 +2133,7 @@ async function verifySkyPage() {
   );
   assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
   console.log(
-    'OK: five SkyPage routes from fresh game, twenty-one posts/comments, local photos/decorations, recent visits, article links, back/forward, XD Search, tabs, small window, restart/New Game, unchanged dialogues and no external requests; no Electron.',
+    'OK: nine SkyPage routes from fresh game, forty posts/comments, local photos/decorations, recent visits, article links, back/forward, XD Search, tabs, small window, restart/New Game, unchanged dialogues and no external requests; no Electron.',
   );
 }
 

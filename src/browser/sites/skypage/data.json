@@ -5,6 +5,7 @@
   "blogs": [
     {
       "id": "pixelgirl",
+      "contactId": "pixelgirl",
       "nickname": "xX_PixelGirl_Xx",
       "theme": "pixelgirl",
       "avatar": "./avatars/pixelgirl.svg",
@@ -149,6 +150,7 @@
     },
     {
       "id": "luna",
+      "contactId": "luna",
       "nickname": "°•.LuNa.°•",
       "theme": "luna",
       "avatar": "./avatars/luna.svg",

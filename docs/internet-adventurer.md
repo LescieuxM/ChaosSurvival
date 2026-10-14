@@ -10,9 +10,14 @@ un seul onglet XD Search.
 Toutes les adresses sont fictives et résolues localement. Aucune URL saisie n'est
 utilisée pour une requête réseau, une iframe, une WebView ou un script. Les
 contenus utilisent des éléments DOM locaux ; le texte saisi est affiché avec
-`textContent`. XD Search et les cinq pages SkyPage sont disponibles. FlashZone,
-ForumJeu, VideoTube et Wiki ne sont pas encore enregistrés et n'apparaissent pas
-dans les résultats.
+`textContent`. XD Search, SkyPage, ForumJeu, FlashZone, VideoTube et Wiki sont disponibles.
+Wiki propose seize articles, une recherche locale par titre et une navigation
+interne ; voir [wiki.md](wiki.md).
+
+VideoTube propose uniquement sur ses pages vidéo une ouverture dans le navigateur
+système, via un identifiant et une liste fixe d'URL YouTube côté Electron.
+Cette exception ne permet pas d'ouvrir les adresses saisies par le joueur.
+Voir [videotube.md](videotube.md) pour les sources et limites des liens.
 
 ## Ajouter une page locale
 

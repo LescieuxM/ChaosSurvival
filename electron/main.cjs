@@ -1,8 +1,9 @@
-const { app, BrowserWindow, dialog, ipcMain, Menu, protocol, session } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, Menu, protocol, session, shell } = require('electron');
 const path = require('node:path');
 const { readFile } = require('node:fs/promises');
 const { resolveLocalAsset } = require('./local-assets.cjs');
 const { developmentUrl, securityPolicy, protectSession, protectWindow } = require('./security.cjs');
+const { createVideoOpener } = require('./video-links.cjs');
 
 // A packaged executable always loads its own bundled game.
 const devUrl = !app.isPackaged ? developmentUrl(process.env.CHAOS_DEV_URL) : undefined;
@@ -66,6 +67,10 @@ async function createWindow() {
 app
   .whenReady()
   .then(async () => {
+    ipcMain.handle(
+      'chaos:open-video',
+      createVideoOpener(policy, (url) => shell.openExternal(url)),
+    );
     ipcMain.handle(
       'chaos:get-fullscreen',
       (event) =>

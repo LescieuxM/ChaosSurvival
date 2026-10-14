@@ -11,6 +11,7 @@ export class InternetAdventurer {
     Object.assign(this, { manager, applications, progression, registry });
     this.session = new BrowserSession(progression);
     this.generation = 0;
+    this.retainedPages = new Map();
   }
   open(url) {
     const existing = this.instance?.element.isConnected;
@@ -18,7 +19,7 @@ export class InternetAdventurer {
       this.applications.restore(this.instance);
       if (url !== undefined) {
         this.session.add(url);
-        this.load();
+        this.load('switch');
       }
       return this.instance;
     }
@@ -38,6 +39,8 @@ export class InternetAdventurer {
       <div class="window-status browser-statusbar"><span class="browser-status"></span><progress class="browser-progress" hidden></progress></div>`,
       },
       onDismiss: () => {
+        this.disposePage();
+        this.clearRetainedPages();
         clearTimeout(this.timer);
         this.generation++;
         this.observer?.disconnect();
@@ -73,13 +76,20 @@ export class InternetAdventurer {
       if (action === 'new') this.session.add();
       if (action === 'select') this.session.select(button.dataset.tabId);
       if (action === 'close') {
+        const closingActive = button.dataset.tabId === this.session.active;
+        this.retainedPages.get(button.dataset.tabId)?.cleanup?.();
+        this.retainedPages.delete(button.dataset.tabId);
         this.session.close(button.dataset.tabId);
         if (!this.session.tabs.length) {
           this.manager.close(this.instance.id);
           return;
         }
+        if (!closingActive) {
+          this.tabs();
+          return;
+        }
       }
-      this.load();
+      this.load(['select', 'new'].includes(action) ? 'switch' : 'navigate');
     });
     this.observer = new ResizeObserver(() => {
       if (element.hidden || !element.isConnected) return;
@@ -125,7 +135,8 @@ export class InternetAdventurer {
     add.setAttribute('aria-label', 'Nouvel onglet');
     list.append(add);
   }
-  load() {
+  load(reason = 'navigate') {
+    this.disposePage(reason);
     clearTimeout(this.timer);
     const generation = ++this.generation;
     const element = this.instance.element;
@@ -147,20 +158,43 @@ export class InternetAdventurer {
     this.timer = setTimeout(() => {
       if (generation !== this.generation || !element.isConnected) return;
       const current = this.registry.resolve(this.session.address, this.progression.data);
+      const cached = this.retainedPages.get(this.session.active);
+      this.retainedPages.delete(this.session.active);
+      if (cached && cached.address !== this.session.address) cached.cleanup?.();
       this.session.title(
         current.page?.title ?? (pageErrors[current.error] ?? pageErrors.connection)[0],
       );
       this.tabs();
       page.replaceChildren(
-        current.page
-          ? current.page.render({
-              url: current.url,
-              registry: this.registry,
-              data: this.progression.data,
-              navigate: (url) => this.navigate(url),
-            })
-          : renderError(current.error),
+        cached && cached.address === this.session.address
+          ? cached.node
+          : current.page
+            ? current.page.render({
+                url: current.url,
+                registry: this.registry,
+                data: this.progression.data,
+                progression: this.progression,
+                onDispose: (cleanup) => {
+                  this.pageCleanup = cleanup;
+                },
+                onResume: (resume) => {
+                  this.pageResume = resume;
+                },
+                navigate: (url) => this.navigate(url),
+              })
+            : renderError(current.error),
       );
+      if (cached && cached.address === this.session.address) {
+        this.pageCleanup = cached.cleanup;
+        this.pageResume = cached.resume;
+        this.pageResume?.();
+      }
+      this.currentPage = {
+        tabId: this.session.active,
+        address: this.session.address,
+        node: page.firstElementChild,
+        preserve: current.page?.preserveOnTabSwitch,
+      };
       if (current.page?.rememberVisit) this.session.recordVisit(current.page.url);
       page.scrollTop = 0;
       page.setAttribute('aria-busy', 'false');
@@ -169,9 +203,29 @@ export class InternetAdventurer {
     }, 200);
   }
   reset() {
+    this.disposePage();
+    this.clearRetainedPages();
     clearTimeout(this.timer);
     this.generation++;
     this.instance = null;
     this.session.restore();
+  }
+  disposePage(reason = 'navigate') {
+    const cleanup = this.pageCleanup;
+    if (reason === 'switch' && this.currentPage?.preserve && cleanup) {
+      cleanup('pause');
+      this.retainedPages.set(this.currentPage.tabId, {
+        ...this.currentPage,
+        cleanup,
+        resume: this.pageResume,
+      });
+    } else cleanup?.();
+    this.pageCleanup = null;
+    this.pageResume = null;
+    this.currentPage = null;
+  }
+  clearRetainedPages() {
+    for (const page of this.retainedPages.values()) page.cleanup?.();
+    this.retainedPages.clear();
   }
 }

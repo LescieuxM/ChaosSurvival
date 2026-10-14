@@ -1,5 +1,22 @@
 # Audit des ressources graphiques
 
+## Ajout VideoTube — 14 octobre 2026
+
+`public/videotube/numa-numa.svg`, `chocolate-rain.svg`,
+`leave-britney-alone.svg`, `dramatic-chipmunk.svg`, `laughing-baby.svg`,
+`sneezing-baby-panda.svg` et `what-what.svg` : provenance **C**, SVG originaux
+écrits avec Codex lors de l'intégration de VideoTube. Aucun fichier d'une vidéo,
+miniature YouTube, photographie ni logo externe téléchargé. Il ne s'agit pas
+de ressources bitmap générées par imagegen. Les sujets sont évoqués par des
+dessins génériques ; pas de portrait réaliste ni reproduction de frame.
+Pas de licence externe inventée. Une expertise exhaustive de similarité ou de
+marques n'a pas été effectuée. Pour une commercialisation, contrôler aussi
+les conditions applicables au code généré et la présentation des références
+aux œuvres. Sources, attributions et limites des liens : [videotube.md](videotube.md).
+
+L'inventaire ci-dessous décrit le périmètre de l'audit initial ; cet ajout ne
+transforme pas cet audit en certification juridique.
+
 Audit du **14 octobre 2026**, sur les fichiers de la branche de travail. Ce rapport
 est un inventaire de provenance et de risques, **pas une certification juridique**.
 Aucune image n’a été modifiée, remplacée ou supprimée pendant cet audit.

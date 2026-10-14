@@ -14,7 +14,16 @@ import { Progression } from '../src/story/progression.js';
 import { InternetAdventurer } from '../src/ui/browser.js';
 import { renderSkyHome } from '../src/browser/sites/skypage/render.js';
 const story = JSON.parse(readFileSync(new URL('../src/config/story.json', import.meta.url)));
-const articleCounts = { pixelgirl: 6, luna: 5, sk8er_du_93: 4, 'oo_bubble-princess_oo': 6 };
+const articleCounts = {
+  pixelgirl: 6,
+  luna: 5,
+  sk8er_du_93: 4,
+  'oo_bubble-princess_oo': 6,
+  cartouchegrise: 5,
+  grillepain_92: 4,
+  disquette44: 6,
+  padsansfil: 4,
+};
 const walk = (node) => [node, ...(node.children ?? []).flatMap(walk)];
 function dom(t) {
   const previous = globalThis.document;
@@ -37,8 +46,8 @@ function dom(t) {
     else globalThis.document = previous;
   });
 }
-test('SkyPage exposes home and four available blog routes without narrative prerequisites', () => {
-  assert.equal(skyPages.length, 5);
+test('SkyPage exposes home and eight available blog routes without narrative prerequisites', () => {
+  assert.equal(skyPages.length, 9);
   for (const url of [
     'skypage.fr',
     'www.skypage.fr',
@@ -51,11 +60,11 @@ test('SkyPage exposes home and four available blog routes without narrative prer
   assert.equal(localPages.resolve('skypage.fr/turbo', {}).error, 'not-found');
   assert.equal(localPages.resolve('skypage.fr/missing', {}).error, 'not-found');
   assert.deepEqual(
-    skyPageData.blogs.map((blog) => blog.nickname),
+    skyPageData.blogs.slice(0, 4).map((blog) => blog.nickname),
     ['xX_PixelGirl_Xx', '°•.LuNa.°•', 'Sk8er_du_93', 'Oo_bubble-princess_oO'],
   );
 });
-test('twenty-one articles follow the requested distribution, with valid dates and MSN comment authors', () => {
+test('all articles follow the requested distribution, with valid dates and MSN comment authors', () => {
   const contacts = JSON.parse(
     readFileSync(new URL('../src/config/contacts.json', import.meta.url)),
   );
@@ -208,10 +217,15 @@ test('secondary blogs use exact identities, searchable themes and recent-visit/l
   assert.equal(initial.filter((n) => n.className === 'sky-discovery').length, 0);
   const latest = initial.filter((n) => n.className === 'sky-latest');
   assert.equal(latest.length, 4);
-  for (const id of ['sk8er_du_93', 'oo_bubble-princess_oo'])
-    assert.ok(
-      latest.some((n) => n.children[0].dataset.browserLink.startsWith(`${SKY_URL}${id}?article=`)),
-    );
+  const expectedLatest = skyPageData.blogs
+    .filter((blog) => blog.contactId)
+    .flatMap((blog) => blog.articles.map((article) => ({ blog, article })))
+    .sort((a, b) => b.article.date.localeCompare(a.article.date))
+    .slice(0, 4);
+  assert.deepEqual(
+    latest.map((n) => n.children[0].dataset.browserLink),
+    expectedLatest.map(({ blog, article }) => articleUrl(blog, article)),
+  );
   const visited = [blogUrl(skyPageData.blogs[3]), blogUrl(skyPageData.blogs[2])];
   const rendered = walk(home.render({ data: { browser: { recentPages: visited } } }));
   assert.deepEqual(
@@ -257,7 +271,7 @@ test('normal browser history, tabs, restart and New Game keep static blogs avail
   for (const page of skyPages) assert.ok(localPages.resolve(page.url, progression.data).page);
 });
 
-test('friends directory includes all actual blogs and future data additions without changing visits or navigation', (t) => {
+test('friends directory includes only MSN blogs and future contact blog additions without changing visits or navigation', (t) => {
   dom(t);
   const render = (data) => walk(renderSkyHome({ data: {} }, data));
   const nodes = render(skyPageData);
@@ -266,11 +280,11 @@ test('friends directory includes all actual blogs and future data additions with
   const links = walk(friends).filter((node) => node.tag === 'a');
   assert.deepEqual(
     links.map((link) => link.textContent),
-    skyPageData.blogs.map((blog) => blog.nickname),
+    skyPageData.blogs.filter((blog) => blog.contactId).map((blog) => blog.nickname),
   );
   assert.deepEqual(
     links.map((link) => link.dataset.browserLink),
-    skyPageData.blogs.map(blogUrl),
+    skyPageData.blogs.filter((blog) => blog.contactId).map(blogUrl),
   );
   assert.ok(
     links.every(
@@ -286,6 +300,64 @@ test('friends directory includes all actual blogs and future data additions with
   const added = expanded.find((node) => node.className === 'sky-box sky-friends');
   assert.equal(walk(added).filter((node) => node.tag === 'a').length, 5);
   assert.ok(walk(added).some((node) => node.dataset?.browserLink === blogUrl(future)));
+});
+
+test('new blog owners already participate in multiple ForumJeu threads but do not become MSN contacts', () => {
+  const forum = JSON.parse(
+    readFileSync(new URL('../src/browser/sites/forumjeu/data.json', import.meta.url)),
+  );
+  const contacts = JSON.parse(
+    readFileSync(new URL('../src/config/contacts.json', import.meta.url)),
+  );
+  const blogs = skyPageData.blogs.slice(4);
+  assert.equal(blogs.length, 4);
+  for (const blog of blogs) {
+    const threads = forum.categories
+      .flatMap((category) => category.topics)
+      .filter((topic) => topic.posts.some((post) => post.author === blog.nickname));
+    assert.ok(threads.length >= 2, blog.nickname);
+    assert.ok(!contacts.some((contact) => contact.nickname === blog.nickname));
+    const route = localPages.resolve(blogUrl(blog), {});
+    assert.ok(route.page);
+    assert.equal(route.page.rememberVisit, true);
+    assert.ok(localPages.search(blog.nickname, {}).some((page) => page.url === blogUrl(blog)));
+    assert.ok(blog.articles.length >= 4 && blog.articles.length <= 6);
+    assert.doesNotMatch(JSON.stringify(blog), /\b(?:ARCHIVE|Buddy|Raph|TikTok|Discord|TURBO)\b/i);
+  }
+});
+
+test('public blogs stay searchable/directly accessible and enter recents without entering friends or latest posts', (t) => {
+  dom(t);
+  const publicBlogs = skyPageData.blogs.filter((blog) => !blog.contactId);
+  const home = localPages.resolve(SKY_URL, {}).page;
+  const nodes = walk(home.render({ data: { browser: { recentPages: publicBlogs.map(blogUrl) } } }));
+  const friends = nodes.find((node) => node.className === 'sky-box sky-friends');
+  const latest = nodes.filter((node) => node.className === 'sky-latest');
+  const recent = nodes.filter((node) => node.className === 'sky-discovery');
+  assert.equal(walk(friends).filter((node) => node.tag === 'a').length, 4);
+  assert.deepEqual(
+    recent.map((row) => walk(row).find((node) => node.tag === 'a').dataset.browserLink),
+    publicBlogs.map(blogUrl),
+  );
+  for (const blog of publicBlogs) {
+    assert.ok(localPages.resolve(blogUrl(blog), {}).page);
+    assert.ok(localPages.search(blog.nickname, {}).some((page) => page.url === blogUrl(blog)));
+    assert.ok(!walk(friends).some((node) => node.dataset?.browserLink === blogUrl(blog)));
+    assert.ok(
+      !latest.some((row) => row.children[0].dataset.browserLink.startsWith(`${blogUrl(blog)}?`)),
+    );
+  }
+  const extra = { ...publicBlogs[0], id: 'not-a-contact', contactId: 'unknown' };
+  const turbo = { ...publicBlogs[0], id: 'turbo', contactId: 'turbo' };
+  const filtered = walk(
+    renderSkyHome({ data: {} }, { ...skyPageData, blogs: [...skyPageData.blogs, extra, turbo] }),
+  );
+  assert.equal(
+    walk(filtered.find((node) => node.className === 'sky-box sky-friends')).filter(
+      (node) => node.tag === 'a',
+    ).length,
+    4,
+  );
 });
 
 test('recent blogs are unique, newest first, persistent and reset by New Game without changing latest articles', (t) => {

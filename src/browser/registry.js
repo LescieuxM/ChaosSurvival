@@ -1,6 +1,9 @@
 import { renderSearch } from './pages/xd-search.js';
 import { skyPages } from './sites/skypage/index.js';
 import { forumPages } from './sites/forumjeu/index.js';
+import { flashPages } from './sites/flashzone/index.js';
+import { videoPages } from './sites/videotube/index.js';
+import { wikiPages } from './sites/wiki/index.js';
 
 export const HOME_URL = 'http://www.xdsearch.fr/';
 export function normalizeUrl(input) {
@@ -99,3 +102,6 @@ localPages.register({
 });
 for (const page of skyPages) localPages.register(page);
 for (const page of forumPages) localPages.register(page);
+for (const page of flashPages) localPages.register(page);
+for (const page of videoPages) localPages.register(page);
+for (const page of wikiPages) localPages.register(page);

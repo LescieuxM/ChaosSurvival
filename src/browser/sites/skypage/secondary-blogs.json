@@ -1,6 +1,7 @@
 [
   {
     "id": "sk8er_du_93",
+    "contactId": "skater",
     "nickname": "Sk8er_du_93",
     "theme": "skater",
     "avatar": "./avatars/contact-skater.svg",
@@ -88,6 +89,7 @@
   },
   {
     "id": "oo_bubble-princess_oo",
+    "contactId": "princess",
     "nickname": "Oo_bubble-princess_oO",
     "theme": "princess",
     "avatar": "./avatars/contact-bubble.svg",

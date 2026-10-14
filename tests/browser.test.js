@@ -43,7 +43,7 @@ test('URLs normalize aliases and paths locally and reject host files, scripts, c
 test('registry resolves only implemented available pages and differentiates domain errors, 404 and explicit timeout', () => {
   assert.equal(localPages.resolve('xdsearch.fr/?q=internet', {}).page.title, 'XD Search');
   assert.equal(localPages.resolve('xdsearch.fr/missing', {}).error, 'not-found');
-  for (const domain of ['flashzone.fr', 'wiki.fr', 'unknown.fr'])
+  for (const domain of ['unknown.fr'])
     assert.equal(localPages.resolve(domain, {}).error, 'connection');
   const registry = new PageRegistry();
   registry.register({
@@ -85,15 +85,20 @@ test('search matches multiple terms, casing and accents and excludes nonexistent
     ['FlashZone', 'Jeux de société'],
   );
   assert.equal(registry.search('societe', {})[0].title, 'Jeux de société');
-  assert.ok(
-    localPages.search('jeux flash', {}).every((page) => !page.url.includes('flashzone.fr')),
-  );
+  assert.ok(localPages.search('jeux flash', {}).some((page) => page.url.includes('flashzone.fr')));
 });
 
 test('site directory derives only available implemented homepages and picks up future registrations', (t) => {
   assert.deepEqual(
     localPages.sites({}).map((page) => page.url),
-    [HOME_URL, 'http://www.skypage.fr/'],
+    [
+      HOME_URL,
+      'http://www.skypage.fr/',
+      'http://www.forumjeu.fr/',
+      'http://www.flashzone.fr/',
+      'http://www.videotube.fr/',
+      'http://www.wiki.fr/',
+    ],
   );
   const registry = new PageRegistry();
   const render = () => {};
