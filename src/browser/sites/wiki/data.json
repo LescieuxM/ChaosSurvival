@@ -17,7 +17,10 @@
       "article": "tour-eiffel",
       "text": "La construction de la tour Eiffel s'est achevée en 1889."
     },
-    { "article": "primates", "text": "L'être humain appartient à l'ordre des primates." }
+    {
+      "article": "primates",
+      "text": "L'être humain appartient à l'ordre des primates."
+    }
   ],
   "articles": [
     {
@@ -28,25 +31,48 @@
       "sections": [
         {
           "id": "origines",
-          "title": "Origines et développement",
+          "title": "Des premiers réseaux à Internet",
           "paragraphs": [
             "Ses origines se trouvent dans les recherches sur la communication entre ordinateurs et la transmission par paquets. ARPANET relie ses premiers ordinateurs en 1969. Plutôt que de réserver une liaison continue à chaque échange, les informations sont découpées en unités que le réseau transporte et que le destinataire rassemble.",
-            "L'adoption de TCP/IP par ARPANET en 1983 facilite les échanges entre réseaux. Des universités et des organismes de recherche participent ensuite à cet ensemble. Le Web, proposé au CERN par Tim Berners-Lee en 1989, rend la consultation de documents reliés par des hyperliens plus accessible au cours des années 1990."
+            "L'adoption de TCP/IP par ARPANET en 1983 facilite les échanges entre réseaux. Des universités et des organismes de recherche participent ensuite à cet ensemble."
+          ]
+        },
+        {
+          "id": "web",
+          "title": "Le développement du Web",
+          "paragraphs": [
+            "Le Web, proposé au CERN par Tim Berners-Lee en 1989, rend la consultation de documents reliés par des hyperliens plus accessible au cours des années 1990.",
+            "Une page Web peut être reliée à une autre par un hyperlien, même si leurs documents se trouvent sur des ordinateurs différents. Ce principe facilite la consultation : le lecteur suit un sujet sans avoir à connaître l'organisation matérielle du réseau. Il ne supprime pas les autres services, qui continuent à employer leurs propres logiciels."
+          ]
+        },
+        {
+          "id": "adressage",
+          "title": "Adresses et circulation des données",
+          "paragraphs": [
+            "Ces activités reposent sur des logiciels et des règles distincts. Une adresse de site est traduite en information utilisable par les machines. Le navigateur demande ensuite les documents nécessaires à l'affichage. Une connexion rapide améliore le confort, mais la taille des fichiers et la disponibilité des serveurs interviennent également.",
+            "Les noms de domaine rendent les adresses plus faciles à retenir. Ils ne désignent pas nécessairement une seule machine : un service peut utiliser plusieurs serveurs. Le trajet suivi par les données n'est pas toujours identique, et la communication dépend d'équipements administrés par des organismes différents."
           ]
         },
         {
           "id": "services",
           "title": "Services et usages",
           "paragraphs": [
-            "En 2009, Internet sert à envoyer du courrier électronique, discuter, rechercher des informations et transférer des fichiers. Des services tels que XD Search orientent les lecteurs vers des pages ; les blogs et les forums permettent de publier des textes. La messagerie instantanée facilite les échanges entre personnes connectées au même moment.",
-            "Ces activités reposent sur des logiciels et des règles distincts. Une adresse de site est traduite en information utilisable par les machines. Le navigateur demande ensuite les documents nécessaires à l'affichage. Une connexion rapide améliore le confort, mais la taille des fichiers et la disponibilité des serveurs interviennent également."
+            "En 2009, Internet sert à envoyer du courrier électronique, discuter, rechercher des informations et transférer des fichiers. Des services tels que XD Search orientent les lecteurs vers des pages ; les blogs et les forums permettent de publier des textes. La messagerie instantanée facilite les échanges entre personnes connectées au même moment."
           ]
         },
         {
           "id": "acces",
-          "title": "Accès et information",
+          "title": "Accès domestique",
           "paragraphs": [
-            "L'accès domestique utilise notamment des lignes téléphoniques, l'ADSL ou le câble. Les usages varient selon les équipements et le coût des abonnements. La présence d'une information en ligne ne garantit ni son exactitude ni sa pérennité : identifier son auteur, sa date et ses sources reste une étape importante de la lecture."
+            "L'accès domestique utilise notamment des lignes téléphoniques, l'ADSL ou le câble. Les usages varient selon les équipements et le coût des abonnements.",
+            "Les connexions domestiques sont partagées entre les activités de l'ordinateur. Un téléchargement volumineux peut ralentir d'autres échanges. La réception des données et leur envoi n'ont pas toujours le même débit, ce qui intervient notamment dans le partage de photographies."
+          ]
+        },
+        {
+          "id": "information",
+          "title": "Lecture de l'information",
+          "paragraphs": [
+            "La présence d'une information en ligne ne garantit ni son exactitude ni sa pérennité : identifier son auteur, sa date et ses sources reste une étape importante de la lecture."
           ]
         }
       ],
@@ -60,25 +86,50 @@
       "sections": [
         {
           "id": "bureau",
-          "title": "Bureau et fenêtres",
+          "title": "Bureau et raccourcis",
           "paragraphs": [
             "Le bureau présente des raccourcis vers les fichiers et les programmes. Un clic sélectionne une icône, tandis qu'un double-clic ouvre l'élément correspondant. Les icônes peuvent être réorganisées. Les applications disposent généralement d'une fenêtre dont la barre de titre permet le déplacement ; plusieurs fenêtres peuvent rester ouvertes en même temps.",
-            "La barre des tâches rassemble les fenêtres ouvertes et permet de retrouver une application réduite. La fenêtre au premier plan reçoit les interactions qui la concernent. Réduire une fenêtre la retire temporairement du bureau, sans équivaloir à sa fermeture. Cette distinction facilite le passage d'une tâche à une autre."
+            "Le placement des icônes peut être adapté aux habitudes de l'utilisateur. Une sélection permet de repérer un élément sans l'ouvrir ; sur une zone libre du bureau, un rectangle de sélection peut englober plusieurs icônes. Cette organisation est indépendante de l'ordre des applications dans le menu Démarrer."
+          ]
+        },
+        {
+          "id": "fenetres",
+          "title": "Fenêtres et barre des tâches",
+          "paragraphs": [
+            "La barre des tâches rassemble les fenêtres ouvertes et permet de retrouver une application réduite. La fenêtre au premier plan reçoit les interactions qui la concernent. Réduire une fenêtre la retire temporairement du bureau, sans équivaloir à sa fermeture. Cette distinction facilite le passage d'une tâche à une autre.",
+            "Cliquer sur une fenêtre la ramène au premier plan. Son déplacement ne modifie pas l'emplacement des icônes qu'elle recouvre. La barre des tâches conserve un accès aux applications ouvertes, tandis que la fermeture d'un document indépendant laisse les autres fenêtres disponibles."
           ]
         },
         {
           "id": "navigation",
-          "title": "Menu Démarrer et documents",
+          "title": "Menu Démarrer",
           "paragraphs": [
-            "Le menu Démarrer propose des raccourcis vers les applications disponibles. Son organisation complète celle du bureau : un logiciel n'a pas besoin d'y posséder une icône pour être accessible. Le Poste de travail présente les périphériques et une arborescence de dossiers, avec des commandes pour revenir en arrière ou remonter au dossier parent.",
-            "Les fichiers sont identifiés par un nom et une extension. Selon leur type et leur association, ils s'ouvrent dans une application adaptée. Le Bloc-notes permet de consulter et modifier des textes ; la visionneuse affiche les images. Ouvrir un document conserve l'explorateur à son emplacement et place le document dans une fenêtre indépendante."
+            "Le menu Démarrer propose des raccourcis vers les applications disponibles. Son organisation complète celle du bureau : un logiciel n'a pas besoin d'y posséder une icône pour être accessible.",
+            "Les raccourcis d'applications peuvent être réordonnés par glisser-déposer. Un clic conserve son rôle de lancement ; déplacer une entrée sert uniquement à organiser la liste. Buddy et Windows Love Messenger peuvent être retrouvés depuis ce menu, sans imposer la présence d'un raccourci supplémentaire sur le bureau."
+          ]
+        },
+        {
+          "id": "explorateur",
+          "title": "Poste de travail et dossiers",
+          "paragraphs": [
+            "Le Poste de travail présente les périphériques et une arborescence de dossiers, avec des commandes pour revenir en arrière ou remonter au dossier parent.",
+            "Le Poste de travail présente un disque local, un lecteur CD/DVD vide et une clé USB. Les dossiers s'ouvrent dans l'explorateur et le chemin courant reste visible. Un lecteur vide affiche une indication adaptée ; il ne présente pas un contenu qui n'est pas disponible."
+          ]
+        },
+        {
+          "id": "fichiers",
+          "title": "Documents et applications associées",
+          "paragraphs": [
+            "Les fichiers sont identifiés par un nom et une extension. Selon leur type et leur association, ils s'ouvrent dans une application adaptée. Le Bloc-notes permet de consulter et modifier des textes ; la visionneuse affiche les images. Ouvrir un document conserve l'explorateur à son emplacement et place le document dans une fenêtre indépendante.",
+            "Dans le Bloc-notes, le menu Fichier propose l'enregistrement et la fermeture. Le raccourci Ctrl+S enregistre également les modifications. Fermer un texte modifié demande une confirmation. La visionneuse ajuste l'image à sa fenêtre en conservant ses proportions ; elle ne propose pas d'édition de l'image."
           ]
         },
         {
           "id": "applications",
-          "title": "Applications intégrées",
+          "title": "Communication, navigation et assistance",
           "paragraphs": [
-            "Internet Adventurer donne accès aux pages Web, Windows Love Messenger à la liste de contacts et aux discussions. Buddy propose des conseils sous forme de bulles. Des jeux sont également disponibles. Ces outils remplissent des fonctions différentes ; leur présence dans un environnement commun permet de passer de la communication à la consultation de documents sans réorganiser le bureau."
+            "Internet Adventurer donne accès aux pages Web, Windows Love Messenger à la liste de contacts et aux discussions. Buddy propose des conseils sous forme de bulles. Des jeux sont également disponibles. Ces outils remplissent des fonctions différentes ; leur présence dans un environnement commun permet de passer de la communication à la consultation de documents sans réorganiser le bureau.",
+            "Buddy s'ouvre à la demande depuis le menu Démarrer et peut être masqué. Ses conseils apparaissent dans des bulles : aucun champ ne permet de lui répondre. Internet Adventurer organise les pages dans des onglets avec des commandes de navigation. Windows Love Messenger sépare la liste de contacts des fenêtres de conversation."
           ]
         }
       ],
@@ -108,7 +159,14 @@
           "title": "Messages et expression",
           "paragraphs": [
             "Le texte constitue le support principal. Les émoticônes complètent les mots pour suggérer une expression ou préciser le ton d'une phrase. Les abréviations sont fréquentes dans les échanges familiers, mais leur sens dépend des habitudes du groupe. Une conversation écrite ne transmet pas automatiquement toutes les nuances d'une conversation orale.",
-            "Certains logiciels indiquent qu'un interlocuteur prépare un message. Des notifications attirent l'attention sur un nouvel échange et des fonctions comme le Wizz peuvent accompagner la discussion. L'historique rassemble les messages envoyés et reçus, ce qui permet de relire un passage ou de poursuivre un échange après avoir fermé sa fenêtre."
+            "Certains logiciels indiquent qu'un interlocuteur prépare un message. Des notifications attirent l'attention sur un nouvel échange et des fonctions comme le Wizz peuvent accompagner la discussion."
+          ]
+        },
+        {
+          "id": "historique",
+          "title": "Continuité des échanges",
+          "paragraphs": [
+            "L'historique rassemble les messages envoyés et reçus, ce qui permet de relire un passage ou de poursuivre un échange après avoir fermé sa fenêtre."
           ]
         },
         {
@@ -137,9 +195,15 @@
         },
         {
           "id": "diffusion",
-          "title": "Diffusion sur le Web",
+          "title": "Lecture et chargement",
           "paragraphs": [
-            "Les contenus sont souvent distribués sous forme de fichiers SWF lus par Flash Player. Dans un navigateur, leur lecture nécessite un composant compatible. La vitesse de chargement dépend du poids des images, des sons et des animations. Les créateurs cherchent ainsi à limiter les ressources nécessaires, notamment pour les visiteurs disposant de connexions lentes.",
+            "Les contenus sont souvent distribués sous forme de fichiers SWF lus par Flash Player. Dans un navigateur, leur lecture nécessite un composant compatible. La vitesse de chargement dépend du poids des images, des sons et des animations. Les créateurs cherchent ainsi à limiter les ressources nécessaires, notamment pour les visiteurs disposant de connexions lentes."
+          ]
+        },
+        {
+          "id": "outils",
+          "title": "Outils et dénominations",
+          "paragraphs": [
             "La technologie a été développée sous le nom de Macromedia Flash avant le rachat de Macromedia par Adobe en 2005. Les contenus publiés sur Internet présentent des qualités et des usages variés : publicité animée, présentation pédagogique, dessin animé court ou petite application. Le terme Flash peut désigner les outils de création ou la technologie de lecture."
           ]
         },
@@ -183,7 +247,6 @@
           ]
         }
       ],
-      "notice": "Cet article est une ébauche concernant Internet.",
       "related": ["internet", "reseau-social", "photographie-numerique", "forum-internet"]
     },
     {
@@ -194,9 +257,15 @@
       "sections": [
         {
           "id": "histoire",
-          "title": "Développement historique",
+          "title": "Des expériences aux machines commerciales",
           "paragraphs": [
-            "Les premières expériences de jeux sur ordinateur précèdent leur diffusion commerciale. Dans les années 1970, les bornes d'arcade et les consoles domestiques élargissent leur public. Pong, commercialisé par Atari en 1972, propose une représentation simple du tennis de table. Les cartouches permettent ensuite de changer de jeu sans remplacer l'ensemble de la console.",
+            "Les premières expériences de jeux sur ordinateur précèdent leur diffusion commerciale. Dans les années 1970, les bornes d'arcade et les consoles domestiques élargissent leur public. Pong, commercialisé par Atari en 1972, propose une représentation simple du tennis de table. Les cartouches permettent ensuite de changer de jeu sans remplacer l'ensemble de la console."
+          ]
+        },
+        {
+          "id": "supports",
+          "title": "Ordinateurs et consoles",
+          "paragraphs": [
             "Les ordinateurs personnels, les consoles et les machines portables développent des catalogues et des usages distincts. Les capacités graphiques progressent, des scènes en trois dimensions complétant les images en deux dimensions. En 2009, Xbox 360, PlayStation 3 et Nintendo Wii illustrent des approches différentes de l'équipement domestique et des commandes proposées aux joueurs."
           ]
         },
@@ -204,8 +273,15 @@
           "id": "genres",
           "title": "Genres et règles",
           "paragraphs": [
-            "Les catégories servent à décrire les actions dominantes : plateforme, course, stratégie, aventure, rôle, sport ou énigme. Elles ne constituent pas des frontières strictes. Un jeu peut combiner exploration et combat, ou demander à la fois des réflexes et une planification. Les conditions de réussite sont définies par ses règles plutôt que par sa seule apparence.",
-            "La difficulté dépend notamment de la précision des commandes, du temps disponible et des informations fournies au joueur. L'apprentissage repose sur l'observation et les essais. Une présentation claire des objectifs aide à comprendre les erreurs ; un score, une durée ou un niveau atteint peut ensuite permettre de comparer plusieurs parties d'une même activité."
+            "Les catégories servent à décrire les actions dominantes : plateforme, course, stratégie, aventure, rôle, sport ou énigme. Elles ne constituent pas des frontières strictes. Un jeu peut combiner exploration et combat, ou demander à la fois des réflexes et une planification. Les conditions de réussite sont définies par ses règles plutôt que par sa seule apparence."
+          ]
+        },
+        {
+          "id": "apprentissage",
+          "title": "Apprentissage et difficulté",
+          "paragraphs": [
+            "La difficulté dépend notamment de la précision des commandes, du temps disponible et des informations fournies au joueur. L'apprentissage repose sur l'observation et les essais. Une présentation claire des objectifs aide à comprendre les erreurs ; un score, une durée ou un niveau atteint peut ensuite permettre de comparer plusieurs parties d'une même activité.",
+            "Les commandes font partie de cette expérience. Un clavier, une manette ou une souris ne proposent pas les mêmes gestes, et une règle simple peut demander de l'entraînement. La précision d'un mouvement compte autant que la compréhension de l'objectif."
           ]
         },
         {
@@ -226,29 +302,23 @@
       "sections": [
         {
           "id": "technique",
-          "title": "Grille et palette",
+          "title": "Dessin sur une grille",
           "paragraphs": [
-            "Un pixel est un élément d'une image matricielle. Une petite grille oblige à sélectionner les détails les plus utiles pour reconnaître un objet. Une palette limitée peut donner une cohérence aux personnages et aux décors. Les teintes sont souvent choisies pour séparer les plans et suggérer des volumes sans disposer d'un grand nombre de nuances.",
-            "Les lignes obliques apparaissent comme une succession de marches. Leur rythme, l'épaisseur des contours et la répartition des surfaces influencent la lisibilité. Des motifs alternés de deux couleurs peuvent suggérer une teinte intermédiaire : cette méthode est appelée tramage. Elle ne remplace pas tous les effets d'éclairage, mais constitue un outil parmi d'autres."
+            "Un pixel est un élément d'une image matricielle. Une petite grille oblige à sélectionner les détails utiles pour reconnaître un objet. Une palette limitée donne une cohérence aux personnages et aux décors ; les teintes séparent les plans et suggèrent les volumes.",
+            "Les diagonales forment des marches dont le rythme influence la lisibilité. L'épaisseur des contours compte également. Le tramage, qui alterne des points de couleurs différentes, peut suggérer une nuance intermédiaire sans ajouter une nouvelle couleur à la palette."
           ]
         },
         {
           "id": "jeux",
-          "title": "Usages dans les jeux",
+          "title": "Jeux, animation et affichage",
           "paragraphs": [
-            "Les limitations de mémoire, de résolution et de couleur des premières machines ont encouragé des graphismes économes. Les personnages mobiles sont fréquemment représentés par des sprites. Une animation de marche résulte alors de plusieurs dessins successifs, dont les changements de silhouette donnent une impression de mouvement malgré un nombre réduit d'images et de détails.",
-            "L'emploi d'images pixelisées ne se limite pas aux anciens équipements. En 2009, des créateurs choisissent aussi cette technique pour son caractère visuel ou pour la clarté de petites scènes. Une image réduite peut être expressive, mais elle demande de contrôler les proportions et de conserver des différences suffisantes entre les éléments interactifs et le décor."
-          ]
-        },
-        {
-          "id": "affichage",
-          "title": "Affichage et conservation",
-          "paragraphs": [
-            "L'agrandissement d'une image peut préserver les blocs de pixels ou les lisser selon la méthode utilisée. Le lissage modifie parfois l'aspect voulu par l'auteur. Les fichiers sans perte conviennent à la conservation des dessins nets ; une compression destinée aux photographies peut ajouter des traces autour des contours et transformer une palette soigneusement organisée."
+            "Les limites de mémoire et de résolution des premières machines ont favorisé des images économes. Les personnages mobiles utilisent souvent des sprites. Une marche est représentée par plusieurs dessins successifs : quelques changements de silhouette suffisent à rendre le mouvement reconnaissable.",
+            "En 2009, cette technique reste aussi un choix graphique, même sur des équipements plus puissants. L'agrandissement peut conserver les pixels ou les lisser. Une compression avec perte risque de modifier les contours ; les formats sans perte préservent mieux le dessin et sa palette."
           ]
         }
       ],
-      "related": ["jeu-video", "photographie-numerique", "adobe-flash"]
+      "related": ["jeu-video", "photographie-numerique", "adobe-flash"],
+      "notice": "Cet article est une ébauche concernant les arts numériques."
     },
     {
       "id": "musique-electronique",
@@ -266,9 +336,15 @@
         },
         {
           "id": "genres",
-          "title": "Techno, trance et dance",
+          "title": "Techno et house",
           "paragraphs": [
-            "La techno se développe notamment à Detroit durant les années 1980, avec une place importante donnée aux sons synthétiques et aux motifs rythmiques. La house, associée à Chicago, s'appuie également sur les pratiques des clubs et des disc-jockeys. Ces courants présentent de nombreuses variantes et leurs appellations ne décrivent pas toutes les caractéristiques d'un morceau.",
+            "La techno se développe notamment à Detroit durant les années 1980, avec une place importante donnée aux sons synthétiques et aux motifs rythmiques. La house, associée à Chicago, s'appuie également sur les pratiques des clubs et des disc-jockeys. Ces courants présentent de nombreuses variantes et leurs appellations ne décrivent pas toutes les caractéristiques d'un morceau."
+          ]
+        },
+        {
+          "id": "trance-dance",
+          "title": "Trance et dance",
+          "paragraphs": [
             "La trance privilégie souvent des phrases répétées, des nappes et des montées qui préparent un retour marqué du rythme. Le terme dance regroupe des productions destinées à la danse, parfois proches de la chanson populaire. Dans les années 1990 et 2000, les échanges entre ces formes donnent naissance à des morceaux aux structures et aux tempos différents."
           ]
         },
@@ -354,25 +430,18 @@
       "sections": [
         {
           "id": "anatomie",
-          "title": "Caractéristiques physiques",
+          "title": "Anatomie et perception",
           "paragraphs": [
-            "Son corps souple, ses griffes rétractiles et sa dentition sont adaptés à la chasse. Ses oreilles mobiles l'aident à localiser des sons, tandis que ses vibrisses fournissent des informations tactiles sur l'environnement proche. Sa vision est adaptée à une faible lumière, mais le chat ne voit pas dans une obscurité totale et ne perçoit pas les couleurs comme un humain.",
-            "La robe peut présenter des couleurs et des motifs très différents. Les races sélectionnées par l'élevage ne représentent qu'une partie des chats domestiques. Des individus sans pedigree possèdent également une grande diversité d'apparences. Le poids, l'âge et la condition physique influencent les déplacements ; tous les chats ne manifestent pas la même agilité ni la même activité."
+            "Le corps souple, les griffes rétractiles et la dentition du chat sont adaptés à la chasse. Les oreilles mobiles localisent les sons, tandis que les vibrisses renseignent sur l'environnement proche. Sa vision convient à une faible lumière, mais pas à l'obscurité totale ; sa perception des couleurs diffère de celle des humains.",
+            "Les robes et les tailles sont variées, chez les races sélectionnées comme chez les animaux sans pedigree. L'âge et la condition physique influencent l'activité et l'agilité."
           ]
         },
         {
           "id": "comportement",
-          "title": "Comportement et communication",
+          "title": "Comportement et relations avec les humains",
           "paragraphs": [
-            "Le chat organise une partie de ses activités autour d'un territoire. Il utilise des odeurs, des postures et des vocalisations pour communiquer. Le mouvement de la queue ou la position des oreilles prennent leur sens dans une situation précise. Le ronronnement accompagne fréquemment des moments de proximité, sans constituer à lui seul une indication certaine de bien-être.",
-            "Même un animal nourri peut jouer à poursuivre ou attraper des objets. Les périodes de repos alternent avec des épisodes d'activité. La sociabilité varie selon les individus et leurs expériences : certains recherchent les contacts, d'autres gardent davantage leurs distances. L'observation du comportement doit donc tenir compte de l'animal et de son environnement plutôt que d'un portrait unique."
-          ]
-        },
-        {
-          "id": "domestication",
-          "title": "Relations avec les humains",
-          "paragraphs": [
-            "La domestication est liée à une longue proximité avec les communautés humaines. Les réserves de nourriture attirant des rongeurs ont pu favoriser cette association. Le chat occupe ensuite des places différentes selon les sociétés, notamment dans l'Égypte ancienne. Aujourd'hui animal de compagnie fréquent, il conserve une autonomie comportementale qui ne signifie pas l'absence de besoins ou de relations sociales."
+            "Le chat organise une partie de ses activités autour d'un territoire et communique par les odeurs, les postures et les vocalisations. Sa queue et ses oreilles doivent être observées dans leur contexte. Le ronronnement accompagne souvent la proximité, sans prouver à lui seul le bien-être. Un chat nourri conserve des comportements de poursuite et alterne repos et activité.",
+            "La domestication est liée à une longue proximité avec les humains, qui a pu être favorisée par les rongeurs attirés par les réserves alimentaires. Le chat occupe une place importante dans l'Égypte ancienne et devient un animal de compagnie fréquent. Sa sociabilité varie selon ses expériences ; son autonomie n'exclut ni des besoins ni des relations sociales."
           ]
         }
       ],
@@ -399,9 +468,15 @@
         },
         {
           "id": "usages",
-          "title": "Usages du monument",
+          "title": "Visite et réception du monument",
           "paragraphs": [
-            "La tour suscite d'abord des critiques autant que de la curiosité. Elle accueille des visiteurs qui découvrent la ville depuis ses plateformes. Ses étages sont accessibles par des escaliers et des ascenseurs selon les parcours proposés. Les installations et les conditions d'accès évoluent au fil de son exploitation, sans modifier le principe général de sa structure.",
+            "La tour suscite d'abord des critiques autant que de la curiosité. Elle accueille des visiteurs qui découvrent la ville depuis ses plateformes. Ses étages sont accessibles par des escaliers et des ascenseurs selon les parcours proposés. Les installations et les conditions d'accès évoluent au fil de son exploitation, sans modifier le principe général de sa structure."
+          ]
+        },
+        {
+          "id": "entretien",
+          "title": "Usages techniques et entretien",
+          "paragraphs": [
             "Des expériences scientifiques et des activités de transmission radio contribuent à son utilité au-delà de l'Exposition. La présence d'antennes modifie la hauteur totale mesurée au sommet ; il convient donc de distinguer la tour initiale de ses équipements. L'entretien du métal et la peinture sont nécessaires pour protéger l'ouvrage contre la corrosion et conserver son état."
           ]
         },
@@ -427,6 +502,13 @@
       "intro": "Le Système solaire comprend le Soleil et les objets liés à lui par la gravitation. Le Soleil est une étoile dont le rayonnement fournit l'essentiel de l'énergie reçue par la Terre. Les planètes, leurs satellites et de nombreux petits corps parcourent des orbites différentes, avec des tailles et des compositions très variées.",
       "sections": [
         {
+          "id": "soleil",
+          "title": "Le Soleil",
+          "paragraphs": [
+            "Le Soleil contient la majeure partie de la masse du Système solaire. Dans son intérieur, des réactions de fusion nucléaire libèrent de l'énergie. L'observation de sa surface montre notamment des taches et des variations d'activité. Sa lumière met plusieurs minutes à atteindre la Terre ; les distances astronomiques rendent ainsi le temps de propagation sensible."
+          ]
+        },
+        {
           "id": "planetes",
           "title": "Les huit planètes",
           "paragraphs": [
@@ -436,9 +518,15 @@
         },
         {
           "id": "petits-corps",
-          "title": "Satellites et petits corps",
+          "title": "Satellites, astéroïdes et comètes",
           "paragraphs": [
-            "Un satellite naturel gravite autour d'une planète ou d'un autre corps. La Lune est celui de la Terre. De nombreux astéroïdes occupent une région située entre Mars et Jupiter, mais d'autres suivent des orbites différentes. Les comètes contiennent des matières volatiles qui peuvent produire une chevelure et des queues lorsqu'elles se rapprochent du Soleil.",
+            "Un satellite naturel gravite autour d'une planète ou d'un autre corps. La Lune est celui de la Terre. De nombreux astéroïdes occupent une région située entre Mars et Jupiter, mais d'autres suivent des orbites différentes. Les comètes contiennent des matières volatiles qui peuvent produire une chevelure et des queues lorsqu'elles se rapprochent du Soleil."
+          ]
+        },
+        {
+          "id": "regions-lointaines",
+          "title": "Régions lointaines et échelles",
+          "paragraphs": [
             "Au-delà de Neptune, des objets glacés appartiennent notamment à la ceinture de Kuiper. Tous ces ensembles ne forment pas des frontières nettes comparables à celles d'une carte. Les distances entre les corps sont immenses par rapport à leurs dimensions : les schémas destinés à présenter les planètes ne respectent donc pas toujours simultanément l'échelle des tailles et celle des distances."
           ]
         },
@@ -465,9 +553,15 @@
       "sections": [
         {
           "id": "diversite",
-          "title": "Diversité et milieux",
+          "title": "Diversité des formes",
           "paragraphs": [
-            "Certains dinosaures marchent sur deux membres, d'autres sur quatre. Des espèces herbivores possèdent des dents adaptées à leur alimentation, des plaques ou des cornes ; les carnivores présentent d'autres combinaisons anatomiques. Les grandes dimensions de certains sauropodes ne représentent pas tous les dinosaures, parmi lesquels figurent aussi des animaux relativement petits et légers.",
+            "Certains dinosaures marchent sur deux membres, d'autres sur quatre. Des espèces herbivores possèdent des dents adaptées à leur alimentation, des plaques ou des cornes ; les carnivores présentent d'autres combinaisons anatomiques. Les grandes dimensions de certains sauropodes ne représentent pas tous les dinosaures, parmi lesquels figurent aussi des animaux relativement petits et légers."
+          ]
+        },
+        {
+          "id": "periodes",
+          "title": "Périodes et milieux",
+          "paragraphs": [
             "Le Trias, le Jurassique et le Crétacé correspondent à des périodes successives, et non à un décor unique où toutes les espèces auraient vécu ensemble. Les continents, les climats et les végétations changent au cours de ces longues durées. Les reptiles marins et les ptérosaures, malgré leur présence fréquente dans les mêmes illustrations, ne sont pas des dinosaures."
           ]
         },
@@ -497,9 +591,15 @@
       "sections": [
         {
           "id": "capteur",
-          "title": "Capteur et image",
+          "title": "Capteur et définition",
           "paragraphs": [
-            "Les capteurs CCD et CMOS convertissent la lumière reçue en signaux électriques. Une image est décrite par des pixels, dont le nombre contribue à sa définition. Ce nombre ne suffit pas à évaluer sa qualité : l'objectif, la taille du capteur, l'exposition et le traitement influencent aussi les détails, les couleurs et le bruit visible.",
+            "Les capteurs CCD et CMOS convertissent la lumière reçue en signaux électriques. Une image est décrite par des pixels, dont le nombre contribue à sa définition. Ce nombre ne suffit pas à évaluer sa qualité : l'objectif, la taille du capteur, l'exposition et le traitement influencent aussi les détails, les couleurs et le bruit visible."
+          ]
+        },
+        {
+          "id": "prise-de-vue",
+          "title": "Mise au point et exposition",
+          "paragraphs": [
             "La mise au point détermine la zone qui apparaît nette. L'ouverture, le temps de pose et la sensibilité interviennent dans l'enregistrement de la lumière. Une pose longue facilite certaines prises de vue peu éclairées, mais rend les mouvements plus difficiles à figer. Les automatismes proposent des réglages, sans supprimer ces contraintes physiques."
           ]
         },
@@ -537,17 +637,32 @@
         },
         {
           "id": "groupes",
-          "title": "Principaux groupes",
+          "title": "Lémuriens, loris et tarsiers",
           "paragraphs": [
-            "Les lémuriens vivent naturellement à Madagascar et dans les îles voisines où certaines espèces ont été introduites. Ils appartiennent aux strepsirrhiniens, qui comprennent aussi les loris. Les tarsiers occupent une place distincte parmi les haplorrhiniens, avec les singes. Les différences portent notamment sur l'anatomie sensorielle, mais ne se résument pas à opposer des animaux simples et des animaux perfectionnés.",
+            "Les lémuriens sont naturellement présents à Madagascar. Certaines espèces ont également été introduites dans des îles voisines, notamment aux Comores. Ils appartiennent aux strepsirrhiniens, qui comprennent aussi les loris. Les tarsiers occupent une place distincte parmi les haplorrhiniens, avec les singes. Les différences portent notamment sur l'anatomie sensorielle, mais ne se résument pas à opposer des animaux simples et des animaux perfectionnés."
+          ]
+        },
+        {
+          "id": "singes",
+          "title": "Singes et hominoïdes",
+          "paragraphs": [
             "Les singes du Nouveau Monde vivent en Amérique, tandis que les singes de l'Ancien Monde sont originaires d'Afrique et d'Asie. Les hominoïdes comprennent les gibbons et les grands singes, dépourvus de queue. Parmi ces derniers figurent les orangs-outans, les gorilles, les chimpanzés, les bonobos et les humains. Le vocabulaire courant ne reflète pas toujours précisément ces catégories zoologiques."
           ]
         },
         {
           "id": "evolution",
-          "title": "Évolution et diversité sociale",
+          "title": "Ancêtres communs et évolution",
           "paragraphs": [
-            "Les espèces actuelles résultent de lignées ayant divergé à partir d'ancêtres communs. L'être humain ne descend donc pas d'un chimpanzé actuel. Les relations sociales vont de petits groupes à des organisations plus nombreuses, avec des apprentissages et des communications variés. La destruction des habitats et la chasse menacent plusieurs espèces ; leur étude s'appuie sur l'observation et la comparaison, sans effacer leurs différences."
+            "Les espèces actuelles résultent de lignées ayant divergé à partir d'ancêtres communs. L'être humain ne descend donc pas d'un chimpanzé actuel.",
+            "L'évolution du groupe ne forme pas une échelle qui conduirait nécessairement à l'être humain. Chaque lignée possède sa propre histoire. Les fossiles, les caractères anatomiques et les comparaisons génétiques aident à établir les parentés. Une ressemblance liée à un même mode de vie ne suffit pas, à elle seule, à déterminer la proximité de deux espèces."
+          ]
+        },
+        {
+          "id": "vie-sociale",
+          "title": "Vie sociale et conservation",
+          "paragraphs": [
+            "Les relations sociales vont de petits groupes à des organisations plus nombreuses, avec des apprentissages et des communications variés. La destruction des habitats et la chasse menacent plusieurs espèces ; leur étude s'appuie sur l'observation et la comparaison, sans effacer leurs différences.",
+            "La communication peut faire intervenir des sons, des expressions et des gestes. Les jeunes apprennent au contact d'autres individus, mais les comportements ne sont pas identiques d'une espèce à l'autre. Observer plusieurs groupes dans leur milieu permet de distinguer les habitudes locales des tendances plus générales."
           ]
         }
       ],

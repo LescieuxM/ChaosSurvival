@@ -1403,7 +1403,11 @@ async function verifyWiki() {
     await click(`.wiki-content [data-browser-link="${article.url}"]`);
     await ready();
     assert.equal(await evaluate("document.querySelector('.wiki h1').textContent"), article.title);
-    assert.equal(await evaluate("document.querySelectorAll('.wiki-article-section').length"), 3);
+    const sectionCount = await evaluate(
+      "document.querySelectorAll('.wiki-article-section').length",
+    );
+    assert.ok(sectionCount >= 2 && sectionCount <= 6);
+    assert.equal(await evaluate("document.querySelectorAll('.wiki-toc li').length"), sectionCount);
     await click('.wiki-toc li:last-child a');
     assert.ok(await evaluate("document.querySelector('.browser-page').scrollTop>0"));
     assert.equal(

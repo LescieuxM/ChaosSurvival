@@ -3,9 +3,12 @@
 Wiki est disponible dès le début à `http://www.wiki.fr/`, dans Internet
 Adventurer et l'annuaire de XD Search. Le catalogue contient **16 articles** :
 les quinze sujets initiaux et **Primates**, ajouté explicitement à la demande.
-Chaque texte comporte entre 299 et 343 mots, une introduction, trois sections,
-un sommaire et des renvois « Voir aussi ». Quelques encadrés et un bandeau
-d'ébauche complètent la présentation, sans contribution interactive.
+Les textes ont des longueurs et structures différentes : de deux à six sections,
+avec une introduction, un sommaire adapté et des renvois « Voir aussi ».
+Pixel art et Chat domestique sont plus courts ; Internet, Windows XD, le Système
+solaire et Primates sont davantage développés. Quelques encadrés complètent
+la présentation. Le bandeau d'ébauche est réservé au court article Pixel art ;
+celui de Blog a été retiré. Aucun système de contribution interactive.
 
 ## Données et navigation
 
@@ -79,6 +82,30 @@ Ces vérifications documentaires ne constituent pas une revue scientifique
 exhaustive. Aucun extrait, image ou logo de ces sites n'est téléchargé dans Wiki.
 Les références sont destinées à la maintenance ; elles n'ouvrent aucune adresse
 externe depuis les pages du jeu.
+
+## Révision éditoriale et cohérence de Windows XD
+
+Les identifiants d'articles, titres, URL, introductions, thèmes et renvois sont
+conservés. Les sections existantes ont été regroupées ou subdivisées selon leur
+sujet ; les textes plus courts conservent leurs notions essentielles. Le passage
+sur les lémuriens distingue désormais Madagascar des introductions aux Comores.
+Les compléments sur le Soleil concernent des connaissances déjà établies en
+2009, contrôlées dans la [documentation NASA](https://science.nasa.gov/sun/facts/).
+
+L'article Windows XD a été comparé aux composants actuels, sans modifier le système :
+
+| Description retenue                                                                 | Composants examinés                                                                    |
+| ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Disque local, lecteur CD/DVD vide et clé USB ; dossiers, chemin, retour et remontée | `src/config/desktop-apps.json`, `src/config/filesystem.json`, `src/ui/desktop-apps.js` |
+| Documents indépendants, réduction, restauration depuis la barre des tâches et focus | `src/ui/desktop-apps.js`, `src/ui/windows.js`                                          |
+| Édition des textes `.txt`, menu Fichier, Ctrl+S, confirmation de fermeture          | `src/ui/notepad.js`, `src/story/text-files.js`                                         |
+| Visionneuse ajustant l'image sans édition graphique                                 | `src/ui/desktop-apps.js`                                                               |
+| Raccourcis d'applications réorganisables et lancement depuis Démarrer               | `src/ui/start-menu.js`, `src/ui/start-menu-order.js`                                   |
+| Buddy lancé à la demande, masquable, avec bulles et sans champ de réponse           | `src/ui/buddy.js`                                                                      |
+| Onglets et navigation ; liste de contacts distincte des conversations               | `src/ui/browser.js`, `src/ui/conversation.js` et composants Messenger existants        |
+
+Aucune gestion réelle de périphériques, installation, retouche d'images ou
+fonction supplémentaire n'a été ajoutée au texte par analogie avec un autre OS.
 
 ## Vérifications
 

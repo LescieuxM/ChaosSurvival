@@ -79,11 +79,8 @@ test('all sixteen requested subjects are developed, internally linked and availa
   assert.ok(localPages.sites({}).some((p) => p.url === WIKI_URL));
   for (const article of wikiData.articles) {
     assert.match(article.id, /^[a-z0-9-]+$/);
-    assert.ok(
-      wordCount(article) >= 250 && wordCount(article) <= 450,
-      `${article.title}: ${wordCount(article)}`,
-    );
-    assert.ok(article.sections.length >= 3);
+    assert.ok(wordCount(article) >= 180, `${article.title}: ${wordCount(article)}`);
+    assert.ok(article.sections.length >= 2);
     assert.equal(new Set(article.sections.map((s) => s.id)).size, article.sections.length);
     for (const id of article.related) assert.ok(wikiData.articles.some((a) => a.id === id));
     assert.ok(localPages.resolve(articleUrl(article), {}).page);
@@ -100,6 +97,28 @@ test('all sixteen requested subjects are developed, internally linked and availa
   );
   assert.match(wikiData.articles.find((a) => a.id === 'systeme-solaire').intro, /Soleil/);
   assert.match(wikiData.articles.find((a) => a.id === 'primates').intro, /humain appartient/);
+});
+
+test('editorial structures and lengths vary; short stubs and lemur geography stay consistent', () => {
+  const counts = wikiData.articles.map((article) => article.sections.length);
+  assert.ok(counts.includes(2));
+  assert.ok(counts.some((count) => count === 3 || count === 4));
+  assert.ok(counts.some((count) => count === 5 || count === 6));
+  const lengths = wikiData.articles.map(wordCount);
+  assert.ok(Math.max(...lengths) - Math.min(...lengths) >= 150);
+  assert.equal(wikiData.articles.find((article) => article.id === 'blog').notice, undefined);
+  for (const article of wikiData.articles.filter((article) => article.notice))
+    assert.ok(wordCount(article) <= 250);
+  const primates = wikiData.articles.find((article) => article.id === 'primates');
+  assert.ok(
+    primates.sections
+      .flatMap((section) => section.paragraphs)
+      .some((paragraph) =>
+        paragraph.includes(
+          'Les lémuriens sont naturellement présents à Madagascar. Certaines espèces ont également été introduites dans des îles voisines, notamment aux Comores.',
+        ),
+      ),
+  );
 });
 
 test('title search ignores case and accents; random selection uses only existing articles', () => {
