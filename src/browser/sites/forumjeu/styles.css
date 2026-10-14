@@ -1,0 +1,29 @@
+.forumjeu { padding: 10px; background: #f5f7fa; color: #222; min-height: 100%; font: 12px/1.5 Arial, sans-serif; }
+.forumjeu a { color: #174e94; text-decoration: underline; cursor: pointer; }
+.forum-header { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 24px; padding:10px 12px; border:1px solid #24548b; background:linear-gradient(#3f7bb9,#24548b); color:white; }
+.forum-header a { color:#fff; font:bold 24px Verdana,sans-serif; text-decoration:none; }
+.forum-header span { font-size:11px; }
+.forum-breadcrumb { background:#e4ecf6; border:1px solid #bbcadd; padding:5px 8px; }
+.forumjeu h2 { margin:12px 0 4px; font:bold 16px Arial,sans-serif; letter-spacing:0; color:#28496b; text-shadow:none; font-style:normal; }
+.forumjeu p { margin:5px 0 10px; }
+.forumjeu table { width:100%; border-collapse:collapse; table-layout:fixed; margin:12px 0; }
+.forumjeu th,.forumjeu td { border:1px solid #b4c3d4; padding:7px 6px; text-align:left; vertical-align:top; overflow-wrap:anywhere; }
+.forumjeu th { background:linear-gradient(#edf3fa,#d2e0f0); color:#23446a; font-size:11px; }
+.forumjeu tbody tr:nth-child(even) { background:#eaf0f7; }
+.forumjeu tbody tr:nth-child(odd) { background:#fff; }
+.forum-categories th:first-child { width:40%; }
+.forum-categories th:nth-child(2),.forum-categories th:nth-child(3) { width:9%; }
+.forum-topics th:first-child { width:42%; }
+.forum-topics th:nth-child(2) { width:20%; }
+.forum-topics th:nth-child(3) { width:9%; }
+.forumjeu small { display:block; color:#5d6d7e; font-size:10px; }
+.forumjeu td p { margin:4px 0 0; font-size:11px; }
+.forum-message { display:grid; grid-template-columns:125px minmax(0,1fr); border:1px solid #b4c3d4; margin:0 0 6px; background:#fff; }
+.forum-author { padding:9px; background:#e4ecf6; border-right:1px solid #b4c3d4; color:#224e7a; overflow-wrap:anywhere; }
+.forum-body { padding:8px 10px; }
+.forum-body p { margin:10px 0 4px; white-space:pre-wrap; overflow-wrap:anywhere; }
+.forum-pagination { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; font-size:11px; }
+.forum-pagination a,.forum-pagination strong { border:1px solid #9caec5; padding:1px 6px; background:white; }
+.forum-pagination strong { background:#d9e8f8; }
+.forum-locked { padding:6px; background:#e8edf3; border:1px solid #bac6d5; }
+@media (max-width:650px) { .forum-message { grid-template-columns:100px minmax(0,1fr); } }
