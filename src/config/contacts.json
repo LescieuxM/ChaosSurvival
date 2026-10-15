@@ -45,6 +45,7 @@
     "id": "luna",
     "kind": "narrative",
     "dialogue": "luna-intro",
+    "connection": true,
     "visibleInitially": true,
     "nickname": "°•.LuNa.°•",
     "status": "Hors ligne",

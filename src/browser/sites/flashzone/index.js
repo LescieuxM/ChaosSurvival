@@ -3,12 +3,14 @@ import catalog from './catalog.json' with { type: 'json' };
 import { renderBubblePop } from './bubble-pop.js';
 import { renderAvoidSquares } from './avoid-the-squares.js';
 import { renderPixelRunner } from './pixel-runner.js';
+import { renderSuperPlombierFlash } from './super-plombier-flash.js';
 export const FLASH_URL = 'http://www.flashzone.fr/';
 export const flashCatalog = catalog;
 const components = {
   'bubble-pop': renderBubblePop,
   'avoid-the-squares': renderAvoidSquares,
   'pixel-runner': renderPixelRunner,
+  'super-plombier-flash': renderSuperPlombierFlash,
 };
 function shell() {
   const root = node('section', undefined, 'flashzone');
@@ -55,7 +57,7 @@ export const flashPages = [
       title: `${game.title} — ${catalog.name}`,
       description: game.description,
       keywords: ['flashzone', 'jeux flash', 'jeux gratuits', ...game.keywords],
-      preserveOnTabSwitch: game.component === 'pixel-runner',
+      preserveOnTabSwitch: ['pixel-runner', 'super-plombier-flash'].includes(game.component),
       render(context) {
         const root = shell();
         root.append(

@@ -83,7 +83,7 @@ function dom(t) {
 }
 test('catalog generates a single thumbnail grid with internal image/title links and no game metadata', (t) => {
   dom(t);
-  assert.equal(flashCatalog.games.length, 3);
+  assert.equal(flashCatalog.games.length, 4);
   const nodes = walk(renderFlashHome());
   assert.equal(nodes.filter((n) => n.className === 'flashzone-grid').length, 1);
   const cards = nodes.filter((n) => n.className === 'flashzone-card');

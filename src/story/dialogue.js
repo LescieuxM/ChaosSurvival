@@ -85,7 +85,11 @@ export function validateDialogue(dialogue) {
         (message) =>
           !['contact', 'player'].includes(message.speaker) ||
           (typeof message.text !== 'string' && message.type !== 'file') ||
-          (message.type !== undefined && !['text', 'file'].includes(message.type)) ||
+          (message.type !== undefined && !['text', 'file', 'link'].includes(message.type)) ||
+          (message.type === 'link' &&
+            (typeof message.url !== 'string' ||
+              !/^https?:\/\//i.test(message.url) ||
+              !/^http:\/\/www\.flashzone\.fr\/jeux\/[a-z0-9-]+$/i.test(message.url))) ||
           !validDelay(message.delayMs) ||
           !validDelay(message.typingMs) ||
           (message.typingPauseMs !== undefined && !validDelay(message.typingPauseMs)) ||
@@ -257,6 +261,9 @@ export class DialogueSession {
       );
       entry.type = 'file';
       entry.fileKey = file.key;
+    } else if (message.type === 'link') {
+      entry.type = 'link';
+      entry.url = message.url;
     }
     this.state.transcript.push(entry);
     this.state.cursor++;

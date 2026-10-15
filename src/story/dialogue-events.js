@@ -28,6 +28,27 @@ export class DialogueEvents {
         this.progression.save();
       }
     }
+    const sequencedDialogues = new Set(
+      this.progression.story.sequences.map((sequence) => sequence.dialogue),
+    );
+    for (const definition of Object.values(this.definitions)) {
+      if (
+        sequencedDialogues.has(definition.id) ||
+        !definition.completion?.connection ||
+        this.deferredConnectionDialogues.has(definition.id) ||
+        !data.dialogues[definition.id]?.finished
+      )
+        continue;
+      const connection = definition.completion.connection;
+      data.contactConnections ??= {};
+      if (!data.contactConnections[connection.contactId]) {
+        data.contactConnections[connection.contactId] = {
+          status: 'pending',
+          dueAt: now + connection.delayMs,
+        };
+        this.progression.save();
+      }
+    }
     for (const [id, connection] of Object.entries(data.contactConnections ?? {})) {
       if (
         !notify ||

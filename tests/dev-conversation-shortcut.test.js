@@ -171,3 +171,25 @@ test('development fast-forward triggers Turb0 arrival when it validates PixelGir
     10,
   );
 });
+
+test('development fast-forward finishes Turb0 scene and queues Luna connection once', () => {
+  const view = createView(turbo);
+  const connected = [];
+  const events = new DialogueEvents(view.progression, { [turbo.id]: turbo }, (id) =>
+    connected.push(id),
+  );
+  assert.equal(view.finishImmediately(() => 0.5, () => {}), true);
+  assert.equal(view.progression.data.dialogues[turbo.id].finished, true);
+
+  const finishedAt = 20_000;
+  events.update(finishedAt);
+  assert.deepEqual(view.progression.data.contactConnections.luna, {
+    status: 'pending',
+    dueAt: finishedAt + 3000,
+  });
+  events.update(finishedAt + 2999);
+  assert.deepEqual(connected, []);
+  events.update(finishedAt + 3000);
+  events.update(finishedAt + 9000);
+  assert.deepEqual(connected, ['luna']);
+});

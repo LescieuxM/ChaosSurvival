@@ -43,8 +43,12 @@ export function visibleContacts(
     Object.assign(metadata, personalMessage);
     const online =
       !contact.alwaysOffline &&
-      metadata.status !== 'Hors ligne' &&
-      (contact.connection ? connected : available);
-    return [{ ...metadata, online, available, status: online ? metadata.status : 'Hors ligne' }];
+      (contact.connection ? connected : metadata.status !== 'Hors ligne' && available);
+    const status = online
+      ? metadata.status === 'Hors ligne'
+        ? 'En ligne'
+        : metadata.status
+      : 'Hors ligne';
+    return [{ ...metadata, online, available, status }];
   });
 }

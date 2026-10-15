@@ -673,6 +673,17 @@ button.messenger-contact-row:hover {
   color: #244fb0;
   line-height: 1.5;
 }
+.conversation-link {
+  display: inline-block;
+  margin-top: 4px;
+  color: #164aa6;
+  font-weight: bold;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.conversation-link:hover {
+  color: #b24619;
+}
 .conversation-message.from-player p {
   color: #24415d;
 }

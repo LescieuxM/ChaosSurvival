@@ -16,7 +16,11 @@
   },
   "start": "opening",
   "completion": {
-    "stayOnline": true
+    "stayOnline": true,
+    "connection": {
+      "contactId": "luna",
+      "delayMs": 3000
+    }
   },
   "nodes": {
     "opening": {

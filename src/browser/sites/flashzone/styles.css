@@ -301,3 +301,74 @@
 .pixel-runner [hidden] {
   display: none !important;
 }
+.super-plombier {
+  margin-top: 12px;
+  padding: 12px;
+  color: #27334e;
+  border: 3px ridge #8ca5c9;
+  background: #dcecff;
+}
+.plumber-intro,
+.plumber-result {
+  padding: 12px 4px;
+  text-align: center;
+}
+.plumber-hud {
+  font: bold 13px 'Courier New', monospace;
+}
+.super-plombier button {
+  padding: 7px 20px;
+  border: 2px outset #f6d276;
+  background: linear-gradient(#fff19b, #e8ad35);
+  color: #543719;
+  font: bold 14px Tahoma, sans-serif;
+  cursor: pointer;
+}
+.plumber-intro button {
+  margin-top: 10px;
+}
+.plumber-hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin: 8px 0;
+  padding: 6px 8px;
+  border: 2px inset #a8c1df;
+  background: #f8fcff;
+}
+.plumber-hud button {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+.plumber-canvas {
+  display: block;
+  width: 100%;
+  max-width: 640px;
+  height: auto;
+  margin: 0 auto;
+  border: 2px solid #284c72;
+  box-sizing: border-box;
+  image-rendering: pixelated;
+  touch-action: none;
+}
+.plumber-canvas:focus {
+  outline: 2px solid #edbb44;
+  outline-offset: 2px;
+}
+.plumber-status {
+  text-align: center;
+  font-weight: bold;
+}
+.plumber-result {
+  border: 2px ridge #d4ae55;
+  background: #fff1b1;
+}
+.plumber-result strong {
+  display: block;
+  font: bold 18px 'Courier New', monospace;
+}
+.super-plombier [hidden] {
+  display: none !important;
+}

@@ -22,6 +22,7 @@ export class ConversationWindow {
       thread,
       onContactsRequested,
       onChoiceValidated = () => {},
+      onLink = () => {},
       manageWindow,
       onDispose,
       player = playerIdentity,
@@ -29,6 +30,7 @@ export class ConversationWindow {
   ) {
     this.onContactsRequested = onContactsRequested;
     this.onChoiceValidated = onChoiceValidated;
+    this.onLink = onLink;
     this.manageWindow = manageWindow;
     this.onDispose = onDispose;
     this.player = player;
@@ -279,8 +281,16 @@ export class ConversationWindow {
     }
     const author = document.createElement('small');
     author.textContent = `${message.speaker === 'player' ? (this.player ?? playerIdentity).nickname : this.dialogue.contact.nickname} dit :`;
-    const copy = document.createElement('p');
-    appendMessageText(copy, message.text);
+    const copy = document.createElement(message.type === 'link' ? 'a' : 'p');
+    if (message.type === 'link') {
+      copy.href = '#';
+      copy.className = 'conversation-link';
+      copy.textContent = message.text;
+      copy.addEventListener('click', (event) => {
+        event.preventDefault();
+        this.onLink(message.url);
+      });
+    } else appendMessageText(copy, message.text);
     row.append(author, copy);
     if (message.type === 'file') this.renderTransfer(row, message.fileKey);
     (this.flow ?? this.log).append(row);

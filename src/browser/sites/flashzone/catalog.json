@@ -40,6 +40,20 @@
       "route": "http://www.flashzone.fr/jeux/pixel-runner",
       "component": "pixel-runner",
       "keywords": ["pixel runner", "jeu plateforme", "runner", "jeu flash"]
+    },
+    {
+      "id": "super-plombier-flash",
+      "title": "Super Plombier Flash",
+      "description": "Le plombier le plus rapide du web ! Saute, évite les ennemis et atteins le drapeau avant la fin du chrono !",
+      "longDescription": "Le plombier le plus rapide du web !\nSaute, évite les ennemis et atteins le drapeau avant la fin du chrono !",
+      "thumbnail": "./flashzone/super-plombier-flash.svg",
+      "category": "Plateforme",
+      "rating": 5,
+      "plays": 1,
+      "added": "2009-01-28",
+      "route": "http://www.flashzone.fr/jeux/super-plombier-flash",
+      "component": "super-plombier-flash",
+      "keywords": ["super plombier flash", "plateforme", "plombier", "pixels", "jeu flash"]
     }
   ]
 }
