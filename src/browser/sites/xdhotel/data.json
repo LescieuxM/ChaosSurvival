@@ -30,7 +30,61 @@
         "position": [5, 4],
         "blocking": true,
         "direction": "south",
-        "dialogue": "Bienvenue sur Hopla Hotel ! Amuse-toi bien ;)"
+        "dialogue": "Bienvenue sur Hopla Hotel ! Amuse-toi bien ;)",
+        "behavior": {
+          "messages": ["Bienvenue sur Hopla Hotel ! Amuse-toi bien ;)"]
+        }
+      },
+      {
+        "id": "dark-flo",
+        "name": "xX-DarkFlo-Xx",
+        "position": [2, 2],
+        "blocking": true,
+        "direction": "south",
+        "dialogue": "slt, tu viens d arriver ?",
+        "appearance": {
+          "shirt": "#5682ad",
+          "hair": "#292831"
+        },
+        "behavior": {
+          "idle": [16000, 55000],
+          "moveChance": 0.8,
+          "messages": ["cc tlm", "ya du lag ou c moi", "^^"]
+        }
+      },
+      {
+        "id": "cerise",
+        "name": "Oo-Cerise-oO",
+        "position": [3, 8],
+        "blocking": true,
+        "direction": "west",
+        "dialogue": "cc ^^",
+        "appearance": {
+          "shirt": "#cf6997",
+          "hair": "#ab643c"
+        },
+        "behavior": {
+          "idle": [45000, 120000],
+          "moveChance": 0.45,
+          "messages": ["jre", "pfff les devoirs"]
+        }
+      },
+      {
+        "id": "kebab",
+        "name": "Dr-Kebab",
+        "position": [8, 3],
+        "blocking": true,
+        "direction": "south",
+        "dialogue": "salut !",
+        "appearance": {
+          "shirt": "#79a465",
+          "hair": "#272334"
+        },
+        "behavior": {
+          "idle": [16000, 55000],
+          "moveChance": 0.8,
+          "messages": ["cc tlm", "ya du lag ou c moi", "^^"]
+        }
       }
     ]
   },
@@ -69,7 +123,46 @@
           "position": [5, 4],
           "blocking": true,
           "direction": "south",
-          "dialogue": "Salut ! Ici, on prend le temps de faire une petite pause."
+          "dialogue": "Salut ! Ici, on prend le temps de faire une petite pause.",
+          "behavior": {
+            "idle": [55000, 125000],
+            "moveChance": 0.45,
+            "messages": ["slt tout le monde ^^", "je reviens dans 2 min"]
+          }
+        },
+        {
+          "id": "tite-folle",
+          "name": "TiteFolle59",
+          "position": [3, 2],
+          "blocking": true,
+          "direction": "south",
+          "dialogue": "cc, tu prends quoi ?",
+          "appearance": {
+            "shirt": "#d47985",
+            "hair": "#ad713e"
+          },
+          "behavior": {
+            "idle": [16000, 55000],
+            "moveChance": 0.8,
+            "messages": ["cc tlm", "ya du lag ou c moi", "^^"]
+          }
+        },
+        {
+          "id": "disquette-bleue",
+          "name": "DisquetteBleue",
+          "position": [6, 6],
+          "blocking": true,
+          "direction": "west",
+          "dialogue": "Bonjour, je fais une pause entre deux devoirs.",
+          "appearance": {
+            "shirt": "#5a999f",
+            "hair": "#553848"
+          },
+          "behavior": {
+            "idle": [45000, 120000],
+            "moveChance": 0.45,
+            "messages": ["jre", "pfff les devoirs"]
+          }
         }
       ]
     },
@@ -124,7 +217,63 @@
           "position": [7, 4],
           "blocking": true,
           "direction": "south",
-          "dialogue": "Jolie piste, hein ? J'ai passé plus de temps sur les couleurs que sur ma tenue."
+          "dialogue": "Jolie piste, hein ? J'ai passé plus de temps sur les couleurs que sur ma tenue.",
+          "behavior": {
+            "idle": [55000, 125000],
+            "moveChance": 0.45,
+            "messages": ["slt tout le monde ^^", "je reviens dans 2 min"]
+          }
+        },
+        {
+          "id": "miss-love",
+          "name": "miss-l0ve",
+          "position": [2, 3],
+          "blocking": true,
+          "direction": "south",
+          "dialogue": "cc, ca va ?",
+          "appearance": {
+            "shirt": "#c968ae",
+            "hair": "#442d30"
+          },
+          "behavior": {
+            "idle": [16000, 55000],
+            "moveChance": 0.8,
+            "messages": ["cc tlm", "ya du lag ou c moi", "^^"]
+          }
+        },
+        {
+          "id": "bg-du-62",
+          "name": "BGdu62",
+          "position": [5, 6],
+          "blocking": true,
+          "direction": "west",
+          "dialogue": "slt ^^",
+          "appearance": {
+            "shirt": "#6596ba",
+            "hair": "#a57542"
+          },
+          "behavior": {
+            "idle": [45000, 120000],
+            "moveChance": 0.45,
+            "messages": ["jre", "pfff les devoirs"]
+          }
+        },
+        {
+          "id": "vinyle",
+          "name": "VinyleOrange",
+          "position": [8, 8],
+          "blocking": true,
+          "direction": "south",
+          "dialogue": "Bonsoir !",
+          "appearance": {
+            "shirt": "#d58b52",
+            "hair": "#312a28"
+          },
+          "behavior": {
+            "idle": [16000, 55000],
+            "moveChance": 0.8,
+            "messages": ["cc tlm", "ya du lag ou c moi", "^^"]
+          }
         }
       ]
     },
@@ -176,7 +325,46 @@
           "position": [6, 5],
           "blocking": true,
           "direction": "west",
-          "dialogue": "Je coupe un peu les écrans ce soir... enfin, après cette visite ;)"
+          "dialogue": "Je coupe un peu les écrans ce soir... enfin, après cette visite ;)",
+          "behavior": {
+            "idle": [55000, 125000],
+            "moveChance": 0.45,
+            "messages": ["slt tout le monde ^^", "je reviens dans 2 min"]
+          }
+        },
+        {
+          "id": "nuage",
+          "name": "Nuage17",
+          "position": [2, 2],
+          "blocking": true,
+          "direction": "south",
+          "dialogue": "Salut, on se pose ici ?",
+          "appearance": {
+            "shirt": "#b3789b",
+            "hair": "#8d5834"
+          },
+          "behavior": {
+            "idle": [16000, 55000],
+            "moveChance": 0.8,
+            "messages": ["cc tlm", "ya du lag ou c moi", "^^"]
+          }
+        },
+        {
+          "id": "biscuit",
+          "name": "BiscuitSec",
+          "position": [8, 5],
+          "blocking": true,
+          "direction": "west",
+          "dialogue": "slt, tranquille ?",
+          "appearance": {
+            "shirt": "#5f9c8a",
+            "hair": "#373130"
+          },
+          "behavior": {
+            "idle": [45000, 120000],
+            "moveChance": 0.45,
+            "messages": ["jre", "pfff les devoirs"]
+          }
         }
       ]
     },
@@ -235,7 +423,63 @@
           "position": [5, 4],
           "blocking": true,
           "direction": "south",
-          "dialogue": "Ces bornes, c'est juste pour le décor. Mais ça donne envie de ressortir sa vieille console !"
+          "dialogue": "Ces bornes, c'est juste pour le décor. Mais ça donne envie de ressortir sa vieille console !",
+          "behavior": {
+            "idle": [55000, 125000],
+            "moveChance": 0.45,
+            "messages": ["slt tout le monde ^^", "je reviens dans 2 min"]
+          }
+        },
+        {
+          "id": "mario-fan",
+          "name": "SuperMarioFan",
+          "position": [1, 4],
+          "blocking": true,
+          "direction": "south",
+          "dialogue": "slt, tu joues a quoi ?",
+          "appearance": {
+            "shirt": "#ce7161",
+            "hair": "#514235"
+          },
+          "behavior": {
+            "idle": [16000, 55000],
+            "moveChance": 0.8,
+            "messages": ["cc tlm", "ya du lag ou c moi", "^^"]
+          }
+        },
+        {
+          "id": "panda",
+          "name": "PandaDu93",
+          "position": [4, 7],
+          "blocking": true,
+          "direction": "west",
+          "dialogue": "cc, encore une partie ?",
+          "appearance": {
+            "shirt": "#70a8a2",
+            "hair": "#2f2c35"
+          },
+          "behavior": {
+            "idle": [45000, 120000],
+            "moveChance": 0.45,
+            "messages": ["jre", "pfff les devoirs"]
+          }
+        },
+        {
+          "id": "clavier",
+          "name": "ClavierFou",
+          "position": [8, 3],
+          "blocking": true,
+          "direction": "south",
+          "dialogue": "Salut, plut?t PC ou console ?",
+          "appearance": {
+            "shirt": "#a39854",
+            "hair": "#774b31"
+          },
+          "behavior": {
+            "idle": [16000, 55000],
+            "moveChance": 0.8,
+            "messages": ["cc tlm", "ya du lag ou c moi", "^^"]
+          }
         }
       ]
     }

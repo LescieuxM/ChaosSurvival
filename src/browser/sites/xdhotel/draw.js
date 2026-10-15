@@ -44,7 +44,7 @@ function block(ctx, point, height, top, left, right) {
   );
   tile(ctx, x, y - height, top);
 }
-function person(ctx, point, color, direction, stride = 0) {
+function person(ctx, point, color, direction, stride = 0, hair = '#543c32') {
   const x = Math.round(point.x),
     y = Math.round(point.y);
   tile(ctx, x, y + 1, '#69797c');
@@ -62,7 +62,7 @@ function person(ctx, point, color, direction, stride = 0) {
   ctx.fillRect(x - 6, y - 37, 12, 12);
   ctx.fillRect(x - 10, y - 13, 3, 3);
   ctx.fillRect(x + 7, y - 13, 3, 3);
-  ctx.fillStyle = '#543c32';
+  ctx.fillStyle = hair;
   ctx.fillRect(x - 7, y - 39, 14, 5);
   if (['north', 'west'].includes(direction)) ctx.fillRect(x - 6, y - 34, 12, 7);
   else {
@@ -226,7 +226,14 @@ export function drawRoom(ctx, room, walk) {
   for (const entry of depthOrder(room, walk)) {
     if (entry.kind === 'furniture') furniture(ctx, room, entry.item);
     else if (entry.kind === 'npc')
-      person(ctx, project(...entry.item.position, room), '#f3bf43', entry.item.direction);
+      person(
+        ctx,
+        project(...entry.item.position, room),
+        entry.item.appearance?.shirt ?? '#f3bf43',
+        entry.item.direction,
+        entry.item.walk?.moving ? (Math.floor(entry.item.walk.elapsed / 120) % 2 ? 1 : -1) : 0,
+        entry.item.appearance?.hair ?? '#543c32',
+      );
     else
       person(
         ctx,

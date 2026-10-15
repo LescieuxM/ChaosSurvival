@@ -124,29 +124,46 @@
 }
 .hotel-bubble {
   position: absolute;
-  width: 220px;
-  max-width: calc(100% - 16px);
+  width: max-content;
+  max-height: calc(100% - 12px);
+  overflow: visible;
+  max-width: min(420px, calc(100% - 12px));
   box-sizing: border-box;
-  padding: 8px 10px;
-  border: 2px solid #293e50;
-  background: #fff8dd;
-  color: #23364c;
+  padding: 4px 7px;
+  border: 1px solid #555;
+  background: #fff;
+  color: #000;
+  overflow-wrap: anywhere;
   font:
-    12px/1.4 Tahoma,
+    11px/1.3 Tahoma,
     sans-serif;
   box-shadow: 2px 2px #142537;
   pointer-events: none;
+  animation: hotel-bubble-fade 250ms linear both;
+  animation-delay: var(--hotel-bubble-fade-delay, 0ms);
+  animation-play-state: var(--hotel-bubble-play-state, running);
+}
+.hotel-bubble strong {
+  white-space: nowrap;
+}
+@keyframes hotel-bubble-fade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 .hotel-bubble::after {
   content: '';
   position: absolute;
-  left: 50%;
-  bottom: -7px;
+  left: var(--hotel-pointer-left, 50%);
+  bottom: -5px;
   width: 8px;
   height: 8px;
-  background: #fff8dd;
-  border-right: 2px solid #293e50;
-  border-bottom: 2px solid #293e50;
+  background: #fff;
+  border-right: 1px solid #555;
+  border-bottom: 1px solid #555;
   transform: rotate(45deg);
 }
 .hotel-room {
@@ -154,88 +171,175 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  min-height: 290px;
+  min-height: 0;
+  min-width: 0;
   box-sizing: border-box;
-  padding: 8px;
-}
-.hotel-room .hotel-header {
-  padding: 5px 10px;
-  margin-bottom: 6px;
-}
-.hotel-room .hotel-header a {
-  font-size: 20px;
-}
-.hotel-room .hotel-header span {
-  font-size: 10px;
-}
-.hotel-room-nav {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 4px 15px;
-}
-.hotel-room-nav h2 {
-  margin: 2px 0;
+  padding: 0;
+  background: #000000;
+  overflow: hidden;
 }
 .hotel-viewport {
+  position: relative;
   flex: 1;
-  min-height: 150px;
+  min-height: 0;
+  min-width: 0;
+  background: #000000;
+}
+.hotel-room .hotel-stage {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-.hotel-room .hotel-stage {
+  width: 100%;
+  height: 100%;
+  max-width: none;
   margin: 0;
-  flex-shrink: 0;
+  border: 0;
+  overflow: hidden;
+}
+.hotel-room .hotel-canvas {
+  flex: none;
+  max-width: 100%;
+  max-height: 100%;
+}
+.hotel-room-nav {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 4px 6px;
+  box-sizing: border-box;
+  border-top: 2px solid #727d85;
+  background: #bfc7cd;
+  box-shadow: inset 0 1px #f4f6f7;
+  color: #202930;
+}
+.hotel-chat-space {
+  flex: 1;
+  min-width: 0;
+}
+.hotel-current-room {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
 }
 .hotel-navigator-open,
 .hotel-navigator button {
-  border: 1px solid #41677e;
-  padding: 3px 9px;
-  background: linear-gradient(#fff8d8, #e6c671);
-  color: #23364c;
+  border: 1px solid #59656e;
+  padding: 3px 8px;
+  background: #d5dce1;
+  box-shadow:
+    inset 1px 1px #ffffff,
+    inset -1px -1px #8a969f;
+  color: #202930;
   font:
     bold 11px Tahoma,
     sans-serif;
   cursor: pointer;
 }
+.hotel-navigator-open {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+.hotel-navigator-open:hover,
+.hotel-navigator button:hover {
+  background: #e5eaf0;
+}
+.hotel-navigator-open:active,
+.hotel-navigator-open[aria-expanded='true'],
+.hotel-navigator button:active {
+  box-shadow: inset 1px 1px #697783;
+  background: #abb8c1;
+}
+.hotel-navigator-icon {
+  position: relative;
+  display: inline-block;
+  width: 14px;
+  height: 16px;
+  border: 1px solid #344653;
+  background: #718997;
+}
+.hotel-navigator-icon::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 3px;
+  height: 3px;
+  background: #ffe4a1;
+  box-shadow:
+    6px 0 #ffe4a1,
+    0 5px #ffe4a1,
+    6px 5px #ffe4a1;
+}
+.hotel-navigator-icon::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  bottom: 0;
+  width: 4px;
+  height: 4px;
+  background: #263e4e;
+}
 .hotel-navigator {
   position: absolute;
   z-index: 2;
-  inset: 45px 12px auto;
-  max-height: calc(100% - 57px);
+  left: 8px;
+  bottom: 8px;
+  width: min(380px, calc(100% - 16px));
+  max-height: calc(100% - 16px);
   box-sizing: border-box;
   overflow: auto;
-  background: #f0f4ec;
-  border: 2px solid #41677e;
-  box-shadow: 3px 3px #23364c55;
-  padding: 8px;
+  background: #d5dce1;
+  border: 2px solid #566571;
+  box-shadow: inset 1px 1px #f5f7f9;
+  padding: 3px;
 }
 .hotel-navigator[hidden] {
   display: none;
 }
 .hotel-navigator > header {
+  position: sticky;
+  top: -3px;
+  z-index: 1;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px;
-  background: #b4d7df;
-  border-bottom: 1px solid #749cab;
+  gap: 8px;
+  padding: 4px 5px;
+  background: #879caa;
+  color: #142530;
+  border-bottom: 1px solid #566571;
+  cursor: move;
+  touch-action: none;
+  user-select: none;
+}
+.hotel-navigator-close {
+  min-width: 23px;
 }
 .hotel-room-entry {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 8px 6px;
-  border-bottom: 1px solid #b7c8c6;
+  padding: 7px 6px;
+  border-bottom: 1px solid #a4afb7;
+}
+.hotel-room-entry > div {
+  min-width: 0;
+}
+.hotel-room-entry button {
+  flex: none;
 }
 .hotel-room-entry h3 {
   margin: 0 0 3px;
   font:
     bold 12px Tahoma,
     sans-serif;
-  color: #244664;
+  color: #243846;
 }
 .hotel-room-entry p {
   margin: 0;
@@ -250,15 +354,4 @@
 .hopla-hotel-client > .window-body {
   padding: 0;
   overflow: hidden;
-}
-.hopla-hotel-client .hotel-room {
-  min-height: 0;
-  min-width: 0;
-  padding: 4px;
-}
-.hopla-hotel-client .hotel-stage {
-  max-width: none;
-}
-.hopla-hotel-client .hotel-viewport {
-  min-height: 0;
 }

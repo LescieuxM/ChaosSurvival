@@ -201,10 +201,17 @@ function dom(t) {
     raf: globalThis.requestAnimationFrame,
     caf: globalThis.cancelAnimationFrame,
     observer: globalThis.ResizeObserver,
+    timeout: globalThis.setTimeout,
+    clearTimeout: globalThis.clearTimeout,
+    performance: globalThis.performance,
   };
   const frames = new Map(),
     listeners = new Set();
   const positions = new WeakMap();
+  const timers = new Map();
+  const resizeCallbacks = [];
+  let fakeNow = performance.now();
+  globalThis.performance = { now: () => fakeNow };
   let serial = 0;
   globalThis.document = {
     hidden: false,
@@ -228,13 +235,18 @@ function dom(t) {
       const element = {
         tag,
         children: [],
-        style: {},
+        style: {
+          setProperty(name, value) {
+            this[name] = value;
+          },
+        },
         dataset: {},
         handlers: {},
         classList: { add() {} },
         isConnected: true,
         append(...items) {
           this.children.push(...items);
+          for (const item of items) item.parent = this;
         },
         replaceChildren(...items) {
           this.children = items;
@@ -244,6 +256,8 @@ function dom(t) {
         },
         remove() {
           this.isConnected = false;
+          if (this.parent)
+            this.parent.children = this.parent.children.filter((item) => item !== this);
         },
         setAttribute() {},
         focus() {},
@@ -271,7 +285,15 @@ function dom(t) {
     return serial;
   };
   globalThis.cancelAnimationFrame = (id) => frames.delete(id);
+  globalThis.setTimeout = (fn, delay) => {
+    timers.set(++serial, { fn, due: fakeNow + delay });
+    return serial;
+  };
+  globalThis.clearTimeout = (id) => timers.delete(id);
   globalThis.ResizeObserver = class {
+    constructor(callback) {
+      resizeCallbacks.push(callback);
+    }
     observe() {}
     disconnect() {}
   };
@@ -280,15 +302,27 @@ function dom(t) {
     globalThis.requestAnimationFrame = saved.raf;
     globalThis.cancelAnimationFrame = saved.caf;
     globalThis.ResizeObserver = saved.observer;
+    globalThis.setTimeout = saved.timeout;
+    globalThis.clearTimeout = saved.clearTimeout;
+    globalThis.performance = saved.performance;
   });
   return {
     frames,
     listeners,
+    timers,
+    resize: () => resizeCallbacks.forEach((callback) => callback()),
     position: (canvas) => positions.get(canvas),
     step(now) {
+      fakeNow = now;
       const tasks = [...frames.values()];
       frames.clear();
       for (const fn of tasks) fn(now);
+      const due = [...timers.entries()].filter(([, timer]) => timer.due <= now);
+      for (const [id, timer] of due) {
+        if (!timers.has(id)) continue;
+        timers.delete(id);
+        timer.fn();
+      }
     },
   };
 }
@@ -395,6 +429,7 @@ test('desktop Hotel is a singleton, fits actual bounds, preserves minimized moti
   manager.close(first.id);
   assert.equal(client.instance, null);
   assert.equal(clock.frames.size, 0);
+  assert.equal(clock.timers.size, 0);
   assert.equal(clock.listeners.size, 0);
   assert.equal(applications.instances.size, 0);
   const second = client.open();
@@ -407,6 +442,7 @@ test('desktop Hotel is a singleton, fits actual bounds, preserves minimized moti
   assert.equal(client.instance, null);
   assert.equal(clock.frames.size, 0);
   assert.equal(clock.listeners.size, 0);
+  assert.equal(clock.timers.size, 0);
   assert.equal(applications.instances.size, 0);
   assert.deepEqual(hotelData, original);
 });
@@ -445,11 +481,11 @@ test('room instances have independent motion/bubbles; scaled clicks, visibility 
   assert.equal(clock.frames.size, 0);
   const npc = project(...room.npcs[0].position, room);
   click(npc.x, npc.y - 25);
-  assert.equal(find(a, 'hotel-bubble').textContent, room.npcs[0].dialogue);
-  assert.equal(find(a, 'hotel-bubble').hidden, false);
-  assert.equal(find(b, 'hotel-bubble').hidden, true);
-  clock.step(performance.now() + 5000);
-  assert.equal(find(a, 'hotel-bubble').hidden, true);
+  assert.equal(find(a, 'hotel-message-text').textContent, room.npcs[0].dialogue);
+  assert.ok(find(a, 'hotel-bubble'));
+  assert.equal(find(b, 'hotel-bubble'), undefined);
+  for (let i = 0; i < 80; i++) clock.step(500 + i * 100);
+  assert.equal(find(a, 'hotel-bubble'), undefined);
   click(...Object.values(project(9, 7, room)));
   document.hidden = true;
   for (const fn of clock.listeners) fn();
@@ -497,8 +533,8 @@ test('navigator opens/closes, cancels a moving instance on room changes and repe
     find('hotel-navigator-open').handlers.click();
     buttons.find((button) => button.dataset.hotelRoom === definition.id).handlers.click();
     assert.equal(find('hotel-navigator').hidden, true);
-    assert.equal(walkTree(active).find((item) => item.tag === 'h2').textContent, definition.name);
-    assert.equal(find('hotel-room-nav').children.length, 2);
+    assert.equal(find('hotel-current-room').textContent, definition.name);
+    assert.equal(find('hotel-room-nav').children.length, 3);
     assert.ok(!walkTree(active).some((item) => item.textContent === "Retour à l'accueil"));
     assert.deepEqual(
       clock.position(find('hotel-canvas')),
@@ -514,12 +550,90 @@ test('navigator opens/closes, cancels a moving instance on room changes and repe
       clientX: 20 + npc.x * 2,
       clientY: 30 + (npc.y - 25) * 2,
     });
-    assert.equal(find('hotel-bubble').textContent, definition.npcs[0].dialogue);
+    if (definition.id === 'hall')
+      assert.equal(find('hotel-message-text').textContent, definition.npcs[0].dialogue);
+    else assert.equal(find('hotel-message-text'), undefined, 'ordinary NPC clicks never speak');
     clock.step(performance.now() + 5000);
   }
   cleanup();
   assert.equal(clock.frames.size, 0);
   assert.equal(clock.listeners.size, 0);
+});
+
+test('all five rooms show attributed ambient speech without clicks and dispose their scheduled work', (t) => {
+  const clock = dom(t);
+  for (const definition of hotelRooms) {
+    let cleanup;
+    const root = renderHotelRoom(
+      {
+        onDispose: (fn) => {
+          cleanup = fn;
+        },
+      },
+      hotelData,
+      definition,
+    );
+    const find = (cls) => walkTree(root).find((item) => item.className === cls);
+    assert.equal(find('hotel-bubble'), undefined);
+    assert.equal(find('hotel-nickname'), undefined);
+    const start = performance.now();
+    for (let elapsed = 100; elapsed <= 120000 && !find('hotel-bubble'); elapsed += 100)
+      clock.step(start + elapsed);
+    const bubble = find('hotel-bubble');
+    assert.ok(bubble, `${definition.id}: spontaneous message`);
+    const speaker = definition.npcs.find((npc) => npc.id === bubble.dataset.speaker);
+    assert.ok(speaker, 'message belongs to this room');
+    assert.equal(bubble.children[0].textContent, `${speaker.name} : `);
+    assert.ok(find('hotel-message-text').textContent);
+    cleanup();
+    assert.equal(find('hotel-bubble'), undefined);
+    assert.equal(clock.timers.size, 0);
+    assert.equal(clock.frames.size, 0);
+    assert.equal(clock.listeners.size, 0);
+  }
+});
+
+test('floating navigator drag and resize stay in the scene and cleanup removes its handlers', (t) => {
+  const clock = dom(t);
+  let cleanup;
+  const root = renderHotelRoom(
+    {
+      onDispose: (fn) => {
+        cleanup = fn;
+      },
+    },
+    hotelData,
+  );
+  const find = (cls) => walkTree(root).find((item) => item.className === cls);
+  assert.equal(find('hotel-header'), undefined);
+  assert.equal(find('hotel-chat-space').children.length, 0);
+  const viewport = find('hotel-viewport'),
+    panel = find('hotel-navigator');
+  const header = panel.children[0];
+  header.setPointerCapture = () => {};
+  Object.assign(viewport, { clientWidth: 400, clientHeight: 300 });
+  Object.assign(panel, { offsetWidth: 200, offsetHeight: 180 });
+  find('hotel-navigator-open').handlers.click();
+  header.handlers.pointerdown({
+    button: 0,
+    pointerId: 1,
+    target: header,
+    clientX: 30,
+    clientY: 40,
+    preventDefault() {},
+  });
+  header.handlers.pointermove({ pointerId: 1, clientX: 1030, clientY: 1040 });
+  assert.equal(panel.style.left, '200px');
+  assert.equal(panel.style.top, '120px');
+  header.handlers.pointerup();
+  Object.assign(viewport, { clientWidth: 250, clientHeight: 200 });
+  clock.resize();
+  assert.equal(panel.style.left, '50px');
+  assert.equal(panel.style.top, '20px');
+  cleanup();
+  assert.equal(header.handlers.pointerdown, undefined);
+  assert.equal(header.handlers.pointermove, undefined);
+  assert.equal(clock.timers.size, 0);
 });
 
 test('retained room stops frames while another tab is active, ignores visibility wakeups and resumes its own position', (t) => {
@@ -537,7 +651,14 @@ test('retained room stops frames while another tab is active, ignores visibility
     hotelData,
   );
   const find = (cls) => walkTree(root).find((item) => item.className === cls);
+  assert.equal(find('hotel-nickname'), undefined);
   const point = project(8, 7, room);
+  const reception = project(...room.npcs[0].position, room);
+  find('hotel-canvas').handlers.click({
+    button: 0,
+    clientX: 20 + reception.x * 2,
+    clientY: 30 + (reception.y - 25) * 2,
+  });
   find('hotel-canvas').handlers.click({
     button: 0,
     clientX: 20 + point.x * 2,
@@ -548,6 +669,21 @@ test('retained room stops frames while another tab is active, ignores visibility
   const before = clock.position(find('hotel-canvas'));
   cleanup('pause');
   assert.equal(clock.frames.size, 0);
+  assert.equal(clock.timers.size, 0);
+  const bubblePositions = walkTree(root)
+    .filter((node) => node.className === 'hotel-bubble')
+    .map((node) => [node.style.left, node.style.top]);
+  const viewport = find('hotel-viewport');
+  const bounds = viewport.getBoundingClientRect;
+  viewport.getBoundingClientRect = () => ({ width: 0, height: 0 });
+  clock.resize();
+  assert.deepEqual(
+    walkTree(root)
+      .filter((node) => node.className === 'hotel-bubble')
+      .map((node) => [node.style.left, node.style.top]),
+    bubblePositions,
+  );
+  viewport.getBoundingClientRect = bounds;
   document.hidden = false;
   for (const listener of clock.listeners) listener();
   assert.equal(clock.frames.size, 0);
@@ -560,4 +696,5 @@ test('retained room stops frames while another tab is active, ignores visibility
   resume();
   assert.equal(clock.frames.size, 0);
   assert.equal(clock.listeners.size, 0);
+  assert.equal(clock.timers.size, 0);
 });

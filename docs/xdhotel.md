@@ -1,121 +1,102 @@
-# Hopla Hotel — client de bureau
+# Hopla Hotel — client et conversations ambiantes
 
-Le site local reste disponible à `http://www.hoplahotel.fr/`, avec le même accueil,
-le référencement XD Search et l'alias `www.xdhotel.fr`. Les anciennes routes
-`/salle/...` restent reconnues et présentent désormais l'accueil. Aucun client
-isométrique n'est monté dans Internet Adventurer.
+## Accès et fenêtre
 
-## Ouverture et fenêtre
+Le site local `http://www.hoplahotel.fr/` est référencé par XD Search.
+L'alias `www.xdhotel.fr` et les anciennes routes `/salle/...` restent compatibles.
+Le bouton « Entrer dans l'hôtel » ouvre un client Windows XD indépendant ;
+aucune scène n'est montée dans Internet Adventurer.
 
-« Entrer dans l'hôtel » appelle un callback local `openHotel`, fourni au site par
-le navigateur. `client.js` ouvre une fenêtre simulée **Hopla Hotel** avec
-`WindowManager.spawn` et `DesktopApplications.attachWindow`/`restore`.
-Internet Adventurer reste sur l'accueil, avec le même onglet et le même historique.
-Aucun événement global, processus ou fenêtre native n'est ajouté.
+Le client réutilise `WindowManager` et `DesktopApplications` avec une seule
+fenêtre. Une nouvelle demande restaure la salle actuelle. La réduction conserve
+l'état ; fermer puis rouvrir recrée le Hall. La fermeture du navigateur Web
+ne ferme pas l'hôtel. Aucun processus ou fenêtre native supplémentaire n'est créé.
 
-Une seule instance peut être ouverte, quel que soit l'onglet utilisé pour la
-lancer. Un nouveau clic la restaure et la ramène au premier plan, en conservant
-la salle et la position. Fermer Internet Adventurer laisse le client actif.
-« Retour à l'accueil » utilise l'API locale du navigateur pour afficher le site
-au premier plan.
+La zone de jeu remplit l'intérieur au-dessus de la barre grise inférieure,
+sur fond noir uni `#000000`. Le Canvas 400 × 300 reste centré, proportionnel
+et net avec `image-rendering: pixelated`. La barre de titre Windows XD est
+conservée. La barre inférieure contient Navigateur à gauche, un espace central
+réservé au futur chat sans champ de saisie et le nom de la salle à droite.
+L'accueil Web et les textes supprimés précédemment restent inchangés.
 
-Les dimensions initiales représentent 94 % de la largeur et de la hauteur
-réellement disponibles au-dessus de la barre des tâches, soit environ 88 % de
-la surface. Le calcul utilise `movementBounds`, y compris en mode arcade.
-Le déplacement, le focus, la réduction, la restauration et la fermeture restent
-ceux du gestionnaire existant. Le redimensionnement utilise `resize: both`,
-comme Internet Adventurer. Aucun bouton maximiser n'est ajouté.
-Un observateur adapte les limites lorsque l'écran change et maintient la fenêtre
-dans le bureau.
+## Navigateur et salles
 
-La scène exploite l'espace intérieur compatible avec ses proportions, avec des
-marges réduites et sans plafond de largeur. Le Canvas interne reste à 400 × 300,
-avec une mise à l'échelle uniforme et `image-rendering: pixelated`. La conversion
-des clics vers ces coordonnées est conservée pour les cases et les PNJ.
-La consigne de déplacement et le compteur précédemment supprimés restent absents.
+Le navigateur flottant s'ouvre au-dessus de la scène et se ferme par X, Échap
+ou un second clic sur son bouton. Sa barre de titre permet le déplacement,
+limité à la zone noire. Sa hauteur suit le contenu, avec défilement interne
+si nécessaire. Le panneau et la barre restent utilisables en 320 × 220.
 
-## Salles et moteur commun
+Les cinq salles sont conservées :
 
-Le bouton **Navigateur** propose les cinq salles, leur description et **Entrer**.
-**Fermer**, Navigateur ou Échap referment le panneau. Ouvrir ce panneau suspend
-la marche ; choisir une salle nettoie le rendu précédent, annule le trajet,
-actualise le décor et le nom, puis place l'avatar au point de départ libre.
+| Salle           | PNJ | Habitants                                             |
+| --------------- | --: | ----------------------------------------------------- |
+| Hall de l'hôtel |   4 | ReceptionHotel, xX-DarkFlo-Xx, Oo-Cerise-oO, Dr-Kebab |
+| Café Hopla      |   3 | CafeMax, TiteFolle59, DisquetteBleue                  |
+| Discothèque     |   4 | DJ_Biscotte, miss-l0ve, BGdu62, VinyleOrange          |
+| Salon détente   |   3 | PauseCafe, Nuage17, BiscuitSec                        |
+| Salle de jeux   |   4 | RetroFred, SuperMarioFan, PandaDu93, ClavierFou       |
 
-| Salle           | Identifiant   | Décor                                                 | PNJ            |
-| --------------- | ------------- | ----------------------------------------------------- | -------------- |
-| Hall de l'hôtel | `hall`        | Disposition et mobilier conservés                     | ReceptionHotel |
-| Café Hopla      | `cafe`        | Tons chauds, comptoir, tables, chaises et plante      | CafeMax        |
-| Discothèque     | `discotheque` | Piste colorée, lumières fixes, enceintes et banquette | DJ_Biscotte    |
-| Salon détente   | `detente`     | Tons verts, tapis, canapés, table basse et plantes    | PauseCafe      |
-| Salle de jeux   | `jeux`        | Bornes décoratives, affiches, table et chaise         | RetroFred      |
+## Simulation conservée
 
-Le Hall reste dans `data.room`, les autres salles dans `data.rooms`. Le Navigateur
-et les routes de compatibilité sont construits automatiquement à partir de ces
-définitions. Une salle supplémentaire utilisant les formes disponibles peut être
-ajoutée uniquement aux données. Vérifier les limites, les empreintes, le point
-d'apparition et la connectivité des cases libres.
+`data.json` définit les salles, meubles et 18 personnages. Les positions,
+apparences, personnalités et textes restent conservés. `conversations.json`
+contient 30 échanges, six par salle, avec participants et délais prédéfinis.
+Le planificateur choisit des conversations à intervalles variables et exclut
+ses trois derniers choix. Deux échanges peuvent coexister si leurs participants
+sont distincts et disponibles. Les messages isolés sont moins fréquents.
+Les périodes de silence et les délais entre répliques restent présents.
 
-Pour cette intégration, `data.json`, `model.js` et `draw.js` ne sont pas modifiés :
-salles, meubles, obstacles, couleurs, avatar, dialogues et animations sont
-conservés. Les PNJ restent statiques ; la Discothèque n'a pas de musique et les
-bornes restent décoratives. La projection, BFS et les collisions sont partagés
-par le renderer existant. Aucune logique de moteur n'est ajoutée au navigateur
-ou au gestionnaire de fenêtres.
+Le joueur et les PNJ utilisent le même `RoomWalk`, la projection existante
+et le BFS. Les réservations des trajets évitent les collisions et les échanges
+de cases. Les personnages en discussion attendent avant de repartir.
+ReceptionHotel reste fixe. La refonte des bulles ne modifie pas cette logique.
 
-## Cycle de vie et sauvegardes
+## Bulles et clics
 
-Deux hooks optionnels de l'instance, `onMinimize` et `onRestore`, suspendent et
-reprennent le renderer existant. La réduction conserve la salle et le joueur.
-Les autres applications, qui ne définissent pas ces hooks, gardent leur comportement.
-Le moteur ne demande des frames que pour une marche ou l'expiration d'une bulle ;
-une bulle dure 4,5 secondes.
+Les répliques ordinaires apparaissent automatiquement, même sans mouvement
+ou sélection du joueur. Cliquer sur un PNJ ordinaire ne déclenche plus sa
+réplique. L'interaction spécifique de ReceptionHotel dans le Hall reste active.
 
-Changer de salle nettoie l'ancien rendu. Fermer le client ou vider le bureau
-annule les frames, déconnecte les observateurs, retire les écouteurs, retire la
-tâche et libère l'instance. Une nouvelle ouverture commence dans le Hall.
-Le nettoyage existant du menu et de New Game est réutilisé. Aucun état Hotel
-n'est ajouté aux sauvegardes, aux préférences ou aux événements narratifs.
+Il n'y a plus d'étiquette permanente de pseudonyme. Chaque bulle blanche
+contient le pseudonyme en gras à gauche, puis le message en texte noir, sans
+portrait. La police est compacte, la bordure grise et la pointe discrète.
+La largeur peut atteindre 420 pixels pour privilégier les messages horizontaux.
 
-## Fichiers de cette modification
+`BubbleHistory` conserve séparément les messages, même ceux d'un même auteur,
+avec une limite de huit. La durée varie de six à dix secondes selon la longueur.
+Une extinction de 250 ms termine l'affichage, puis le message est retiré.
+Cette animation CSS ne crée aucun timer JavaScript supplémentaire et se met
+en pause avec la simulation.
 
-- `src/browser/sites/xdhotel/client.js` : nouveau point d'entrée de bureau,
-  instance unique, dimensions et cycle de vie.
-- `src/browser/sites/xdhotel/index.js` : routes de compatibilité vers l'accueil.
-- `src/browser/sites/xdhotel/render.js` : demande d'ouverture depuis le bouton du site.
-- `src/browser/sites/xdhotel/styles.css` : fenêtre et scène agrandies, styles limités au client.
-- `src/main.js` : branchement du client au navigateur et aux applications.
-- `src/ui/browser.js` : callback d'ouverture dans le contexte des pages.
-- `src/ui/desktop-apps.js` : deux hooks optionnels de suspension/reprise.
-- `tests/xdhotel.test.js` : accueil, singleton, restauration et nettoyage.
-- `scripts/verify-desktop-ui.mjs` : parcours de la fenêtre et des cinq salles.
-- `docs/xdhotel.md` : ce document.
+`placeBubbles` dispose les messages proches en hauteur côte à côte. Les auteurs
+suivent leur ordre spatial ; les messages d'un même auteur gardent leur ordre.
+Si la largeur manque, une autre ligne est utilisée. Le placement suit la
+projection, l'échelle et le décalage du Canvas dans toute la zone noire.
+Il reste borné et évite les chevauchements lorsque l'espace le permet.
+Les contenus passent par des nœuds texte, sans interprétation HTML.
+
+## Ressources et limites
+
+Une seule horloge de salle gère conversations et expirations. Un timeout
+attend la prochaine échéance ; les frames tournent pendant les déplacements.
+Ouvrir le navigateur, réduire le client ou masquer le document suspend l'activité.
+Changer de salle ou fermer le client retire bulles, écouteurs, observateur,
+timeout et frames. Aucun état social n'est ajouté aux sauvegardes.
+
+Il n'y a ni nouveau personnage, salle, intrigue, inventaire, monnaie, réseau,
+API externe, ni chat du joueur. Les très petits affichages peuvent nécessiter
+plusieurs lignes ; une scène saturée limite l'évitement des chevauchements.
 
 ## Vérifications
 
-- `node --test tests/xdhotel.test.js tests/browser.test.js tests/browser-security.test.js tests/window-movement.test.js tests/save.test.js` :
-  **39/39 réussis**, dont 12 tests Hotel. Moteur, données, chemins, collisions,
-  dialogues, navigation des salles, instance unique, pause/reprise, fermeture et
-  `WindowManager.clear` ; navigation, sécurité, limites des fenêtres et sauvegardes.
-- `node --test` : **207/208 réussis**. L'échec préexistant reste dans
-  `tests/start-menu.test.js:56`, pour le prototype inutilisé `StartMenu` et son
-  champ manquant `settings.data.applicationUsage`. Ce module n'est pas modifié.
-- `npm run build` : réussi, avec les contrôles musicaux et narratifs existants.
-- `node scripts/verify-desktop-ui.mjs --xdhotel-only` : réussi dans Edge isolé
-  sur le build de production. Ouverture unique, accueil/historique conservés,
-  dimensions initiales, déplacement de fenêtre, poignée de redimensionnement,
-  réduction/restauration depuis la barre des tâches et le site, cinq salles,
-  collisions, PNJ/bulles, changements répétés, clics après redimensionnement,
-  fermeture indépendante du navigateur, fermeture/relance du client,
-  nettoyage du menu et relance après New Game. Aucun changement narratif ou
-  champ de sauvegarde Hotel, aucune requête externe ni nouvelle exception.
-- `node scripts/verify-desktop-ui.mjs --browser-only` : réussi. ForumJeu,
-  recherche, erreurs, alias, historiques indépendants, onglets, fenêtres,
-  barre des tâches, persistance, fermeture du dernier onglet et New Game.
+- 25 tests Hotel réussis : conversations automatiques dans les cinq rendus sans
+  clic, attribution des messages, délais, expiration, clic réservé à la réception,
+  placement, déplacements simultanés, changement de salle et nettoyage.
+- Simulations déterministes de dix minutes par salle sans collision ni mutation
+  des données, avec variété des échanges et périodes de silence.
+- Compilation de production réussie, contrôles musicaux et narratifs inclus.
+- Suite complète : 220/221. L'échec préexistant de `tests/start-menu.test.js:56`
+  concerne `settings.data.applicationUsage.arcade`, hors du client Hotel.
+- Contrôle interactif : `node scripts/verify-desktop-ui.mjs --xdhotel-only`.
 
-Captures de contrôle dans `.qa` : `xdhotel-hall.png`, `xdhotel-small.png`,
-`hopla-desktop-window.png`, `hopla-navigator.png` et les quatre nouvelles salles.
-
-Les données et le moteur des salles, les autres sites, les dépendances et les
-permissions Electron restent inchangés. Pas de lancement Electron ni de portable,
-ni de test d'endurance. Les interactions sont vérifiées à 1280 × 800 et 800 × 600 ;
-le scénario narratif complet n'est pas rejoué manuellement.
+Pas de test Electron ou de portable, ni d'endurance réelle de plusieurs heures.

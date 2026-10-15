@@ -210,11 +210,17 @@ async function verifyNotepad() {
       const options=[...menu.querySelectorAll('button')].map(option=>{
         const r=option.getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,visible:option.contains(document.elementFromPoint(r.left+r.width/2,r.top+r.height/2))};
       });
-      return {left:rect.left,top:rect.top,buttonLeft:button.left,buttonBottom:button.bottom,inside:rect.left>=frame.left&&rect.right<=frame.right&&rect.bottom<=frame.bottom,options};
+      return {left:rect.left,top:rect.top,buttonLeft:button.left,buttonBottom:button.bottom,inside:rect.left>=frame.left&&rect.right<=frame.right&&rect.bottom<=frame.bottom,background:getComputedStyle(menu).backgroundColor,image:getComputedStyle(menu).backgroundImage,options};
     })()`);
     assert.equal(geometry.left, geometry.buttonLeft);
     assert.equal(geometry.top, geometry.buttonBottom);
     assert.equal(geometry.inside, true);
+    assert.equal(
+      geometry.background,
+      'rgb(255, 253, 244)',
+      'Notepad keeps its original menu palette',
+    );
+    assert.equal(geometry.image, 'none');
     assert.ok(geometry.options.every((option) => option.visible));
     assert.ok(geometry.options[0].bottom <= geometry.options[1].top);
     assert.equal(geometry.options[0].left, geometry.options[1].left);
@@ -1463,7 +1469,7 @@ async function verifyHotel() {
   );
   assert.equal(await evaluate("document.querySelectorAll('.hopla-hotel-client').length"), 1);
   assert.equal(
-    await evaluate("document.querySelector('.hotel-room h2').textContent"),
+    await evaluate("document.querySelector('.hotel-current-room').textContent"),
     "Hall de l'hôtel",
   );
   // Observe the avatar's original purple shirt in the Canvas, without a production counter.
@@ -1482,19 +1488,24 @@ async function verifyHotel() {
       const a=(left+10-c.width/2)/16,b=(top+26-90)/8;
       return 'case '+(Math.round((a+b)/2)+1)+', '+(Math.round((b-a)/2)+1);
     })()`);
-  const assertCleanClient = async () => {
+  const assertCleanClient = async (definition = room) => {
+    assert.equal(await evaluate("document.querySelectorAll('.hotel-nickname').length"), 0);
+    assert.equal(
+      await evaluate("document.querySelectorAll('.hotel-room input, .hotel-room textarea').length"),
+      0,
+    );
     assert.ok(
       await evaluate(`(()=>{
       const c=document.querySelector('.hotel-canvas'),ctx=c.getContext('2d');
       return [[0,0],[c.width-1,0],[0,c.height-1],[c.width-1,c.height-1]].every(([x,y])=>{
         const p=ctx.getImageData(x,y,1,1).data;return p[0]===0&&p[1]===0&&p[2]===0&&p[3]===255;
       })&&getComputedStyle(document.querySelector('.hotel-stage')).backgroundColor==='rgb(0, 0, 0)'
-        &&getComputedStyle(document.querySelector('.hotel-navigator')).backgroundColor==='rgb(240, 244, 236)'
+        &&getComputedStyle(document.querySelector('.hotel-navigator')).backgroundColor==='rgb(213, 220, 225)'
         &&getComputedStyle(document.querySelector('.browser-page .xdhotel')).backgroundColor==='rgb(228, 238, 244)';
     })()`),
       'black render background only, in every room',
     );
-    assert.equal(await evaluate("document.querySelector('.hotel-room-nav').children.length"), 2);
+    assert.equal(await evaluate("document.querySelector('.hotel-room-nav').children.length"), 3);
     assert.ok(
       await evaluate(
         `!document.querySelector('.hotel-room').textContent.includes("Retour à l'accueil")`,
@@ -1512,6 +1523,18 @@ async function verifyHotel() {
     );
   };
   await assertCleanClient();
+  assert.ok(
+    await evaluate(`(()=>{
+    const r=document.querySelector('.hotel-room'),v=r.querySelector('.hotel-viewport'),
+      t=r.querySelector('.hotel-room-nav'),b=r.querySelector('.hotel-navigator-open'),
+      rr=r.getBoundingClientRect(),vr=v.getBoundingClientRect(),tr=t.getBoundingClientRect(),br=b.getBoundingClientRect();
+    return !r.querySelector('.hotel-header,h2') && getComputedStyle(v).backgroundColor==='rgb(0, 0, 0)'
+      && vr.top===rr.top && vr.left===rr.left && vr.right===rr.right
+      && Math.abs(vr.bottom-tr.top)<1 && tr.bottom===rr.bottom && tr.width===rr.width
+      && br.left-tr.left<10 && br.bottom<=tr.bottom && getComputedStyle(t).backgroundColor==='rgb(191, 199, 205)';
+  })()`),
+    'full black scene and full-width compact toolbar at bottom',
+  );
   const floorClick = async (col, row, offsetY = 0) => {
     const point = project(col, row, room);
     const hit = await evaluate(
@@ -1541,10 +1564,24 @@ async function verifyHotel() {
   await until(async () => (await location()).endsWith('case 9, 9'), 'replace destination');
   await floorClick(...room.npcs[0].position, -25);
   assert.equal(
-    await evaluate("document.querySelector('.hotel-bubble').textContent"),
+    await evaluate(
+      "[...document.querySelectorAll('.hotel-bubble .hotel-message-text')].at(-1).textContent",
+    ),
     room.npcs[0].dialogue,
   );
-  assert.equal(await evaluate("document.querySelector('.hotel-bubble').hidden"), false);
+  assert.equal(await evaluate("!!document.querySelector('.hotel-bubble')"), true);
+  const firstBubbleLeft = await evaluate("document.querySelector('.hotel-bubble').offsetLeft");
+  await floorClick(...room.npcs[0].position, -25);
+  assert.ok(
+    await evaluate(`(()=>{
+    const bubbles=[...document.querySelectorAll('.hotel-bubble')];
+    return bubbles.length===2 && bubbles.every(b=>b.querySelector('strong').textContent==='ReceptionHotel : ')
+      && bubbles[0].offsetLeft < ${firstBubbleLeft}
+      && bubbles[0].offsetLeft+bubbles[0].offsetWidth < bubbles[1].offsetLeft
+      && bubbles[0].offsetTop===bubbles[1].offsetTop;
+  })()`),
+    'repeated speaker retains horizontal history with author names',
+  );
   await capture('xdhotel-hall.png');
   const assertSceneFits = async () => {
     assert.ok(
@@ -1616,11 +1653,7 @@ async function verifyHotel() {
     ),
   );
   await capture('xdhotel-small.png');
-  await until(
-    () => evaluate("document.querySelector('.hotel-bubble').hidden"),
-    'bubble expires',
-    6000,
-  );
+  await until(() => evaluate("!document.querySelector('.hotel-bubble')"), 'bubble expires', 11000);
   await command('Emulation.setDeviceMetricsOverride', {
     width: 1280,
     height: 800,
@@ -1642,7 +1675,7 @@ async function verifyHotel() {
   })()`);
   const fullPanel = await panelSize();
   assert.ok(fullPanel.bounded && !fullPanel.scroll);
-  assert.ok(fullPanel.tail >= 8 && fullPanel.tail <= 12, 'panel ends just after its content');
+  assert.ok(fullPanel.tail >= 3 && fullPanel.tail <= 7, 'panel ends just after its content');
   await evaluate(
     "[...document.querySelectorAll('.hotel-room-entry')].slice(1).forEach(row=>row.style.display='none')",
   );
@@ -1662,6 +1695,38 @@ async function verifyHotel() {
   await evaluate("document.querySelectorAll('[data-layout-probe]').forEach(row=>row.remove())");
   assert.deepEqual((await panelSize()).window, fullPanel.window);
   await capture('hopla-navigator.png');
+  const panelBeforeDrag = await rect('.hotel-navigator');
+  const canvasBeforeDrag = await rect('.hotel-canvas');
+  const panelTitle = await rect('.hotel-navigator > header');
+  await drag({ x: panelTitle.x, y: panelTitle.y }, 40, -20);
+  assert.ok((await rect('.hotel-navigator')).x > panelBeforeDrag.x, 'internal panel is draggable');
+  assert.deepEqual(
+    await rect('.hotel-canvas'),
+    canvasBeforeDrag,
+    'panel does not displace the room',
+  );
+  const restoreSize = await evaluate(`(()=>{const w=document.querySelector('.hopla-hotel-client');
+    const size=[w.style.width,w.style.height];w.style.width='320px';w.style.height='220px';return size;})()`);
+  await wait(150);
+  await assertSceneFits();
+  assert.ok(
+    (await panelSize()).bounded && (await panelSize()).scroll,
+    'minimum client keeps panel bounded and scrollable',
+  );
+  assert.ok(
+    await evaluate(
+      `(()=>{const t=document.querySelector('.hotel-room-nav').getBoundingClientRect(),p=document.querySelector('.hotel-navigator').getBoundingClientRect();return p.bottom<=t.top;})()`,
+    ),
+    'navigator never covers toolbar',
+  );
+  await capture('hopla-minimum.png');
+  await click('.hotel-navigator-open');
+  assert.equal(await evaluate("document.querySelector('.hotel-navigator').hidden"), true);
+  await click('.hotel-navigator-open');
+  await evaluate(
+    `(()=>{const w=document.querySelector('.hopla-hotel-client');[w.style.width,w.style.height]=${JSON.stringify(restoreSize)};})()`,
+  );
+  await wait(150);
   await click('.hotel-navigator-close');
   assert.equal(await evaluate("document.querySelector('.hotel-navigator').hidden"), true);
   const enterRoom = async (id) => {
@@ -1674,10 +1739,10 @@ async function verifyHotel() {
     await floorClick(9, 8);
     await enterRoom(destination.id);
     assert.equal(
-      await evaluate("document.querySelector('.hotel-room h2').textContent"),
+      await evaluate("document.querySelector('.hotel-current-room').textContent"),
       destination.name,
     );
-    await assertCleanClient();
+    await assertCleanClient(destination);
     assert.ok((await location()).endsWith('case 8, 8'));
     await wait(350);
     assert.ok((await location()).endsWith('case 8, 8'), 'old walking path is cancelled');
@@ -1690,8 +1755,10 @@ async function verifyHotel() {
     assert.ok((await location()).endsWith('case 9, 8'), `${destination.id} blocks furniture`);
     await floorClick(...destination.npcs[0].position, -25);
     assert.equal(
-      await evaluate("document.querySelector('.hotel-bubble').textContent"),
-      destination.npcs[0].dialogue,
+      await evaluate(
+        `[...document.querySelectorAll('.hotel-bubble .hotel-message-text')].some(b=>b.textContent===${JSON.stringify(destination.npcs[0].dialogue)})`,
+      ),
+      false,
     );
   }
   for (const id of ['hall', 'cafe', 'hall']) await enterRoom(id);
@@ -1712,7 +1779,7 @@ async function verifyHotel() {
   assert.equal(await evaluate("document.querySelector('.hopla-hotel-client').hidden"), false);
   assert.ok((await location()).endsWith('case 8, 9'), 'site restoration preserves position');
   assert.equal(
-    await evaluate("document.querySelector('.hotel-room h2').textContent"),
+    await evaluate("document.querySelector('.hotel-current-room').textContent"),
     'Café Hopla',
   );
   await click('.task-tab[data-app=browser]');
@@ -1744,13 +1811,75 @@ async function verifyHotel() {
   );
   await doubleClick('#desktop > .desktop-icons [data-shortcut=browser]');
   await ready();
-  await click('.browser-page .hotel-enter');
+  // Seed only this test instance's random source; timers and animation use the real clock.
+  await evaluate(
+    `(()=>{const original=Math.random;let seed=11;Math.random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);try{document.querySelector('.browser-page .hotel-enter').click();}finally{Math.random=original;}})()`,
+  );
   assert.ok((await location()).endsWith('case 8, 8'));
   assert.equal(
-    await evaluate("document.querySelector('.hotel-room h2').textContent"),
+    await evaluate("document.querySelector('.hotel-current-room').textContent"),
     "Hall de l'hôtel",
   );
   await capture('hopla-desktop-window.png');
+  // Read visible shirt pixels, rather than adding permanent name labels or a debug API.
+  const npcPositions = () =>
+    evaluate(`(()=>{
+    const c=document.querySelector('.hotel-canvas'),pixels=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
+    return ${JSON.stringify(room.npcs.map((n) => [n.id, n.appearance?.shirt ?? '#f3bf43']))}.map(([id,color])=>{
+      const rgb=color.slice(1).match(/../g).map(v=>parseInt(v,16));
+      let x=0,y=0,count=0;
+      for(let i=0;i<pixels.length;i+=4) if(rgb.every((v,j)=>pixels[i+j]===v)){
+        x+=(i/4)%c.width;y+=Math.floor(i/4/c.width);count++;
+      }
+      return [id,count?Math.round(x/count):null,count?Math.round(y/count):null];
+    });
+  })()`);
+  const initialPositions = await npcPositions();
+  const receptionPosition = initialPositions.find(([id]) => id === 'reception-xd');
+  let observedMotion = false,
+    observedChat = false,
+    overlap = false;
+  await until(
+    async () => {
+      const positions = await npcPositions();
+      observedMotion ||= JSON.stringify(positions) !== JSON.stringify(initialPositions);
+      const visible = await evaluate(
+        "[...document.querySelectorAll('.hotel-bubble:not([hidden])')].map(b=>[b.dataset.speaker,b.textContent])",
+      );
+      observedChat ||= visible.some(([id]) => id !== 'reception-xd');
+      overlap ||= visible.length >= 2;
+      assert.deepEqual(
+        positions.find(([id]) => id === 'reception-xd'),
+        receptionPosition,
+      );
+      assert.ok(visible.length <= 8);
+      return observedMotion && observedChat && overlap && visible.length >= 2;
+    },
+    'autonomous visitors move and exchange messages without player input',
+    90000,
+  );
+  await capture('hopla-social-hall.png');
+  const socialState = () =>
+    evaluate(
+      "[...document.querySelectorAll('.hotel-bubble')].map(n=>[n.dataset.speaker,n.textContent,n.hidden,n.style.left,n.style.top])",
+    );
+  await click('.hopla-hotel-client .msn-minimize');
+  const pausedSocial = await socialState();
+  await wait(1200);
+  assert.deepEqual(await socialState(), pausedSocial, 'minimized simulation has no activity');
+  const immediateRestore = await evaluate(
+    "(()=>{document.querySelector('.task-tab[data-app=hopla-hotel]').click();return [...document.querySelectorAll('.hotel-bubble')].map(n=>[n.dataset.speaker,n.textContent,n.hidden,n.style.left,n.style.top]);})()",
+  );
+  assert.deepEqual(
+    immediateRestore,
+    pausedSocial,
+    'restoration preserves the active messages and positions',
+  );
+  assert.ok(
+    await evaluate(
+      `(()=>{const s=document.querySelector('.hotel-stage').getBoundingClientRect();return [...document.querySelectorAll('.hotel-bubble:not([hidden])')].every(b=>{const r=b.getBoundingClientRect();return r.left>=s.left&&r.right<=s.right&&r.top>=s.top&&r.bottom<=s.bottom&&getComputedStyle(b).backgroundColor==='rgb(255, 255, 255)'&&getComputedStyle(b).color==='rgb(0, 0, 0)';});})()`,
+    ),
+  );
   await click('.hopla-hotel-client .close-button');
   assert.ok(await evaluate("!!document.querySelector('.browser-page .hotel-enter')"));
   assert.equal(await narrative(), before);
@@ -1796,7 +1925,7 @@ async function verifyHotel() {
     JSON.stringify(requests),
   );
   console.log(
-    'OK: single desktop Hotel window, unchanged browser homepage/history, large bounded dimensions, titlebar drag/CSS resize, minimize/taskbar/site restoration, five rooms, scaled clicks/collisions/NPCs, repeated room changes, independent browser lifetime, close/relaunch, menu teardown/New Game, unchanged story/save and local requests; no Electron.',
+    'OK: single desktop Hotel window, unchanged browser homepage/history, bounded resize, five populated rooms, no permanent nicknames, reception-only click dialogue, scaled clicks/collisions/NPCs, autonomous movement/conversations and simultaneous white bubbles, frozen minimized social state/restoration, repeated room changes, close/relaunch, menu teardown/New Game, unchanged story/save and local requests; no Electron.',
   );
 }
 
@@ -4047,6 +4176,52 @@ async function verifyMessengerWindows() {
   const pixel = '[data-messenger-contact="pixelgirl"]';
   const skater = '[data-messenger-contact="skater"]';
   const bubble = '[data-messenger-contact="princess"]';
+  let rosterMenuStyle;
+  const verifyBlueMenus = async (windowSelector, name) => {
+    for (let index = 1; index <= 5; index++) {
+      const opener = `${windowSelector} .messenger-menu-group:nth-child(${index}) > button`;
+      const panel = `${windowSelector} .messenger-menu-group:nth-child(${index}) .messenger-dropdown`;
+      await physicalClick(opener);
+      const state = await evaluate(`(()=>{
+        const p=document.querySelector('${panel}'),w=document.querySelector('${windowSelector}'),
+          s=getComputedStyle(p),r=p.getBoundingClientRect(),wr=w.getBoundingClientRect(),
+          items=[...p.querySelectorAll('button')],center=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
+        return {hidden:p.hidden,background:s.backgroundImage,border:s.borderTopColor,opacity:s.opacity,
+          visible:p.contains(center),bounded:r.left>=wr.left&&r.right<=wr.right&&r.top>=wr.top&&r.bottom<=wr.bottom,
+          disabled:items.filter(b=>b.disabled).every(b=>getComputedStyle(b).color==='rgb(105, 126, 145)'),
+          separators:items.slice(1).every(b=>getComputedStyle(b).borderTopColor==='rgb(167, 199, 226)')};
+      })()`);
+      assert.equal(state.hidden, false);
+      assert.ok(
+        state.background.includes('rgb(225, 242, 255)') &&
+          state.background.includes('rgb(198, 226, 248)'),
+        'blue gradient covers the open panel',
+      );
+      assert.equal(state.border, 'rgb(102, 153, 195)');
+      assert.equal(state.opacity, '1');
+      assert.ok(state.visible && state.bounded && state.disabled && state.separators);
+      const shared = [state.background, state.border];
+      if (!rosterMenuStyle) rosterMenuStyle = shared;
+      assert.deepEqual(
+        shared,
+        rosterMenuStyle,
+        'roster and conversation use the same dropdown skin',
+      );
+      const option = await evaluate(
+        `(()=>{const r=document.querySelector('${panel} button:not(:disabled)').getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};})()`,
+      );
+      await command('Input.dispatchMouseEvent', { type: 'mouseMoved', x: option.x, y: option.y });
+      assert.ok(
+        await evaluate(
+          `getComputedStyle(document.querySelector('${panel} button:not(:disabled)')).backgroundImage.includes('rgb(54, 137, 206)')`,
+        ),
+        'physical hover highlights the actual option',
+      );
+      await capture(`messenger-menu-${name}-${index}.png`);
+      await physicalClick(opener);
+      assert.equal(await evaluate(`document.querySelector('${panel}').hidden`), true);
+    }
+  };
   await click('#windows-start');
   await click('#menu-messenger');
   assert.ok(await evaluate(`!!document.querySelector('${roster} .messenger-contact-list')`));
@@ -4073,6 +4248,7 @@ async function verifyMessengerWindows() {
     );
   };
   await assertOrder();
+  await verifyBlueMenus(roster, 'roster');
   await capture('messenger-contacts-list.png');
   const saved = await evaluate(
     "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).dialogues)",
@@ -4081,9 +4257,29 @@ async function verifyMessengerWindows() {
     evaluate(
       `document.querySelector('[data-contact-id=${id}]').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`,
     );
+  for (const id of ['luna', 'turbo']) {
+    await openContact(id);
+    const selector = `[data-messenger-contact="${id}"]`;
+    assert.ok(
+      await evaluate(`(()=>{
+      const w=document.querySelector('${selector}'),slot=w.querySelector('.msn-webcam-placeholder'),
+        portrait=w.querySelector('.conversation-contact-portrait'),img=portrait.querySelector('img');
+      return slot && slot.parentElement===portrait && slot.getBoundingClientRect().top>=img.getBoundingClientRect().bottom
+        && !slot.matches('button,a,input,video') && !slot.querySelector('button,a,input,video')
+        && slot.tabIndex===-1 && !slot.onclick && !w.querySelector('.conversation-return');
+    })()`),
+      'inactive webcam below unchanged contact avatar',
+    );
+    await capture(`messenger-refresh-${id}.png`);
+    await click(`${selector} .msn-minimize`);
+    assert.equal(await evaluate(`document.querySelector('${selector}').hidden`), true);
+    await click(`[data-app="messenger:conversation:${id}"]`);
+    await click(`${selector} .close-button`);
+  }
   await openContact('skater');
   await openContact('princess');
   await openContact('pixelgirl');
+  await verifyBlueMenus(pixel, 'pixelgirl');
   assert.equal(await evaluate("document.querySelectorAll('[data-messenger-contact]').length"), 3);
   assert.equal(await evaluate(`document.querySelector('${roster}').hidden`), false);
   assert.equal(await evaluate("!!document.querySelector('#messenger-contacts')"), false);
@@ -4211,6 +4407,14 @@ async function verifyMessengerWindows() {
   }
   await assertOrder();
   await menuAction(pixel, 'Actions', 'Émoticônes');
+  assert.ok(
+    await evaluate(`(()=>{
+    const buttons=[...document.querySelectorAll('[data-messenger-view=emoticons] .messenger-emoticons button')];
+    const cat=buttons.find(b=>b.textContent===':3');
+    return cat && !cat.querySelector('.msn-emoticon');
+  })()`),
+    ':3 remains a textual shortcut in the emoticon palette',
+  );
   await click('[data-messenger-view=emoticons] .messenger-emoticons button');
   assert.equal(await evaluate("document.querySelector('.emoticon-preview').textContent"), ':)');
   await click('[data-messenger-view=emoticons] .close-button');
@@ -4344,6 +4548,31 @@ async function verifyMessengerWindows() {
     'original unanswered choices preserved after message-only replay',
   );
   await capture('messenger-independent-windows.png');
+  assert.ok(
+    await evaluate(`(()=>{
+    const w=document.querySelector('${pixel}'),p=w.querySelector('.conversation-portraits'),
+      r=p.getBoundingClientRect(),imgs=[...p.querySelectorAll('img')];
+    return imgs.every(img=>{const a=img.getBoundingClientRect();return a.top>=r.top&&a.bottom<=r.bottom&&Math.abs(a.width-a.height)<1;})
+      && !w.querySelector('.conversation-return') && w.querySelector('.msn-webcam-placeholder').tabIndex===-1;
+  })()`),
+    'both avatars fit at the normal conversation size without distortion',
+  );
+  const conversationSize = await evaluate(
+    `(()=>{const w=document.querySelector('${pixel}');const size=[w.style.width,w.style.height];w.style.width='500px';w.style.height='460px';return size;})()`,
+  );
+  await wait(100);
+  assert.ok(
+    await evaluate(`(()=>{const w=document.querySelector('${pixel}'),p=w.querySelector('.conversation-portraits'),h=w.querySelector('.conversation-history');
+    return p.getBoundingClientRect().bottom<=w.querySelector('.msn-tools').getBoundingClientRect().top
+      && h.clientWidth>200 && w.querySelector('.window-body').scrollWidth<=w.querySelector('.window-body').clientWidth;
+  })()`),
+    'resized conversation keeps messages and portrait column inside the window',
+  );
+  await capture('messenger-refresh-small.png');
+  await evaluate(
+    `(()=>{const w=document.querySelector('${pixel}');[w.style.width,w.style.height]=${JSON.stringify(conversationSize)};})()`,
+  );
+  await wait(100);
   const history = await evaluate(
     "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).conversations.pixelgirl.history)",
   );

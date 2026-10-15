@@ -1,0 +1,837 @@
+[
+  {
+    "id": "hall-1",
+    "room": "hall",
+    "participants": ["dark-flo", "cerise"],
+    "messages": [
+      {
+        "speaker": "dark-flo",
+        "text": "slt",
+        "delay": 700
+      },
+      {
+        "speaker": "cerise",
+        "text": "cc ^^",
+        "delay": 4550
+      },
+      {
+        "speaker": "dark-flo",
+        "text": "tu connais deja du monde ici ?",
+        "delay": 3450
+      },
+      {
+        "speaker": "cerise",
+        "text": "pas grand monde, je viens d arriver",
+        "delay": 2350
+      }
+    ]
+  },
+  {
+    "id": "hall-2",
+    "room": "hall",
+    "participants": ["kebab", "dark-flo"],
+    "messages": [
+      {
+        "speaker": "kebab",
+        "text": "ya qqn qui veut visiter ?",
+        "delay": 1300
+      },
+      {
+        "speaker": "dark-flo",
+        "text": "moi, mais pas encore la disco",
+        "delay": 2350
+      },
+      {
+        "speaker": "kebab",
+        "text": "on peut aller au cafe",
+        "delay": 5100
+      },
+      {
+        "speaker": "dark-flo",
+        "text": "ok attends 2 sec",
+        "delay": 4000
+      }
+    ]
+  },
+  {
+    "id": "hall-3",
+    "room": "hall",
+    "participants": ["cerise", "kebab", "dark-flo"],
+    "messages": [
+      {
+        "speaker": "cerise",
+        "text": "vs etes en vacances ?",
+        "delay": 1900
+      },
+      {
+        "speaker": "kebab",
+        "text": "nn encore cours demain",
+        "delay": 4000
+      },
+      {
+        "speaker": "dark-flo",
+        "text": "pareil... controle de maths",
+        "delay": 2900
+      },
+      {
+        "speaker": "cerise",
+        "text": "bon courage lol",
+        "delay": 1800
+      }
+    ]
+  },
+  {
+    "id": "hall-4",
+    "room": "hall",
+    "participants": ["dark-flo", "kebab"],
+    "messages": [
+      {
+        "speaker": "dark-flo",
+        "text": "ton pseudo donne faim",
+        "delay": 700
+      },
+      {
+        "speaker": "kebab",
+        "text": "c est le but mdr",
+        "delay": 1800
+      },
+      {
+        "speaker": "dark-flo",
+        "text": "t abus es il est meme pas midi",
+        "delay": 4550
+      },
+      {
+        "speaker": "kebab",
+        "text": "osef j ai faim",
+        "delay": 3450
+      }
+    ]
+  },
+  {
+    "id": "hall-5",
+    "room": "hall",
+    "participants": ["cerise", "dark-flo"],
+    "messages": [
+      {
+        "speaker": "cerise",
+        "text": "je cherche un salon calme",
+        "delay": 1300
+      },
+      {
+        "speaker": "dark-flo",
+        "text": "la detente est sympa",
+        "delay": 3450
+      },
+      {
+        "speaker": "cerise",
+        "text": "merci, je vais voir",
+        "delay": 2350
+      },
+      {
+        "speaker": "dark-flo",
+        "text": "a toute ^^",
+        "delay": 5100
+      }
+    ]
+  },
+  {
+    "id": "hall-6",
+    "room": "hall",
+    "participants": ["kebab", "cerise"],
+    "messages": [
+      {
+        "speaker": "kebab",
+        "text": "qui a change la deco du hall ?",
+        "delay": 1900
+      },
+      {
+        "speaker": "cerise",
+        "text": "je sais pas, j aime bien les canapes",
+        "delay": 5100
+      },
+      {
+        "speaker": "kebab",
+        "text": "ils etaient deja la hier",
+        "delay": 4000
+      },
+      {
+        "speaker": "cerise",
+        "text": "ah j avais pas fait gaffe",
+        "delay": 2900
+      }
+    ]
+  },
+  {
+    "id": "cafe-1",
+    "room": "cafe",
+    "participants": ["tite-folle", "disquette-bleue"],
+    "messages": [
+      {
+        "speaker": "tite-folle",
+        "text": "g encore des devoirs a faire",
+        "delay": 700
+      },
+      {
+        "speaker": "disquette-bleue",
+        "text": "Moi aussi, un exercice de physique.",
+        "delay": 4550
+      },
+      {
+        "speaker": "tite-folle",
+        "text": "pk ils donnent tout le meme jour",
+        "delay": 3450
+      },
+      {
+        "speaker": "disquette-bleue",
+        "text": "Bonne question...",
+        "delay": 2350
+      }
+    ]
+  },
+  {
+    "id": "cafe-2",
+    "room": "cafe",
+    "participants": ["cafe-max", "tite-folle"],
+    "messages": [
+      {
+        "speaker": "cafe-max",
+        "text": "Vous prenez quoi ?",
+        "delay": 1300
+      },
+      {
+        "speaker": "tite-folle",
+        "text": "un chocolat ^^",
+        "delay": 2350
+      },
+      {
+        "speaker": "cafe-max",
+        "text": "Avec des biscuits ?",
+        "delay": 5100
+      },
+      {
+        "speaker": "tite-folle",
+        "text": "oui mais pas ceux tout secs lol",
+        "delay": 4000
+      },
+      {
+        "speaker": "cafe-max",
+        "text": "Je vais chercher ca.",
+        "delay": 2900
+      }
+    ]
+  },
+  {
+    "id": "cafe-3",
+    "room": "cafe",
+    "participants": ["disquette-bleue", "cafe-max"],
+    "messages": [
+      {
+        "speaker": "disquette-bleue",
+        "text": "Tu as ?cout? le nouvel album d Indochine ?",
+        "delay": 1900
+      },
+      {
+        "speaker": "cafe-max",
+        "text": "Pas encore, je suis rest? sur le pr?c?dent.",
+        "delay": 4000
+      },
+      {
+        "speaker": "disquette-bleue",
+        "text": "On me l a pr?t? hier.",
+        "delay": 2900
+      },
+      {
+        "speaker": "cafe-max",
+        "text": "Tu me diras ce que tu en penses.",
+        "delay": 1800
+      }
+    ]
+  },
+  {
+    "id": "cafe-4",
+    "room": "cafe",
+    "participants": ["tite-folle", "cafe-max", "disquette-bleue"],
+    "messages": [
+      {
+        "speaker": "tite-folle",
+        "text": "qui a pris ma tasse",
+        "delay": 700
+      },
+      {
+        "speaker": "cafe-max",
+        "text": "Elle est juste ? c?t? de toi.",
+        "delay": 1800
+      },
+      {
+        "speaker": "disquette-bleue",
+        "text": "ah oui mdr",
+        "delay": 4550
+      },
+      {
+        "speaker": "tite-folle",
+        "text": "Ca arrive ? tout le monde.",
+        "delay": 3450
+      }
+    ]
+  },
+  {
+    "id": "cafe-5",
+    "room": "cafe",
+    "participants": ["cafe-max", "disquette-bleue"],
+    "messages": [
+      {
+        "speaker": "cafe-max",
+        "text": "Il pleut encore chez toi ?",
+        "delay": 1300
+      },
+      {
+        "speaker": "disquette-bleue",
+        "text": "Oui, depuis ce matin.",
+        "delay": 3450
+      },
+      {
+        "speaker": "cafe-max",
+        "text": "Ici aussi, m?me pas envie de sortir.",
+        "delay": 2350
+      },
+      {
+        "speaker": "disquette-bleue",
+        "text": "Un temps pour rester au chaud.",
+        "delay": 5100
+      }
+    ]
+  },
+  {
+    "id": "cafe-6",
+    "room": "cafe",
+    "participants": ["tite-folle", "disquette-bleue"],
+    "messages": [
+      {
+        "speaker": "tite-folle",
+        "text": "ma prof a ramasse les cahiers ce matin",
+        "delay": 1900
+      },
+      {
+        "speaker": "disquette-bleue",
+        "text": "Et tu avais fait les exercices ?",
+        "delay": 5100
+      },
+      {
+        "speaker": "tite-folle",
+        "text": "presque...",
+        "delay": 4000
+      },
+      {
+        "speaker": "disquette-bleue",
+        "text": "Le presque risque de se voir.",
+        "delay": 2900
+      },
+      {
+        "speaker": "tite-folle",
+        "text": "tkt g une belle ecriture ^^",
+        "delay": 1800
+      }
+    ]
+  },
+  {
+    "id": "discotheque-1",
+    "room": "discotheque",
+    "participants": ["miss-love", "bg-du-62"],
+    "messages": [
+      {
+        "speaker": "miss-love",
+        "text": "cc t es nouveau ?",
+        "delay": 700
+      },
+      {
+        "speaker": "bg-du-62",
+        "text": "ouais je cherche mes potes",
+        "delay": 4550
+      },
+      {
+        "speaker": "miss-love",
+        "text": "tu peux rester un peu ^^",
+        "delay": 3450
+      },
+      {
+        "speaker": "bg-du-62",
+        "text": "ok ils vont me retrouver",
+        "delay": 2350
+      }
+    ]
+  },
+  {
+    "id": "discotheque-2",
+    "room": "discotheque",
+    "participants": ["dj-biscotte", "vinyle"],
+    "messages": [
+      {
+        "speaker": "dj-biscotte",
+        "text": "Vous pr?f?rez quoi comme chanson ?",
+        "delay": 1300
+      },
+      {
+        "speaker": "vinyle",
+        "text": "Un vieux Daft Punk !",
+        "delay": 2350
+      },
+      {
+        "speaker": "dj-biscotte",
+        "text": "Bonne id?e.",
+        "delay": 5100
+      },
+      {
+        "speaker": "vinyle",
+        "text": "Ca change des m?mes titres tout le temps.",
+        "delay": 4000
+      }
+    ]
+  },
+  {
+    "id": "discotheque-3",
+    "room": "discotheque",
+    "participants": ["bg-du-62", "miss-love"],
+    "messages": [
+      {
+        "speaker": "bg-du-62",
+        "text": "j aime bien ta tenue",
+        "delay": 1900
+      },
+      {
+        "speaker": "miss-love",
+        "text": "merci ^^",
+        "delay": 4000
+      },
+      {
+        "speaker": "bg-du-62",
+        "text": "elle va avec la piste",
+        "delay": 2900
+      },
+      {
+        "speaker": "miss-love",
+        "text": "lol c etait pas fait expres",
+        "delay": 1800
+      }
+    ]
+  },
+  {
+    "id": "discotheque-4",
+    "room": "discotheque",
+    "participants": ["vinyle", "dj-biscotte"],
+    "messages": [
+      {
+        "speaker": "vinyle",
+        "text": "Les enceintes sont ?normes.",
+        "delay": 700
+      },
+      {
+        "speaker": "dj-biscotte",
+        "text": "J ai surtout choisi les couleurs.",
+        "delay": 1800
+      },
+      {
+        "speaker": "vinyle",
+        "text": "Le coin salon est pas mal aussi.",
+        "delay": 4550
+      },
+      {
+        "speaker": "dj-biscotte",
+        "text": "Oui, pour discuter au calme.",
+        "delay": 3450
+      }
+    ]
+  },
+  {
+    "id": "discotheque-5",
+    "room": "discotheque",
+    "participants": ["miss-love", "bg-du-62", "vinyle"],
+    "messages": [
+      {
+        "speaker": "miss-love",
+        "text": "ya pas bcp de monde ce soir",
+        "delay": 1300
+      },
+      {
+        "speaker": "bg-du-62",
+        "text": "mes potes arrivent apres manger",
+        "delay": 3450
+      },
+      {
+        "speaker": "vinyle",
+        "text": "Moi je ne vais pas rester tr?s tard.",
+        "delay": 2350
+      },
+      {
+        "speaker": "miss-love",
+        "text": "on verra ^^",
+        "delay": 5100
+      }
+    ]
+  },
+  {
+    "id": "discotheque-6",
+    "room": "discotheque",
+    "participants": ["dj-biscotte", "vinyle"],
+    "messages": [
+      {
+        "speaker": "dj-biscotte",
+        "text": "Quelqu un conna?t ce remix ?",
+        "delay": 1900
+      },
+      {
+        "speaker": "vinyle",
+        "text": "Je crois, mais j ai oubli? le nom.",
+        "delay": 5100
+      },
+      {
+        "speaker": "dj-biscotte",
+        "text": "Toujours pareil avec les remix.",
+        "delay": 4000
+      },
+      {
+        "speaker": "vinyle",
+        "text": "Je demanderai ? mon fr?re.",
+        "delay": 2900
+      }
+    ]
+  },
+  {
+    "id": "detente-1",
+    "room": "detente",
+    "participants": ["nuage", "biscuit"],
+    "messages": [
+      {
+        "speaker": "nuage",
+        "text": "slt, tu reviens souvent ici ?",
+        "delay": 700
+      },
+      {
+        "speaker": "biscuit",
+        "text": "quand j ai fini les cours",
+        "delay": 4550
+      },
+      {
+        "speaker": "nuage",
+        "text": "pareil, c est tranquille",
+        "delay": 3450
+      },
+      {
+        "speaker": "biscuit",
+        "text": "ouais on peut parler sans crier",
+        "delay": 2350
+      }
+    ]
+  },
+  {
+    "id": "detente-2",
+    "room": "detente",
+    "participants": ["pause-cafe", "nuage"],
+    "messages": [
+      {
+        "speaker": "pause-cafe",
+        "text": "Ta journ?e s est bien pass?e ?",
+        "delay": 1300
+      },
+      {
+        "speaker": "nuage",
+        "text": "ca va, on a fini une heure plus tot",
+        "delay": 2350
+      },
+      {
+        "speaker": "pause-cafe",
+        "text": "Ca fait toujours plaisir.",
+        "delay": 5100
+      },
+      {
+        "speaker": "nuage",
+        "text": "surtout quand il fait beau ^^",
+        "delay": 4000
+      }
+    ]
+  },
+  {
+    "id": "detente-3",
+    "room": "detente",
+    "participants": ["biscuit", "nuage"],
+    "messages": [
+      {
+        "speaker": "biscuit",
+        "text": "mon pote m a encore plante",
+        "delay": 1900
+      },
+      {
+        "speaker": "nuage",
+        "text": "il a peut etre rate le bus",
+        "delay": 4000
+      },
+      {
+        "speaker": "biscuit",
+        "text": "il habite a 5 min lol",
+        "delay": 2900
+      },
+      {
+        "speaker": "nuage",
+        "text": "ah...",
+        "delay": 1800
+      }
+    ]
+  },
+  {
+    "id": "detente-4",
+    "room": "detente",
+    "participants": ["nuage", "pause-cafe", "biscuit"],
+    "messages": [
+      {
+        "speaker": "nuage",
+        "text": "on devrait changer le tapis",
+        "delay": 700
+      },
+      {
+        "speaker": "pause-cafe",
+        "text": "Je le trouve bien comme ?a.",
+        "delay": 1800
+      },
+      {
+        "speaker": "biscuit",
+        "text": "moi aussi, garde le vert",
+        "delay": 4550
+      },
+      {
+        "speaker": "nuage",
+        "text": "bon ok je suis toute seule alors",
+        "delay": 3450
+      }
+    ]
+  },
+  {
+    "id": "detente-5",
+    "room": "detente",
+    "participants": ["pause-cafe", "biscuit"],
+    "messages": [
+      {
+        "speaker": "pause-cafe",
+        "text": "Tu connais les autres habitu?s ?",
+        "delay": 1300
+      },
+      {
+        "speaker": "biscuit",
+        "text": "2 ou 3, on se croise le soir",
+        "delay": 3450
+      },
+      {
+        "speaker": "pause-cafe",
+        "text": "Je les ai vus hier.",
+        "delay": 2350
+      },
+      {
+        "speaker": "biscuit",
+        "text": "ils restent longtemps des fois",
+        "delay": 5100
+      }
+    ]
+  },
+  {
+    "id": "detente-6",
+    "room": "detente",
+    "participants": ["biscuit", "nuage"],
+    "messages": [
+      {
+        "speaker": "biscuit",
+        "text": "le surveillant a confisque mon mp3",
+        "delay": 1900
+      },
+      {
+        "speaker": "nuage",
+        "text": "t avais mis les ecouteurs en cours ?",
+        "delay": 5100
+      },
+      {
+        "speaker": "biscuit",
+        "text": "nn dans le couloir",
+        "delay": 4000
+      },
+      {
+        "speaker": "nuage",
+        "text": "demande lui demain",
+        "delay": 2900
+      },
+      {
+        "speaker": "biscuit",
+        "text": "ouais je vais essayer",
+        "delay": 1800
+      }
+    ]
+  },
+  {
+    "id": "jeux-1",
+    "room": "jeux",
+    "participants": ["mario-fan", "panda"],
+    "messages": [
+      {
+        "speaker": "mario-fan",
+        "text": "360 ou ps3 ?",
+        "delay": 700
+      },
+      {
+        "speaker": "panda",
+        "text": "ps3, j aime bien la manette",
+        "delay": 4550
+      },
+      {
+        "speaker": "mario-fan",
+        "text": "moi j ai une 360",
+        "delay": 3450
+      },
+      {
+        "speaker": "panda",
+        "text": "du moment qu on a des bons jeux ^^",
+        "delay": 2350
+      }
+    ]
+  },
+  {
+    "id": "jeux-2",
+    "room": "jeux",
+    "participants": ["clavier", "retro-fred"],
+    "messages": [
+      {
+        "speaker": "clavier",
+        "text": "Mon PC rame sur Crysis.",
+        "delay": 1300
+      },
+      {
+        "speaker": "retro-fred",
+        "text": "Tu as baiss? les d?tails ?",
+        "delay": 2350
+      },
+      {
+        "speaker": "clavier",
+        "text": "Oui, surtout les ombres.",
+        "delay": 5100
+      },
+      {
+        "speaker": "retro-fred",
+        "text": "C est d?j? gourmand comme ?a.",
+        "delay": 4000
+      }
+    ]
+  },
+  {
+    "id": "jeux-3",
+    "room": "jeux",
+    "participants": ["mario-fan", "clavier"],
+    "messages": [
+      {
+        "speaker": "mario-fan",
+        "text": "j ai recommence gta san andreas",
+        "delay": 1900
+      },
+      {
+        "speaker": "clavier",
+        "text": "Tu en es o? ?",
+        "delay": 4000
+      },
+      {
+        "speaker": "mario-fan",
+        "text": "encore a los santos",
+        "delay": 2900
+      },
+      {
+        "speaker": "clavier",
+        "text": "Bon courage pour les missions de conduite.",
+        "delay": 1800
+      },
+      {
+        "speaker": "mario-fan",
+        "text": "je les rate tjrs lol",
+        "delay": 4550
+      }
+    ]
+  },
+  {
+    "id": "jeux-4",
+    "room": "jeux",
+    "participants": ["panda", "mario-fan", "retro-fred"],
+    "messages": [
+      {
+        "speaker": "panda",
+        "text": "g fait le meilleur temps",
+        "delay": 700
+      },
+      {
+        "speaker": "mario-fan",
+        "text": "t as coupe dans l herbe",
+        "delay": 1800
+      },
+      {
+        "speaker": "retro-fred",
+        "text": "Ca d?pend des r?gles de la course.",
+        "delay": 4550
+      },
+      {
+        "speaker": "panda",
+        "text": "c etait pas interdit",
+        "delay": 3450
+      },
+      {
+        "speaker": "mario-fan",
+        "text": "ouais facile de dire ca apres",
+        "delay": 2350
+      }
+    ]
+  },
+  {
+    "id": "jeux-5",
+    "room": "jeux",
+    "participants": ["retro-fred", "clavier"],
+    "messages": [
+      {
+        "speaker": "retro-fred",
+        "text": "Tu joues encore ? des vieux jeux PC ?",
+        "delay": 1300
+      },
+      {
+        "speaker": "clavier",
+        "text": "Oui, j ai r?install? Age of Empires II.",
+        "delay": 3450
+      },
+      {
+        "speaker": "retro-fred",
+        "text": "Bonne id?e, il vieillit bien.",
+        "delay": 2350
+      },
+      {
+        "speaker": "clavier",
+        "text": "On y jouait chez mon cousin.",
+        "delay": 5100
+      }
+    ]
+  },
+  {
+    "id": "jeux-6",
+    "room": "jeux",
+    "participants": ["mario-fan", "panda"],
+    "messages": [
+      {
+        "speaker": "mario-fan",
+        "text": "g bloque sur le dernier niveau",
+        "delay": 1900
+      },
+      {
+        "speaker": "panda",
+        "text": "moi aussi, ya trop de trucs",
+        "delay": 5100
+      },
+      {
+        "speaker": "mario-fan",
+        "text": "tu disais que c etait facile",
+        "delay": 4000
+      },
+      {
+        "speaker": "panda",
+        "text": "le debut oui mdr",
+        "delay": 2900
+      }
+    ]
+  }
+]

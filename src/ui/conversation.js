@@ -2,6 +2,7 @@ import { DialogueSession } from '../story/dialogue.js';
 import { ConversationThread } from '../story/conversation-thread.js';
 import { applicationName } from './identity.js';
 import { playerIdentity } from './player-identity.js';
+import { webcamPlaceholder } from './webcam-placeholder.js';
 
 import { appendMessageText } from './message-text.js';
 export { appendMessageText } from './message-text.js';
@@ -106,10 +107,11 @@ export class ConversationWindow {
               <div class="contact-typing" role="status" aria-live="polite" hidden></div>
             </div>
             <div class="conversation-portraits">
-              <img class="story-avatar contact-avatar" alt="Avatar du contact" /><img
-                class="story-avatar player-avatar"
-                alt="Votre avatar"
-              />
+              <div class="conversation-contact-portrait">
+                <img class="story-avatar contact-avatar" alt="Avatar du contact" />
+                ${webcamPlaceholder()}
+              </div>
+              <img class="story-avatar player-avatar" alt="Votre avatar" />
             </div>
           </div>
           <div class="msn-tools">
@@ -367,24 +369,15 @@ export class ConversationWindow {
         this.element.querySelector('.contact-status').textContent = stayOnline
           ? `${this.dialogue.contact.status} · ${this.dialogue.contact.personalMessage ?? ''}`
           : 'Partie choisir une image perso';
-        const button = document.createElement('button');
-        button.className = 'xp-button';
-        button.classList.add('conversation-return');
-        button.textContent = 'Retour au bureau';
         const pendingFile = this.session.state.transcript.some(
           (entry) =>
             entry.type === 'file' &&
             this.progression.data.files[entry.fileKey]?.status === 'pending',
         );
-        button.disabled = pendingFile;
         if (!pendingFile) this.onCheckpoint(this.dialogue.id);
         if (pendingFile) this.typing.textContent = 'Termine le transfert quand tu le souhaites.';
-        button.addEventListener('click', () => {
-          const id = Number(this.element.dataset.windowId);
-          this.manager.close(id);
-        });
         if (!this.thread.pendingResponses.length && !this.thread.hasPendingMessages) {
-          this.choices.replaceChildren(button);
+          this.choices.replaceChildren();
           this.responseSignature = JSON.stringify([false, []]);
         } else {
           this.element.classList.remove('contact-away');

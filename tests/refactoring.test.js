@@ -64,13 +64,14 @@ test('extracted Messenger formatting preserves emoticons and renders HTML-lookin
         children.push(node);
       },
     },
-    'salut <3 <img src=x> :D',
+    'salut <3 <img src=x> :D :3 :) :( ;) :P',
   );
   assert.equal(
     children.map((node) => node.textContent).join(''),
-    'salut \u2665 <img src=x> \u263b',
+    'salut \u2665 <img src=x> \u263b :3 \u263a :( 😉 😛',
   );
-  assert.equal(children.filter((node) => node.className?.includes('msn-emoticon')).length, 2);
+  assert.equal(children.filter((node) => node.className?.includes('msn-emoticon')).length, 5);
+  assert.ok(children.some((node) => !node.className && node.textContent.includes(':3')));
 });
 
 test('additional engines reuse file gating and completion without duplicating progression or instances', () => {
