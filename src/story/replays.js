@@ -42,6 +42,10 @@ export class ReplayReactions {
       ...progression.data.unlockedConversations
         .filter((id) => id !== 'pixelgirl-intro' && definitions[id]?.contact.name === 'PixelGirl')
         .map((id) => definitions[id]),
+      ...(progression.data.flags.superPlombierHumorWizzesComplete === true &&
+      definitions['pixelgirl-super-plombier-wizz']
+        ? [definitions['pixelgirl-super-plombier-wizz']]
+        : []),
       ...this.dialogues,
     ]);
   }

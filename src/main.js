@@ -61,7 +61,7 @@ import {
 } from './story/narrative-orchestrator.js';
 import { resetGameToInitialState as resetSession, recoverGameReset } from './story/reset-game.js';
 import { applicationName, trackIdentity } from './ui/identity.js';
-import { NotificationCenter, ENTER_ANIMATION_MS, EXIT_ANIMATION_MS } from './ui/notifications.js';
+import { NotificationCenter, ENTER_ANIMATION_MS } from './ui/notifications.js';
 
 const BEST_SCORE_KEY = 'chaos-survival-best';
 const DEFAULT_VOLUME = 0.55;
@@ -150,6 +150,7 @@ const manager = new WindowManager(ui.playfield, ({ preview, x, y, openedAt }) =>
 });
 let activeDialogue = pixelgirlDialogue;
 let conversation = createConversation(activeDialogue);
+let plumberGroupThread;
 const desktopApplications = new DesktopApplications(
   manager,
   ui.desktop.querySelector('.taskbar'),
@@ -173,10 +174,14 @@ const messenger = new Messenger({
   primary: () => conversation,
   settings,
   onWindowState: syncSystemWindows,
-  onMessage: (contact) => {
-    const invitationMessage = narrativeOrchestrator?.onMessage(contact);
+  onMessage: (contact, incoming) => {
+    const invitationMessage = narrativeOrchestrator?.onMessage(contact, incoming);
+    if (invitationMessage === 'turbo-smiley-scene3')
+      showMessageNotification(contact, 'turbo-smiley-scene3-message', undefined, 2000);
     if (invitationMessage === 'notify')
       showMessageNotification(contact, 'turbo-flashzone-invitation-message');
+    if (invitationMessage === 'super-plombier')
+      showMessageNotification(contact, 'turbo-super-plombier-message');
     if (invitationMessage) return;
     showMessageNotification(contact, messageNotificationId(contact));
   },
@@ -232,15 +237,43 @@ narrativeOrchestrator = new NarrativeOrchestrator({
   dialogueEvents,
   getContact: (contactId) => messenger.contacts().find((entry) => entry.id === contactId),
   prepareContact: (contact) => messenger.prepareContact(contact),
-  showConnectionNotification: (contactId, { onDismiss }) => {
+  showConnectionNotification: (contactId) => {
     const contact = messenger.contacts().find((entry) => entry.id === contactId);
     if (!contact) return;
-    showContactConnectionNotification(contact, { onDismiss });
+    showContactConnectionNotification(contact);
     sounds.unlock().then(() => sounds.play('online'));
   },
-  showTurboMessageNotification: (contact, onShow) =>
-    showMessageNotification(contact, 'turbo-smiley-scene3-message', onShow),
+  sendWizz: (contactId, eventId, speaker, now) =>
+    messenger.sendWizz(contactId, { eventId, speaker, now }),
+  getGroupThread: () => {
+    plumberGroupThread ??= new ConversationThread('plumber-group', progression, () => [
+      dialogues['pixelgirl-super-plombier-group'],
+    ]);
+    return plumberGroupThread;
+  },
+  showGroupNotification: (contact) => {
+    if (!contact) return false;
+    const id = 'group:super-plombier';
+    const shown = notifications.show({
+      id,
+      type: 'message',
+      contactId: 'plumber-group',
+      contact: 'Windows Love Messenger',
+      message: 'PixelGirl vous a ajouté à une conversation de groupe',
+      durationMs: 6000,
+      clock: 'game',
+      policy: 'queue',
+      priority: 'important',
+      action: () => {
+        const group = messenger.contacts().find((entry) => entry.id === 'plumber-group');
+        if (group) openConversation(false, group);
+      },
+    });
+    return shown || notifications.has(id);
+  },
 });
+browser.onSuperPlombierStart = () => narrativeOrchestrator.onSuperPlombierStart();
+browser.onSuperPlombierVictory = () => narrativeOrchestrator.onSuperPlombierVictory();
 let restoringStory = false;
 function createConversation(dialogue, contactId = 'pixelgirl', thread = replayReactions.thread) {
   return new ConversationWindow(
@@ -310,10 +343,6 @@ function showContactConnectionNotification(contact, options = {}) {
     options.durationMs ?? (contactId === 'turbo' ? 700 : 6000),
     ENTER_ANIMATION_MS + MIN_CONNECTION_TOAST_VISIBLE_MS,
   );
-  narrativeOrchestrator?.onConnectionNotificationQueued(
-    contactId,
-    displayDurationMs + EXIT_ANIMATION_MS,
-  );
   notifications.show({
     id: `connection:${contactId}`,
     type: 'connection',
@@ -329,7 +358,6 @@ function showContactConnectionNotification(contact, options = {}) {
       if (target) openConversation(false, target);
     },
     onDismiss: (reason, timing) => {
-      narrativeOrchestrator?.onConnectionNotificationDismissed(contactId);
       options.onDismiss?.(reason, timing);
     },
   });
@@ -453,8 +481,7 @@ async function resetGameToInitialState() {
         taskbarOrder.cancel();
         manager.clear();
         miniGameLauncher.reset();
-        notifications.clear();
-        narrativeOrchestrator.resetTransientState();
+        notifications.clear({ resetHandled: true });
         action = secondaryAction = () => {};
         clearEffects();
       },
@@ -895,7 +922,6 @@ function wizz() {
 }
 function clearEffects() {
   notifications.clear();
-  narrativeOrchestrator.resetTransientState();
   wizzUntil = 0;
   sparkleUntil = -Infinity;
   ui.wizzLabel.hidden = true;
@@ -1102,6 +1128,8 @@ if (import.meta.env.DEV) {
       if (['playing', 'paused'].includes(phase)) return { finish: () => finishGame(true) };
       const game = miniGameLauncher.active;
       if (phase === 'desktop' && game?.element?.isConnected && !game.finished) return game;
+      const flashGame = browser.currentPage?.node;
+      if (phase === 'desktop' && flashGame?.running && !flashGame.finished) return flashGame;
       return null;
     });
     installDevelopmentConversationShortcut(document, () => {

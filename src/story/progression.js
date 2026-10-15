@@ -101,6 +101,8 @@ function normalizeSaved(saved, story) {
     state.transcript = state.transcript.filter(
       (message) => record(message) && ['contact', 'player'].includes(message.speaker) &&
         typeof message.text === 'string' &&
+        (message.author === undefined ||
+          (message.speaker === 'contact' && typeof message.author === 'string')) &&
         (message.type !== 'file' || typeof message.fileKey === 'string'),
     );
     if (state.receiveDueAt !== undefined && !Number.isFinite(state.receiveDueAt))

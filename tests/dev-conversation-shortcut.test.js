@@ -58,7 +58,7 @@ test('development conversation shortcut runs one random branch through the saved
   );
   const saved = view.progression.data.dialogues[turbo.id];
   assert.deepEqual(
-    saved.transcript.map((message) => message.text),
+    saved.transcript.map((message) => message.text).slice(0, 4),
     [
       'mdrrrr noob',
       turbo.nodes.opening.choices[1].text,
@@ -67,9 +67,12 @@ test('development conversation shortcut runs one random branch through the saved
     ],
   );
   assert.equal(saved.finished, true);
-  assert.equal(view.progression.data.choices.at(-1).choice, 'screen');
-  assert.equal(view.thread.state.history.length, 4);
-  assert.equal(logs.filter((line) => line.startsWith('[DEV] Choix')).length, 1);
+  assert.equal(saved.transcript.at(-1).text, 'jvais chercher un truc');
+  assert.equal(saved.transcript.filter((message) => message.speaker === 'player').length, 4);
+  assert.equal(view.progression.data.choices[0].choice, 'screen');
+  assert.equal(view.progression.data.choices.at(-1).choice, 'pixelgirl-funny');
+  assert.equal(view.thread.state.history.length, saved.transcript.length);
+  assert.equal(logs.filter((line) => line.startsWith('[DEV] Choix')).length, 4);
   assert.equal(logs.at(-1), '[DEV] Conversation terminée');
 
   assert.equal(
@@ -79,7 +82,7 @@ test('development conversation shortcut runs one random branch through the saved
     ),
     false,
   );
-  assert.equal(saved.transcript.length, 4);
+  assert.equal(saved.transcript.length, 24);
 });
 
 test('partially received messages are preserved and Ctrl+Shift+F ignores text fields', () => {
@@ -120,7 +123,7 @@ test('partially received messages are preserved and Ctrl+Shift+F ignores text fi
     true,
   );
   assert.equal(view.progression.data.dialogues[turbo.id].transcript[0].text, 'mdrrrr noob');
-  assert.equal(view.progression.data.dialogues[turbo.id].transcript.length, 3);
+  assert.equal(view.progression.data.dialogues[turbo.id].transcript.length, 22);
 });
 
 test('development conversation shortcut resolves successive choices and transfer steps without delays', () => {
@@ -163,6 +166,12 @@ test('development fast-forward triggers Turb0 arrival when it validates PixelGir
     ),
     true,
   );
+  assert.deepEqual(arrivals, []);
+  assert.equal(view.progression.data.contactConnections.turbo.status, 'pending');
+  const dueAt = view.progression.data.contactConnections.turbo.dueAt;
+  effects.update(dueAt - 1);
+  assert.deepEqual(arrivals, []);
+  effects.update(dueAt);
   assert.deepEqual(arrivals, ['turbo']);
   assert.equal(view.progression.data.contactConnections.turbo.status, 'online');
   assert.equal(

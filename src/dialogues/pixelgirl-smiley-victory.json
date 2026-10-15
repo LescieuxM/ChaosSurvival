@@ -19,7 +19,7 @@
     "stayOnline": true,
     "connection": {
       "contactId": "turbo",
-      "delayMs": 2200
+      "delayMs": 2000
     }
   },
   "nodes": {

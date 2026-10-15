@@ -1,7 +1,7 @@
 {
   "id": "turbo-smiley-catcher",
   "version": 1,
-  "revision": 1,
+  "revision": 2,
   "contact": {
     "id": "turbo",
     "name": "Turb0",
@@ -50,18 +50,123 @@
       "messages": [
         { "speaker": "contact", "text": "MDRRR t'as eu de la chance c'est tout", "delayMs": 0, "typingMs": 650 }
       ],
-      "end": true
+      "next": "hobbies"
     },
     "screen-reply": {
       "messages": [
         { "speaker": "contact", "text": "bah ouais je voyais ton jeu mdr", "delayMs": 0, "typingMs": 650 },
         { "speaker": "contact", "text": "pourquoi tu demandes ça ???", "delayMs": 250, "typingMs": 550 }
       ],
-      "end": true
+      "next": "hobbies"
     },
     "leave-reply": {
       "messages": [
         { "speaker": "contact", "text": "MDRRRR même pas en rêve", "delayMs": 0, "typingMs": 650 }
+      ],
+      "next": "hobbies"
+    },
+    "hobbies": {
+      "messages": [
+        { "speaker": "contact", "text": "sinon tu joues a quoi en ce moment ?", "delayMs": 500, "typingMs": 520 }
+      ],
+      "choices": [
+        { "id": "hobbies-anything", "text": "un peu a tout mdr", "next": "hobbies-anything-reply" },
+        { "id": "hobbies-online", "text": "surtout aux jeux sur internet", "next": "hobbies-online-reply" },
+        { "id": "hobbies-little", "text": "pas grand chose en vrai", "next": "hobbies-little-reply" }
+      ]
+    },
+    "hobbies-anything-reply": {
+      "messages": [
+        { "speaker": "contact", "text": "ah ouais le mec il a pas de vie xD", "delayMs": 250, "typingMs": 500 },
+        { "speaker": "contact", "text": "bienvenue au club", "delayMs": 300, "typingMs": 350 }
+      ],
+      "next": "computer-life"
+    },
+    "hobbies-online-reply": {
+      "messages": [
+        { "speaker": "contact", "text": "normal les jeux flash c'est la vie", "delayMs": 250, "typingMs": 500 },
+        { "speaker": "contact", "text": "j'ai genre 50 favoris mdr", "delayMs": 300, "typingMs": 450 }
+      ],
+      "next": "computer-life"
+    },
+    "hobbies-little-reply": {
+      "messages": [
+        { "speaker": "contact", "text": "QUOI", "delayMs": 250, "typingMs": 300 },
+        { "speaker": "contact", "text": "faut remedier a ca direct xD", "delayMs": 300, "typingMs": 500 }
+      ],
+      "next": "computer-life"
+    },
+    "computer-life": {
+      "messages": [
+        { "speaker": "contact", "text": "moi jpourrais passer ma vie devant mon pc", "delayMs": 400, "typingMs": 600 },
+        { "speaker": "contact", "text": "mes parents ils petent un cable mdr", "delayMs": 300, "typingMs": 520 }
+      ],
+      "choices": [
+        { "id": "pc-same", "text": "mdrrr pareil", "next": "pc-same-reply" },
+        { "id": "pc-only-games", "text": "tu fais que jouer ?", "next": "pc-only-games-reply" },
+        { "id": "pc-parents-right", "text": "ils ont ptet raison xD", "next": "pc-parents-right-reply" }
+      ]
+    },
+    "pc-same-reply": {
+      "messages": [
+        { "speaker": "contact", "text": "ptdrrrr", "delayMs": 250, "typingMs": 350 },
+        { "speaker": "contact", "text": "on est foutus", "delayMs": 300, "typingMs": 350 }
+      ],
+      "next": "pixelgirl-links"
+    },
+    "pc-only-games-reply": {
+      "messages": [
+        { "speaker": "contact", "text": "nan des fois je mange aussi", "delayMs": 250, "typingMs": 450 },
+        { "speaker": "contact", "text": "quand j'y pense xD", "delayMs": 300, "typingMs": 350 }
+      ],
+      "next": "pixelgirl-links"
+    },
+    "pc-parents-right-reply": {
+      "messages": [
+        { "speaker": "contact", "text": "TRAITRE", "delayMs": 250, "typingMs": 350 },
+        { "speaker": "contact", "text": "tu parles comme ma mere mdr", "delayMs": 300, "typingMs": 450 }
+      ],
+      "next": "pixelgirl-links"
+    },
+    "pixelgirl-links": {
+      "messages": [
+        { "speaker": "contact", "text": "en plus pixelgirl elle m'envoie", "delayMs": 400, "typingMs": 400 },
+        { "speaker": "contact", "text": "des liens debiles toute la journée", "delayMs": 300, "typingMs": 450 },
+        { "speaker": "contact", "text": "hier elle m'a envoyé une video", "delayMs": 300, "typingMs": 450 },
+        { "speaker": "contact", "text": "d'un chat qui tombe d'une table", "delayMs": 300, "typingMs": 450 },
+        { "speaker": "contact", "text": "j'ai rigolé pendant 10 minutes", "delayMs": 300, "typingMs": 450 },
+        { "speaker": "contact", "text": "j'ai honte xD", "delayMs": 300, "typingMs": 350 }
+      ],
+      "choices": [
+        { "id": "cat-video-send", "text": "ptdrrr envoie", "next": "cat-video-send-reply" },
+        { "id": "pixelgirl-funny", "text": "elle a l'air grave marrante", "next": "pixelgirl-funny-reply" },
+        { "id": "friends-long", "text": "vous vous connaissez depuis longtemps ?", "next": "friends-long-reply" }
+      ]
+    },
+    "cat-video-send-reply": {
+      "messages": [
+        { "speaker": "contact", "text": "faut que je retrouve le lien mdr", "delayMs": 250, "typingMs": 500 }
+      ],
+      "next": "goodbye"
+    },
+    "pixelgirl-funny-reply": {
+      "messages": [
+        { "speaker": "contact", "text": "ouais elle est cool", "delayMs": 250, "typingMs": 350 },
+        { "speaker": "contact", "text": "un peu tarée mais cool xD", "delayMs": 300, "typingMs": 450 }
+      ],
+      "next": "goodbye"
+    },
+    "friends-long-reply": {
+      "messages": [
+        { "speaker": "contact", "text": "ouais ça fait un bail", "delayMs": 250, "typingMs": 400 },
+        { "speaker": "contact", "text": "on s'est connus sur un forum", "delayMs": 300, "typingMs": 450 }
+      ],
+      "next": "goodbye"
+    },
+    "goodbye": {
+      "messages": [
+        { "speaker": "contact", "text": "bon jte laisse deux sec", "delayMs": 400, "typingMs": 450 },
+        { "speaker": "contact", "text": "jvais chercher un truc", "delayMs": 300, "typingMs": 450 }
       ],
       "end": true
     }

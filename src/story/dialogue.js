@@ -84,6 +84,8 @@ export function validateDialogue(dialogue) {
       node.messages.some(
         (message) =>
           !['contact', 'player'].includes(message.speaker) ||
+          (message.author !== undefined &&
+            (message.speaker !== 'contact' || typeof message.author !== 'string' || !message.author)) ||
           (typeof message.text !== 'string' && message.type !== 'file') ||
           (message.type !== undefined && !['text', 'file', 'link'].includes(message.type)) ||
           (message.type === 'link' &&
@@ -197,6 +199,8 @@ export class DialogueSession {
         (message) =>
           ['contact', 'player'].includes(message.speaker) &&
           typeof message.text === 'string' &&
+          (message.author === undefined ||
+            (message.speaker === 'contact' && typeof message.author === 'string')) &&
           (message.type !== 'file' || typeof message.fileKey === 'string'),
       ) &&
       saved.revision === (dialogue.revision ?? 1) &&
@@ -219,6 +223,8 @@ export class DialogueSession {
         (message) =>
           ['contact', 'player'].includes(message.speaker) &&
           typeof message.text === 'string' &&
+          (message.author === undefined ||
+            (message.speaker === 'contact' && typeof message.author === 'string')) &&
           (message.type !== 'file' || typeof message.fileKey === 'string'),
       )
     )
@@ -251,6 +257,7 @@ export class DialogueSession {
       text: message.text ?? message.file.name,
       receivedAt: Date.now(),
     };
+    if (message.author !== undefined) entry.author = message.author;
     if (message.type === 'file') {
       const file = this.progression.receiveFile(
         message.file,

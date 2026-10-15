@@ -1,0 +1,190 @@
+{
+  "id": "pixelgirl-super-plombier-wizz",
+  "version": 1,
+  "revision": 2,
+  "contact": {
+    "id": "pixelgirl",
+    "name": "PixelGirl",
+    "nickname": "xX_PixelGirl_Xx",
+    "status": "En ligne",
+    "personalMessage": "j'écoute de la musique :D",
+    "avatar": "./avatars/pixelgirl.svg"
+  },
+  "player": {
+    "nickname": "Moi",
+    "avatar": "./avatars/player.svg"
+  },
+  "start": "opening",
+  "completion": {
+    "stayOnline": true
+  },
+  "nodes": {
+    "opening": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "WIZZZZZZZ",
+          "delayMs": 250,
+          "typingMs": 350
+        },
+        {
+          "speaker": "contact",
+          "text": "hihihihi xD",
+          "delayMs": 250,
+          "typingMs": 400
+        }
+      ],
+      "choices": [
+        {
+          "id": "stop",
+          "text": "MAIS ARRETE MDR",
+          "next": "stop-reply"
+        },
+        {
+          "id": "what",
+          "text": "quoiiiii",
+          "next": "what-reply"
+        },
+        {
+          "id": "wizz",
+          "text": "*wizz*",
+          "next": "wizz-reply"
+        }
+      ]
+    },
+    "stop-reply": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "orrrrh j't'embête !!!",
+          "delayMs": 300,
+          "typingMs": 400
+        },
+        {
+          "speaker": "contact",
+          "text": "xDDDD",
+          "delayMs": 250,
+          "typingMs": 350
+        }
+      ],
+      "next": "closing"
+    },
+    "what-reply": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "riennnnn",
+          "delayMs": 300,
+          "typingMs": 400
+        },
+        {
+          "speaker": "contact",
+          "text": "j'avais envie de faire des wizz :3",
+          "delayMs": 250,
+          "typingMs": 450
+        }
+      ],
+      "next": "closing"
+    },
+    "wizz-reply": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "AHAHAHAHA",
+          "delayMs": 300,
+          "typingMs": 400
+        },
+        {
+          "speaker": "contact",
+          "text": "BATAILLE DE WIZZ !!!",
+          "delayMs": 250,
+          "typingMs": 450
+        }
+      ],
+      "next": "closing"
+    },
+    "closing": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "bon j'arrête promis :p",
+          "delayMs": 400,
+          "typingMs": 420
+        }
+      ],
+      "choices": [
+        {
+          "id": "thanks",
+          "text": "merci ptdr",
+          "next": "thanks-reply"
+        },
+        {
+          "id": "doubt",
+          "text": "j'y crois pas une seconde",
+          "next": "doubt-reply"
+        },
+        {
+          "id": "more-wizz",
+          "text": "dommage je commençais à aimer",
+          "next": "more-wizz-reply"
+        }
+      ]
+    },
+    "thanks-reply": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "de rieeeen :D",
+          "delayMs": 250,
+          "typingMs": 350
+        }
+      ],
+      "next": "ending"
+    },
+    "doubt-reply": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "t'as raison de pas me croire xD",
+          "delayMs": 250,
+          "typingMs": 400
+        }
+      ],
+      "next": "ending"
+    },
+    "more-wizz-reply": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "OOOOH",
+          "delayMs": 250,
+          "typingMs": 350
+        },
+        {
+          "speaker": "contact",
+          "text": "tu veux encore des wizz ??? :D",
+          "delayMs": 300,
+          "typingMs": 420
+        }
+      ],
+      "next": "ending"
+    },
+    "ending": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "hihihi",
+          "delayMs": 350,
+          "typingMs": 350
+        },
+        {
+          "speaker": "contact",
+          "text": "allez bisousss :3",
+          "delayMs": 300,
+          "typingMs": 400
+        }
+      ],
+      "end": true
+    }
+  }
+}

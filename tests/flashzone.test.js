@@ -87,7 +87,7 @@ test('catalog generates a single thumbnail grid with internal image/title links 
   const nodes = walk(renderFlashHome());
   assert.equal(nodes.filter((n) => n.className === 'flashzone-grid').length, 1);
   const cards = nodes.filter((n) => n.className === 'flashzone-card');
-  assert.equal(cards.length, flashCatalog.games.length);
+  assert.equal(cards.length, flashCatalog.games.length - 1);
   assert.equal(nodes.filter((n) => n.className === 'flashzone-list').length, 0);
   for (const [index, card] of cards.entries()) {
     const game = flashCatalog.games[index];
@@ -99,6 +99,13 @@ test('catalog generates a single thumbnail grid with internal image/title links 
     assert.equal(card.children[1].textContent, game.title);
     assert.equal(walk(card).filter((n) => ['p', 'small', 'h2'].includes(n.tag)).length, 0);
   }
+  const unlockedNodes = walk(
+    renderFlashHome({ data: { flags: { superPlombierFlashUnlocked: true } } }),
+  );
+  assert.equal(
+    unlockedNodes.filter((n) => n.className === 'flashzone-card').length,
+    flashCatalog.games.length,
+  );
   for (const n of nodes.filter((n) => n.tag === 'a')) {
     assert.equal(n.href, '#');
     assert.ok(localPages.resolve(n.dataset.browserLink, {}).page);

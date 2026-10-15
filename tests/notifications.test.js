@@ -109,6 +109,27 @@ test('cancels queued messages for a contact after the conversation is read', () 
   assert.equal(view.center.has('luna:message:2'), false);
 });
 
+test('a dismissed notification id is treated as handled while a new message id remains available', () => {
+  const view = setup();
+  let activated = 0;
+  assert.equal(
+    view.center.show({ id: 'connection:turbo', type: 'connection', action: () => activated++ }),
+    true,
+  );
+
+  view.center.dismissButton.dispatch('click', {
+    stopPropagation() {},
+  });
+  view.setTime(180);
+  view.center.update();
+  assert.equal(view.root.hidden, true);
+  assert.equal(view.center.show({ id: 'connection:turbo', type: 'connection' }), false);
+  assert.equal(activated, 0);
+
+  assert.equal(view.center.show({ id: 'message:turbo:mdrrrr', type: 'message' }), true);
+  assert.equal(view.center.current.id, 'message:turbo:mdrrrr');
+});
+
 test('delayed notifications wait for their real-time deadline before taking the queue', () => {
   const view = setup();
   view.center.show({

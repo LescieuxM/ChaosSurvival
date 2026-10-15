@@ -159,6 +159,8 @@ export class InternetAdventurer {
                 },
                 navigate: (url) => this.navigate(url),
                 openHotel: this.openHotel,
+                onSuperPlombierStart: () => this.onSuperPlombierStart?.(),
+                onSuperPlombierVictory: () => this.onSuperPlombierVictory?.(),
               })
             : renderError(current.error),
       );

@@ -330,7 +330,7 @@ export class Messenger {
         const incoming = view.thread.receive();
         if (incoming.length) {
           this.sounds.unlock().then(() => this.sounds.play('message'));
-          if (!this.isVisible(view)) this.onMessage(view.dialogue.contact);
+          if (!this.isVisible(view)) this.onMessage(view.dialogue.contact, incoming);
         }
       }
       view.refresh();

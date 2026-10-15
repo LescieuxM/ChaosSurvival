@@ -1,0 +1,591 @@
+{
+  "id": "turbo-super-plombier",
+  "version": 1,
+  "revision": 3,
+  "contact": {
+    "id": "turbo",
+    "name": "Turb0",
+    "nickname": "Turb0",
+    "status": "En ligne",
+    "personalMessage": "♪ BASSHUNTER - DOTA ♪",
+    "avatar": "./avatars/turbo.svg"
+  },
+  "player": {
+    "nickname": "Moi",
+    "avatar": "./avatars/player.svg"
+  },
+  "start": "challenge",
+  "completion": {
+    "stayOnline": true
+  },
+  "nodes": {
+    "challenge": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "alors noob ta fini ? xD",
+          "delayMs": 250,
+          "typingMs": 500
+        }
+      ],
+      "choices": [
+        {
+          "id": "impossible-record",
+          "text": "ouais mais ton record est impossible",
+          "next": "record-reply"
+        },
+        {
+          "id": "struggled",
+          "text": "ouais jai galéré comme un porc mdr",
+          "next": "struggled-reply"
+        },
+        {
+          "id": "bad-game",
+          "text": "ton jeu il pue la merde",
+          "next": "bad-game-reply"
+        }
+      ]
+    },
+    "record-reply": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "ptdrrrr mauvais perdant",
+          "delayMs": 300,
+          "typingMs": 450
+        },
+        {
+          "speaker": "contact",
+          "text": "fallait juste etre bon",
+          "delayMs": 250,
+          "typingMs": 400
+        }
+      ],
+      "next": "common"
+    },
+    "struggled-reply": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "HAHAHAHA",
+          "delayMs": 300,
+          "typingMs": 350
+        },
+        {
+          "speaker": "contact",
+          "text": "12.43 secondes moi jdis ça jdis rien :p",
+          "delayMs": 250,
+          "typingMs": 500
+        }
+      ],
+      "next": "common"
+    },
+    "bad-game-reply": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "rage pas parce que t'es nul mdr",
+          "delayMs": 300,
+          "typingMs": 500
+        },
+        {
+          "speaker": "contact",
+          "text": "c'est un jeu de skill",
+          "delayMs": 250,
+          "typingMs": 400
+        }
+      ],
+      "next": "common"
+    },
+    "common": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "bon j'avoue",
+          "delayMs": 350,
+          "typingMs": 400
+        },
+        {
+          "speaker": "contact",
+          "text": "mon record est un peu cheaté xD",
+          "delayMs": 250,
+          "typingMs": 450
+        },
+        {
+          "speaker": "player",
+          "text": "un peu ???",
+          "delayMs": 250,
+          "typingMs": 350
+        },
+        {
+          "speaker": "contact",
+          "text": "MDRRRRRR",
+          "delayMs": 250,
+          "typingMs": 400
+        }
+      ],
+      "next": "bug-found"
+    },
+    "bug-found": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "en vrai j'ai trouvé un bug",
+          "delayMs": 500,
+          "typingMs": 450
+        },
+        {
+          "speaker": "contact",
+          "text": "si tu sautes contre un mur au bon moment",
+          "delayMs": 300,
+          "typingMs": 500
+        },
+        {
+          "speaker": "contact",
+          "text": "tu traverses le niveau ptdrrr",
+          "delayMs": 300,
+          "typingMs": 420
+        }
+      ],
+      "choices": [
+        {
+          "id": "bug-cheating",
+          "text": "MAIS C'EST DE LA TRICHE",
+          "next": "bug-cheating-reply"
+        },
+        {
+          "id": "bug-show-me",
+          "text": "ptdr faut que tu me montres",
+          "next": "bug-show-me-reply"
+        },
+        {
+          "id": "bug-fraud",
+          "text": "t'es vraiment une fraude",
+          "next": "bug-fraud-reply"
+        }
+      ]
+    },
+    "bug-cheating-reply": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "c'est pas de la triche",
+          "delayMs": 250,
+          "typingMs": 400
+        },
+        {
+          "speaker": "contact",
+          "text": "c'est de l'optimisation B)",
+          "delayMs": 300,
+          "typingMs": 450
+        }
+      ],
+      "next": "bugs-passion"
+    },
+    "bug-show-me-reply": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "nan c'est mon secret professionnel",
+          "delayMs": 250,
+          "typingMs": 500
+        },
+        {
+          "speaker": "contact",
+          "text": "jvais pas révéler ma technique xD",
+          "delayMs": 300,
+          "typingMs": 450
+        }
+      ],
+      "next": "bugs-passion"
+    },
+    "bug-fraud-reply": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "jaloux de mon talent",
+          "delayMs": 250,
+          "typingMs": 400
+        },
+        {
+          "speaker": "contact",
+          "text": "classique",
+          "delayMs": 300,
+          "typingMs": 300
+        }
+      ],
+      "next": "bugs-passion"
+    },
+    "bugs-passion": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "en vrai j'adore trouver des bugs dans les jeux",
+          "delayMs": 500,
+          "typingMs": 500
+        },
+        {
+          "speaker": "contact",
+          "text": "des fois j'y passe plus de temps",
+          "delayMs": 300,
+          "typingMs": 420
+        },
+        {
+          "speaker": "contact",
+          "text": "qu'à jouer normalement mdr",
+          "delayMs": 300,
+          "typingMs": 400
+        }
+      ],
+      "choices": [
+        {
+          "id": "bugs-no-life",
+          "text": "t'as vraiment que ça à foutre",
+          "next": "bugs-no-life-reply"
+        },
+        {
+          "id": "bugs-same",
+          "text": "ah ouais moi aussi j'aime bien",
+          "next": "bugs-same-reply"
+        },
+        {
+          "id": "bugs-make-game",
+          "text": "tu devrais faire tes propres jeux",
+          "next": "bugs-make-game-reply"
+        }
+      ]
+    },
+    "bugs-no-life-reply": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "exactement",
+          "delayMs": 250,
+          "typingMs": 350
+        },
+        {
+          "speaker": "contact",
+          "text": "et j'en suis fier xD",
+          "delayMs": 300,
+          "typingMs": 400
+        }
+      ],
+      "next": "mom"
+    },
+    "bugs-same-reply": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "MAIS OUI",
+          "delayMs": 250,
+          "typingMs": 300
+        },
+        {
+          "speaker": "contact",
+          "text": "quand tu casses un jeu c'est trop satisfaisant",
+          "delayMs": 300,
+          "typingMs": 500
+        }
+      ],
+      "next": "mom"
+    },
+    "bugs-make-game-reply": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "j'ai essayé une fois",
+          "delayMs": 250,
+          "typingMs": 400
+        },
+        {
+          "speaker": "contact",
+          "text": "j'ai fait un carré qui bouge",
+          "delayMs": 300,
+          "typingMs": 420
+        },
+        {
+          "speaker": "contact",
+          "text": "puis j'ai abandonné mdr",
+          "delayMs": 300,
+          "typingMs": 400
+        }
+      ],
+      "next": "mom"
+    },
+    "mom": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "attends",
+          "delayMs": 500,
+          "typingMs": 300
+        },
+        {
+          "speaker": "contact",
+          "text": "ma mere gueule encore parce que je suis sur le pc",
+          "delayMs": 300,
+          "typingMs": 500
+        },
+        {
+          "speaker": "contact",
+          "text": "elle croit que je fais que jouer",
+          "delayMs": 300,
+          "typingMs": 400
+        }
+      ],
+      "choices": [
+        {
+          "id": "mom-right",
+          "text": "bah elle a pas tort mdr",
+          "next": "mom-right-reply"
+        },
+        {
+          "id": "mom-working",
+          "text": "dis lui que tu travailles",
+          "next": "mom-working-reply"
+        },
+        {
+          "id": "age",
+          "text": "t'as quel âge au fait ?",
+          "next": "age-reply"
+        }
+      ]
+    },
+    "mom-right-reply": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "balance pas mes secrets stp",
+          "delayMs": 250,
+          "typingMs": 420
+        }
+      ],
+      "next": "friends"
+    },
+    "mom-working-reply": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "deja essayé",
+          "delayMs": 250,
+          "typingMs": 400
+        },
+        {
+          "speaker": "contact",
+          "text": "elle m'a demandé mes notes",
+          "delayMs": 300,
+          "typingMs": 450
+        },
+        {
+          "speaker": "contact",
+          "text": "j'ai perdu le débat",
+          "delayMs": 300,
+          "typingMs": 400
+        }
+      ],
+      "next": "friends"
+    },
+    "age-reply": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "13 ans",
+          "delayMs": 250,
+          "typingMs": 300
+        },
+        {
+          "speaker": "contact",
+          "text": "et toutes mes dents",
+          "delayMs": 300,
+          "typingMs": 350
+        },
+        {
+          "speaker": "contact",
+          "text": "enfin presque j'ai un appareil ptdr",
+          "delayMs": 300,
+          "typingMs": 450
+        }
+      ],
+      "next": "friends"
+    },
+    "friends": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "heureusement que pixelgirl est la",
+          "delayMs": 500,
+          "typingMs": 450
+        },
+        {
+          "speaker": "contact",
+          "text": "comme ça je suis pas le seul à rien foutre sur msn",
+          "delayMs": 300,
+          "typingMs": 500
+        }
+      ],
+      "choices": [
+        {
+          "id": "friends-forum",
+          "text": "vous vous connaissez depuis longtemps ?",
+          "next": "friends-forum-reply"
+        },
+        {
+          "id": "pixelgirl-funny",
+          "text": "elle est marrante en vrai",
+          "next": "pixelgirl-funny-reply"
+        },
+        {
+          "id": "luna-personality",
+          "text": "pixelgirl elle est toujours comme \u00e7a ?",
+          "next": "luna-reply"
+        }
+      ]
+    },
+    "friends-forum-reply": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "ouais on s'est connus sur un forum",
+          "delayMs": 250,
+          "typingMs": 450
+        },
+        {
+          "speaker": "contact",
+          "text": "elle écrivait déjà comme une folle mdr",
+          "delayMs": 300,
+          "typingMs": 500
+        }
+      ],
+      "next": "food"
+    },
+    "pixelgirl-funny-reply": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "ouais grave",
+          "delayMs": 250,
+          "typingMs": 350
+        },
+        {
+          "speaker": "contact",
+          "text": "mais faut pas lui dire",
+          "delayMs": 300,
+          "typingMs": 400
+        },
+        {
+          "speaker": "contact",
+          "text": "elle va prendre la confiance",
+          "delayMs": 300,
+          "typingMs": 450
+        }
+      ],
+      "next": "food"
+    },
+    "luna-reply": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "TOUJOURS ptdrrr",
+          "delayMs": 250,
+          "typingMs": 400
+        },
+        {
+          "speaker": "contact",
+          "text": "même quand elle dort jcrois xD",
+          "delayMs": 300,
+          "typingMs": 450
+        }
+      ],
+      "next": "food"
+    },
+    "food": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "bon jvais aller chercher un truc à manger",
+          "delayMs": 500,
+          "typingMs": 450
+        },
+        {
+          "speaker": "contact",
+          "text": "j'ai rien bouffé depuis midi",
+          "delayMs": 300,
+          "typingMs": 400
+        }
+      ],
+      "choices": [
+        {
+          "id": "food-enjoy",
+          "text": "bon app mdr",
+          "next": "food-enjoy-reply"
+        },
+        {
+          "id": "food-bring",
+          "text": "ramene moi un truc",
+          "next": "food-bring-reply"
+        },
+        {
+          "id": "food-geek",
+          "text": "va manger gros geek",
+          "next": "food-geek-reply"
+        }
+      ]
+    },
+    "food-enjoy-reply": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "mercii chef",
+          "delayMs": 250,
+          "typingMs": 400
+        }
+      ],
+      "next": "last-goodbye"
+    },
+    "food-bring-reply": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "ouais tkt",
+          "delayMs": 250,
+          "typingMs": 350
+        },
+        {
+          "speaker": "contact",
+          "text": "livraison par msn",
+          "delayMs": 300,
+          "typingMs": 400
+        }
+      ],
+      "next": "last-goodbye"
+    },
+    "food-geek-reply": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "parle mieux au champion",
+          "delayMs": 250,
+          "typingMs": 450
+        },
+        {
+          "speaker": "contact",
+          "text": "de super plombier flash stp",
+          "delayMs": 300,
+          "typingMs": 450
+        }
+      ],
+      "next": "last-goodbye"
+    },
+    "last-goodbye": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "allez a+",
+          "delayMs": 400,
+          "typingMs": 400
+        }
+      ],
+      "end": true
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "id": "pixelgirl-super-plombier-group",
+  "version": 1,
+  "revision": 1,
+  "contact": {
+    "id": "plumber-group",
+    "name": "PixelGirl, Turb0 et Luna",
+    "nickname": "PixelGirl, Turb0 et Luna",
+    "status": "En ligne",
+    "personalMessage": "Conversation de groupe",
+    "avatar": "./avatars/pixelgirl.svg"
+  },
+  "participants": ["xX_PixelGirl_Xx", "Turb0", "°•.LuNa.°•", "Moi"],
+  "player": { "nickname": "Moi", "avatar": "./avatars/player.svg" },
+  "start": "opening",
+  "completion": { "stayOnline": true },
+  "nodes": {
+    "opening": {
+      "messages": [
+        { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "COUCOUUUUUUU", "delayMs": 350, "typingMs": 450 },
+        { "speaker": "contact", "author": "Turb0", "text": "???", "delayMs": 650, "typingMs": 300 },
+        { "speaker": "contact", "author": "°•.LuNa.°•", "text": "salut :)", "delayMs": 600, "typingMs": 350 },
+        { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "voila maintenant vous etes tous la :D", "delayMs": 700, "typingMs": 550 },
+        { "speaker": "contact", "author": "Turb0", "text": "pk tu fais un groupe mdr", "delayMs": 650, "typingMs": 450 },
+        { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "parce que jai envie xD", "delayMs": 650, "typingMs": 400 },
+        { "speaker": "contact", "author": "°•.LuNa.°•", "text": "argument imparable", "delayMs": 700, "typingMs": 400 },
+        { "speaker": "contact", "author": "Turb0", "text": "ptdrrrr", "delayMs": 600, "typingMs": 350 }
+      ],
+      "end": true
+    }
+  }
+}

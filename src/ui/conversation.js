@@ -56,6 +56,14 @@ export class ConversationWindow {
     this.sessions.set(definition.id, session);
     return session;
   }
+  contactStatus(definition) {
+    const profile = `${definition.contact.status} · ${definition.contact.personalMessage ?? ''}`;
+    if (!Array.isArray(definition.participants)) return profile;
+    const participants = definition.participants.map((name) =>
+      name === definition.player.nickname ? this.player.nickname : name,
+    );
+    return `Participants : ${participants.join(', ')} · ${profile}`;
+  }
   chooseResponse(definition, session, choiceId) {
     const nodeId = session.state.node;
     const choice = session.choose(choiceId);
@@ -174,8 +182,7 @@ export class ConversationWindow {
     this.element.querySelector('.contact-name').textContent = this.dialogue.contact.nickname;
     this.element.querySelector('.contact-avatar').alt =
       `Avatar de ${this.dialogue.contact.name ?? this.dialogue.contact.nickname}`;
-    this.element.querySelector('.contact-status').textContent =
-      `${this.dialogue.contact.status} · ${this.dialogue.contact.personalMessage ?? ''}`;
+    this.element.querySelector('.contact-status').textContent = this.contactStatus(this.dialogue);
     for (const [selector, path] of [
       ['.contact-avatar', this.dialogue.contact.avatar],
       ['.player-avatar', this.player.avatar],
@@ -254,8 +261,7 @@ export class ConversationWindow {
       return;
     this.dialogue = definition;
     this.element.classList.remove('contact-away');
-    this.element.querySelector('.contact-status').textContent =
-      `${definition.contact.status} · ${definition.contact.personalMessage ?? ''}`;
+    this.element.querySelector('.contact-status').textContent = this.contactStatus(definition);
     this.session = this.sessionFor(definition);
     this.pending = null;
     this.ghost?.remove();
@@ -280,7 +286,7 @@ export class ConversationWindow {
       return row;
     }
     const author = document.createElement('small');
-    author.textContent = `${message.speaker === 'player' ? (this.player ?? playerIdentity).nickname : this.dialogue.contact.nickname} dit :`;
+    author.textContent = `${message.speaker === 'player' ? (this.player ?? playerIdentity).nickname : message.author ?? this.dialogue.contact.nickname} dit :`;
     const copy = document.createElement(message.type === 'link' ? 'a' : 'p');
     if (message.type === 'link') {
       copy.href = '#';
@@ -385,7 +391,7 @@ export class ConversationWindow {
           ? ''
           : `${this.dialogue.contact.name} est absente · à tout à l’heure !`;
         this.element.querySelector('.contact-status').textContent = stayOnline
-          ? `${this.dialogue.contact.status} · ${this.dialogue.contact.personalMessage ?? ''}`
+          ? this.contactStatus(this.dialogue)
           : 'Partie choisir une image perso';
         const pendingFile = this.session.state.transcript.some(
           (entry) =>

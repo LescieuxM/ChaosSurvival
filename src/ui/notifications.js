@@ -6,6 +6,7 @@ export class NotificationCenter {
     Object.assign(this, { root, contact, message, dismissButton, getTime });
     this.current = null;
     this.queue = [];
+    this.handled = new Set();
     this.root.addEventListener('click', (event) => {
       if (event.target.closest('button')) return;
       this.activate();
@@ -26,7 +27,12 @@ export class NotificationCenter {
   }
 
   show(notification) {
-    if (!notification || typeof notification.id !== 'string' || this.has(notification.id))
+    if (
+      !notification ||
+      typeof notification.id !== 'string' ||
+      this.handled.has(notification.id) ||
+      this.has(notification.id)
+    )
       return false;
     const item = {
       type: 'story',
@@ -113,6 +119,7 @@ export class NotificationCenter {
     this.current = null;
     this.root.hidden = true;
     this.root.classList.remove('is-dismissing');
+    if (!['cancelled', 'replaced'].includes(item.dismissReason)) this.handled.add(item.id);
     item.onDismiss?.(item.dismissReason, {
       shownAt: item.shownAt,
       expiresAt: item.expiresAt,
@@ -142,12 +149,13 @@ export class NotificationCenter {
       this.dismiss('cancelled');
   }
 
-  clear() {
+  clear({ resetHandled = false } = {}) {
     this.queue.length = 0;
     this.current = null;
     this.root.hidden = true;
     this.root.classList.remove('is-dismissing');
     delete this.root.dataset.notificationType;
+    if (resetHandled) this.handled.clear();
   }
 }
 

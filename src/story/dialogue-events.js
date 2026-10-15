@@ -69,10 +69,13 @@ export class DialogueEvents {
     if (!deferred) return false;
     const data = this.progression.data;
     data.contactConnections ??= {};
-    if (data.contactConnections[contactId]?.status === 'online') return false;
-    data.contactConnections[contactId] = { status: 'pending', dueAt: now };
+    if (['online', 'pending'].includes(data.contactConnections[contactId]?.status)) return false;
+    data.contactConnections[contactId] = {
+      status: 'pending',
+      dueAt: now + deferred.delayMs,
+    };
     this.progression.save();
     this.update(now, notify);
-    return data.contactConnections[contactId].status === 'online';
+    return true;
   }
 }

@@ -13,12 +13,13 @@ import {
 } from './super-plombier-round.js';
 
 function markFirst(progression, flag) {
-  if (progression.data.flags[flag]) return;
+  if (progression.data.flags[flag]) return false;
   progression.data.flags[flag] = true;
   progression.save();
+  return true;
 }
 
-export function renderSuperPlombierFlash({ progression, onDispose, onResume }, game) {
+export function renderSuperPlombierFlash({ progression, onDispose, onResume, onStart, onVictory }, game) {
   const root = node('section', undefined, 'super-plombier'),
     intro = node('div', undefined, 'plumber-intro'),
     play = node('button', 'JOUER', 'plumber-play');
@@ -58,7 +59,13 @@ export function renderSuperPlombierFlash({ progression, onDispose, onResume }, g
   let frame = null,
     disposed = false,
     paused = false,
-    deathCount = 0;
+    deathCount = 0,
+    finished = false,
+    developerVictory = false;
+  root.finished = false;
+  Object.defineProperty(root, 'running', {
+    get: () => round.active && !paused && !disposed && !finished,
+  });
 
   function rect(x, y, width, height, color) {
     context.fillStyle = color;
@@ -150,7 +157,11 @@ export function renderSuperPlombierFlash({ progression, onDispose, onResume }, g
 
   function start() {
     if (disposed) return;
+    finished = false;
+    developerVictory = false;
+    root.finished = false;
     markFirst(progression, 'superPlombierFirstAttempt');
+    onStart?.();
     paused = false;
     pressed.clear();
     round.begin(performance.now());
@@ -166,13 +177,26 @@ export function renderSuperPlombierFlash({ progression, onDispose, onResume }, g
     frame = requestAnimationFrame(loop);
   }
   function finish() {
-    if (!round.won) return;
+    if (!round.won || finished) return false;
+    finished = true;
+    root.finished = true;
     cancelAnimationFrame(frame);
     frame = null;
     result.hidden = false;
-    final.textContent = `Ton temps : ${formatPlumberTime(round.elapsed)}`;
+    final.textContent = developerVictory
+      ? 'Victoire développeur — temps non enregistré'
+      : `Ton temps : ${formatPlumberTime(round.elapsed)}`;
     markFirst(progression, 'superPlombierFirstCompletion');
+    onVictory?.();
     result.scrollIntoView?.({ block: 'nearest' });
+    return true;
+  }
+  function finishImmediately() {
+    if (disposed || paused || finished || !round.active || round.won) return false;
+    developerVictory = true;
+    round.won = true;
+    round.active = false;
+    return finish();
   }
   function loop(now) {
     if (disposed || paused) return;
@@ -246,6 +270,7 @@ export function renderSuperPlombierFlash({ progression, onDispose, onResume }, g
   replay.addEventListener('click', start);
   onDispose(dispose);
   onResume?.(resume);
+  root.finish = finishImmediately;
   return root;
 }
 

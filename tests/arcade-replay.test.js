@@ -215,6 +215,7 @@ test('development shortcut uses arcade victory and never duplicates results or s
     queueArcadeVictory,
     installDevelopmentVictoryShortcut,
     miniGameLauncher: { active: null },
+    browser: { currentPage: null },
     rules: { active: false },
     state: { score: 1200, closed: 12 },
     audio: {
