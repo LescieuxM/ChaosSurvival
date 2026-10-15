@@ -4,6 +4,7 @@ import { DialogueSession, pendingChoices, hasPendingMessages } from './dialogue.
 export class ConversationThread {
   constructor(contactId, progression, getEvents) {
     Object.assign(this, { contactId, progression, getEvents });
+    this.repaired = false;
     this.sync();
   }
   get state() {
@@ -15,17 +16,8 @@ export class ConversationThread {
     )
       data.conversations = {};
     const saved = data.conversations[this.contactId];
-    if (
-      !saved ||
-      saved.version !== 1 ||
-      !Array.isArray(saved.history) ||
-      !saved.history.every(
-        (entry) =>
-          typeof entry?.key === 'string' &&
-          typeof entry.text === 'string' &&
-          ['contact', 'player'].includes(entry.speaker),
-      )
-    )
+    const replaced = !saved || saved.version !== 1 || !Array.isArray(saved.history);
+    if (replaced)
       data.conversations[this.contactId] = {
         version: 1,
         history: [],
@@ -33,11 +25,32 @@ export class ConversationThread {
         activeEvent: null,
         pendingEvents: [],
       };
-    // Read markers are independent metadata, not grounds for erasing messages.
     const state = data.conversations[this.contactId];
-    if (!Array.isArray(state.unread)) state.unread = [];
-    else if (state.unread.some((key) => typeof key !== 'string'))
-      state.unread = state.unread.filter((key) => typeof key === 'string');
+    const originalState = JSON.stringify(state);
+    const history = state.history.filter(
+      (entry) =>
+        typeof entry?.key === 'string' &&
+        typeof entry.text === 'string' &&
+        ['contact', 'player'].includes(entry.speaker),
+    );
+    const seen = new Set();
+    state.history = history.filter((entry) => {
+      if (seen.has(entry.key)) return false;
+      seen.add(entry.key);
+      return true;
+    });
+    const keys = new Set(state.history.map((entry) => entry.key));
+    const unread = Array.isArray(state.unread)
+      ? [...new Set(state.unread.filter((key) => typeof key === 'string' && keys.has(key)))]
+      : [];
+    state.unread = unread;
+    if (state.activeEvent !== null && typeof state.activeEvent !== 'string') state.activeEvent = null;
+    state.pendingEvents = Array.isArray(state.pendingEvents)
+      ? [...new Set(state.pendingEvents.filter((id) => typeof id === 'string' && this.getEvents().some((event) => event.id === id)))]
+      : [];
+    if (state.activeEvent && !this.getEvents().some((event) => event.id === state.activeEvent))
+      state.activeEvent = null;
+    this.repaired ||= replaced || JSON.stringify(state) !== originalState;
     return data.conversations[this.contactId];
   }
   hasPendingFile(id) {
@@ -113,12 +126,13 @@ export class ConversationThread {
       )
       .map((event) => event.id);
     const changed =
+      this.repaired ||
       added.length ||
       state.activeEvent !== active ||
       JSON.stringify(state.pendingEvents) !== JSON.stringify(pending);
     state.activeEvent = active;
     state.pendingEvents = pending;
-    if (changed && this.progression.hasSave) this.progression.save();
+    if (changed && this.progression.hasSave && this.progression.save()) this.repaired = false;
     return state.history;
   }
   schedule(definition, now = Date.now()) {

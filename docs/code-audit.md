@@ -173,5 +173,7 @@ fenêtres, progression, dialogues et sauvegardes, mais une traversée manuelle
 complète du scénario, des profils MSN et de toutes les applications n'a pas été
 effectuée. Elle reste à réaliser pour une validation exhaustive de livraison,
 ainsi que l'ouverture des liens YouTube dans le navigateur réel du joueur.
-Aucun exécutable portable n'a été généré. L'échec préexistant du prototype
-`StartMenu` et les quatre écarts de formatage restent à traiter séparément.
+Aucun exécutable portable n'a été généré. Le prototype historique `StartMenu` a
+été retiré le 15 octobre 2026 ; son test est remplacé par une vérification du
+menu canonique `StartMenuOrder`. Les quatre écarts de formatage restent à traiter
+séparément.

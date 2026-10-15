@@ -3,15 +3,35 @@ import { HOME_URL, normalizeUrl } from './registry.js';
 const safeTab = (tab) =>
   tab &&
   typeof tab.id === 'string' &&
+  tab.id.length > 0 &&
   typeof tab.title === 'string' &&
   tab.title.length <= 256 &&
   Array.isArray(tab.history) &&
   tab.history.length > 0 &&
-  tab.history.length <= 100 &&
-  tab.history.every((url) => typeof url === 'string' && url.length <= 2048) &&
-  Number.isInteger(tab.cursor) &&
-  tab.cursor >= 0 &&
-  tab.cursor < tab.history.length;
+  tab.history.length <= 100;
+const validSavedUrl = (url) => {
+  const normalized = normalizeUrl(url);
+  if (!normalized || normalized !== url) return false;
+  return new URL(normalized).hostname !== 'www.xdhotel.fr';
+};
+
+function restoreTab(tab) {
+  if (!safeTab(tab)) return null;
+  const history = tab.history.filter(
+    (url) => typeof url === 'string' && url.length <= 2048 && validSavedUrl(url),
+  );
+  if (!history.length) return null;
+  const current = tab.history[tab.cursor];
+  let cursor = Number.isInteger(tab.cursor) && validSavedUrl(current) ? history.indexOf(current) : -1;
+  if (cursor < 0) {
+    const before = Number.isInteger(tab.cursor) ? Math.min(tab.cursor - 1, tab.history.length - 1) : -1;
+    for (let index = before; index >= 0 && cursor < 0; index--) {
+      if (validSavedUrl(tab.history[index])) cursor = history.indexOf(tab.history[index]);
+    }
+    if (cursor < 0) cursor = 0;
+  }
+  return { ...tab, history, cursor };
+}
 export class BrowserSession {
   constructor(progression) {
     this.progression = progression;
@@ -22,20 +42,19 @@ export class BrowserSession {
     this.recentPages = Array.isArray(saved?.recentPages)
       ? [
           ...new Set(
-            saved.recentPages.filter((url) => typeof url === 'string' && normalizeUrl(url) === url),
+            saved.recentPages.filter(validSavedUrl),
           ),
         ].slice(0, 100)
       : [];
-    const valid =
-      saved?.version === 1 &&
-      Array.isArray(saved.tabs) &&
-      saved.tabs.length > 0 &&
-      saved.tabs.length <= 30 &&
-      saved.tabs.every(safeTab) &&
-      new Set(saved.tabs.map((tab) => tab.id)).size === saved.tabs.length &&
-      saved.tabs.some((tab) => tab.id === saved.active);
-    this.tabs = valid ? structuredClone(saved.tabs) : [];
-    this.active = valid ? saved.active : null;
+    const restored = saved?.version === 1 && Array.isArray(saved.tabs)
+      ? saved.tabs.slice(0, 30).map(restoreTab).filter(Boolean)
+      : [];
+    this.tabs = restored.filter(
+      (tab, index) => restored.findIndex((candidate) => candidate.id === tab.id) === index,
+    );
+    this.active = this.tabs.some((tab) => tab.id === saved?.active)
+      ? saved.active
+      : (this.tabs[0]?.id ?? null);
     if (!this.tabs.length) this.add(HOME_URL, false);
   }
   get tab() {

@@ -1,20 +1,20 @@
 import { textElement as node, internalLink as link } from '../../dom.js';
-import { HOTEL_URL, VIEW_WIDTH, VIEW_HEIGHT, project, screenCell } from './model.js';
+import { HOPLA_HOTEL_URL, VIEW_WIDTH, VIEW_HEIGHT, project, screenCell } from './model.js';
 import { drawRoom } from './draw.js';
 import { RoomSimulation } from './simulation.js';
 import { playerIdentity } from '../../../ui/player-identity.js';
 
 function shell(data) {
-  const root = node('section', undefined, 'xdhotel');
+  const root = node('section', undefined, 'hopla-hotel');
   const header = node('header', undefined, 'hotel-header');
   header.append(
-    link('Hopla Hotel', HOTEL_URL),
+    link('Hopla Hotel', HOPLA_HOTEL_URL),
     node('span', 'Un petit monde, de grandes rencontres !'),
   );
   root.append(header);
   return root;
 }
-export function renderHotelHome({ openHotel }, data) {
+export function renderHoplaHotelHome({ openHotel }, data) {
   const root = shell(data);
   const banner = node('div', undefined, 'hotel-banner');
   const skyline = node('div', undefined, 'hotel-skyline');
@@ -32,8 +32,8 @@ export function renderHotelHome({ openHotel }, data) {
   root.append(banner, node('small', 'Hopla Hotel · 2009', 'hotel-footer'));
   return root;
 }
-export function renderHotelRoom({ onDispose, onResume, navigate }, data, room = data.room) {
-  const root = node('section', undefined, 'xdhotel hotel-room');
+export function renderHoplaHotelRoom({ onDispose, onResume, navigate }, data, room = data.room) {
+  const root = node('section', undefined, 'hopla-hotel hotel-room');
   root.setAttribute('aria-label', room.name);
   const navigation = node('nav', undefined, 'hotel-room-nav');
   const browserButton = node('button', undefined, 'hotel-navigator-open');
@@ -104,7 +104,7 @@ export function renderHotelRoom({ onDispose, onResume, navigate }, data, room = 
     enter.addEventListener('click', () => {
       if (disposed || paused) return;
       showNavigator(false);
-      navigate(`${HOTEL_URL}salle/${destination.id}`);
+      navigate(`${HOPLA_HOTEL_URL}salle/${destination.id}`);
     });
     entry.append(copy, enter);
     navigator.append(entry);

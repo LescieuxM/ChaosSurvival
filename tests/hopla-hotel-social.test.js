@@ -1,16 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import data from '../src/browser/sites/xdhotel/data.json' with { type: 'json' };
-import conversations from '../src/browser/sites/xdhotel/conversations.json' with { type: 'json' };
+import data from '../src/browser/sites/hopla-hotel/data.json' with { type: 'json' };
+import conversations from '../src/browser/sites/hopla-hotel/conversations.json' with { type: 'json' };
 import contacts from '../src/config/contacts.json' with { type: 'json' };
 import {
   RoomSimulation,
   ROOM_START_DELAYS,
   messageDuration,
   placeBubbles,
-} from '../src/browser/sites/xdhotel/simulation.js';
-import { RoomWalk, blockedCells, inside } from '../src/browser/sites/xdhotel/model.js';
-import { depthOrder } from '../src/browser/sites/xdhotel/draw.js';
+} from '../src/browser/sites/hopla-hotel/simulation.js';
+import { RoomWalk, blockedCells, inside } from '../src/browser/sites/hopla-hotel/model.js';
+import { depthOrder } from '../src/browser/sites/hopla-hotel/draw.js';
 const rooms = [data.room, ...data.rooms];
 test('NPC display names stay attached to their existing room identities', () => {
   const expected = new Map([

@@ -29,7 +29,7 @@ const skyPageOnly = process.argv.includes('--skypage-only');
 const flashZoneOnly = process.argv.includes('--flashzone-only');
 const videoTubeOnly = process.argv.includes('--videotube-only');
 const wikiOnly = process.argv.includes('--wiki-only');
-const hotelOnly = process.argv.includes('--xdhotel-only');
+const hoplaHotelOnly = process.argv.includes('--hopla-hotel-only');
 const minigameOnly =
   process.argv.includes('--minigame-only') ||
   typingOnly ||
@@ -47,7 +47,7 @@ const minigameOnly =
   flashZoneOnly ||
   videoTubeOnly ||
   wikiOnly ||
-  hotelOnly ||
+  hoplaHotelOnly ||
   stabilityOnly;
 let browserServer;
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -568,7 +568,7 @@ try {
   if (browserSecurityElectron) {
     await verifyBrowser();
   } else if (minigameOnly) {
-    if (hotelOnly) await verifyHotel();
+    if (hoplaHotelOnly) await verifyHoplaHotel();
     else if (wikiOnly) await verifyWiki();
     else if (videoTubeOnly) await verifyVideoTube();
     else if (flashZoneOnly) await verifyFlashZone();
@@ -1356,16 +1356,16 @@ async function physicalDrag(selector, left, top) {
   });
 }
 
-async function verifyHotel() {
+async function verifyHoplaHotel() {
   await command('Emulation.setDeviceMetricsOverride', {
     width: 1280,
     height: 800,
     deviceScaleFactor: 1,
     mobile: false,
   });
-  const { project } = await import('../src/browser/sites/xdhotel/model.js');
-  const { hotelData, hotelRooms } = await import('../src/browser/sites/xdhotel/index.js');
-  const room = hotelData.room;
+  const { project } = await import('../src/browser/sites/hopla-hotel/model.js');
+  const { hoplaHotelData, hoplaHotelRooms } = await import('../src/browser/sites/hopla-hotel/index.js');
+  const room = hoplaHotelData.room;
   await command('Page.enable');
   await command('Network.enable');
   const requests = [];
@@ -1409,17 +1409,17 @@ async function verifyHotel() {
       ),
     );
   }
-  await go('www.xdhotel.fr');
+  await go('www.hoplahotel.fr');
   assert.equal(
     await evaluate("document.querySelector('.browser-address input').value"),
     'http://www.hoplahotel.fr/',
   );
   await go('www.hoplahotel.fr');
   assert.equal(
-    await evaluate("document.querySelector('.xdhotel h1').textContent"),
+    await evaluate("document.querySelector('.hopla-hotel h1').textContent"),
     'Bienvenue à Hopla Hotel !',
   );
-  await capture('xdhotel-home.png');
+  await capture('hopla-hotel-home.png');
   assert.equal(await evaluate("!!document.querySelector('.browser-page .hotel-intro')"), false);
   assert.ok(
     await evaluate(
@@ -1501,7 +1501,7 @@ async function verifyHotel() {
         const p=ctx.getImageData(x,y,1,1).data;return p[0]===0&&p[1]===0&&p[2]===0&&p[3]===255;
       })&&getComputedStyle(document.querySelector('.hotel-stage')).backgroundColor==='rgb(0, 0, 0)'
         &&getComputedStyle(document.querySelector('.hotel-navigator')).backgroundColor==='rgb(213, 220, 225)'
-        &&getComputedStyle(document.querySelector('.browser-page .xdhotel')).backgroundColor==='rgb(228, 238, 244)';
+        &&getComputedStyle(document.querySelector('.browser-page .hopla-hotel')).backgroundColor==='rgb(228, 238, 244)';
     })()`),
       'black render background only, in every room',
     );
@@ -1602,7 +1602,7 @@ async function verifyHotel() {
   })()`),
     'repeated speaker appears in successive rows with author names',
   );
-  await capture('xdhotel-hall.png');
+  await capture('hopla-hotel-hall.png');
   const assertSceneFits = async () => {
     assert.ok(
       await evaluate(
@@ -1674,7 +1674,7 @@ async function verifyHotel() {
       `(()=>{const s=document.querySelector('.hotel-stage').getBoundingClientRect(),b=[...document.querySelectorAll('.hotel-bubble[data-speaker="reception-xd"]')].at(-1).getBoundingClientRect();return b.left>=s.left&&b.right<=s.right&&b.top>=s.top&&b.bottom<=s.bottom;})()`,
     ),
   );
-  await capture('xdhotel-small.png');
+  await capture('hopla-hotel-small.png');
   await until(
     () => evaluate('window.__hotelGreetingNodes.every(b=>!b.isConnected)'),
     'greeting bubbles expire while ambient conversation continues',
@@ -1761,7 +1761,7 @@ async function verifyHotel() {
     await ready();
     assert.equal(await evaluate("document.querySelector('.hotel-navigator').hidden"), true);
   };
-  for (const destination of hotelRooms.slice(1)) {
+  for (const destination of hoplaHotelRooms.slice(1)) {
     await floorClick(9, 8);
     await enterRoom(destination.id);
     await assertEarlyAmbient(destination);
@@ -1912,7 +1912,7 @@ async function verifyHotel() {
   assert.equal(await narrative(), before);
   assert.equal(
     await evaluate(
-      "Object.hasOwn(JSON.parse(localStorage.getItem('chaos-survival-story-v1')),'xdhotel')",
+      "(()=>{const s=JSON.parse(localStorage.getItem('chaos-survival-story-v1'));return !Object.hasOwn(s,'hopla-hotel');})()",
     ),
     false,
   );

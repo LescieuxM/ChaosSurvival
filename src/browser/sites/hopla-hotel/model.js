@@ -1,4 +1,4 @@
-export const HOTEL_URL = 'http://www.hoplahotel.fr/';
+export const HOPLA_HOTEL_URL = 'http://www.hoplahotel.fr/';
 export const VIEW_WIDTH = 400;
 export const VIEW_HEIGHT = 300;
 const HALF_WIDTH = 16;

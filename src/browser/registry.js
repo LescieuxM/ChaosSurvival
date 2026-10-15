@@ -13,8 +13,6 @@ export function normalizeUrl(input) {
       return null;
     url.protocol = 'http:';
     url.hostname = `www.${url.hostname.toLowerCase().replace(/^www\./, '')}`;
-    // Keep old Hotel addresses in saved tab histories usable under its new identity.
-    if (url.hostname === 'www.xdhotel.fr') url.hostname = 'www.hoplahotel.fr';
     url.hash = '';
     return url.href;
   } catch {

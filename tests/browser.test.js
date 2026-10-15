@@ -206,6 +206,23 @@ test('corrupt browser fields fall back locally without invalidating narrative da
   assert.equal(session.tab.history.length, 100);
   assert.equal(session.tab.cursor, 99);
 });
+
+test('browser restoration drops only malformed tabs and selects a surviving tab when active is invalid', () => {
+  const { progression, session } = fixture();
+  progression.data.browser = {
+    version: 1,
+    active: 'bad',
+    tabs: [
+      { id: 'bad', title: 'bad', history: [null], cursor: 0 },
+      { id: 'first', title: 'First', history: ['http://www.xdsearch.fr/'], cursor: 0 },
+      { id: 'second', title: 'Second', history: ['http://www.xdsearch.fr/missing'], cursor: 0 },
+    ],
+  };
+  session.restore();
+  assert.deepEqual(session.tabs.map((tab) => tab.id), ['first', 'second']);
+  assert.equal(session.active, 'first');
+  assert.equal(session.address, 'http://www.xdsearch.fr/');
+});
 test('XD Search and error pages use local links and text for user input without unsafe HTML', (t) => {
   const previous = globalThis.document;
   const create = () => ({

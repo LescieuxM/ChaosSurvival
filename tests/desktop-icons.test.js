@@ -83,10 +83,13 @@ test('right-anchored columns use the same even grid pitch and keep a constant ri
     const previous = { col: grid.cols - 2, row: 0 };
     assert.equal(iconCellLeft(last, grid, width, 100, 'right'), width - 120);
     assert.equal(width - (iconCellLeft(last, grid, width, 100, 'right') + 100), 20);
-    assert.equal(
-      iconCellLeft(last, grid, width, 100, 'right') -
-        iconCellLeft(previous, grid, width, 100),
-      grid.step,
+    assert.ok(
+      Math.abs(
+        iconCellLeft(last, grid, width, 100, 'right') -
+          iconCellLeft(previous, grid, width, 100) -
+          grid.step,
+      ) < 1e-9,
+      'adjacent columns keep the same pitch within floating-point precision',
     );
     assert.equal(iconCellLeft(last, grid, width, 100, 'right'), width - 120);
   }
@@ -277,10 +280,15 @@ test('dragging snaps, persists, rejects occupied cells, suppresses accidental cl
   assert.equal(button.style.top, '124px');
 
   handlers.pointerdown(event(270, 134));
-  handlers.pointermove(event(1110, 134));
-  handlers.pointerup(event(1110, 134));
+  const rightmostDropX =
+    270 +
+    (icons.grid.cols - 1 - icons.cells.get('shortcut:music').col) *
+      icons.grid.step +
+    icons.grid.step / 2;
+  handlers.pointermove(event(rightmostDropX, 134));
+  handlers.pointerup(event(rightmostDropX, 134));
   assert.deepEqual(progression.data.desktopIcons['shortcut:music'], {
-    col: 9,
+    col: icons.grid.cols - 1,
     row: 1,
     edge: 'right',
   });
@@ -454,7 +462,7 @@ test('empty-area dragging selects icons without moving them and clears the box o
   assert.ok(buttons.every((button) => button.attrs['aria-pressed'] === 'false'));
   phaseClass = 'rhythm-active';
   icons.down(event(130, 5));
-  icons.move(event(250, 216));
+  icons.move(event(246, 216));
   assert.equal(icons.selectedIds.size, 1);
   const rhythmicBox = desktop.children.at(-1);
   icons.move(event(250, 900));
