@@ -1535,6 +1535,28 @@ async function verifyHotel() {
   })()`),
     'full black scene and full-width compact toolbar at bottom',
   );
+  const assertEarlyAmbient = async (definition) => {
+    await until(
+      () => evaluate("!!document.querySelector('.hotel-bubble')"),
+      `${definition.id}: visible ambient speech within seven seconds without input`,
+      7000,
+    );
+    assert.ok(
+      await evaluate(`(()=>{
+      const stage=document.querySelector('.hotel-stage').getBoundingClientRect();
+      return [...document.querySelectorAll('.hotel-bubble')].some(b=>{
+        const r=b.getBoundingClientRect(),s=getComputedStyle(b),author=b.querySelector('strong');
+        return ${JSON.stringify(definition.npcs.map((n) => [n.id, `${n.name} : `]))}.some(([id,name])=>b.dataset.speaker===id&&author.textContent===name)
+          && Number(s.opacity)>.95 && s.display!=='none' && s.visibility==='visible'
+          && s.backgroundColor==='rgb(255, 255, 255)' && r.width>r.height
+          && r.left>=stage.left && r.right<=stage.right && r.top>=stage.top && r.bottom<=stage.bottom;
+      });
+    })()`),
+      `${definition.id}: real DOM bubble is opaque, attributed and inside the scene`,
+    );
+    await capture(`hopla-early-${definition.id}.png`);
+  };
+  await assertEarlyAmbient(room);
   const floorClick = async (col, row, offsetY = 0) => {
     const point = project(col, row, room);
     const hit = await evaluate(
@@ -1570,13 +1592,11 @@ async function verifyHotel() {
     room.npcs[0].dialogue,
   );
   assert.equal(await evaluate("!!document.querySelector('.hotel-bubble')"), true);
-  const firstBubbleLeft = await evaluate("document.querySelector('.hotel-bubble').offsetLeft");
   await floorClick(...room.npcs[0].position, -25);
   assert.ok(
     await evaluate(`(()=>{
-    const bubbles=[...document.querySelectorAll('.hotel-bubble')];
+    const bubbles=[...document.querySelectorAll('.hotel-bubble[data-speaker="reception-xd"]')];
     return bubbles.length===2 && bubbles.every(b=>b.querySelector('strong').textContent==='ReceptionHotel : ')
-      && bubbles[0].offsetLeft < ${firstBubbleLeft}
       && bubbles[0].offsetLeft+bubbles[0].offsetWidth < bubbles[1].offsetLeft
       && bubbles[0].offsetTop===bubbles[1].offsetTop;
   })()`),
@@ -1646,14 +1666,21 @@ async function verifyHotel() {
     'scaled clicks after desktop shrink',
   );
   await floorClick(...room.npcs[0].position, -25);
+  await evaluate(
+    'window.__hotelGreetingNodes=[...document.querySelectorAll(\'.hotel-bubble[data-speaker="reception-xd"]\')]',
+  );
   const npcTop = project(...room.npcs[0].position, room).y - 40;
   assert.ok(
     await evaluate(
-      `(()=>{const s=document.querySelector('.hotel-stage').getBoundingClientRect(),c=document.querySelector('.hotel-canvas').getBoundingClientRect(),b=document.querySelector('.hotel-bubble').getBoundingClientRect();return b.left>=s.left&&b.right<=s.right&&b.top>=s.top&&b.bottom<=s.bottom&&b.bottom<=c.top+${npcTop}/300*c.height;})()`,
+      `(()=>{const s=document.querySelector('.hotel-stage').getBoundingClientRect(),c=document.querySelector('.hotel-canvas').getBoundingClientRect(),b=[...document.querySelectorAll('.hotel-bubble[data-speaker="reception-xd"]')].at(-1).getBoundingClientRect();return b.left>=s.left&&b.right<=s.right&&b.top>=s.top&&b.bottom<=s.bottom&&b.bottom<=c.top+${npcTop}/300*c.height;})()`,
     ),
   );
   await capture('xdhotel-small.png');
-  await until(() => evaluate("!document.querySelector('.hotel-bubble')"), 'bubble expires', 11000);
+  await until(
+    () => evaluate('window.__hotelGreetingNodes.every(b=>!b.isConnected)'),
+    'greeting bubbles expire while ambient conversation continues',
+    11000,
+  );
   await command('Emulation.setDeviceMetricsOverride', {
     width: 1280,
     height: 800,
@@ -1738,6 +1765,7 @@ async function verifyHotel() {
   for (const destination of hotelRooms.slice(1)) {
     await floorClick(9, 8);
     await enterRoom(destination.id);
+    await assertEarlyAmbient(destination);
     assert.equal(
       await evaluate("document.querySelector('.hotel-current-room').textContent"),
       destination.name,

@@ -131,6 +131,8 @@ export class Messenger {
     });
     instance = this.applications.attachWindow(`messenger:${key}`, id, title, 'msn');
     instance.element.classList.add('messenger-panel');
+    if (['emoticons', 'options', 'about'].includes(key))
+      instance.element.classList.add('messenger-secondary');
     instance.element.dataset.messengerView = key;
     this.views.set(key, instance);
     this.onWindowState();

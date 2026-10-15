@@ -4,6 +4,14 @@ import { BubbleHistory } from './bubbles.js';
 export { messageDuration, placeBubbles } from './bubbles.js';
 
 const key = (cell) => cell.join(':');
+// Milliseconds on the room clock; response delays remain authored in conversations.json.
+export const AMBIENT_TIMING = Object.freeze({
+  firstConversation: [2500, 4500],
+  conversation: [14000, 26000],
+  retry: [1500, 3000],
+  firstSpontaneous: [12000, 22000],
+  spontaneous: [25000, 45000],
+});
 
 // Only the active room owns a simulation. All movement uses the existing RoomWalk/BFS.
 export class RoomSimulation {
@@ -46,8 +54,8 @@ export class RoomSimulation {
             message.delay >= 0,
         ),
     );
-    this.nextConversation = this.range([18000, 35000]);
-    this.nextSpontaneous = this.range([35000, 75000]);
+    this.nextConversation = this.range(AMBIENT_TIMING.firstConversation);
+    this.nextSpontaneous = this.range(AMBIENT_TIMING.firstSpontaneous);
   }
   range([low, high]) {
     return low + this.random() * (high - low);
@@ -115,12 +123,8 @@ export class RoomSimulation {
     const busy = new Set(
       this.activeConversations.flatMap((active) => active.definition.participants),
     );
-    if (
-      conversation.participants.some(
-        (id) => busy.has(id) || this.npcs.find((npc) => npc.id === id).walk.moving,
-      )
-    )
-      return false;
+    // Walking does not reserve speech. Existing routes continue while messages appear.
+    if (conversation.participants.some((id) => busy.has(id))) return false;
     this.activeConversations.push({
       definition: conversation,
       index: 0,
@@ -156,14 +160,20 @@ export class RoomSimulation {
       else active.due = this.now + active.definition.messages[active.index].delay;
     }
     if (this.now >= this.nextConversation) {
-      const choices = this.conversations.filter(
+      const fresh = this.conversations.filter(
         (conversation) => !this.recent.includes(conversation.id),
       );
+      const choices = fresh.length ? fresh : this.conversations;
       // A shuffled attempt allows a second exchange only when its participants are free.
       const start = Math.floor(this.random() * choices.length);
+      let started = false;
       for (let i = 0; i < choices.length; i++)
-        if (this.startConversation(choices[(start + i) % choices.length])) break;
-      this.nextConversation = this.now + this.range([24000, 55000]);
+        if (this.startConversation(choices[(start + i) % choices.length])) {
+          started = true;
+          break;
+        }
+      this.nextConversation =
+        this.now + this.range(started ? AMBIENT_TIMING.conversation : AMBIENT_TIMING.retry);
     }
     if (this.now >= this.nextSpontaneous) {
       const busy = new Set(
@@ -171,10 +181,7 @@ export class RoomSimulation {
       );
       const available = this.npcs.filter(
         (npc) =>
-          npc.behavior?.messages?.length &&
-          !busy.has(npc.id) &&
-          !npc.walk.moving &&
-          !this.bubbles.hasSpeaker(npc.id),
+          npc.behavior?.messages?.length && !busy.has(npc.id) && !this.bubbles.hasSpeaker(npc.id),
       );
       const speaker = available[Math.floor(this.random() * available.length)];
       if (speaker)
@@ -183,7 +190,8 @@ export class RoomSimulation {
             speaker.id,
             speaker.behavior.messages[Math.floor(this.random() * speaker.behavior.messages.length)],
           ) || changed;
-      this.nextSpontaneous = this.now + this.range([45000, 100000]);
+      this.nextSpontaneous =
+        this.now + this.range(speaker ? AMBIENT_TIMING.spontaneous : AMBIENT_TIMING.retry);
     }
     const chatting = new Set([
       ...[...this.messages.values()].map((message) => message.speaker),

@@ -481,11 +481,16 @@ test('room instances have independent motion/bubbles; scaled clicks, visibility 
   assert.equal(clock.frames.size, 0);
   const npc = project(...room.npcs[0].position, room);
   click(npc.x, npc.y - 25);
+  const greeting = find(a, 'hotel-bubble');
   assert.equal(find(a, 'hotel-message-text').textContent, room.npcs[0].dialogue);
   assert.ok(find(a, 'hotel-bubble'));
   assert.equal(find(b, 'hotel-bubble'), undefined);
   for (let i = 0; i < 80; i++) clock.step(500 + i * 100);
-  assert.equal(find(a, 'hotel-bubble'), undefined);
+  assert.equal(
+    walkTree(a).includes(greeting),
+    false,
+    'expired greeting is removed even as ambient speech starts',
+  );
   click(...Object.values(project(9, 7, room)));
   document.hidden = true;
   for (const fn of clock.listeners) fn();
@@ -577,7 +582,7 @@ test('all five rooms show attributed ambient speech without clicks and dispose t
     assert.equal(find('hotel-bubble'), undefined);
     assert.equal(find('hotel-nickname'), undefined);
     const start = performance.now();
-    for (let elapsed = 100; elapsed <= 120000 && !find('hotel-bubble'); elapsed += 100)
+    for (let elapsed = 100; elapsed <= 7000 && !find('hotel-bubble'); elapsed += 100)
       clock.step(start + elapsed);
     const bubble = find('hotel-bubble');
     assert.ok(bubble, `${definition.id}: spontaneous message`);
@@ -634,6 +639,47 @@ test('floating navigator drag and resize stay in the scene and cleanup removes i
   assert.equal(header.handlers.pointerdown, undefined);
   assert.equal(header.handlers.pointermove, undefined);
   assert.equal(clock.timers.size, 0);
+});
+
+test('early ambient DOM speech resumes after navigator pause and client restoration without extra timers', (t) => {
+  const clock = dom(t);
+  let cleanup, resume;
+  const root = renderHotelRoom(
+    {
+      onDispose: (fn) => {
+        cleanup = fn;
+      },
+      onResume: (fn) => {
+        resume = fn;
+      },
+    },
+    hotelData,
+  );
+  const find = (cls) => walkTree(root).find((item) => item.className === cls);
+  const start = performance.now();
+  clock.step(start + 1000);
+  find('hotel-navigator-open').handlers.click();
+  clock.step(start + 20000);
+  assert.equal(find('hotel-bubble'), undefined);
+  assert.equal(clock.timers.size, 0);
+  find('hotel-navigator-close').handlers.click();
+  for (let elapsed = 100; elapsed <= 7000 && !find('hotel-bubble'); elapsed += 100)
+    clock.step(start + 20000 + elapsed);
+  const first = find('hotel-bubble');
+  assert.ok(first);
+  cleanup('pause');
+  const pausedAt = performance.now();
+  clock.step(pausedAt + 30000);
+  assert.ok(walkTree(root).includes(first));
+  assert.equal(clock.timers.size, 0);
+  resume();
+  for (let elapsed = 100; elapsed <= 7000; elapsed += 100) clock.step(pausedAt + 30000 + elapsed);
+  assert.equal(walkTree(root).includes(first), false, 'expiration resumes on the room clock');
+  assert.ok(find('hotel-bubble'), 'conversation replies resume too');
+  assert.ok(clock.timers.size + clock.frames.size <= 1);
+  cleanup();
+  assert.equal(clock.timers.size, 0);
+  assert.equal(clock.frames.size, 0);
 });
 
 test('retained room stops frames while another tab is active, ignores visibility wakeups and resumes its own position', (t) => {

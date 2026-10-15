@@ -41,14 +41,27 @@ Les cinq salles sont conservées :
 `data.json` définit les salles, meubles et 18 personnages. Les positions,
 apparences, personnalités et textes restent conservés. `conversations.json`
 contient 30 échanges, six par salle, avec participants et délais prédéfinis.
-Le planificateur choisit des conversations à intervalles variables et exclut
-ses trois derniers choix. Deux échanges peuvent coexister si leurs participants
-sont distincts et disponibles. Les messages isolés sont moins fréquents.
+Le planificateur choisit des conversations à intervalles variables et évite
+ses trois derniers choix. Si tous les échanges sont récents dans une courte
+liste, ils redeviennent éligibles pour éviter un silence permanent. Deux échanges
+peuvent coexister si leurs participants sont distincts et disponibles pour parler.
+Un déplacement en cours ne bloque plus le démarrage ou l'affichage des messages.
+Les messages isolés sont moins fréquents.
 Les périodes de silence et les délais entre répliques restent présents.
+
+Les délais sont regroupés dans `AMBIENT_TIMING` de `simulation.js` :
+
+- Premier départ après 2,5 à 4,5 secondes, puis délai de la première réplique
+  inchangé : les textes actuels apparaissent entre environ 3,2 et 6,4 secondes.
+- Conversation suivante après 14 à 26 secondes ; refus reprogrammé après
+  1,5 à 3 secondes au lieu d'attendre un intervalle complet.
+- Première remarque isolée après 12 à 22 secondes, puis 25 à 45 secondes ;
+  une absence de locuteur disponible est également retentée rapidement.
 
 Le joueur et les PNJ utilisent le même `RoomWalk`, la projection existante
 et le BFS. Les réservations des trajets évitent les collisions et les échanges
-de cases. Les personnages en discussion attendent avant de repartir.
+de cases. Un trajet en cours continue pendant la discussion ; les personnages
+attendent ensuite la fin de leurs messages avant de repartir.
 ReceptionHotel reste fixe. La refonte des bulles ne modifie pas cette logique.
 
 ## Bulles et clics
@@ -89,13 +102,16 @@ plusieurs lignes ; une scène saturée limite l'évitement des chevauchements.
 
 ## Vérifications
 
-- 25 tests Hotel réussis : conversations automatiques dans les cinq rendus sans
+- 29 tests Hotel réussis : conversations automatiques dans les cinq rendus sans
   clic, attribution des messages, délais, expiration, clic réservé à la réception,
   placement, déplacements simultanés, changement de salle et nettoyage.
+- Premiers messages dans les sept premières secondes aux bornes des délais,
+  participant qui parle en marchant, nouvelle tentative rapide après refus,
+  reprise du DOM après pause du navigateur et restauration du client.
 - Simulations déterministes de dix minutes par salle sans collision ni mutation
   des données, avec variété des échanges et périodes de silence.
 - Compilation de production réussie, contrôles musicaux et narratifs inclus.
-- Suite complète : 220/221. L'échec préexistant de `tests/start-menu.test.js:56`
+- Suite complète : 224/225. L'échec préexistant de `tests/start-menu.test.js:56`
   concerne `settings.data.applicationUsage.arcade`, hors du client Hotel.
 - Contrôle interactif : `node scripts/verify-desktop-ui.mjs --xdhotel-only`.
 

@@ -15,6 +15,73 @@ function random(seed = 42) {
   return () => (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296;
 }
 const cellKey = (cell) => cell.join(':');
+test('an idle room schedules visible speech in 3–7 seconds at either timing extreme in all five rooms', () => {
+  for (const room of rooms)
+    for (const value of [0, 0.999999]) {
+      const simulation = new RoomSimulation(room, { random: () => value });
+      assert.equal(simulation.messages.size, 0);
+      const start = simulation.nextDelay;
+      assert.ok(start >= 2500 && start <= 4500);
+      simulation.update(start);
+      assert.equal(simulation.activeConversations.length, 1);
+      const reply = simulation.nextDelay;
+      assert.ok(start + reply >= 3000 && start + reply <= 7000);
+      assert.equal(
+        simulation.update(reply),
+        true,
+        'new speech requests a render even without movement',
+      );
+      const message = [...simulation.messages.values()][0];
+      assert.ok(room.npcs.some((npc) => npc.id === message.speaker));
+      assert.equal(message.text, simulation.activeConversations[0].definition.messages[0].text);
+    }
+});
+
+test('a walking participant can start and speak without abandoning its reserved route', () => {
+  const simulation = new RoomSimulation(rooms[0], { random: random() });
+  const conversation = simulation.conversations[0];
+  const npc = simulation.npcs.find((npc) => npc.id === conversation.participants[0]);
+  assert.ok(simulation.move(npc.walk, [7, 2]));
+  assert.ok(npc.walk.moving);
+  assert.ok(simulation.startConversation(conversation));
+  for (let time = 0; time < conversation.messages[0].delay; time += 100) {
+    simulation.update(100);
+    assertClear(simulation);
+  }
+  assert.ok(npc.walk.moving);
+  assert.ok([...simulation.messages.values()].some((message) => message.speaker === npc.id));
+});
+
+test('busy conversations retry within three seconds and release participants after completion', () => {
+  const conversation = conversations[0];
+  const simulation = new RoomSimulation(rooms[0], {
+    random: () => 0,
+    conversations: [conversation],
+  });
+  simulation.nextSpontaneous = Infinity;
+  assert.ok(simulation.startConversation(conversation));
+  simulation.nextConversation = 0;
+  simulation.update(0);
+  assert.ok(simulation.nextConversation - simulation.now >= 1500);
+  assert.ok(simulation.nextConversation - simulation.now <= 3000);
+  assert.equal(simulation.activeConversations.length, 1);
+  let completed = false,
+    restarted = false;
+  for (let i = 0; i < 200; i++) {
+    simulation.update(100);
+    if (!simulation.activeConversations.length) completed = true;
+    if (completed && simulation.activeConversations.length) {
+      restarted = true;
+      break;
+    }
+    assert.ok(simulation.activeConversations.length <= 1);
+  }
+  assert.ok(
+    completed && restarted,
+    'a short conversation list never becomes permanently excluded by recent history',
+  );
+});
+
 function assertClear(simulation) {
   const reserved = new Map();
   for (const walk of simulation.actors) {
@@ -182,7 +249,7 @@ test('scheduler avoids its three latest conversations rather than replaying a fi
 });
 
 test('message history preserves repeated speakers, expires individually and supports future player speech', () => {
-  const simulation = new RoomSimulation(rooms[0], { random: random() });
+  const simulation = new RoomSimulation(rooms[0], { random: random(), conversations: [] });
   assert.equal(simulation.say('unknown', 'no'), false);
   simulation.say('reception-xd', 'cc');
   simulation.update(1000);
