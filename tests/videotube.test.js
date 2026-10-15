@@ -84,6 +84,7 @@ test('home links go only to internal watch pages; metadata and comments are text
   dom(t);
   const home = localPages.resolve(VIDEO_URL, {}).page.render({});
   assert.equal(walk(home).filter((n) => n.className === 'videotube-card').length, 7);
+  assert.ok(walk(home).some((n) => n.textContent === 'Diffuse-toi toi-même'));
   assert.equal(walk(home).filter((n) => n.tag === 'button').length, 0);
   for (const video of videoCatalog.videos) {
     const tree = localPages.resolve(videoRoute(video), {}).page.render({});

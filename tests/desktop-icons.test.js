@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import {
   DesktopIcons,
   groupIconCells,
+  iconCellLeft,
   rectanglesTouch,
   iconGrid,
   layoutIconCells,
@@ -38,6 +39,57 @@ test('desktop icons fill the first column before the next and preserve existing 
   const withNew = layoutIconCells([...ids, 'new-file'], saved, grid);
   for (const id of ids) assert.deepEqual(withNew.get(id), saved[id]);
   assert.deepEqual(withNew.get('new-file'), { col: 0, row: 3 });
+});
+
+test('desktop columns use one even pitch and keep the right margin at each width', () => {
+  const iconWidth = 100;
+  const grid = iconGrid(1340, 800, 40, 90, iconWidth);
+  assert.equal(grid.cols, 11);
+  assert.equal(iconGrid(1320, 800, 40, 90, iconWidth).cols, 11);
+  const cell = nearestIconCell(1340, 20, grid);
+  assert.deepEqual(cell, { col: 10, row: 0 });
+  const left = iconCellLeft(cell, grid, 1340, iconWidth);
+  assert.equal(left + iconWidth, 1320);
+  assert.equal(1340 - (left + iconWidth), 20);
+  for (let col = 1; col < grid.cols; col++)
+    assert.equal(
+      iconCellLeft({ col, row: 0 }, grid, 1340, iconWidth) -
+        iconCellLeft({ col: col - 1, row: 0 }, grid, 1340, iconWidth),
+      grid.step,
+    );
+  assert.deepEqual(
+    groupIconCells(new Map([['icon', { col: 9, row: 0 }]]), ['icon'], { col: 1, row: 0 }, grid),
+    new Map([['icon', { col: 10, row: 0 }]]),
+  );
+});
+
+test('right-anchored saved cells follow the last column across resize without moving left-anchored cells', () => {
+  const saved = {
+    left: { col: 0, row: 0 },
+    right: { col: 7, row: 1, edge: 'right' },
+  };
+  for (const cols of [11, 6, 13, 6, 13]) {
+    const cells = layoutIconCells(['left', 'right'], saved, { cols, rows: 5 });
+    assert.deepEqual(cells.get('left'), { col: 0, row: 0 });
+    assert.deepEqual(cells.get('right'), { col: cols - 1, row: 1 });
+    assert.equal(new Set([...cells.values()].map(JSON.stringify)).size, 2);
+  }
+});
+
+test('right-anchored columns use the same even grid pitch and keep a constant right margin', () => {
+  for (const width of [800, 1280, 1600]) {
+    const grid = iconGrid(width, 800, 40, 90, 100);
+    const last = { col: grid.cols - 1, row: 0 };
+    const previous = { col: grid.cols - 2, row: 0 };
+    assert.equal(iconCellLeft(last, grid, width, 100, 'right'), width - 120);
+    assert.equal(width - (iconCellLeft(last, grid, width, 100, 'right') + 100), 20);
+    assert.equal(
+      iconCellLeft(last, grid, width, 100, 'right') -
+        iconCellLeft(previous, grid, width, 100),
+      grid.step,
+    );
+    assert.equal(iconCellLeft(last, grid, width, 100, 'right'), width - 120);
+  }
 });
 
 test('the bin defaults to top left while personal and legacy saved positions remain intact', () => {
@@ -221,8 +273,33 @@ test('dragging snaps, persists, rejects occupied cells, suppresses accidental cl
   assert.equal(new Set([...icons.cells.values()].map(JSON.stringify)).size, buttons.length);
   desktop.width = 1280;
   icons.refresh();
-  assert.equal(button.style.left, '260px');
+  assert.equal(button.style.left, `${20 + icons.cells.get('shortcut:music').col * icons.grid.step}px`);
   assert.equal(button.style.top, '124px');
+
+  handlers.pointerdown(event(270, 134));
+  handlers.pointermove(event(1110, 134));
+  handlers.pointerup(event(1110, 134));
+  assert.deepEqual(progression.data.desktopIcons['shortcut:music'], {
+    col: 9,
+    row: 1,
+    edge: 'right',
+  });
+  for (const width of [1600, 800, 1600]) {
+    desktop.width = width;
+    icons.refresh();
+    assert.equal(icons.cells.get('shortcut:music').col, icons.grid.cols - 1);
+    assert.equal(icons.cells.get('shortcut:computer').col, 0);
+    assert.equal(new Set([...icons.cells.values()].map(JSON.stringify)).size, buttons.length);
+    assert.ok(parseFloat(button.style.left) + button.offsetWidth <= width);
+    assert.equal(parseFloat(button.style.left), width - 120);
+  }
+  const reloaded = new Progression(story, storage);
+  const restored = layoutIconCells(
+    buttons.map((item) => `shortcut:${item.dataset.shortcut}`),
+    reloaded.data.desktopIcons,
+    icons.grid,
+  );
+  assert.equal(restored.get('shortcut:music').col, icons.grid.cols - 1);
 });
 
 test('group moves preserve relative cells and reject occupied and out-of-bounds destinations', () => {

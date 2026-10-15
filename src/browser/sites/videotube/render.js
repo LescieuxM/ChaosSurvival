@@ -15,7 +15,7 @@ function shell(homeUrl) {
   const logo = link(undefined, homeUrl);
   logo.className = 'videotube-logo';
   logo.append(node('span', 'Video'), node('strong', 'Tube'));
-  header.append(logo, node('span', 'Les petites vidéos font les grandes pauses.'));
+  header.append(logo, node('span', 'Diffuse-toi toi-même'));
   root.append(header, link('Accueil', homeUrl));
   return root;
 }
