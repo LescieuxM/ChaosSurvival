@@ -8,9 +8,9 @@ import './browser/sites/forumjeu/styles.css';
 import './browser/sites/flashzone/styles.css';
 import './browser/sites/videotube/styles.css';
 import './browser/sites/wiki/styles.css';
-import './browser/sites/xdhotel/styles.css';
+import './browser/sites/hopla-hotel/styles.css';
 import { InternetAdventurer } from './ui/browser.js';
-import { HotelClient } from './browser/sites/xdhotel/client.js';
+import { HoplaHotelClient } from './browser/sites/hopla-hotel/client.js';
 import { Buddy } from './ui/buddy.js';
 import chart from './config/chart.json';
 import music from './config/music-lvl1.analysis.json';
@@ -55,6 +55,10 @@ import {
 import replayConfig from './config/replay-reactions.json';
 import { ReplayReactions } from './story/replays.js';
 import { DialogueEvents } from './story/dialogue-events.js';
+import {
+  NarrativeOrchestrator,
+  DEFERRED_CONNECTION_DIALOGUES,
+} from './story/narrative-orchestrator.js';
 import { resetGameToInitialState as resetSession, recoverGameReset } from './story/reset-game.js';
 import { applicationName, trackIdentity } from './ui/identity.js';
 import { NotificationCenter, ENTER_ANIMATION_MS, EXIT_ANIMATION_MS } from './ui/notifications.js';
@@ -62,8 +66,6 @@ import { NotificationCenter, ENTER_ANIMATION_MS, EXIT_ANIMATION_MS } from './ui/
 const BEST_SCORE_KEY = 'chaos-survival-best';
 const DEFAULT_VOLUME = 0.55;
 const MIN_CONNECTION_TOAST_VISIBLE_MS = 3000;
-const TURBO_MESSAGE_NOTIFICATION_GAP_MS = 2000;
-const SUPER_PLOMBIER_INVITATION_DELAY_MS = 10_000;
 const SYNC_OFFSET_KEY = `chaos-sync-${music.source.sha256}`;
 let storyStorage;
 try {
@@ -98,18 +100,6 @@ const notifications = new NotificationCenter({
   getTime: (clock) => (clock === 'game' ? audio.time * 1000 : Date.now()),
 });
 const progression = new Progression(story, storyStorage);
-const turboSceneFlags = progression.data.flags;
-if (
-  !turboSceneFlags.turboSmileyScene3ArrivalTriggered &&
-  (turboSceneFlags.turboSmileyScene3Opened ||
-    turboSceneFlags.turboSmileyScene3Notified ||
-    progression.data.contactConnections?.turbo?.status === 'online' ||
-    (turboSceneFlags.turboSmileyScene3 &&
-      progression.data.dialogues['pixelgirl-smiley-victory']?.finished))
-) {
-  turboSceneFlags.turboSmileyScene3ArrivalTriggered = true;
-  progression.save();
-}
 const buddy = new Buddy(ui.desktop, progression);
 const replayReactions = new ReplayReactions(progression, dialogues, replayConfig);
 const settings = new UserSettings(storyStorage, chart.volume);
@@ -122,7 +112,6 @@ const sounds = new DesktopSounds(
   () => (menuMusic.active || phase === 'paused' ? menuMusic.context : audio.context),
 );
 let cancelVictory = () => {};
-let turboConnectionNotificationActive = false;
 let timeline;
 let configurationError;
 let director;
@@ -168,11 +157,12 @@ const desktopApplications = new DesktopApplications(
   replayLevelOne,
   new VirtualTextFiles(progression),
 );
-const hotel = new HotelClient(manager, desktopApplications, () =>
+let narrativeOrchestrator;
+const hoplaHotel = new HoplaHotelClient(manager, desktopApplications, () =>
   openBrowser('http://www.hoplahotel.fr/'),
 );
 const browser = new InternetAdventurer(manager, desktopApplications, progression, undefined, () =>
-  hotel.open(),
+  hoplaHotel.open(),
 );
 const messenger = new Messenger({
   manager,
@@ -184,31 +174,16 @@ const messenger = new Messenger({
   settings,
   onWindowState: syncSystemWindows,
   onMessage: (contact) => {
-    if (
-      contact.id === 'turbo' &&
-      progression.data.dialogues['turbo-flashzone-invitation']?.transcript?.length
-    ) {
-      const flags = progression.data.flags;
-      if (!flags.superPlombierInvitationNotificationShown) {
-        flags.superPlombierInvitationNotificationShown = true;
-        progression.save();
-        showMessageNotification(contact, 'turbo-flashzone-invitation-message');
-      }
-      return;
-    }
-    if (contact.id === 'turbo' && progression.data.flags.turboSmileyScene3ArrivalTriggered) {
-      return;
-    }
+    const invitationMessage = narrativeOrchestrator?.onMessage(contact);
+    if (invitationMessage === 'notify')
+      showMessageNotification(contact, 'turbo-flashzone-invitation-message');
+    if (invitationMessage) return;
     showMessageNotification(contact, messageNotificationId(contact));
   },
   onContactOpened: (contact) => {
     notifications.cancelContact(contact.id, 'message');
     notifications.cancel(`connection:${contact.id}`);
-    if (contact.id !== 'turbo' || !progression.data.flags.turboSmileyScene3ArrivalTriggered) return;
-    turboConnectionNotificationActive = false;
-    progression.data.flags.turboSmileyScene3Opened = true;
-    delete progression.data.flags.turboSmileyScene3MessageNotificationDueAt;
-    progression.save();
+    narrativeOrchestrator?.onContactOpened(contact);
   },
   createConversation: (contact) => {
     const definition = dialogues[contact.dialogue] ?? pixelgirlDialogue;
@@ -220,16 +195,9 @@ const messenger = new Messenger({
               .filter(
                 (event) =>
                   event.contact.name === definition.contact.name &&
-                  (event.id !== 'turbo-flashzone-invitation' ||
-                    progression.data.contactConnections?.luna?.status === 'online'),
+                  narrativeOrchestrator?.isEventAvailable(event),
               )
-              .sort((a, b) => {
-                const order = {
-                  'turbo-smiley-catcher': 0,
-                  'turbo-flashzone-invitation': 1,
-                };
-                return (order[a.id] ?? 10) - (order[b.id] ?? 10);
-              }),
+              .sort((a, b) => narrativeOrchestrator?.compareEvents(a, b) ?? 0),
           );
     return createConversation(definition, contact.id, thread);
   },
@@ -255,28 +223,24 @@ const miniGameLauncher = new MiniGameLauncher(
 const dialogueEvents = new DialogueEvents(
   progression,
   dialogues,
-  (contactId) => {
+  (contactId) => narrativeOrchestrator?.onContactConnected(contactId),
+  { deferredConnectionDialogues: DEFERRED_CONNECTION_DIALOGUES },
+);
+narrativeOrchestrator = new NarrativeOrchestrator({
+  progression,
+  definitions: dialogues,
+  dialogueEvents,
+  getContact: (contactId) => messenger.contacts().find((entry) => entry.id === contactId),
+  prepareContact: (contact) => messenger.prepareContact(contact),
+  showConnectionNotification: (contactId, { onDismiss }) => {
     const contact = messenger.contacts().find((entry) => entry.id === contactId);
     if (!contact) return;
-    showContactConnectionNotification(contact);
+    showContactConnectionNotification(contact, { onDismiss });
     sounds.unlock().then(() => sounds.play('online'));
-    if (contactId === 'luna') {
-      const flags = progression.data.flags;
-      if (
-        !flags.superPlombierInvitationScheduled &&
-        !flags.superPlombierInvitationReceived &&
-        !progression.data.dialogues['turbo-flashzone-invitation']?.transcript?.length
-      ) {
-        flags.superPlombierInvitationDueAt = Date.now() + SUPER_PLOMBIER_INVITATION_DELAY_MS;
-        flags.superPlombierInvitationDelayVersion = 2;
-        progression.save();
-      }
-    }
-    if (contactId === 'turbo' && progression.data.flags.turboSmileyScene3ArrivalTriggered)
-      prepareTurboSceneMessage();
   },
-  { deferredConnectionDialogues: ['pixelgirl-smiley-victory'] },
-);
+  showTurboMessageNotification: (contact, onShow) =>
+    showMessageNotification(contact, 'turbo-smiley-scene3-message', onShow),
+});
 let restoringStory = false;
 function createConversation(dialogue, contactId = 'pixelgirl', thread = replayReactions.thread) {
   return new ConversationWindow(
@@ -301,113 +265,16 @@ function createConversation(dialogue, contactId = 'pixelgirl', thread = replayRe
       manageWindow: (view) => messenger.attachConversation(view, contactId),
       onDispose: (view) => messenger.disposeConversation(view),
       onContactsRequested: () => messenger.open(),
-      onChoiceValidated: (definition, { nodeId }) => {
-        if (
-          definition.id !== 'pixelgirl-smiley-victory' ||
-          nodeId !== definition.start ||
-          progression.data.flags.turboSmileyScene3ArrivalTriggered
-        )
-          return;
-        progression.data.flags.turboSmileyScene3ArrivalTriggered = true;
-        progression.save();
-        dialogueEvents.triggerConnection('turbo');
-      },
+      onChoiceValidated: (definition, details) =>
+        narrativeOrchestrator.onChoiceValidated(definition, details),
       onLink: (url) => {
-        if (url === 'http://www.flashzone.fr/jeux/super-plombier-flash') {
-          progression.data.flags.superPlombierOpenedFromInvite = true;
-          progression.save();
-        }
+        narrativeOrchestrator.onLink(url);
         openBrowser(url);
       },
-      isUnlocked: () =>
-        progression.data.unlockedConversations.includes(dialogue.id) ||
-        (dialogue.id === 'turbo-smiley-catcher' &&
-          progression.data.flags.turboSmileyScene3ArrivalTriggered),
+      isUnlocked: () => narrativeOrchestrator.isConversationUnlocked(dialogue.id),
       onWindowState: syncSystemWindows,
     },
   );
-}
-function prepareTurboSceneMessage() {
-  if (
-    !progression.data.flags.turboSmileyScene3ArrivalTriggered ||
-    progression.data.contactConnections?.turbo?.status !== 'online'
-  )
-    return;
-  const definition = dialogues['turbo-smiley-catcher'];
-  const saved = progression.data.dialogues[definition.id];
-  if (saved?.finished || saved?.transcript?.length) return;
-  const contact = messenger.contacts().find((entry) => entry.id === 'turbo');
-  if (!contact?.available) return;
-  const view = messenger.prepareContact(contact);
-  if (!view) return;
-  view.thread.schedule(definition);
-  const pending = progression.data.dialogues[definition.id];
-  if (pending && Number.isFinite(pending.receiveDueAt)) {
-    pending.receiveDueAt = Date.now();
-    progression.save();
-  }
-}
-function prepareSuperPlombierInvitation() {
-  if (
-    progression.data.contactConnections?.luna?.status !== 'online' ||
-    !progression.data.dialogues['turbo-smiley-catcher']?.finished
-  )
-    return;
-  const flags = progression.data.flags;
-  const definition = dialogues['turbo-flashzone-invitation'];
-  const saved = progression.data.dialogues[definition.id];
-  if (flags.superPlombierInvitationScheduled) {
-    if (
-      flags.superPlombierInvitationDelayVersion !== 2 &&
-      !saved?.transcript?.length &&
-      Number.isFinite(saved?.receiveDueAt)
-    ) {
-      // A prior save may already have queued the first message at the old five-second mark.
-      saved.receiveDueAt += 5000;
-      flags.superPlombierInvitationDelayVersion = 2;
-      progression.save();
-    }
-    return;
-  }
-  if (!Number.isFinite(flags.superPlombierInvitationDueAt)) {
-    flags.superPlombierInvitationDueAt = Date.now() + SUPER_PLOMBIER_INVITATION_DELAY_MS;
-    flags.superPlombierInvitationDelayVersion = 2;
-    progression.save();
-  } else if (flags.superPlombierInvitationDelayVersion !== 2) {
-    // Older saves persisted a five-second deadline; extend it once to the new ten-second delay.
-    flags.superPlombierInvitationDueAt += 5000;
-    flags.superPlombierInvitationDelayVersion = 2;
-    progression.save();
-  }
-  if (Date.now() < flags.superPlombierInvitationDueAt) return;
-  if (
-    saved?.finished ||
-    saved?.transcript?.length ||
-    Number.isFinite(saved?.receiveDueAt)
-  ) {
-    flags.superPlombierInvitationScheduled = true;
-    progression.save();
-    return;
-  }
-  const contact = messenger.contacts().find((entry) => entry.id === 'turbo');
-  if (!contact?.available) return;
-  const view = messenger.prepareContact(contact);
-  if (!view) return;
-  view.thread.schedule(definition);
-  delete flags.superPlombierInvitationDueAt;
-  if (Number.isFinite(progression.data.dialogues[definition.id]?.receiveDueAt)) {
-    flags.superPlombierInvitationScheduled = true;
-    progression.save();
-  }
-}
-function recordSuperPlombierInvitation() {
-  if (
-    !progression.data.flags.superPlombierInvitationReceived &&
-    progression.data.dialogues['turbo-flashzone-invitation']?.transcript?.length
-  ) {
-    progression.data.flags.superPlombierInvitationReceived = true;
-    progression.save();
-  }
 }
 function messageNotificationId(contact) {
   const unread = progression.data.conversations?.[contact.id]?.unread;
@@ -443,17 +310,10 @@ function showContactConnectionNotification(contact, options = {}) {
     options.durationMs ?? (contactId === 'turbo' ? 700 : 6000),
     ENTER_ANIMATION_MS + MIN_CONNECTION_TOAST_VISIBLE_MS,
   );
-  if (contactId === 'turbo') turboConnectionNotificationActive = true;
-  if (
-    contactId === 'turbo' &&
-    progression.data.flags.turboSmileyScene3ArrivalTriggered &&
-    !progression.data.flags.turboSmileyScene3Opened &&
-    !progression.data.flags.turboSmileyScene3Notified
-  ) {
-    progression.data.flags.turboSmileyScene3MessageNotificationDueAt =
-      Date.now() + displayDurationMs + EXIT_ANIMATION_MS + TURBO_MESSAGE_NOTIFICATION_GAP_MS;
-    progression.save();
-  }
+  narrativeOrchestrator?.onConnectionNotificationQueued(
+    contactId,
+    displayDurationMs + EXIT_ANIMATION_MS,
+  );
   notifications.show({
     id: `connection:${contactId}`,
     type: 'connection',
@@ -469,41 +329,9 @@ function showContactConnectionNotification(contact, options = {}) {
       if (target) openConversation(false, target);
     },
     onDismiss: (reason, timing) => {
-      if (contactId === 'turbo') {
-        turboConnectionNotificationActive = false;
-        finishTurboConnectionToast();
-      }
+      narrativeOrchestrator?.onConnectionNotificationDismissed(contactId);
       options.onDismiss?.(reason, timing);
     },
-  });
-}
-
-function finishTurboConnectionToast() {
-  const flags = progression.data.flags;
-  if (flags.turboSmileyScene3Opened || flags.turboSmileyScene3Notified) return;
-  flags.turboSmileyScene3MessageNotificationDueAt =
-    Date.now() + TURBO_MESSAGE_NOTIFICATION_GAP_MS;
-  progression.save();
-}
-
-function flushTurboMessageNotification() {
-  const flags = progression.data.flags;
-  const dueAt = flags.turboSmileyScene3MessageNotificationDueAt;
-  if (!Number.isFinite(dueAt)) return;
-  if (flags.turboSmileyScene3Opened) {
-    delete flags.turboSmileyScene3MessageNotificationDueAt;
-    progression.save();
-    return;
-  }
-  if (turboConnectionNotificationActive) return;
-  if (!progression.data.dialogues['turbo-smiley-catcher']?.transcript?.length) return;
-  if (Date.now() < dueAt) return;
-  const contact = messenger.contacts().find((item) => item.id === 'turbo');
-  if (!contact?.online) return;
-  showMessageNotification(contact, 'turbo-smiley-scene3-message', () => {
-    delete flags.turboSmileyScene3MessageNotificationDueAt;
-    flags.turboSmileyScene3Notified = true;
-    progression.save();
   });
 }
 progression.register('arcade', async (sequence) => {
@@ -626,7 +454,7 @@ async function resetGameToInitialState() {
         manager.clear();
         miniGameLauncher.reset();
         notifications.clear();
-        turboConnectionNotificationActive = false;
+        narrativeOrchestrator.resetTransientState();
         action = secondaryAction = () => {};
         clearEffects();
       },
@@ -1067,7 +895,7 @@ function wizz() {
 }
 function clearEffects() {
   notifications.clear();
-  turboConnectionNotificationActive = false;
+  narrativeOrchestrator.resetTransientState();
   wizzUntil = 0;
   sparkleUntil = -Infinity;
   ui.wizzLabel.hidden = true;
@@ -1315,13 +1143,11 @@ function receiveReplayReactions() {
     requestAnimationFrame(receiveReplayReactions);
     return;
   }
-  prepareTurboSceneMessage();
+  narrativeOrchestrator.prepareTurboSceneMessage();
   const incoming = replayReactions.flush();
-  dialogueEvents.update(Date.now(), phase !== 'menu');
-  prepareSuperPlombierInvitation();
+  narrativeOrchestrator.update(Date.now(), phase !== 'menu');
   messenger.update();
-  recordSuperPlombierInvitation();
-  flushTurboMessageNotification();
+  narrativeOrchestrator.afterMessengerUpdate(Date.now());
   buddy.update();
   const visible = !conversation.offlineContact && messenger.isVisible(conversation);
   const unread = replayReactions.thread.state.unread;

@@ -100,7 +100,7 @@ L'article Windows XD a été comparé aux composants actuels, sans modifier le s
 | Documents indépendants, réduction, restauration depuis la barre des tâches et focus | `src/ui/desktop-apps.js`, `src/ui/windows.js`                                          |
 | Édition des textes `.txt`, menu Fichier, Ctrl+S, confirmation de fermeture          | `src/ui/notepad.js`, `src/story/text-files.js`                                         |
 | Visionneuse ajustant l'image sans édition graphique                                 | `src/ui/desktop-apps.js`                                                               |
-| Raccourcis d'applications réorganisables et lancement depuis Démarrer               | `src/ui/start-menu.js`, `src/ui/start-menu-order.js`                                   |
+| Raccourcis d'applications réorganisables et lancement depuis Démarrer               | `src/ui/start-menu-order.js`                                                           |
 | Buddy lancé à la demande, masquable, avec bulles et sans champ de réponse           | `src/ui/buddy.js`                                                                      |
 | Onglets et navigation ; liste de contacts distincte des conversations               | `src/ui/browser.js`, `src/ui/conversation.js` et composants Messenger existants        |
 

@@ -3,7 +3,7 @@
 ## Accès et fenêtre
 
 Le site local `http://www.hoplahotel.fr/` est référencé par XD Search.
-L'alias `www.xdhotel.fr` et les anciennes routes `/salle/...` restent compatibles.
+L'ancien domaine `www.xdhotel.fr` et les routes `/salle/...` restent compatibles.
 Le bouton « Entrer dans l'hôtel » ouvre un client Windows XD indépendant ;
 aucune scène n'est montée dans Internet Adventurer.
 
@@ -111,8 +111,8 @@ plusieurs lignes ; une scène saturée limite l'évitement des chevauchements.
 - Simulations déterministes de dix minutes par salle sans collision ni mutation
   des données, avec variété des échanges et périodes de silence.
 - Compilation de production réussie, contrôles musicaux et narratifs inclus.
-- Suite complète : 224/225. L'échec préexistant de `tests/start-menu.test.js:56`
-  concerne `settings.data.applicationUsage.arcade`, hors du client Hotel.
-- Contrôle interactif : `node scripts/verify-desktop-ui.mjs --xdhotel-only`.
+- Suite complète à la date de cet audit : 224/225. L'échec sans lien avec le
+  client Hotel a été résolu depuis par le nettoyage du menu Démarrer historique.
+- Contrôle interactif : `node scripts/verify-desktop-ui.mjs --hopla-hotel-only`.
 
 Pas de test Electron ou de portable, ni d'endurance réelle de plusieurs heures.

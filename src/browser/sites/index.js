@@ -3,7 +3,7 @@ import { forumPages } from './forumjeu/index.js';
 import { flashPages } from './flashzone/index.js';
 import { videoPages } from './videotube/index.js';
 import { wikiPages } from './wiki/index.js';
-import { hotelPages } from './xdhotel/index.js';
+import { hoplaHotelPages } from './hopla-hotel/index.js';
 
 // Preserve registration order: it also breaks ties in XD Search results.
 export const sitePages = [
@@ -12,5 +12,5 @@ export const sitePages = [
   flashPages,
   videoPages,
   wikiPages,
-  hotelPages,
+  hoplaHotelPages,
 ].flat();

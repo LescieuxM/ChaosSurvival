@@ -1,9 +1,9 @@
 import data from './data.json' with { type: 'json' };
-import { HOTEL_URL } from './model.js';
-import { renderHotelRoom } from './render.js';
+import { HOPLA_HOTEL_URL } from './model.js';
+import { renderHoplaHotelRoom } from './render.js';
 
 // A simulated desktop application; rooms and movement stay in the existing renderer.
-export class HotelClient {
+export class HoplaHotelClient {
   constructor(manager, applications, onHome) {
     Object.assign(this, { manager, applications, onHome });
   }
@@ -36,7 +36,7 @@ export class HotelClient {
       const link = event.target.closest('[data-browser-link]');
       if (!link) return;
       event.preventDefault();
-      if (link.dataset.browserLink === HOTEL_URL) this.onHome?.();
+      if (link.dataset.browserLink === HOPLA_HOTEL_URL) this.onHome?.();
     };
     element.addEventListener('click', instance.home);
     // movementBounds already accounts for the real desktop and taskbar, even in arcade mode.
@@ -85,13 +85,13 @@ export class HotelClient {
       },
       navigate: (url) => {
         const destination = [data.room, ...data.rooms].find(
-          (item) => url === `${HOTEL_URL}salle/${item.id}`,
+          (item) => url === `${HOPLA_HOTEL_URL}salle/${item.id}`,
         );
         if (destination) this.showRoom(destination);
       },
     };
     instance.element
       .querySelector('.window-body')
-      .replaceChildren(renderHotelRoom(context, data, room));
+      .replaceChildren(renderHoplaHotelRoom(context, data, room));
   }
 }

@@ -1,4 +1,4 @@
-.xdhotel {
+.hopla-hotel {
   padding: 12px;
   background: #e4eef4;
   color: #23364c;
@@ -7,7 +7,7 @@
     sans-serif;
   min-height: 100%;
 }
-.xdhotel a {
+.hopla-hotel a {
   color: #195a92;
   text-decoration: underline;
 }
@@ -32,7 +32,7 @@
   text-decoration: none;
   letter-spacing: -1px;
 }
-.xdhotel h1 {
+.hopla-hotel h1 {
   color: #fff5be;
   font:
     bold 23px Tahoma,
@@ -41,7 +41,7 @@
   letter-spacing: 0;
   line-height: 1.3;
 }
-.xdhotel h2 {
+.hopla-hotel h2 {
   color: #23364c;
   font:
     bold 16px Tahoma,
@@ -85,7 +85,7 @@
   height: 50px;
   background-color: #935771;
 }
-.xdhotel .hotel-enter {
+.hopla-hotel .hotel-enter {
   display: inline-block;
   margin-top: 14px;
   padding: 10px 22px;

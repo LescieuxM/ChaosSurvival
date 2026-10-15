@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { hotelData, hotelRooms } from '../src/browser/sites/xdhotel/index.js';
-import conversations from '../src/browser/sites/xdhotel/conversations.json' with { type: 'json' };
+import { hoplaHotelData, hoplaHotelRooms } from '../src/browser/sites/hopla-hotel/index.js';
+import conversations from '../src/browser/sites/hopla-hotel/conversations.json' with { type: 'json' };
 import {
-  HOTEL_URL,
+  HOPLA_HOTEL_URL,
   VIEW_WIDTH,
   VIEW_HEIGHT,
   project,
@@ -13,22 +13,22 @@ import {
   RoomWalk,
   furnitureCells,
   inside,
-} from '../src/browser/sites/xdhotel/model.js';
-import { depthOrder } from '../src/browser/sites/xdhotel/draw.js';
-import { renderHotelRoom } from '../src/browser/sites/xdhotel/render.js';
-import { HotelClient } from '../src/browser/sites/xdhotel/client.js';
+} from '../src/browser/sites/hopla-hotel/model.js';
+import { depthOrder } from '../src/browser/sites/hopla-hotel/draw.js';
+import { renderHoplaHotelRoom } from '../src/browser/sites/hopla-hotel/render.js';
+import { HoplaHotelClient } from '../src/browser/sites/hopla-hotel/client.js';
 import { WindowManager } from '../src/ui/windows.js';
 import { localPages } from '../src/browser/registry.js';
 import { BrowserSession } from '../src/browser/session.js';
-const room = hotelData.room;
+const room = hoplaHotelData.room;
 
-test('legacy Hotel URLs resolve to the new site, including saved histories, without admitting lookalike domains', () => {
+test('Hopla Hotel resolves canonical and legacy URLs, including saved histories, without admitting lookalike domains', () => {
   for (const old of ['xdhotel.fr', 'https://www.xdhotel.fr/'])
-    assert.equal(localPages.resolve(old, {}).page.url, HOTEL_URL);
+    assert.equal(localPages.resolve(old, {}).page.url, HOPLA_HOTEL_URL);
   const oldRoom = 'http://www.xdhotel.fr/salle/hall?test=1';
   const resolved = localPages.resolve(oldRoom, {});
-  assert.equal(resolved.page.url, `${HOTEL_URL}salle/hall`);
-  assert.equal(resolved.url.href, `${HOTEL_URL}salle/hall?test=1`);
+  assert.equal(resolved.page.url, `${HOPLA_HOTEL_URL}salle/hall`);
+  assert.equal(resolved.url.href, `${HOPLA_HOTEL_URL}salle/hall?test=1`);
   const saved = {
     version: 1,
     active: 'old',
@@ -52,16 +52,16 @@ test('legacy Hotel URLs resolve to the new site, including saved histories, with
     assert.ok(localPages.resolve(address, {}).error);
   const entries = localPages.sites({}).filter((page) => /hotel/.test(page.url));
   assert.equal(entries.length, 1);
-  assert.equal(entries[0].url, HOTEL_URL);
+  assert.equal(entries[0].url, HOPLA_HOTEL_URL);
 });
 
-test('Hotel registration uses only local routes and existing directory/search', () => {
-  assert.equal(localPages.resolve('www.hoplahotel.fr', {}).page.url, HOTEL_URL);
-  assert.ok(localPages.resolve(`${HOTEL_URL}salle/hall`, {}).page);
-  assert.equal(localPages.resolve(`${HOTEL_URL}salle/unknown`, {}).error, 'not-found');
-  assert.ok(localPages.sites({}).some((page) => page.url === HOTEL_URL));
+test('Hopla Hotel registration uses its canonical host and existing directory/search', () => {
+  assert.equal(localPages.resolve('www.hoplahotel.fr', {}).page.url, HOPLA_HOTEL_URL);
+  assert.ok(localPages.resolve(`${HOPLA_HOTEL_URL}salle/hall`, {}).page);
+  assert.equal(localPages.resolve(`${HOPLA_HOTEL_URL}salle/unknown`, {}).error, 'not-found');
+  assert.ok(localPages.sites({}).some((page) => page.url === HOPLA_HOTEL_URL));
   for (const query of ['hopla hotel', 'hotel virtuel'])
-    assert.ok(localPages.search(query, {}).some((page) => page.url === HOTEL_URL));
+    assert.ok(localPages.search(query, {}).some((page) => page.url === HOPLA_HOTEL_URL));
   assert.equal(room.width, 10);
   assert.equal(room.height, 10);
   assert.equal(room.npcs[0].name, 'ReceptionHotel');
@@ -70,12 +70,12 @@ test('Hotel registration uses only local routes and existing directory/search', 
 
 test('five data-driven rooms have unique IDs, unoccupied spawns, bounded obstacles and connected walkable areas', () => {
   assert.deepEqual(
-    hotelRooms.map((room) => room.name),
+    hoplaHotelRooms.map((room) => room.name),
     ["Hall de l'hôtel", 'Café Hopla', 'Discothèque', 'Salon détente', 'Salle de jeux'],
   );
-  assert.equal(new Set(hotelRooms.map((room) => room.id)).size, 5);
-  for (const definition of hotelRooms) {
-    const route = localPages.resolve(`${HOTEL_URL}salle/${definition.id}`, {});
+  assert.equal(new Set(hoplaHotelRooms.map((room) => room.id)).size, 5);
+  for (const definition of hoplaHotelRooms) {
+    const route = localPages.resolve(`${HOPLA_HOTEL_URL}salle/${definition.id}`, {});
     assert.ok(route.page);
     assert.equal(route.page.preserveOnTabSwitch, undefined);
     assert.equal(
@@ -318,12 +318,15 @@ function dom(t) {
       const tasks = [...frames.values()];
       frames.clear();
       for (const fn of tasks) fn(now);
-      const due = [...timers.entries()].filter(([, timer]) => timer.due <= now);
-      for (const [id, timer] of due) {
-        if (!timers.has(id)) continue;
-        timers.delete(id);
-        timer.fn();
-      }
+      let due;
+      do {
+        due = [...timers.entries()].filter(([, timer]) => timer.due <= now);
+        for (const [id, timer] of due) {
+          if (!timers.has(id)) continue;
+          timers.delete(id);
+          timer.fn();
+        }
+      } while (due.length);
     },
   };
 }
@@ -332,7 +335,7 @@ const walkTree = (node) => [node, ...node.children.flatMap(walkTree)];
 test('site and legacy room pages only request the desktop client and never mount it in the browser', (t) => {
   dom(t);
   let launches = 0;
-  for (const address of [HOTEL_URL, ...hotelRooms.map((room) => `${HOTEL_URL}salle/${room.id}`)]) {
+  for (const address of [HOPLA_HOTEL_URL, ...hoplaHotelRooms.map((room) => `${HOPLA_HOTEL_URL}salle/${room.id}`)]) {
     const root = localPages.resolve(address, {}).page.render({ openHotel: () => launches++ });
     assert.equal(root.querySelector('.hotel-canvas'), undefined);
     assert.equal(root.querySelector('.hotel-intro'), undefined);
@@ -344,9 +347,9 @@ test('site and legacy room pages only request the desktop client and never mount
   assert.equal(launches, 6);
 });
 
-test('desktop Hotel is a singleton, fits actual bounds, preserves minimized motion and cleans up on close/clear', (t) => {
+test('Hopla Hotel is a singleton with the canonical app ID and cleans up on close/clear', (t) => {
   const clock = dom(t);
-  const original = structuredClone(hotelData);
+  const original = structuredClone(hoplaHotelData);
   const bounds = { minX: 0, minY: -120, maxX: 1000, maxY: 580 };
   const manager = {
     windows: new Map(),
@@ -393,8 +396,10 @@ test('desktop Hotel is a singleton, fits actual bounds, preserves minimized moti
     },
   };
   let homes = 0;
-  const client = new HotelClient(manager, applications, () => homes++);
+  const client = new HoplaHotelClient(manager, applications, () => homes++);
   const first = client.open();
+  assert.ok(applications.instances.has('hopla-hotel'));
+  assert.equal(applications.instances.size, 1);
   assert.equal(first.element.style.width, '940px');
   assert.equal(first.element.style.height, '658px');
   assert.equal(first.element.style.top, '-99px');
@@ -402,10 +407,10 @@ test('desktop Hotel is a singleton, fits actual bounds, preserves minimized moti
   assert.equal(manager.windows.size, 1);
   const canvas = () => first.element.querySelector('.hotel-canvas');
   const move = () => {
-    const point = project(8, 7, hotelData.room);
+    const point = project(8, 7, hoplaHotelData.room);
     canvas().handlers.click({ button: 0, clientX: 20 + point.x * 2, clientY: 30 + point.y * 2 });
   };
-  for (const room of hotelRooms) {
+  for (const room of hoplaHotelRooms) {
     client.showRoom(room);
     assert.deepEqual(clock.position(canvas()), project(...room.spawn, room));
     move();
@@ -422,7 +427,7 @@ test('desktop Hotel is a singleton, fits actual bounds, preserves minimized moti
     assert.deepEqual(clock.position(canvas()), project(8, 7, room));
   }
   first.element.handlers.click({
-    target: { closest: () => ({ dataset: { browserLink: HOTEL_URL } }) },
+    target: { closest: () => ({ dataset: { browserLink: HOPLA_HOTEL_URL } }) },
     preventDefault() {},
   });
   assert.equal(homes, 1);
@@ -437,7 +442,7 @@ test('desktop Hotel is a singleton, fits actual bounds, preserves minimized moti
   assert.notEqual(second, first);
   assert.deepEqual(
     clock.position(second.element.querySelector('.hotel-canvas')),
-    project(...hotelData.room.spawn, hotelData.room),
+    project(...hoplaHotelData.room.spawn, hoplaHotelData.room),
   );
   WindowManager.prototype.clear.call(manager);
   assert.equal(client.instance, null);
@@ -445,26 +450,26 @@ test('desktop Hotel is a singleton, fits actual bounds, preserves minimized moti
   assert.equal(clock.listeners.size, 0);
   assert.equal(clock.timers.size, 0);
   assert.equal(applications.instances.size, 0);
-  assert.deepEqual(hotelData, original);
+  assert.deepEqual(hoplaHotelData, original);
 });
 test('room instances have independent motion/bubbles; scaled clicks, visibility and disposal clean up all resources', (t) => {
   const clock = dom(t);
   let disposeA, disposeB;
-  const a = renderHotelRoom(
+  const a = renderHoplaHotelRoom(
     {
       onDispose: (fn) => {
         disposeA = fn;
       },
     },
-    hotelData,
+    hoplaHotelData,
   );
-  const b = renderHotelRoom(
+  const b = renderHoplaHotelRoom(
     {
       onDispose: (fn) => {
         disposeB = fn;
       },
     },
-    hotelData,
+    hoplaHotelData,
   );
   const find = (root, cls) => walkTree(root).find((item) => item.className === cls);
   const canvas = find(a, 'hotel-canvas');
@@ -520,13 +525,13 @@ test('navigator opens/closes, cancels a moving instance on room changes and repe
     },
     navigate(url) {
       cleanup();
-      const definition = hotelRooms.find((item) => url === `${HOTEL_URL}salle/${item.id}`);
-      active = renderHotelRoom(context, hotelData, definition);
+      const definition = hoplaHotelRooms.find((item) => url === `${HOPLA_HOTEL_URL}salle/${item.id}`);
+      active = renderHoplaHotelRoom(context, hoplaHotelData, definition);
     },
   };
-  active = renderHotelRoom(context, hotelData);
+  active = renderHoplaHotelRoom(context, hoplaHotelData);
   const find = (cls) => walkTree(active).find((item) => item.className === cls);
-  for (const definition of [...hotelRooms, ...hotelRooms].slice(1)) {
+  for (const definition of [...hoplaHotelRooms, ...hoplaHotelRooms].slice(1)) {
     const point = project(8, 7, room);
     find('hotel-canvas').handlers.click({
       button: 0,
@@ -578,25 +583,36 @@ test('navigator opens/closes, cancels a moving instance on room changes and repe
 
 test('all five rooms show attributed ambient speech without clicks and dispose their scheduled work', (t) => {
   const clock = dom(t);
-  for (const definition of hotelRooms) {
+  const originalRandom = Math.random;
+  Math.random = () => 0.5;
+  t.after(() => {
+    Math.random = originalRandom;
+  });
+  for (const definition of hoplaHotelRooms) {
     let cleanup;
-    const root = renderHotelRoom(
+    const root = renderHoplaHotelRoom(
       {
         onDispose: (fn) => {
           cleanup = fn;
         },
       },
-      hotelData,
+      hoplaHotelData,
       definition,
     );
     const find = (cls) => walkTree(root).find((item) => item.className === cls);
+    const spontaneousBubble = () =>
+      walkTree(root).find((item) => {
+        if (item.className !== 'hotel-bubble') return false;
+        const speaker = definition.npcs.find((npc) => npc.id === item.dataset.speaker);
+        return speaker?.behavior?.messages?.includes(item.children[1].textContent);
+      });
     const immediate = ['hall', 'discotheque'].includes(definition.id);
     assert.equal(Boolean(find('hotel-bubble')), immediate);
     assert.equal(find('hotel-nickname'), undefined);
     const start = performance.now();
-    for (let elapsed = 100; elapsed <= 10000 && !find('hotel-bubble'); elapsed += 100)
+    for (let elapsed = 100; elapsed <= 35000 && !spontaneousBubble(); elapsed += 100)
       clock.step(start + elapsed);
-    const bubble = find('hotel-bubble');
+    const bubble = spontaneousBubble();
     assert.ok(bubble, `${definition.id}: spontaneous message`);
     assert.equal(bubble.parent.className, 'hotel-messages');
     assert.equal(bubble.style.left, undefined);
@@ -616,7 +632,7 @@ test('all five rooms show attributed ambient speech without clicks and dispose t
 test('receptionist presents the two welcome lines in order and only once per room visit', (t) => {
   const clock = dom(t);
   let cleanup;
-  const root = renderHotelRoom({ onDispose: (fn) => (cleanup = fn) }, hotelData);
+  const root = renderHoplaHotelRoom({ onDispose: (fn) => (cleanup = fn) }, hoplaHotelData);
   const find = (cls) => walkTree(root).find((item) => item.className === cls);
   const reception = project(...room.npcs[0].position, room);
   const clickReception = () => find('hotel-canvas').handlers.click({
@@ -643,14 +659,14 @@ test('hall and disco open with an in-progress exchange and continue it without a
   const clock = dom(t);
   for (const id of ['hall', 'discotheque']) {
     let cleanup;
-    const definition = hotelRooms.find((candidate) => candidate.id === id);
-    const root = renderHotelRoom({ onDispose: (fn) => (cleanup = fn) }, hotelData, definition);
+    const definition = hoplaHotelRooms.find((candidate) => candidate.id === id);
+    const root = renderHoplaHotelRoom({ onDispose: (fn) => (cleanup = fn) }, hoplaHotelData, definition);
     const messages = () => walkTree(root)
       .filter((item) => item.className === 'hotel-message-text')
       .map((item) => item.textContent);
     const opening = conversations.find((conversation) => conversation.room === id && conversation.opening);
     assert.deepEqual(messages(), [opening.messages[0].text]);
-    clock.step(performance.now() + opening.messages[1].delay);
+    clock.step(performance.now() + opening.messages[1].delay + 1);
     assert.deepEqual(messages(), [opening.messages[0].text, opening.messages[1].text]);
     cleanup();
   }
@@ -659,13 +675,13 @@ test('hall and disco open with an in-progress exchange and continue it without a
 test('floating navigator drag and resize stay in the scene and cleanup removes its handlers', (t) => {
   const clock = dom(t);
   let cleanup;
-  const root = renderHotelRoom(
+  const root = renderHoplaHotelRoom(
     {
       onDispose: (fn) => {
         cleanup = fn;
       },
     },
-    hotelData,
+    hoplaHotelData,
   );
   const find = (cls) => walkTree(root).find((item) => item.className === cls);
   assert.equal(find('hotel-header'), undefined);
@@ -743,7 +759,7 @@ test('floating navigator drag and resize stay in the scene and cleanup removes i
 test('early ambient DOM speech resumes after navigator pause and client restoration without extra timers', (t) => {
   const clock = dom(t);
   let cleanup, resume;
-  const root = renderHotelRoom(
+  const root = renderHoplaHotelRoom(
     {
       onDispose: (fn) => {
         cleanup = fn;
@@ -752,7 +768,7 @@ test('early ambient DOM speech resumes after navigator pause and client restorat
         resume = fn;
       },
     },
-    hotelData,
+    hoplaHotelData,
   );
   const find = (cls) => walkTree(root).find((item) => item.className === cls);
   const start = performance.now();
@@ -786,7 +802,7 @@ test('early ambient DOM speech resumes after navigator pause and client restorat
 test('retained room stops frames while another tab is active, ignores visibility wakeups and resumes its own position', (t) => {
   const clock = dom(t);
   let cleanup, resume;
-  const root = renderHotelRoom(
+  const root = renderHoplaHotelRoom(
     {
       onDispose(fn) {
         cleanup = fn;
@@ -795,7 +811,7 @@ test('retained room stops frames while another tab is active, ignores visibility
         resume = fn;
       },
     },
-    hotelData,
+    hoplaHotelData,
   );
   const find = (cls) => walkTree(root).find((item) => item.className === cls);
   assert.equal(find('hotel-nickname'), undefined);
