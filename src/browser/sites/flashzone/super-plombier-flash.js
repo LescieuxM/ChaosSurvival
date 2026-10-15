@@ -1,4 +1,10 @@
 import { textElement as node } from '../../dom.js';
+import { createGameMusic } from '../../../audio/game-music.js';
+
+const plumberMusicUrl = new URL(
+  '../../../../assets/moodmode-retro-game-arcade-236133.mp3',
+  import.meta.url,
+).href;
 import {
   PLUMBER_GROUND,
   PLUMBER_GOAL_X,
@@ -55,6 +61,7 @@ export function renderSuperPlombierFlash({ progression, onDispose, onResume, onS
 
   const context = canvas.getContext('2d');
   const round = new SuperPlombierRound();
+  const music = createGameMusic(plumberMusicUrl);
   const pressed = new Set();
   let frame = null,
     disposed = false,
@@ -165,6 +172,7 @@ export function renderSuperPlombierFlash({ progression, onDispose, onResume, onS
     paused = false;
     pressed.clear();
     round.begin(performance.now());
+    music.start();
     deathCount = round.deaths;
     intro.hidden = true;
     result.hidden = true;
@@ -180,6 +188,7 @@ export function renderSuperPlombierFlash({ progression, onDispose, onResume, onS
     if (!round.won || finished) return false;
     finished = true;
     root.finished = true;
+    music.stop();
     cancelAnimationFrame(frame);
     frame = null;
     result.hidden = false;
@@ -222,6 +231,7 @@ export function renderSuperPlombierFlash({ progression, onDispose, onResume, onS
   function pause() {
     if (paused || disposed) return;
     paused = true;
+    music.pause();
     pressed.clear();
     round.pause(performance.now());
     if (frame !== null) cancelAnimationFrame(frame);
@@ -231,6 +241,7 @@ export function renderSuperPlombierFlash({ progression, onDispose, onResume, onS
     if (!paused || disposed || document.hidden) return;
     round.resume(performance.now());
     paused = false;
+    music.resume();
     if (round.active) frame = requestAnimationFrame(loop);
   }
   const keydown = (event) => {
@@ -254,6 +265,7 @@ export function renderSuperPlombierFlash({ progression, onDispose, onResume, onS
     if (disposed) return;
     pause();
     disposed = true;
+    music.dispose();
     round.stop();
     canvas.removeEventListener('keydown', keydown);
     canvas.removeEventListener('keyup', keyup);

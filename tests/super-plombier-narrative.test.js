@@ -6,6 +6,7 @@ import { DialogueSession, validateDialogue } from '../src/story/dialogue.js';
 import { ConversationThread } from '../src/story/conversation-thread.js';
 import { NarrativeOrchestrator } from '../src/story/narrative-orchestrator.js';
 import { ConversationWindow } from '../src/ui/conversation.js';
+import { createContactAvatar } from '../src/ui/contact-avatar.js';
 
 const read = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8'));
 const story = read('../src/config/story.json');
@@ -594,29 +595,113 @@ test('the second finished conversation starts one rest deadline that survives a 
   }
 });
 
-test('group dialogue authors and order survive thread sync and reload', () => {
-  const { progression } = fixture();
-  const thread = new ConversationThread('plumber-group', progression, () => [
-    definitions['pixelgirl-super-plombier-group'],
-  ]);
-  thread.schedule(definitions['pixelgirl-super-plombier-group'], 10_000);
-  let dueAt = progression.data.dialogues['pixelgirl-super-plombier-group'].receiveDueAt;
-  while (Number.isFinite(dueAt)) {
-    thread.receive(dueAt);
-    dueAt = progression.data.dialogues['pixelgirl-super-plombier-group'].receiveDueAt;
+test('group dialogue keeps its original opening, persists each choice path, and converges at the quiet ending', () => {
+  const definition = definitions['pixelgirl-super-plombier-group'];
+  validateDialogue(definition);
+  const originalOpening = [
+    'COUCOUUUUUUU', '???', 'salut :)', 'voila maintenant vous etes tous la :D',
+    'pk tu fais un groupe mdr', 'parce que jai envie xD', 'argument imparable', 'ptdrrrr',
+  ];
+  const selectedOpeningChoices = [
+    ['on peut juste discuter non ?', 'des mains à la place des pieds', 'vous êtes vraiment débiles mdr'],
+    ['on peut jouer à un truc', 'des pieds à la place des mains', 'moi je suis du côté de luna'],
+    ["c'est toi qui nous as réunis mdr", 'je préfère garder mon corps actuel merci', 'SI'],
+  ];
+  const branchMessages = [
+    ['merci captain obvious', 'MAIS VOUS ETES TOUS OBSEDES PAR LES MAINS'],
+    ['evidemment que tu veux jouer toi', 'imagine jouer a la souris avec un pied'],
+    ['MAIS ARRETEZ DE ME JUGER', 'MAIS LUNAAAA'],
+  ];
+
+  for (let path = 0; path < 3; path++) {
+    const { progression } = fixture();
+    const thread = new ConversationThread('plumber-group', progression, () => [definition]);
+    const session = new DialogueSession(definition, progression);
+    const choices = selectedOpeningChoices[path];
+    let choiceIndex = 0;
+    while (!session.state.finished) {
+      const message = session.nextMessage();
+      if (message) {
+        session.deliver();
+        continue;
+      }
+      if (session.choices.length) {
+        session.offerChoices();
+        const offered = session.choices;
+        const targetText = choices[choiceIndex++];
+        const selected = offered.find((choice) => choice.text === targetText);
+        assert.ok(selected, `Missing ${targetText}; offered: ${offered.map(({ text }) => text).join(' | ')}`);
+        session.choose(selected.id);
+        continue;
+      }
+      if (!session.advance()) break;
+    }
+    thread.sync();
+    assert.equal(session.state.finished, true);
+    assert.equal(choiceIndex, 3);
+    assert.deepEqual(session.state.transcript.slice(0, 8).map(({ text }) => text), originalOpening);
+    assert.ok(session.state.transcript.some(({ text }) => text === branchMessages[path][0]));
+    assert.ok(session.state.transcript.some(({ text }) => text === branchMessages[path][1]));
+    assert.ok(session.state.transcript.some(({ text }) => text === [
+      'on fait de notre mieux :D', 'TRAHISON', 'PTDRRRRRRRRRRR',
+    ][path]));
+    assert.equal(session.state.transcript.at(-1).text, "vous êtes méchants :'(");
+    assert.deepEqual(
+      session.state.transcript.filter(({ speaker }) => speaker === 'player').map(({ text }) => text),
+      choices,
+    );
+    assert.equal(thread.state.history.length, session.state.transcript.length);
+
+    const restored = new ConversationThread('plumber-group', progression, () => [definition]);
+    restored.sync();
+    assert.equal(restored.state.history.length, session.state.transcript.length);
   }
-  assert.equal(progression.data.dialogues['pixelgirl-super-plombier-group'].finished, true);
-  const messages = thread.state.history;
-  assert.equal(messages.length, 8);
+});
+
+test('a saved group opening resumes at the new dialogue without replaying its original messages', () => {
+  const { progression } = fixture();
+  const definition = definitions['pixelgirl-super-plombier-group'];
+  const transcript = definition.nodes.opening.messages.map((message, index) => ({
+    speaker: message.speaker,
+    author: message.author,
+    text: message.text,
+    receivedAt: 1_000 + index,
+  }));
+  progression.data.dialogues[definition.id] = {
+    node: 'opening', cursor: 8, transcript, finished: true, revision: 1,
+  };
+  progression.data.conversations['plumber-group'] = {
+    version: 1,
+    history: transcript.map((message, index) => ({
+      ...message,
+      key: `${definition.id}:1:${index}`,
+      eventId: definition.id,
+    })),
+    unread: [],
+    activeEvent: definition.id,
+    pendingEvents: [],
+  };
+
+  new NarrativeOrchestrator({
+    progression,
+    definitions,
+    dialogueEvents: { update() {}, triggerConnection() {} },
+    getContact: () => null,
+    prepareContact: () => null,
+    showConnectionNotification() {},
+  });
+
+  const saved = progression.data.dialogues[definition.id];
+  assert.equal(saved.revision, 2);
+  assert.equal(saved.node, 'a');
+  assert.equal(saved.cursor, 0);
+  assert.equal(saved.finished, false);
+  assert.equal(saved.transcript.length, 8);
   assert.deepEqual(
-    messages.map(({ author }) => author),
-    definitions['pixelgirl-super-plombier-group'].nodes.opening.messages.map(({ author }) => author),
+    progression.data.conversations['plumber-group'].history.map(({ key }) => key),
+    transcript.map((_, index) => `${definition.id}:2:${index}`),
   );
-  const restored = new ConversationThread('plumber-group', progression, () => [
-    definitions['pixelgirl-super-plombier-group'],
-  ]);
-  restored.sync();
-  assert.equal(restored.state.history.length, 8);
+  assert.ok(progression.data.dialogueArchives[`${definition.id}:1`]);
 });
 
 test('group conversation status keeps the participant list alongside its normal contact profile', () => {
@@ -630,7 +715,34 @@ test('group conversation status keeps the participant list alongside its normal 
   assert.match(status, /Conversation de groupe/);
 });
 
-test('group transcript rendering labels each contact message with its saved author', (t) => {
+test('the group avatar is composed from the three existing character avatars', (t) => {
+  const previous = globalThis.document;
+  globalThis.document = {
+    createElement: (tagName) => ({
+      tagName: tagName.toUpperCase(),
+      attributes: {},
+      children: [],
+      dataset: {},
+      setAttribute(name, value) { this.attributes[name] = value; },
+      append(child) { this.children.push(child); },
+    }),
+  };
+  t.after(() => {
+    if (previous === undefined) delete globalThis.document;
+    else globalThis.document = previous;
+  });
+
+  const avatar = createContactAvatar(definitions['pixelgirl-super-plombier-group'].contact);
+  assert.equal(avatar.className, 'contact-avatar-composition');
+  assert.equal(avatar.attributes.role, 'img');
+  assert.deepEqual(avatar.children.map(({ src, dataset }) => [src, dataset.avatar]), [
+    ['./avatars/pixelgirl.svg', 'pixelgirl'],
+    ['./avatars/turbo.svg', 'turb0'],
+    ['./avatars/luna.svg', 'luna'],
+  ]);
+});
+
+test('group transcript color IDs follow saved authors, while private conversations stay unchanged', (t) => {
   const previous = globalThis.document;
   globalThis.document = {
     createElement: (tagName) => ({
@@ -646,19 +758,39 @@ test('group transcript rendering labels each contact message with its saved auth
     if (previous === undefined) delete globalThis.document;
     else globalThis.document = previous;
   });
-  const rows = [];
-  const view = {
+  const groupRows = [];
+  const groupView = {
     dialogue: definitions['pixelgirl-super-plombier-group'],
-    flow: { append: (row) => rows.push(row) },
+    flow: { append: (row) => groupRows.push(row) },
     scrollLatest() {},
   };
-  ConversationWindow.prototype.appendMessage.call(view, {
-    speaker: 'contact',
-    author: 'Turb0',
-    text: '???',
-  });
-  assert.equal(rows[0].children[0].textContent, 'Turb0 dit :');
-  assert.equal(rows[0].children[1].children[0].textContent, '???');
+  for (const [speaker, author, authorId, label] of [
+    ['contact', 'xX_PixelGirl_Xx', 'pixelgirl', 'xX_PixelGirl_Xx dit :'],
+    ['contact', 'Turb0', 'turbo', 'Turb0 dit :'],
+    ['contact', '°•.LuNa.°•', 'luna', '°•.LuNa.°• dit :'],
+    ['player', undefined, 'player', 'JustMe dit :'],
+  ]) {
+    ConversationWindow.prototype.appendMessage.call(groupView, {
+      speaker, author, text: 'message de test',
+    });
+    const row = groupRows.at(-1);
+    assert.equal(row.dataset.authorId, authorId);
+    assert.equal(row.children[0].textContent, label);
+  }
+  const privateRows = [];
+  ConversationWindow.prototype.appendMessage.call({
+    dialogue: definitions['pixelgirl-smiley-victory'],
+    flow: { append: (row) => privateRows.push(row) },
+    scrollLatest() {},
+  }, { speaker: 'contact', author: 'Turb0', text: 'message privé' });
+  assert.equal(privateRows[0].dataset.authorId, undefined);
+
+  const styles = readFileSync(new URL('../src/styles-story.css', import.meta.url), 'utf8');
+  for (const color of ['#d21883', '#2057c8', '#7950a0', '#252525'])
+    assert.ok(styles.includes(color));
+  assert.match(styles, /\.group-conversation \.conversation-message\[data-author-id\] > p/);
+  assert.doesNotMatch(styles, /\.group-conversation \.conversation-message\[data-author-id\] > small/);
+  assert.match(styles, /\.conversation-message small \{[\s\S]*?color: #8795a5;/);
 });
 
 test('Turbo post-game dialogue preserves its opening and all six choice groups converge on the final line', () => {

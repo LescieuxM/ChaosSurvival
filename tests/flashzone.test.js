@@ -26,6 +26,23 @@ function dom(t) {
     document: globalThis.document,
     request: globalThis.requestAnimationFrame,
     cancel: globalThis.cancelAnimationFrame,
+    Audio: globalThis.Audio,
+  };
+  const audios = [];
+  globalThis.Audio = class {
+    constructor(src) {
+      this.src = src;
+      this.currentTime = 0;
+      this.playCount = 0;
+      this.pauseCount = 0;
+      this.paused = true;
+      this.ended = false;
+      audios.push(this);
+    }
+    play() { this.playCount++; this.paused = false; return Promise.resolve(); }
+    pause() { this.pauseCount++; this.paused = true; }
+    removeAttribute(name) { if (name === 'src') this.src = ''; }
+    load() {}
   };
   globalThis.document = {
     createElement(tag) {
@@ -71,9 +88,11 @@ function dom(t) {
     globalThis.document = previous.document;
     globalThis.requestAnimationFrame = previous.request;
     globalThis.cancelAnimationFrame = previous.cancel;
+    globalThis.Audio = previous.Audio;
   });
   return {
     frames,
+    audios,
     frame(now) {
       const entries = [...frames];
       frames.clear();
@@ -157,31 +176,62 @@ test('only personal best is saved, corrupt scores fall back, restart restores an
   saveBestScore(p, 'bubble-pop', 10);
   assert.equal(bestScore(p, 'bubble-pop'), 10);
 });
-test('actual page play/pop/finish/replay and disposal use isolated animation frames', (t) => {
+test('BubblePop music and pop effects start at their events, overlap, restart and clean up', (t) => {
   const clock = dom(t),
     { p } = fixture();
   let cleanup;
   const route = localPages.resolve(flashCatalog.games[0].route, {});
   const root = route.page.render({ progression: p, onDispose: (fn) => (cleanup = fn) });
   const find = (cls) => walk(root).find((n) => n.className === cls);
+  assert.equal(clock.audios.length, 0);
   assert.equal(clock.frames.size, 0);
   find('bubble-play').handlers.click();
+  assert.equal(clock.audios.length, 1);
+  const music = clock.audios[0];
+  assert.match(music.src, /jakob_welik-roblox-time-to-win-skyline-run-1-442119\.mp3$/);
+  assert.equal(music.loop, true);
+  assert.equal(music.volume, 0.35);
+  assert.equal(music.playCount, 1);
+  assert.equal(clock.audios.length, 1, 'effect audio is lazy until a bubble pops');
   assert.equal(clock.frames.size, 1);
   let bubble = walk(root).find((n) => n.className?.startsWith('bubble-target'));
   assert.ok(bubble);
   bubble.handlers.click();
   assert.equal(find('bubble-stats').children[0].textContent, 'Score : 10');
+  const popEffect = clock.audios[1];
+  assert.ok(popEffect);
+  assert.match(popEffect.src, /cherskis-bubble-popping-3-587265\.mp3$/);
+  assert.equal(popEffect.volume, 0.5);
+  assert.equal(popEffect.playCount, 1);
+  assert.equal(music.playCount, 1, 'popping does not restart the background music');
+  bubble.handlers.click();
+  assert.equal(popEffect.playCount, 1, 'a stale target does not play another effect');
+  clock.frame(performance.now() + 451);
+  const nextBubble = walk(root).find((n) => n.className?.startsWith('bubble-target'));
+  assert.ok(nextBubble);
+  nextBubble.handlers.click();
+  assert.equal(clock.audios.length, 3, 'overlapping pops use separate pool voices');
+  assert.equal(clock.audios[2].playCount, 1);
+  assert.equal(music.playCount, 1);
   clock.frame(performance.now() + 30001);
   assert.equal(clock.frames.size, 0);
   assert.equal(find('bubble-result').hidden, false);
-  assert.equal(bestScore(p, 'bubble-pop'), 10);
+  assert.equal(music.currentTime, 0);
+  assert.equal(popEffect.currentTime, 0, 'finishing the round stops active effects');
+  assert.equal(clock.audios[2].currentTime, 0);
+  assert.equal(bestScore(p, 'bubble-pop'), 20);
   find('bubble-replay').handlers.click();
+  assert.equal(clock.audios.length, 3);
+  assert.equal(music.playCount, 2);
   assert.equal(find('bubble-stats').children[0].textContent, 'Score : 0');
   assert.equal(clock.frames.size, 1);
   cleanup();
   cleanup();
   assert.equal(clock.frames.size, 0);
-  assert.equal(bestScore(p, 'bubble-pop'), 10);
+  assert.equal(music.src, '');
+  assert.equal(popEffect.src, '');
+  assert.equal(clock.audios[2].src, '');
+  assert.equal(bestScore(p, 'bubble-pop'), 20);
   let cleanup2;
   const second = route.page.render({ progression: p, onDispose: (fn) => (cleanup2 = fn) });
   assert.equal(walk(second).find((n) => n.className === 'bubble-intro').hidden, undefined);

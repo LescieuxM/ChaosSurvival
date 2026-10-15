@@ -108,6 +108,21 @@ test('view controls player, finishes on collision, replays and removes frames/li
     doc: globalThis.document,
     raf: globalThis.requestAnimationFrame,
     caf: globalThis.cancelAnimationFrame,
+    Audio: globalThis.Audio,
+  };
+  const audios = [];
+  globalThis.Audio = class {
+    constructor(src) {
+      this.src = src;
+      this.currentTime = 0;
+      this.playCount = 0;
+      this.pauseCount = 0;
+      audios.push(this);
+    }
+    play() { this.playCount++; return Promise.resolve(); }
+    pause() { this.pauseCount++; }
+    removeAttribute(name) { if (name === 'src') this.src = ''; }
+    load() {}
   };
   const frames = new Map(),
     listeners = new Map();
@@ -158,6 +173,7 @@ test('view controls player, finishes on collision, replays and removes frames/li
     globalThis.document = old.doc;
     globalThis.requestAnimationFrame = old.raf;
     globalThis.cancelAnimationFrame = old.caf;
+    globalThis.Audio = old.Audio;
   });
   const walk = (n) => [n, ...n.children.flatMap(walk)];
   let cleanup;
@@ -166,7 +182,14 @@ test('view controls player, finishes on collision, replays and removes frames/li
     .resolve(GAME_URL, {})
     .page.render({ progression: p, onDispose: (fn) => (cleanup = fn) });
   const find = (cls) => walk(root).find((n) => n.className === cls);
+  assert.equal(audios.length, 0, 'opening the game page does not start music');
   find('squares-play').handlers.click();
+  assert.equal(audios.length, 1);
+  const music = audios[0];
+  assert.match(music.src, /9jackjack8-neon-amnesia-club-house-2010-375600\.mp3$/);
+  assert.equal(music.loop, true);
+  assert.equal(music.volume, 0.35);
+  assert.equal(music.playCount, 1);
   assert.equal(frames.size, 1);
   assert.equal(walk(root).filter((n) => n.className === 'squares-enemy').length, 2);
   const arena = find('squares-arena');
@@ -183,18 +206,23 @@ test('view controls player, finishes on collision, replays and removes frames/li
     y = (parseFloat(enemy.style.top) / 100) * 300;
   arena.handlers.pointermove({ clientX: x + 14, clientY: y + 14 });
   assert.equal(find('squares-result').hidden, false);
+  assert.equal(music.currentTime, 0, 'collision stops and rewinds the track');
   assert.equal(frames.size, 0);
   assert.ok(bestTime(p, 'avoid-the-squares') >= 750);
   find('squares-replay').handlers.click();
+  assert.equal(audios.length, 1, 'replay reuses one audio instance');
+  assert.equal(music.playCount, 2);
   assert.equal(find('squares-result').hidden, true);
   document.hidden = true;
   listeners.get('visibilitychange')();
+  assert.equal(music.currentTime, 0, 'abandoning the round stops the track');
   assert.equal(frames.size, 0);
   assert.equal(find('squares-intro').hidden, false);
   document.hidden = false;
   find('squares-play').handlers.click();
   cleanup();
   cleanup();
+  assert.equal(music.src, '', 'leaving the game releases the audio source');
   assert.equal(frames.size, 0);
   assert.equal(listeners.size, 0);
   assert.equal(arena.handlers.pointermove, undefined);

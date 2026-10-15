@@ -1,7 +1,7 @@
 {
   "id": "pixelgirl-super-plombier-group",
   "version": 1,
-  "revision": 1,
+  "revision": 2,
   "contact": {
     "id": "plumber-group",
     "name": "PixelGirl, Turb0 et Luna",
@@ -26,7 +26,158 @@
         { "speaker": "contact", "author": "°•.LuNa.°•", "text": "argument imparable", "delayMs": 700, "typingMs": 400 },
         { "speaker": "contact", "author": "Turb0", "text": "ptdrrrr", "delayMs": 600, "typingMs": 350 }
       ],
-      "end": true
-    }
+      "next": "a"
+    },
+    "a": {
+      "messages": [
+        { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "BON", "delayMs": 1100, "typingMs": 700 },
+        { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "on fait quoi maintenant", "delayMs": 350, "typingMs": 500 },
+        { "speaker": "contact", "author": "Turb0", "text": "bah jsp c'est toi qui nous a mis la", "delayMs": 450, "typingMs": 450 },
+        { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "OUI BAH", "delayMs": 300, "typingMs": 280 },
+        { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "j'avais pas prévu la suite", "delayMs": 280, "typingMs": 380 },
+        { "speaker": "contact", "author": "°•.LuNa.°•", "text": "ça se voit", "delayMs": 700, "typingMs": 650 },
+        { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "OHHHHHH", "delayMs": 300, "typingMs": 250 },
+        { "speaker": "contact", "author": "Turb0", "text": "MDRRRRR", "delayMs": 250, "typingMs": 220 }
+      ],
+      "next": "b"
+    },
+    "b": {
+      "messages": [
+        { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "bon allez faut trouver un truc a faire", "delayMs": 650, "typingMs": 650 },
+        { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "des idées ????", "delayMs": 300, "typingMs": 350 }
+      ],
+      "choices": [
+        { "id": "just-talk", "text": "on peut juste discuter non ?", "next": "b-talk" },
+        { "id": "play-something", "text": "on peut jouer à un truc", "next": "b-play" },
+        { "id": "you-made-group", "text": "c'est toi qui nous as réunis mdr", "next": "b-blame" }
+      ]
+    },
+    "b-talk": { "messages": [
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "OUIIII", "delayMs": 350, "typingMs": 300 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "mais faut parler alors xD", "delayMs": 250, "typingMs": 400 },
+      { "speaker": "contact", "author": "Turb0", "text": "merci captain obvious", "delayMs": 500, "typingMs": 450 }
+    ], "next": "c" },
+    "b-play": { "messages": [
+      { "speaker": "contact", "author": "Turb0", "text": "AH", "delayMs": 350, "typingMs": 180 },
+      { "speaker": "contact", "author": "Turb0", "text": "ENFIN une bonne idée", "delayMs": 220, "typingMs": 300 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "evidemment que tu veux jouer toi", "delayMs": 500, "typingMs": 450 }
+    ], "next": "c" },
+    "b-blame": { "messages": [
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "MAIS ARRETEZ DE ME JUGER", "delayMs": 350, "typingMs": 500 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "xDDDD", "delayMs": 250, "typingMs": 250 }
+    ], "next": "c" },
+    "c": { "messages": [
+      { "speaker": "contact", "author": "Turb0", "text": "sinon j'ai trouvé un jeu trop bien", "delayMs": 750, "typingMs": 500 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "NON", "delayMs": 350, "typingMs": 200 },
+      { "speaker": "contact", "author": "Turb0", "text": "???", "delayMs": 240, "typingMs": 220 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "la derniere fois ton jeu il a fait planter mon navigateur", "delayMs": 420, "typingMs": 650 },
+      { "speaker": "contact", "author": "Turb0", "text": "c'était pas ma faute", "delayMs": 400, "typingMs": 400 },
+      { "speaker": "contact", "author": "°•.LuNa.°•", "text": "c'était un peu ta faute", "delayMs": 850, "typingMs": 720 },
+      { "speaker": "contact", "author": "Turb0", "text": "MAIS VOUS ETES CONTRE MOI OU QUOI", "delayMs": 300, "typingMs": 380 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "oui :D", "delayMs": 250, "typingMs": 250 }
+    ], "next": "d" },
+    "d": { "messages": [
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "ATTENDEZ", "delayMs": 750, "typingMs": 500 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "question tres importante", "delayMs": 280, "typingMs": 320 },
+      { "speaker": "contact", "author": "Turb0", "text": "oh non", "delayMs": 450, "typingMs": 300 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "vous preferez avoir", "delayMs": 600, "typingMs": 400 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "des mains a la place des pieds", "delayMs": 280, "typingMs": 360 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "OU", "delayMs": 220, "typingMs": 180 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "des pieds a la place des mains", "delayMs": 250, "typingMs": 360 },
+      { "speaker": "contact", "author": "Turb0", "text": "mais ??????", "delayMs": 420, "typingMs": 340 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "REPONDS", "delayMs": 280, "typingMs": 260 },
+      { "speaker": "contact", "author": "Turb0", "text": "des mains a la place des pieds", "delayMs": 480, "typingMs": 380 },
+      { "speaker": "contact", "author": "Turb0", "text": "comme ça je peux jouer a deux jeux en meme temps", "delayMs": 250, "typingMs": 450 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "PTDRRRRRRRRR", "delayMs": 300, "typingMs": 320 },
+      { "speaker": "contact", "author": "°•.LuNa.°•", "text": "tu pourrais surtout marcher sur ton clavier", "delayMs": 900, "typingMs": 700 },
+      { "speaker": "contact", "author": "Turb0", "text": "ouais bon", "delayMs": 400, "typingMs": 330 },
+      { "speaker": "contact", "author": "Turb0", "text": "ya des risques", "delayMs": 220, "typingMs": 300 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "ET TOI ???", "delayMs": 500, "typingMs": 350 }
+    ], "choices": [
+      { "id": "hands-for-feet", "text": "des mains à la place des pieds", "next": "d-hands" },
+      { "id": "feet-for-hands", "text": "des pieds à la place des mains", "next": "d-feet" },
+      { "id": "keep-body", "text": "je préfère garder mon corps actuel merci", "next": "d-keep" }
+    ] },
+    "d-hands": { "messages": [
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "MAIS VOUS ETES TOUS OBSEDES PAR LES MAINS", "delayMs": 400, "typingMs": 500 },
+      { "speaker": "contact", "author": "Turb0", "text": "les mains c'est le futur", "delayMs": 420, "typingMs": 400 }
+    ], "next": "e" },
+    "d-feet": { "messages": [
+      { "speaker": "contact", "author": "Turb0", "text": "imagine jouer a la souris avec un pied", "delayMs": 420, "typingMs": 430 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "AHAHAHAHAHA", "delayMs": 320, "typingMs": 350 }
+    ], "next": "e" },
+    "d-keep": { "messages": [
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "REPONSE INTERDITE", "delayMs": 360, "typingMs": 350 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "faut choisir !!!", "delayMs": 240, "typingMs": 300 },
+      { "speaker": "contact", "author": "°•.LuNa.°•", "text": "je vote pour garder mes mains aussi", "delayMs": 800, "typingMs": 720 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "MAIS LUNAAAA", "delayMs": 300, "typingMs": 300 }
+    ], "next": "e" },
+    "e": { "messages": [
+      { "speaker": "contact", "author": "Turb0", "text": "attendez j'ai une idée", "delayMs": 900, "typingMs": 500 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "oh non pas toi aussi", "delayMs": 450, "typingMs": 420 },
+      { "speaker": "contact", "author": "Turb0", "text": "on pourrait envoyer des chips par mail", "delayMs": 650, "typingMs": 550 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "????????", "delayMs": 320, "typingMs": 300 },
+      { "speaker": "contact", "author": "Turb0", "text": "en pièce jointe", "delayMs": 350, "typingMs": 320 },
+      { "speaker": "contact", "author": "°•.LuNa.°•", "text": "ça risque d'être compressé", "delayMs": 1000, "typingMs": 800 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "PTDRRRRRRR", "delayMs": 1100, "typingMs": 700 },
+      { "speaker": "contact", "author": "Turb0", "text": "MDRRRRRRRRR", "delayMs": 450, "typingMs": 420 }
+    ], "next": "f" },
+    "f": { "messages": [
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "turbo", "delayMs": 1600, "typingMs": 350 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "TURBO", "delayMs": 3000, "typingMs": 500 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "TURBOOOOOOOOO", "delayMs": 3000, "typingMs": 900 },
+      { "speaker": "contact", "author": "Turb0", "text": "QUOI", "delayMs": 3200, "typingMs": 300 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "rien :3", "delayMs": 300, "typingMs": 280 },
+      { "speaker": "contact", "author": "Turb0", "text": "...", "delayMs": 450, "typingMs": 250 },
+      { "speaker": "contact", "author": "°•.LuNa.°•", "text": "magnifique", "delayMs": 950, "typingMs": 750 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "hihihihi", "delayMs": 300, "typingMs": 300 },
+      { "speaker": "contact", "author": "Turb0", "text": "jte déteste", "delayMs": 450, "typingMs": 350 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "moi aussi jtm <3", "delayMs": 300, "typingMs": 350 }
+    ], "next": "g" },
+    "g": { "messages": [
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "vous savez quoi", "delayMs": 1000, "typingMs": 650 },
+      { "speaker": "contact", "author": "Turb0", "text": "non", "delayMs": 450, "typingMs": 280 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "bah moi non plus", "delayMs": 350, "typingMs": 300 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "j'ai oublié ce que je voulais dire", "delayMs": 250, "typingMs": 380 },
+      { "speaker": "contact", "author": "Turb0", "text": "ptdrrrrrr", "delayMs": 500, "typingMs": 420 },
+      { "speaker": "contact", "author": "°•.LuNa.°•", "text": "ça arrive", "delayMs": 850, "typingMs": 700 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "MERCI LUNA", "delayMs": 300, "typingMs": 300 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "AU MOINS UNE PERSONNE GENTILLE ICI", "delayMs": 260, "typingMs": 430 },
+      { "speaker": "contact", "author": "Turb0", "text": "eh oh", "delayMs": 400, "typingMs": 300 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "toi t'es méchant", "delayMs": 300, "typingMs": 350 },
+      { "speaker": "contact", "author": "Turb0", "text": "c'est faux", "delayMs": 350, "typingMs": 350 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "SI", "delayMs": 280, "typingMs": 220 },
+      { "speaker": "contact", "author": "Turb0", "text": "NON", "delayMs": 250, "typingMs": 200 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "SI", "delayMs": 260, "typingMs": 200 },
+      { "speaker": "contact", "author": "Turb0", "text": "NON", "delayMs": 250, "typingMs": 200 },
+      { "speaker": "contact", "author": "°•.LuNa.°•", "text": "vous avez 5 ans", "delayMs": 1200, "typingMs": 950 },
+      { "speaker": "contact", "author": "Turb0", "text": "elle a commencé", "delayMs": 400, "typingMs": 360 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "AHAHAHAHAHAHA", "delayMs": 300, "typingMs": 400 }
+    ], "choices": [
+      { "id": "you-are-ridiculous", "text": "vous êtes vraiment débiles mdr", "next": "g-ridiculous" },
+      { "id": "side-with-luna", "text": "moi je suis du côté de luna", "next": "g-luna" },
+      { "id": "si", "text": "SI", "next": "g-si" }
+    ] },
+    "g-ridiculous": { "messages": [
+      { "speaker": "contact", "author": "Turb0", "text": "merci c'est gentil", "delayMs": 400, "typingMs": 380 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "on fait de notre mieux :D", "delayMs": 350, "typingMs": 330 }
+    ], "next": "h" },
+    "g-luna": { "messages": [
+      { "speaker": "contact", "author": "°•.LuNa.°•", "text": "sage décision", "delayMs": 600, "typingMs": 600 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "TRAHISON", "delayMs": 350, "typingMs": 300 }
+    ], "next": "h" },
+    "g-si": { "messages": [
+      { "speaker": "contact", "author": "Turb0", "text": "NON", "delayMs": 300, "typingMs": 220 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "PTDRRRRRRRRRRR", "delayMs": 280, "typingMs": 350 }
+    ], "next": "h" },
+    "h": { "messages": [
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "bon", "delayMs": 1300, "typingMs": 450 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "j'ai une idée", "delayMs": 320, "typingMs": 360 },
+      { "speaker": "contact", "author": "Turb0", "text": "oh non", "delayMs": 400, "typingMs": 300 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "MAIS JAI ENCORE RIEN DIT", "delayMs": 300, "typingMs": 380 },
+      { "speaker": "contact", "author": "°•.LuNa.°•", "text": "justement", "delayMs": 800, "typingMs": 650 },
+      { "speaker": "contact", "author": "Turb0", "text": "ptdrrrr", "delayMs": 400, "typingMs": 350 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "vous êtes méchants :'(", "delayMs": 350, "typingMs": 400 }
+    ], "end": true }
   }
 }

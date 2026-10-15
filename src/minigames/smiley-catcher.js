@@ -1,4 +1,10 @@
 import { smileyIcon } from './smiley-icons.js';
+import { createGameMusic } from '../audio/game-music.js';
+
+const smileyMusicUrl = new URL(
+  '../../assets/djartmusic-i-love-my-8-bit-game-console-301272.mp3',
+  import.meta.url,
+).href;
 
 export class SmileyCatcher {
   constructor(definition, manager, sounds, onComplete) {
@@ -6,6 +12,7 @@ export class SmileyCatcher {
     this.manager = manager;
     this.sounds = sounds;
     this.onComplete = onComplete;
+    this.music = createGameMusic(smileyMusicUrl);
     this.elapsed = 0;
     this.score = 0;
     this.combo = 0;
@@ -56,11 +63,14 @@ export class SmileyCatcher {
       this.resetRound();
       this.spawn();
       this.render();
+      this.music.start();
       this.startLoop();
     });
     this.element.querySelector('.flash-pause').addEventListener('click', (event) => {
       this.paused = !this.paused;
       event.target.textContent = this.paused ? 'Reprendre' : 'Pause';
+      if (this.paused) this.music.pause();
+      else this.music.resume();
     });
     this.element.querySelector('.flash-rules').addEventListener('click', () => this.showRules?.());
     this.resetRound();
@@ -69,6 +79,7 @@ export class SmileyCatcher {
     };
     this.spawn();
     this.render();
+    this.music.start();
     this.startLoop();
   }
   startLoop() {
@@ -141,6 +152,7 @@ export class SmileyCatcher {
   finish() {
     if (!this.element?.isConnected || this.finished) return;
     this.finished = true;
+    this.music.stop();
     cancelAnimationFrame(this.frame);
     document.removeEventListener('visibilitychange', this.onVisibility);
     this.elapsed = this.definition.durationSeconds;
@@ -153,6 +165,7 @@ export class SmileyCatcher {
     this.onComplete({ score: this.score, duration: this.elapsed });
   }
   dispose() {
+    this.music.dispose();
     cancelAnimationFrame(this.frame);
     document.removeEventListener('visibilitychange', this.onVisibility);
     this.targets = [];

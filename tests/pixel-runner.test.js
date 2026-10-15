@@ -97,6 +97,21 @@ function dom(t) {
     doc: globalThis.document,
     raf: globalThis.requestAnimationFrame,
     caf: globalThis.cancelAnimationFrame,
+    Audio: globalThis.Audio,
+  };
+  const audios = [];
+  globalThis.Audio = class {
+    constructor(src) {
+      this.src = src;
+      this.currentTime = 0;
+      this.playCount = 0;
+      this.pauseCount = 0;
+      audios.push(this);
+    }
+    play() { this.playCount++; return Promise.resolve(); }
+    pause() { this.pauseCount++; }
+    removeAttribute(name) { if (name === 'src') this.src = ''; }
+    load() {}
   };
   const frames = new Map(),
     listeners = new Map();
@@ -151,10 +166,12 @@ function dom(t) {
     globalThis.document = previous.doc;
     globalThis.requestAnimationFrame = previous.raf;
     globalThis.cancelAnimationFrame = previous.caf;
+    globalThis.Audio = previous.Audio;
   });
   return {
     frames,
     listeners,
+    audios,
     step(now) {
       const tasks = [...frames.values()];
       frames.clear();
@@ -163,7 +180,7 @@ function dom(t) {
   };
 }
 const walk = (n) => [n, ...n.children.flatMap(walk)];
-test('view owns its keyboard events, pauses/resumes without losing state, replays and cleans up', (t) => {
+test('view owns keyboard events and music, pauses/resumes, replays and cleans up', (t) => {
   const clock = dom(t),
     { p } = fixture();
   let cleanup, resume;
@@ -173,7 +190,14 @@ test('view owns its keyboard events, pauses/resumes without losing state, replay
     onResume: (fn) => (resume = fn),
   });
   const find = (cls) => walk(root).find((n) => n.className === cls);
+  assert.equal(clock.audios.length, 0);
   find('runner-play').handlers.click();
+  assert.equal(clock.audios.length, 1);
+  const music = clock.audios[0];
+  assert.match(music.src, /bransboynd-retro-runner-548536\.mp3$/);
+  assert.equal(music.loop, true);
+  assert.equal(music.volume, 0.35);
+  assert.equal(music.playCount, 1);
   assert.equal(framesCount(), 1);
   function framesCount() {
     return clock.frames.size;
@@ -193,17 +217,23 @@ test('view owns its keyboard events, pauses/resumes without losing state, replay
   clock.step(now + 100);
   const before = find('runner-distance').textContent;
   cleanup('pause');
+  assert.equal(music.pauseCount, 1);
   assert.equal(framesCount(), 0);
   resume();
+  assert.equal(music.playCount, 2);
   assert.equal(framesCount(), 1);
   assert.equal(find('runner-distance').textContent, before);
   let time = performance.now();
   for (let i = 1; i <= 130 && find('runner-result').hidden; i++) clock.step(time + i * 100);
   assert.equal(find('runner-result').hidden, false);
+  assert.equal(music.currentTime, 0);
   assert.ok(bestDistance(p, 'pixel-runner') > 0);
   find('runner-replay').handlers.click();
+  assert.equal(clock.audios.length, 1);
+  assert.equal(music.playCount, 3);
   assert.equal(find('runner-distance').textContent, 'Distance : 0 m');
   cleanup();
+  assert.equal(music.src, '');
   assert.equal(framesCount(), 0);
   assert.equal(clock.listeners.size, 0);
   assert.equal(canvas.handlers.keydown, undefined);

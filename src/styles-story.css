@@ -119,6 +119,46 @@ button.messenger-contact-row:hover {
   background: white;
   border-radius: 4px;
 }
+.contact-avatar-composition {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.messenger-contact-row .contact-avatar-composition {
+  width: 42px;
+  height: 42px;
+  flex: none;
+  border: 1px solid #9bacbd;
+  padding: 2px;
+  background: #fff;
+  border-radius: 4px;
+}
+.contact-avatar-composition img {
+  position: absolute;
+  width: 62%;
+  height: 62%;
+  object-fit: cover;
+  border: 1px solid #fff;
+  padding: 0;
+  background: #fff;
+}
+.contact-avatar-composition [data-avatar='pixelgirl'] {
+  top: 0;
+  left: 19%;
+  z-index: 2;
+}
+.contact-avatar-composition [data-avatar='turbo'] {
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+}
+.contact-avatar-composition [data-avatar='luna'] {
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+}
 .messenger-contact-row.offline img {
   filter: saturate(0.5);
 }
@@ -680,6 +720,28 @@ button.messenger-contact-row:hover {
 .conversation-message.from-player p {
   color: #24415d;
 }
+.group-conversation {
+  --group-pixelgirl-color: #d21883;
+  --group-turbo-color: #2057c8;
+  --group-luna-color: #7950a0;
+  --group-player-color: #252525;
+}
+.group-conversation .conversation-message[data-author-id='pixelgirl'] {
+  --group-message-color: var(--group-pixelgirl-color);
+}
+.group-conversation .conversation-message[data-author-id='turbo'] {
+  --group-message-color: var(--group-turbo-color);
+}
+.group-conversation .conversation-message[data-author-id='luna'] {
+  --group-message-color: var(--group-luna-color);
+}
+.group-conversation .conversation-message[data-author-id='player'] {
+  --group-message-color: var(--group-player-color);
+}
+.group-conversation .conversation-message[data-author-id] > p,
+.group-conversation .conversation-message[data-author-id] > a {
+  color: var(--group-message-color);
+}
 .conversation-system {
   text-align: center;
   color: #756498;
@@ -992,6 +1054,13 @@ button.messenger-contact-row:hover {
   flex: none;
   box-shadow: 0 1px #fff;
   border-color: #8fb3cf;
+}
+.messenger-roster .messenger-contact-row .contact-avatar-composition img {
+  position: absolute;
+  width: 62%;
+  height: 62%;
+  padding: 0;
+  border: 1px solid #fff;
 }
 .messenger-roster .messenger-contact-row small {
   color: #5c748a;

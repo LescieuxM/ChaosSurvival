@@ -40,6 +40,7 @@ export class NarrativeOrchestrator {
     this.migrateSuperPlombierDialogue();
     this.migratePixelGirlWizzDialogue();
     this.migrateTurboSmileyDialogue();
+    this.migrateSuperPlombierGroupDialogue();
     this.restoreSuperPlombierFlashUnlock();
     if (
       this.flags.superPlombierPixelCase === 'A' &&
@@ -153,6 +154,38 @@ export class NarrativeOrchestrator {
         const newKey = `${definition.id}:${saved.revision}:${index}`;
         keyMap.set(oldKey, newKey);
         const entry = conversation.history.find((message) => message.key === oldKey);
+        if (entry) entry.key = newKey;
+      }
+      if (Array.isArray(conversation.unread))
+        conversation.unread = conversation.unread.map((key) => keyMap.get(key) ?? key);
+    }
+    this.progression.save();
+  }
+
+  migrateSuperPlombierGroupDialogue() {
+    const definition = this.definitions['pixelgirl-super-plombier-group'];
+    const saved = this.progression.data.dialogues[definition?.id];
+    if (!definition || !saved || saved.revision === (definition.revision ?? 1)) return;
+    const oldRevision = saved.revision ?? 1;
+    this.progression.data.dialogueArchives[`${definition.id}:${oldRevision}`] ??=
+      structuredClone(saved);
+    if (saved.node === 'opening' && saved.finished && definition.nodes.a) {
+      saved.node = 'a';
+      saved.cursor = 0;
+      saved.finished = false;
+      delete saved.receiveDueAt;
+    }
+    saved.revision = definition.revision ?? 1;
+
+    const conversation = this.progression.data.conversations?.['plumber-group'];
+    const history = conversation?.history;
+    if (Array.isArray(history)) {
+      const keyMap = new Map();
+      for (let index = 0; index < (saved.transcript ?? []).length; index++) {
+        const oldKey = `${definition.id}:${oldRevision}:${index}`;
+        const newKey = `${definition.id}:${saved.revision}:${index}`;
+        keyMap.set(oldKey, newKey);
+        const entry = history.find((message) => message.key === oldKey);
         if (entry) entry.key = newKey;
       }
       if (Array.isArray(conversation.unread))

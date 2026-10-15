@@ -3,9 +3,16 @@ import { ConversationThread } from '../story/conversation-thread.js';
 import { applicationName } from './identity.js';
 import { playerIdentity } from './player-identity.js';
 import { webcamPlaceholder } from './webcam-placeholder.js';
+import { createContactAvatar } from './contact-avatar.js';
 
 import { appendMessageText } from './message-text.js';
 export { appendMessageText } from './message-text.js';
+
+const GROUP_AUTHOR_IDS = Object.freeze({
+  xX_PixelGirl_Xx: 'pixelgirl',
+  Turb0: 'turbo',
+  '°•.LuNa.°•': 'luna',
+});
 
 export class ConversationWindow {
   constructor(
@@ -105,7 +112,7 @@ export class ConversationWindow {
         body: /* HTML */ `
           <div class="msn-menu"></div>
           <div class="msn-contact">
-            <img class="story-avatar contact-avatar" alt="Avatar de PixelGirl" />
+            <img class="story-avatar contact-avatar" alt="Avatar du contact" />
             <div>
               <strong class="contact-name"></strong
               ><small><i class="online-dot"></i><span class="contact-status"></span></small>
@@ -154,6 +161,7 @@ export class ConversationWindow {
       'contact-offline',
       Boolean(this.offlineContact && !this.offlineContact.online),
     );
+    this.element.classList.toggle('group-conversation', this.dialogue.contact.id === 'plumber-group');
     if (this.manageWindow) this.manageWindow(this);
     else {
       const minimize = document.createElement('button');
@@ -180,18 +188,29 @@ export class ConversationWindow {
       .querySelector('.close-button')
       .setAttribute('aria-label', `Fermer ${applicationName('messenger')}`);
     this.element.querySelector('.contact-name').textContent = this.dialogue.contact.nickname;
-    this.element.querySelector('.contact-avatar').alt =
-      `Avatar de ${this.dialogue.contact.name ?? this.dialogue.contact.nickname}`;
     this.element.querySelector('.contact-status').textContent = this.contactStatus(this.dialogue);
-    for (const [selector, path] of [
-      ['.contact-avatar', this.dialogue.contact.avatar],
-      ['.player-avatar', this.player.avatar],
-    ]) {
-      if (!/^\.\/avatars\/[a-z0-9-]+\.svg$/i.test(path)) throw new Error('Avatar local invalide.');
-      this.element.querySelectorAll(selector).forEach((image) => {
+    this.element.querySelectorAll('.contact-avatar').forEach((container) => {
+      if (this.dialogue.contact.id !== 'plumber-group') {
+        if (!/^\.\/avatars\/[a-z0-9-]+\.svg$/i.test(this.dialogue.contact.avatar))
+          throw new Error('Avatar local invalide.');
+        container.alt = `Avatar de ${this.dialogue.contact.name ?? this.dialogue.contact.nickname}`;
+        container.src = new URL(this.dialogue.contact.avatar, document.baseURI).href;
+        return;
+      }
+      const avatar = createContactAvatar(this.dialogue.contact, 'story-avatar contact-avatar');
+      container.replaceWith(avatar);
+      const images = avatar.querySelectorAll('img');
+      images.forEach((image) => {
+        const path = image.getAttribute('src');
+        if (!/^\.\/avatars\/[a-z0-9-]+\.svg$/i.test(path))
+          throw new Error('Avatar local invalide.');
         image.src = new URL(path, document.baseURI).href;
       });
-    }
+    });
+    const playerAvatar = this.element.querySelector('.player-avatar');
+    if (!/^\.\/avatars\/[a-z0-9-]+\.svg$/i.test(this.player.avatar))
+      throw new Error('Avatar local invalide.');
+    playerAvatar.src = new URL(this.player.avatar, document.baseURI).href;
     this.log = this.element.querySelector('.conversation-log');
     this.history = this.element.querySelector('.conversation-history');
     this.flow = this.element.querySelector('.conversation-flow');
@@ -284,6 +303,10 @@ export class ConversationWindow {
       (this.flow ?? this.log).append(row);
       this.scrollLatest();
       return row;
+    }
+    if (this.dialogue.contact.id === 'plumber-group') {
+      const authorId = message.speaker === 'player' ? 'player' : GROUP_AUTHOR_IDS[message.author];
+      if (authorId) row.dataset.authorId = authorId;
     }
     const author = document.createElement('small');
     author.textContent = `${message.speaker === 'player' ? (this.player ?? playerIdentity).nickname : message.author ?? this.dialogue.contact.nickname} dit :`;
