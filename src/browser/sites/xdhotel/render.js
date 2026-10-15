@@ -2,7 +2,6 @@ import { textElement as node, internalLink as link } from '../../dom.js';
 import { HOTEL_URL, VIEW_WIDTH, VIEW_HEIGHT, project, screenCell } from './model.js';
 import { drawRoom } from './draw.js';
 import { RoomSimulation } from './simulation.js';
-import { placeBubbles } from './bubbles.js';
 import { playerIdentity } from '../../../ui/player-identity.js';
 
 function shell(data) {
@@ -51,11 +50,13 @@ export function renderHotelRoom({ onDispose, onResume, navigate }, data, room = 
   const canvas = node('canvas', undefined, 'hotel-canvas');
   canvas.width = VIEW_WIDTH;
   canvas.height = VIEW_HEIGHT;
-  canvas.setAttribute(
-    'aria-label',
-    `${room.name} : cliquez sur le sol pour marcher, ou sur un personnage pour le saluer.`,
-  );
-  stage.append(canvas);
+  canvas.setAttribute('aria-label', `${room.name} : cliquez sur le sol pour marcher.`);
+  const messages = node('div', undefined, 'hotel-messages');
+  messages.setAttribute('role', 'log');
+  messages.setAttribute('aria-label', 'Discussions dans la salle');
+  messages.setAttribute('aria-live', 'polite');
+  messages.setAttribute('aria-relevant', 'additions');
+  stage.append(canvas, messages);
   viewport.append(stage);
   root.append(viewport, navigation);
   const navigator = node('section', undefined, 'hotel-navigator');
@@ -85,78 +86,54 @@ export function renderHotelRoom({ onDispose, onResume, navigate }, data, room = 
   }
   viewport.append(navigator);
   const ctx = canvas.getContext('2d'),
-    simulation = new RoomSimulation(room),
+    simulation = new RoomSimulation(room, { startImmediately: true }),
     walk = simulation.player;
-  const speakers = [...simulation.npcs, { id: 'player', name: playerIdentity.nickname, walk }];
+  const speakers = new Map(
+    [...simulation.npcs, { id: 'player', name: playerIdentity.nickname }].map((speaker) => [
+      speaker.id,
+      speaker.name,
+    ]),
+  );
   const bubbles = new Map();
   let frame = null,
     timer = null,
     last = performance.now(),
     disposed = false,
     paused = false;
+  let receptionWelcomeShown = false;
   const observer = new ResizeObserver(() => {
     if (disposed || paused) return;
     const { width, height } = viewport.getBoundingClientRect();
     if (!width || !height) return;
     canvas.style.width = `${Math.max(0, Math.min(width, (height * VIEW_WIDTH) / VIEW_HEIGHT))}px`;
     clampNavigator();
-    positionMessages();
   });
   observer.observe(viewport);
-  function positionMessages() {
-    const width = stage.clientWidth ?? VIEW_WIDTH;
-    const height = stage.clientHeight ?? VIEW_HEIGHT;
-    const scaleX = (canvas.clientWidth ?? VIEW_WIDTH) / VIEW_WIDTH;
-    const scaleY = (canvas.clientHeight ?? VIEW_HEIGHT) / VIEW_HEIGHT;
-    const offsetX = canvas.offsetLeft ?? 0;
-    const offsetY = canvas.offsetTop ?? 0;
-    const visible = [];
+  function renderMessages() {
     for (const [id, bubble] of bubbles) {
       if (simulation.messages.has(id)) continue;
       bubble.remove();
       bubbles.delete(id);
     }
     for (const message of simulation.messages.values()) {
-      const speaker = speakers.find((speaker) => speaker.id === message.speaker);
+      const speaker = speakers.get(message.speaker);
       if (!speaker) continue;
-      let bubble = bubbles.get(message.id);
-      if (!bubble) {
-        bubble = node('div', undefined, 'hotel-bubble');
-        bubble.setAttribute('role', 'status');
-        bubble.dataset.speaker = speaker.id;
-        bubble.style.setProperty(
-          '--hotel-bubble-fade-delay',
-          `${Math.max(0, message.expiresAt - simulation.now - 250)}ms`,
-        );
-        bubble.append(
-          node('strong', `${speaker.name} : `),
-          node('span', message.text, 'hotel-message-text'),
-        );
-        stage.append(bubble);
-        bubbles.set(message.id, bubble);
-      }
-      const point = project(...speaker.walk.position, room);
-      visible.push({
-        id: message.id,
-        x: offsetX + point.x * scaleX,
-        y: offsetY + (point.y - 40) * scaleY,
-        width: bubble.offsetWidth ?? 180,
-        height: bubble.offsetHeight ?? 48,
-      });
-    }
-    for (const position of placeBubbles(visible, width, height)) {
-      const bubble = bubbles.get(position.id);
-      bubble.style.left = `${position.left}px`;
-      bubble.style.top = `${position.top}px`;
-      bubble.style.setProperty('--hotel-pointer-left', `${position.pointer}px`);
+      if (bubbles.has(message.id)) continue;
+      const bubble = node('div', undefined, 'hotel-bubble');
+      bubble.dataset.speaker = message.speaker;
+      bubble.append(
+        node('strong', `${speaker} : `),
+        node('span', message.text, 'hotel-message-text'),
+      );
+      messages.append(bubble);
+      bubbles.set(message.id, bubble);
     }
   }
   function draw() {
     drawRoom(ctx, simulation.view, walk);
-    positionMessages();
+    renderMessages();
   }
   function suspend() {
-    stage.style.setProperty('--hotel-bubble-play-state', 'paused');
     cancelAnimationFrame(frame);
     clearTimeout(timer);
     frame = timer = last = null;
@@ -179,7 +156,6 @@ export function renderHotelRoom({ onDispose, onResume, navigate }, data, room = 
   }
   function wake() {
     if (!disposed && !paused && navigator.hidden && !document.hidden && frame === null) {
-      stage.style.setProperty('--hotel-bubble-play-state', 'running');
       clearTimeout(timer);
       timer = null;
       if (last === null) last = performance.now();
@@ -264,10 +240,14 @@ export function renderHotelRoom({ onDispose, onResume, navigate }, data, room = 
       });
     if (npc) {
       // Ordinary speech comes from the room clock, never from selecting a visitor.
-      if (room.id === 'hall' && npc.id === 'reception-xd') {
-        simulation.say(npc.id, npc.dialogue);
-        positionMessages();
-        wake();
+      if (room.id === 'hall' && npc.id === 'receptionhotel') {
+        if (!receptionWelcomeShown) {
+          receptionWelcomeShown = true;
+          simulation.say(npc.id, npc.dialogue);
+          if (npc.followUp) simulation.sayAfter(npc.id, npc.followUp, 2200);
+          renderMessages();
+          wake();
+        }
       }
       return;
     }

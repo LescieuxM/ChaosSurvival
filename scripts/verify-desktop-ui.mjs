@@ -1597,10 +1597,10 @@ async function verifyHotel() {
     await evaluate(`(()=>{
     const bubbles=[...document.querySelectorAll('.hotel-bubble[data-speaker="reception-xd"]')];
     return bubbles.length===2 && bubbles.every(b=>b.querySelector('strong').textContent==='ReceptionHotel : ')
-      && bubbles[0].offsetLeft+bubbles[0].offsetWidth < bubbles[1].offsetLeft
-      && bubbles[0].offsetTop===bubbles[1].offsetTop;
+      && bubbles[0].parentElement===bubbles[1].parentElement
+      && bubbles[0].getBoundingClientRect().bottom<=bubbles[1].getBoundingClientRect().top;
   })()`),
-    'repeated speaker retains horizontal history with author names',
+    'repeated speaker appears in successive rows with author names',
   );
   await capture('xdhotel-hall.png');
   const assertSceneFits = async () => {
@@ -1669,10 +1669,9 @@ async function verifyHotel() {
   await evaluate(
     'window.__hotelGreetingNodes=[...document.querySelectorAll(\'.hotel-bubble[data-speaker="reception-xd"]\')]',
   );
-  const npcTop = project(...room.npcs[0].position, room).y - 40;
   assert.ok(
     await evaluate(
-      `(()=>{const s=document.querySelector('.hotel-stage').getBoundingClientRect(),c=document.querySelector('.hotel-canvas').getBoundingClientRect(),b=[...document.querySelectorAll('.hotel-bubble[data-speaker="reception-xd"]')].at(-1).getBoundingClientRect();return b.left>=s.left&&b.right<=s.right&&b.top>=s.top&&b.bottom<=s.bottom&&b.bottom<=c.top+${npcTop}/300*c.height;})()`,
+      `(()=>{const s=document.querySelector('.hotel-stage').getBoundingClientRect(),b=[...document.querySelectorAll('.hotel-bubble[data-speaker="reception-xd"]')].at(-1).getBoundingClientRect();return b.left>=s.left&&b.right<=s.right&&b.top>=s.top&&b.bottom<=s.bottom;})()`,
     ),
   );
   await capture('xdhotel-small.png');
@@ -1880,7 +1879,7 @@ async function verifyHotel() {
         positions.find(([id]) => id === 'reception-xd'),
         receptionPosition,
       );
-      assert.ok(visible.length <= 8);
+      assert.ok(visible.length <= 4);
       return observedMotion && observedChat && overlap && visible.length >= 2;
     },
     'autonomous visitors move and exchange messages without player input',

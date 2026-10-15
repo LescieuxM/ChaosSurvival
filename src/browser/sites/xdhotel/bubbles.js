@@ -9,7 +9,7 @@ export class BubbleHistory {
   add(speaker, text, now) {
     const id = ++this.sequence;
     this.messages.set(id, { id, speaker, text, expiresAt: now + messageDuration(text) });
-    if (this.messages.size > 8) this.messages.delete(this.messages.keys().next().value);
+    if (this.messages.size > 4) this.messages.delete(this.messages.keys().next().value);
   }
   hasSpeaker(speaker) {
     return [...this.messages.values()].some((message) => message.speaker === speaker);

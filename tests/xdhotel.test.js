@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { hotelData, hotelRooms } from '../src/browser/sites/xdhotel/index.js';
+import conversations from '../src/browser/sites/xdhotel/conversations.json' with { type: 'json' };
 import {
   HOTEL_URL,
   VIEW_WIDTH,
@@ -481,10 +482,15 @@ test('room instances have independent motion/bubbles; scaled clicks, visibility 
   assert.equal(clock.frames.size, 0);
   const npc = project(...room.npcs[0].position, room);
   click(npc.x, npc.y - 25);
-  const greeting = find(a, 'hotel-bubble');
-  assert.equal(find(a, 'hotel-message-text').textContent, room.npcs[0].dialogue);
-  assert.ok(find(a, 'hotel-bubble'));
-  assert.equal(find(b, 'hotel-bubble'), undefined);
+  const greeting = walkTree(a).find((item) =>
+    item.className === 'hotel-bubble' && item.dataset.speaker === 'receptionhotel',
+  );
+  assert.equal(greeting.children[1].textContent, room.npcs[0].dialogue);
+  assert.ok(greeting);
+  assert.equal(
+    walkTree(b).find((item) => item.className === 'hotel-bubble').dataset.speaker,
+    'darkflo',
+  );
   for (let i = 0; i < 80; i++) clock.step(500 + i * 100);
   assert.equal(
     walkTree(a).includes(greeting),
@@ -555,9 +561,14 @@ test('navigator opens/closes, cancels a moving instance on room changes and repe
       clientX: 20 + npc.x * 2,
       clientY: 30 + (npc.y - 25) * 2,
     });
-    if (definition.id === 'hall')
-      assert.equal(find('hotel-message-text').textContent, definition.npcs[0].dialogue);
-    else assert.equal(find('hotel-message-text'), undefined, 'ordinary NPC clicks never speak');
+    if (definition.id === 'hall') {
+      const receptionBubble = walkTree(active).find((item) =>
+        item.className === 'hotel-bubble' && item.dataset.speaker === 'receptionhotel',
+      );
+      assert.equal(receptionBubble.children[1].textContent, definition.npcs[0].dialogue);
+    } else if (definition.id !== 'discotheque') {
+      assert.equal(find('hotel-message-text'), undefined, 'ordinary NPC clicks never speak');
+    }
     clock.step(performance.now() + 5000);
   }
   cleanup();
@@ -579,13 +590,17 @@ test('all five rooms show attributed ambient speech without clicks and dispose t
       definition,
     );
     const find = (cls) => walkTree(root).find((item) => item.className === cls);
-    assert.equal(find('hotel-bubble'), undefined);
+    const immediate = ['hall', 'discotheque'].includes(definition.id);
+    assert.equal(Boolean(find('hotel-bubble')), immediate);
     assert.equal(find('hotel-nickname'), undefined);
     const start = performance.now();
-    for (let elapsed = 100; elapsed <= 7000 && !find('hotel-bubble'); elapsed += 100)
+    for (let elapsed = 100; elapsed <= 10000 && !find('hotel-bubble'); elapsed += 100)
       clock.step(start + elapsed);
     const bubble = find('hotel-bubble');
     assert.ok(bubble, `${definition.id}: spontaneous message`);
+    assert.equal(bubble.parent.className, 'hotel-messages');
+    assert.equal(bubble.style.left, undefined);
+    assert.equal(bubble.style.top, undefined);
     const speaker = definition.npcs.find((npc) => npc.id === bubble.dataset.speaker);
     assert.ok(speaker, 'message belongs to this room');
     assert.equal(bubble.children[0].textContent, `${speaker.name} : `);
@@ -595,6 +610,49 @@ test('all five rooms show attributed ambient speech without clicks and dispose t
     assert.equal(clock.timers.size, 0);
     assert.equal(clock.frames.size, 0);
     assert.equal(clock.listeners.size, 0);
+  }
+});
+
+test('receptionist presents the two welcome lines in order and only once per room visit', (t) => {
+  const clock = dom(t);
+  let cleanup;
+  const root = renderHotelRoom({ onDispose: (fn) => (cleanup = fn) }, hotelData);
+  const find = (cls) => walkTree(root).find((item) => item.className === cls);
+  const reception = project(...room.npcs[0].position, room);
+  const clickReception = () => find('hotel-canvas').handlers.click({
+    button: 0,
+    clientX: 20 + reception.x * 2,
+    clientY: 30 + (reception.y - 25) * 2,
+  });
+  clickReception();
+  const texts = () => walkTree(root)
+    .filter((item) => item.className === 'hotel-bubble' && item.dataset.speaker === 'receptionhotel')
+    .map((bubble) => bubble.children[1].textContent);
+  assert.deepEqual(texts(), ['Bienvenue sur Hopla Hotel ! Amuse-toi bien ;)']);
+  clickReception();
+  assert.deepEqual(texts(), ['Bienvenue sur Hopla Hotel ! Amuse-toi bien ;)']);
+  clock.step(performance.now() + 2200);
+  assert.deepEqual(texts(), [
+    'Bienvenue sur Hopla Hotel ! Amuse-toi bien ;)',
+    "Ici, il n'y a pas de cr\u00e9dits \u00e0 d\u00e9penser ;)",
+  ]);
+  cleanup();
+});
+
+test('hall and disco open with an in-progress exchange and continue it without a pause', (t) => {
+  const clock = dom(t);
+  for (const id of ['hall', 'discotheque']) {
+    let cleanup;
+    const definition = hotelRooms.find((candidate) => candidate.id === id);
+    const root = renderHotelRoom({ onDispose: (fn) => (cleanup = fn) }, hotelData, definition);
+    const messages = () => walkTree(root)
+      .filter((item) => item.className === 'hotel-message-text')
+      .map((item) => item.textContent);
+    const opening = conversations.find((conversation) => conversation.room === id && conversation.opening);
+    assert.deepEqual(messages(), [opening.messages[0].text]);
+    clock.step(performance.now() + opening.messages[1].delay);
+    assert.deepEqual(messages(), [opening.messages[0].text, opening.messages[1].text]);
+    cleanup();
   }
 });
 
@@ -657,10 +715,12 @@ test('early ambient DOM speech resumes after navigator pause and client restorat
   );
   const find = (cls) => walkTree(root).find((item) => item.className === cls);
   const start = performance.now();
+  const openingBubble = find('hotel-bubble');
+  assert.ok(openingBubble);
   clock.step(start + 1000);
   find('hotel-navigator-open').handlers.click();
   clock.step(start + 20000);
-  assert.equal(find('hotel-bubble'), undefined);
+  assert.equal(find('hotel-bubble'), openingBubble);
   assert.equal(clock.timers.size, 0);
   find('hotel-navigator-close').handlers.click();
   for (let elapsed = 100; elapsed <= 7000 && !find('hotel-bubble'); elapsed += 100)

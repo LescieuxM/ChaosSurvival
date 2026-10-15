@@ -12,10 +12,20 @@ export const AMBIENT_TIMING = Object.freeze({
   firstSpontaneous: [12000, 22000],
   spontaneous: [25000, 45000],
 });
+export const ROOM_START_DELAYS = Object.freeze({
+  hall: [0, 0],
+  discotheque: [0, 0],
+  cafe: [1000, 3000],
+  jeux: [2000, 5000],
+  detente: [4000, 8000],
+});
 
 // Only the active room owns a simulation. All movement uses the existing RoomWalk/BFS.
 export class RoomSimulation {
-  constructor(room, { random = Math.random, conversations = dialogueData } = {}) {
+  constructor(
+    room,
+    { random = Math.random, conversations = dialogueData, startImmediately = false } = {},
+  ) {
     this.room = room;
     this.random = random;
     this.now = 0;
@@ -23,6 +33,8 @@ export class RoomSimulation {
     this.bubbles = new BubbleHistory();
     this.messages = this.bubbles.messages;
     this.activeConversations = [];
+    this.hasStartedConversation = false;
+    this.scheduledSpeech = [];
     this.recent = [];
     this.staticBlocked = blockedCells({ ...room, npcs: [] });
     this.player = new RoomWalk({ ...room, npcs: [] });
@@ -54,8 +66,15 @@ export class RoomSimulation {
             message.delay >= 0,
         ),
     );
-    this.nextConversation = this.range(AMBIENT_TIMING.firstConversation);
+    this.nextConversation = this.range(
+      ROOM_START_DELAYS[room.id] ?? AMBIENT_TIMING.firstConversation,
+    );
     this.nextSpontaneous = this.range(AMBIENT_TIMING.firstSpontaneous);
+    if (startImmediately && ['hall', 'discotheque'].includes(room.id)) {
+      const opening = this.conversations.find((conversation) => conversation.opening);
+      if (opening && this.startConversation(opening, true))
+        this.nextConversation = this.now + this.range(AMBIENT_TIMING.conversation);
+    }
   }
   range([low, high]) {
     return low + this.random() * (high - low);
@@ -113,7 +132,18 @@ export class RoomSimulation {
     this.bubbles.add(speaker, text, this.now);
     return true;
   }
-  startConversation(conversation) {
+  sayAfter(speaker, text, delay) {
+    if (
+      this.disposed ||
+      !this.npcs.some((npc) => npc.id === speaker) ||
+      typeof text !== 'string' ||
+      !Number.isFinite(delay) ||
+      delay < 0
+    ) return false;
+    this.scheduledSpeech.push({ speaker, text, due: this.now + delay });
+    return true;
+  }
+  startConversation(conversation, immediate = false) {
     if (
       this.disposed ||
       !this.conversations.includes(conversation) ||
@@ -125,19 +155,38 @@ export class RoomSimulation {
     );
     // Walking does not reserve speech. Existing routes continue while messages appear.
     if (conversation.participants.some((id) => busy.has(id))) return false;
-    this.activeConversations.push({
-      definition: conversation,
-      index: 0,
-      due: this.now + conversation.messages[0].delay,
-    });
+    if (immediate) {
+      const first = conversation.messages[0];
+      this.say(first.speaker, first.text);
+      if (conversation.messages.length > 1)
+        this.activeConversations.push({
+          definition: conversation,
+          index: 1,
+          due: this.now + conversation.messages[1].delay,
+        });
+    } else {
+      this.activeConversations.push({
+        definition: conversation,
+        index: 0,
+        due: this.now + conversation.messages[0].delay,
+      });
+    }
     this.recent.push(conversation.id);
     this.recent = this.recent.slice(-3);
+    this.hasStartedConversation = true;
     return true;
   }
   update(delta) {
     if (this.disposed || !Number.isFinite(delta) || delta < 0) return false;
     this.now += delta;
     let changed = this.bubbles.expire(this.now);
+    const speechSequencePending = this.scheduledSpeech.length > 0;
+    for (const message of [...this.scheduledSpeech]) {
+      if (message.due > this.now) continue;
+      this.say(message.speaker, message.text);
+      this.scheduledSpeech.splice(this.scheduledSpeech.indexOf(message), 1);
+      changed = true;
+    }
     for (const walk of this.actors) {
       if (!walk.moving) continue;
       const obstacles = this.obstacles(walk);
@@ -150,7 +199,7 @@ export class RoomSimulation {
       walk.update(delta);
       changed = true;
     }
-    for (const active of [...this.activeConversations]) {
+    for (const active of speechSequencePending ? [] : [...this.activeConversations]) {
       if (active.due > this.now) continue;
       const message = active.definition.messages[active.index++];
       this.say(message.speaker, message.text);
@@ -159,7 +208,7 @@ export class RoomSimulation {
         this.activeConversations.splice(this.activeConversations.indexOf(active), 1);
       else active.due = this.now + active.definition.messages[active.index].delay;
     }
-    if (this.now >= this.nextConversation) {
+    if (!speechSequencePending && this.now >= this.nextConversation) {
       const fresh = this.conversations.filter(
         (conversation) => !this.recent.includes(conversation.id),
       );
@@ -168,14 +217,19 @@ export class RoomSimulation {
       const start = Math.floor(this.random() * choices.length);
       let started = false;
       for (let i = 0; i < choices.length; i++)
-        if (this.startConversation(choices[(start + i) % choices.length])) {
+        if (
+          this.startConversation(
+            choices[(start + i) % choices.length],
+            !this.hasStartedConversation,
+          )
+        ) {
           started = true;
           break;
         }
       this.nextConversation =
         this.now + this.range(started ? AMBIENT_TIMING.conversation : AMBIENT_TIMING.retry);
     }
-    if (this.now >= this.nextSpontaneous) {
+    if (!speechSequencePending && this.now >= this.nextSpontaneous) {
       const busy = new Set(
         this.activeConversations.flatMap((active) => active.definition.participants),
       );
@@ -219,6 +273,7 @@ export class RoomSimulation {
         this.nextSpontaneous,
         ...this.npcs.filter((npc) => !npc.walk.moving).map((npc) => npc.nextMove),
         ...this.activeConversations.map((active) => active.due),
+        ...this.scheduledSpeech.map((message) => message.due),
         ...[...this.messages.values()].map((message) => message.expiresAt),
       ) - this.now,
     );
@@ -227,6 +282,7 @@ export class RoomSimulation {
     this.disposed = true;
     this.bubbles.clear();
     this.activeConversations = [];
+    this.scheduledSpeech = [];
     for (const walk of this.actors) {
       walk.path = [];
       walk.step = null;

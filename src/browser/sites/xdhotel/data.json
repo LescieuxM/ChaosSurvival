@@ -25,19 +25,17 @@
     ],
     "npcs": [
       {
-        "id": "reception-xd",
+        "id": "receptionhotel",
         "name": "ReceptionHotel",
         "position": [5, 4],
         "blocking": true,
         "direction": "south",
         "dialogue": "Bienvenue sur Hopla Hotel ! Amuse-toi bien ;)",
-        "behavior": {
-          "messages": ["Bienvenue sur Hopla Hotel ! Amuse-toi bien ;)"]
-        }
+        "followUp": "Ici, il n'y a pas de crédits à dépenser ;)"
       },
       {
-        "id": "dark-flo",
-        "name": "xX-DarkFlo-Xx",
+        "id": "darkflo",
+        "name": "DarkFlo",
         "position": [2, 2],
         "blocking": true,
         "direction": "south",
@@ -54,7 +52,7 @@
       },
       {
         "id": "cerise",
-        "name": "Oo-Cerise-oO",
+        "name": "Cerise",
         "position": [3, 8],
         "blocking": true,
         "direction": "west",
@@ -70,8 +68,8 @@
         }
       },
       {
-        "id": "kebab",
-        "name": "Dr-Kebab",
+        "id": "pixelgirl",
+        "name": "PixelGirl",
         "position": [8, 3],
         "blocking": true,
         "direction": "south",
@@ -118,7 +116,7 @@
       ],
       "npcs": [
         {
-          "id": "cafe-max",
+          "id": "cafemax",
           "name": "CafeMax",
           "position": [5, 4],
           "blocking": true,
@@ -131,8 +129,8 @@
           }
         },
         {
-          "id": "tite-folle",
-          "name": "TiteFolle59",
+          "id": "titefolle",
+          "name": "TiteFolle",
           "position": [3, 2],
           "blocking": true,
           "direction": "south",
@@ -148,8 +146,8 @@
           }
         },
         {
-          "id": "disquette-bleue",
-          "name": "DisquetteBleue",
+          "id": "xmel0dy",
+          "name": "xMel0dy",
           "position": [6, 6],
           "blocking": true,
           "direction": "west",
@@ -212,8 +210,8 @@
       ],
       "npcs": [
         {
-          "id": "dj-biscotte",
-          "name": "DJ_Biscotte",
+          "id": "dj-k7",
+          "name": "DJ-K7",
           "position": [7, 4],
           "blocking": true,
           "direction": "south",
@@ -225,7 +223,7 @@
           }
         },
         {
-          "id": "miss-love",
+          "id": "miss-l0ve",
           "name": "miss-l0ve",
           "position": [2, 3],
           "blocking": true,
@@ -242,7 +240,7 @@
           }
         },
         {
-          "id": "bg-du-62",
+          "id": "bgdu62",
           "name": "BGdu62",
           "position": [5, 6],
           "blocking": true,
@@ -259,8 +257,8 @@
           }
         },
         {
-          "id": "vinyle",
-          "name": "VinyleOrange",
+          "id": "turb0",
+          "name": "Turb0",
           "position": [8, 8],
           "blocking": true,
           "direction": "south",
@@ -320,8 +318,8 @@
       ],
       "npcs": [
         {
-          "id": "pause-cafe",
-          "name": "PauseCafe",
+          "id": "pauseclope",
+          "name": "PauseClope",
           "position": [6, 5],
           "blocking": true,
           "direction": "west",
@@ -333,7 +331,7 @@
           }
         },
         {
-          "id": "nuage",
+          "id": "nuage17",
           "name": "Nuage17",
           "position": [2, 2],
           "blocking": true,
@@ -350,7 +348,7 @@
           }
         },
         {
-          "id": "biscuit",
+          "id": "biscuitsec",
           "name": "BiscuitSec",
           "position": [8, 5],
           "blocking": true,
@@ -418,8 +416,8 @@
       ],
       "npcs": [
         {
-          "id": "retro-fred",
-          "name": "RetroFred",
+          "id": "fredoux2",
+          "name": "Fredoux2",
           "position": [5, 4],
           "blocking": true,
           "direction": "south",
@@ -431,7 +429,7 @@
           }
         },
         {
-          "id": "mario-fan",
+          "id": "supermariofan",
           "name": "SuperMarioFan",
           "position": [1, 4],
           "blocking": true,
@@ -448,8 +446,8 @@
           }
         },
         {
-          "id": "panda",
-          "name": "PandaDu93",
+          "id": "panda666",
+          "name": "Panda666",
           "position": [4, 7],
           "blocking": true,
           "direction": "west",
@@ -465,12 +463,12 @@
           }
         },
         {
-          "id": "clavier",
-          "name": "ClavierFou",
+          "id": "skull",
+          "name": "Skull",
           "position": [8, 3],
           "blocking": true,
           "direction": "south",
-          "dialogue": "Salut, plut?t PC ou console ?",
+          "dialogue": "Salut, plutôt PC ou console ?",
           "appearance": {
             "shirt": "#a39854",
             "hair": "#774b31"

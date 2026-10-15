@@ -5,35 +5,46 @@ import conversations from '../src/browser/sites/xdhotel/conversations.json' with
 import contacts from '../src/config/contacts.json' with { type: 'json' };
 import {
   RoomSimulation,
+  ROOM_START_DELAYS,
   messageDuration,
   placeBubbles,
 } from '../src/browser/sites/xdhotel/simulation.js';
 import { RoomWalk, blockedCells, inside } from '../src/browser/sites/xdhotel/model.js';
 import { depthOrder } from '../src/browser/sites/xdhotel/draw.js';
 const rooms = [data.room, ...data.rooms];
+test('NPC display names stay attached to their existing room identities', () => {
+  const expected = new Map([
+    ['hall', ['ReceptionHotel', 'DarkFlo', 'Cerise', 'PixelGirl']],
+    ['cafe', ['CafeMax', 'TiteFolle', 'xMel0dy']],
+    ['discotheque', ['DJ-K7', 'miss-l0ve', 'BGdu62', 'Turb0']],
+    ['detente', ['PauseClope', 'Nuage17', 'BiscuitSec']],
+    ['jeux', ['Fredoux2', 'SuperMarioFan', 'Panda666', 'Skull']],
+  ]);
+  assert.deepEqual(new Map(rooms.map((room) => [room.id, room.npcs.map((npc) => npc.name)])), expected);
+  const ids = new Set(rooms.flatMap((room) => room.npcs.map((npc) => npc.id)));
+  for (const conversation of conversations)
+    assert.ok(conversation.participants.every((id) => ids.has(id)), conversation.id);
+});
 function random(seed = 42) {
   return () => (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296;
 }
 const cellKey = (cell) => cell.join(':');
-test('an idle room schedules visible speech in 3–7 seconds at either timing extreme in all five rooms', () => {
+test('room entry delays are distinct and the scheduled conversations continue in order', () => {
   for (const room of rooms)
     for (const value of [0, 0.999999]) {
       const simulation = new RoomSimulation(room, { random: () => value });
+      const [minimum, maximum] = ROOM_START_DELAYS[room.id];
+      assert.ok(simulation.nextConversation >= minimum && simulation.nextConversation <= maximum);
       assert.equal(simulation.messages.size, 0);
-      const start = simulation.nextDelay;
-      assert.ok(start >= 2500 && start <= 4500);
-      simulation.update(start);
+      simulation.update(simulation.nextConversation);
       assert.equal(simulation.activeConversations.length, 1);
-      const reply = simulation.nextDelay;
-      assert.ok(start + reply >= 3000 && start + reply <= 7000);
-      assert.equal(
-        simulation.update(reply),
-        true,
-        'new speech requests a render even without movement',
+      const conversation = simulation.activeConversations[0].definition;
+      assert.equal([...simulation.messages.values()][0].text, conversation.messages[0].text);
+      assert.equal(simulation.activeConversations[0].index, 1);
+      simulation.update(simulation.activeConversations[0].due - simulation.now);
+      assert.ok(
+        [...simulation.messages.values()].some((message) => message.text === conversation.messages[1].text),
       );
-      const message = [...simulation.messages.values()][0];
-      assert.ok(room.npcs.some((npc) => npc.id === message.speaker));
-      assert.equal(message.text, simulation.activeConversations[0].definition.messages[0].text);
     }
 });
 
@@ -251,9 +262,9 @@ test('scheduler avoids its three latest conversations rather than replaying a fi
 test('message history preserves repeated speakers, expires individually and supports future player speech', () => {
   const simulation = new RoomSimulation(rooms[0], { random: random(), conversations: [] });
   assert.equal(simulation.say('unknown', 'no'), false);
-  simulation.say('reception-xd', 'cc');
+  simulation.say('receptionhotel', 'cc');
   simulation.update(1000);
-  simulation.say('reception-xd', 'Bienvenue');
+  simulation.say('receptionhotel', 'Bienvenue');
   assert.equal(simulation.messages.size, 2);
   assert.deepEqual(
     [...simulation.messages.values()].map((m) => m.text),
@@ -269,10 +280,38 @@ test('message history preserves repeated speakers, expires individually and supp
   simulation.update(1000);
   assert.equal(simulation.messages.size, 0);
   for (let i = 0; i < 20; i++) simulation.say('player', String(i));
-  assert.equal(simulation.messages.size, 8);
-  assert.equal([...simulation.messages.values()][0].text, '12');
+  assert.equal(simulation.messages.size, 4);
+  assert.equal([...simulation.messages.values()][0].text, '16');
   assert.ok(messageDuration('x'.repeat(1000)) <= 10000);
   assert.ok(messageDuration('x'.repeat(200)) > messageDuration('cc'));
+});
+
+test('reception follow-up is queued after the exact initial greeting', () => {
+  const unrelated = {
+    id: 'hall-test',
+    room: 'hall',
+    participants: ['darkflo', 'cerise'],
+    messages: [{ speaker: 'darkflo', text: 'autre message', delay: 1000 }],
+  };
+  const simulation = new RoomSimulation(rooms[0], { conversations: [unrelated] });
+  const receptionist = rooms[0].npcs[0];
+  assert.equal(simulation.startConversation(unrelated), true);
+  assert.equal(receptionist.dialogue, 'Bienvenue sur Hopla Hotel ! Amuse-toi bien ;)');
+  assert.equal(receptionist.followUp, "Ici, il n'y a pas de crédits à dépenser ;)");
+  assert.equal(simulation.say(receptionist.id, receptionist.dialogue), true);
+  assert.equal(simulation.sayAfter(receptionist.id, receptionist.followUp, 2200), true);
+  simulation.update(2199);
+  assert.deepEqual([...simulation.messages.values()].map((message) => message.text), [receptionist.dialogue]);
+  simulation.update(1);
+  assert.deepEqual(
+    [...simulation.messages.values()].map((message) => message.text),
+    [receptionist.dialogue, receptionist.followUp],
+  );
+  simulation.update(1);
+  assert.deepEqual(
+    [...simulation.messages.values()].map((message) => message.text),
+    [receptionist.dialogue, receptionist.followUp, 'autre message'],
+  );
 });
 
 test('bubble layout stays inside resized viewports, avoids overlap when space permits and points to avatars', () => {
