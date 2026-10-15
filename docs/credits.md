@@ -83,6 +83,3 @@ de propriété sur ces morceaux n’est revendiqué.
   `assets/cherskis-bubble-popping-3-587265.mp3`, sous la Pixabay Content License.
 - **Disco** — ProducesPlatinum, utilisé pour la discothèque de Hopla Hotel depuis
   `assets/producesplatinum-disco-483559.mp3`, sous la Pixabay Content License.
-- **Hype | Drill Music** — kontraa, utilisée comme musique générale de Hopla
-  Hotel depuis `assets/kontraa-hype-drill-music-438398.mp3`, sous la Pixabay
-  Content License.
