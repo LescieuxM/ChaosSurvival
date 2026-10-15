@@ -115,7 +115,7 @@ test('Turb0 scene 3 keeps its three opening branches and resumes its shared dial
   assert.equal(turboScene.contact.id, 'turbo');
   assert.equal(turboScene.contact.nickname, 'Turb0');
   const expected = [
-    ["c'est toi le noob mdr", ["MDRRR t'as eu de la chance c'est tout"]],
+    ["c'est toi le noob mdr", ["eh oh !!"]],
     [
       'attends mais toi aussi tu vois mon écran ?',
       ['bah ouais je voyais ton jeu mdr', 'pourquoi tu demandes ça ???'],
@@ -312,7 +312,7 @@ test('all eight sequences, all 31 branches, joins and ten choices survive restar
       10,
     );
     assert.ok(
-      [':D', ':|', '>:)', 'pourquoi tu me poses cette question MDR'].includes(
+      [':)', ':|', '>:)', 'pourquoi tu me poses cette question MDR'].includes(
         progression.data.flags.pixelgirlSmiley,
       ),
     );

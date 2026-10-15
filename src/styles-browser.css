@@ -236,3 +236,25 @@
   color: #304f6b;
   font-size: 20px;
 }
+.browser-error-ie {
+  min-height: 100%;
+  box-sizing: border-box;
+  padding: 42px 56px;
+  background: #fff;
+  color: #222;
+  font-family: Tahoma, Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.browser-error-ie h2 {
+  margin: 0 0 18px;
+  color: #1b4e81;
+  font-size: 18px;
+  font-weight: 600;
+}
+.browser-error-ie p {
+  max-width: 620px;
+}
+.browser-error-ie ul {
+  padding-left: 22px;
+}

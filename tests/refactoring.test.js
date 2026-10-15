@@ -46,11 +46,12 @@ test('shared activation preserves double-click and Enter without treating a clic
 test('extracted Messenger formatting preserves emoticons and renders HTML-looking dialogue as text', (t) => {
   const previous = globalThis.document;
   globalThis.document = {
+    baseURI: 'https://example.test/',
     createTextNode(text) {
       return { textContent: text };
     },
-    createElement() {
-      return { setAttribute() {} };
+    createElement(tagName) {
+      return { tagName: tagName.toUpperCase(), setAttribute() {} };
     },
   };
   t.after(() => {
@@ -64,13 +65,19 @@ test('extracted Messenger formatting preserves emoticons and renders HTML-lookin
         children.push(node);
       },
     },
-    'salut <3 <img src=x> :D :3 :) :( ;) :P',
+    'salut <3 <img src=x> :D :3 :) :| >:) :( ;) :P',
   );
   assert.equal(
-    children.map((node) => node.textContent).join(''),
-    'salut \u2665 <img src=x> \u263b :3 \u263a :( 😉 😛',
+    children.map((node) => node.alt ?? node.textContent).join(''),
+    'salut \u2665 <img src=x> :D :3 :) :| >:) :( 😉 😛',
   );
-  assert.equal(children.filter((node) => node.className?.includes('msn-emoticon')).length, 5);
+  assert.equal(children.filter((node) => node.className?.includes('msn-emoticon')).length, 7);
+  assert.deepEqual(children.filter((node) => node.tagName === 'IMG').map((node) => node.src), [
+    'https://example.test/emoticons/msn-smile.svg',
+    'https://example.test/emoticons/msn-smile.svg',
+    'https://example.test/emoticons/msn-neutral.svg',
+    'https://example.test/emoticons/msn-devil.svg',
+  ]);
   assert.ok(children.some((node) => !node.className && node.textContent.includes(':3')));
 });
 

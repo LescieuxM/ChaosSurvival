@@ -10,7 +10,7 @@
     "dev": "node scripts/dev.mjs",
     "build": "node scripts/verify-music.mjs && node scripts/verify-story.mjs && vite build",
     "start": "electron .",
-    "dist": "npm run build && node node_modules/electron/install.js && electron-builder --win portable --x64 --publish never && node scripts/finalize-portable.mjs",
+    "dist": "npm run build -- --configLoader runner && node node_modules/electron/install.js && electron-builder --win portable --x64 --publish never && node scripts/finalize-portable.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "test": "node --test",
     "format": "prettier --write .",

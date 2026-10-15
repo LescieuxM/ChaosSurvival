@@ -152,7 +152,7 @@ export class ConversationWindow {
           !this.switchingView &&
           !this.offlineContact &&
           this.session?.state.finished;
-        this.dispose();
+        this.dispose({ reason });
         if (complete) this.onComplete(this.dialogue.id);
       },
     });
@@ -244,6 +244,16 @@ export class ConversationWindow {
     this.lastFrame = null;
     this.refresh();
     this.onWindowState({ open: true, minimized: false });
+  }
+  openMinimized() {
+    if (this.element?.isConnected) return this.element;
+    this.open();
+    if (!this.element?.isConnected) return this.element;
+    this.element.hidden = true;
+    this.lastFrame = null;
+    this.messengerInstance?.task.setAttribute('aria-pressed', 'false');
+    this.onWindowState({ open: true, minimized: true });
+    return this.element;
   }
   renderTranscript() {
     (this.flow ?? this.log).replaceChildren();
@@ -677,8 +687,8 @@ export class ConversationWindow {
     this.renderTyping();
     this.frame = requestAnimationFrame((next) => this.tick(next));
   }
-  dispose() {
-    this.onDispose?.(this);
+  dispose(dismissal) {
+    this.onDispose?.(this, dismissal);
     this.logObserver?.disconnect();
     cancelAnimationFrame(this.frame);
     document.removeEventListener('visibilitychange', this.onVisibility);

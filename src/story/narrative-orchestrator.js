@@ -19,6 +19,7 @@ export class NarrativeOrchestrator {
     sendWizz = () => false,
     getGroupThread = () => null,
     showGroupNotification = () => false,
+    onGroupMessage = () => {},
     now = () => Date.now(),
   }) {
     Object.assign(this, {
@@ -31,6 +32,7 @@ export class NarrativeOrchestrator {
       sendWizz,
       getGroupThread,
       showGroupNotification,
+      onGroupMessage,
       now,
     });
     if (Number.isFinite(this.flags.turboSmileyScene3MessageNotificationDueAt)) {
@@ -533,7 +535,8 @@ export class NarrativeOrchestrator {
     const state = this.progression.data.dialogues[definition.id];
     if (!state?.transcript?.length && !Number.isFinite(state?.receiveDueAt))
       thread.schedule(definition, this.flags.superPlombierGroupCreatedAt ?? now);
-    thread.receive(now);
+    const incoming = thread.receive(now) ?? [];
+    if (incoming.length) this.onGroupMessage(this.getContact('plumber-group'), incoming);
     if (!this.flags.superPlombierGroupNotified) {
       const accepted = this.showGroupNotification(this.getContact('plumber-group'));
       if (accepted) {

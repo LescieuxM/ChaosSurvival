@@ -1,14 +1,54 @@
 import data from './data.json' with { type: 'json' };
 import { HOPLA_HOTEL_URL } from './model.js';
 import { renderHoplaHotelRoom } from './render.js';
+import { createGameMusic } from '../../../audio/game-music.js';
+
+const hotelMusicUrl = new URL(
+  '../../../../assets/kontraa-hype-drill-music-438398.mp3',
+  import.meta.url,
+).href;
+const discoMusicUrl = new URL(
+  '../../../../assets/producesplatinum-disco-483559.mp3',
+  import.meta.url,
+).href;
 
 // A simulated desktop application; rooms and movement stay in the existing renderer.
 export class HoplaHotelClient {
-  constructor(manager, applications, onHome) {
-    Object.assign(this, { manager, applications, onHome });
+  constructor(manager, applications, onHome, getMusicVolume = () => 1) {
+    Object.assign(this, { manager, applications, onHome, getMusicVolume });
+  }
+  setMusicVolume(value) {
+    this.hotelMusic?.setMasterVolume(value);
+    this.discoMusic?.setMasterVolume(value);
+  }
+  stopMusic() {
+    this.hotelMusic?.stop();
+    this.discoMusic?.stop();
+    this.activeMusic = null;
+    this.musicStopped = true;
+  }
+  updateMusic(room) {
+    const nextMusic = room.id === 'discotheque' ? 'discoMusic' : 'hotelMusic';
+    if (this.activeMusic === nextMusic && !this.musicStopped) return;
+    this[this.activeMusic]?.stop();
+    this.hotelMusic ??= createGameMusic(hotelMusicUrl, undefined, this.getMusicVolume());
+    this.discoMusic ??= createGameMusic(discoMusicUrl, undefined, this.getMusicVolume());
+    this.activeMusic = nextMusic;
+    this.musicStopped = false;
+    this[nextMusic].start();
+  }
+  disposeMusic() {
+    this.hotelMusic?.dispose();
+    this.discoMusic?.dispose();
+    this.hotelMusic = this.discoMusic = this.activeMusic = null;
+    this.musicStopped = true;
   }
   open() {
     if (this.instance?.element.isConnected) {
+      if (this.musicStopped) {
+        this.musicStopped = false;
+        this.showRoom(this.room ?? data.room);
+      }
       this.applications.restore(this.instance);
       return this.instance;
     }
@@ -18,6 +58,7 @@ export class HoplaHotelClient {
       onDismiss: () => {
         const instance = this.instance;
         instance.cleanup?.();
+        this.disposeMusic();
         instance.observer.disconnect();
         instance.element.removeEventListener('click', instance.home);
         instance.task.remove();
@@ -30,13 +71,22 @@ export class HoplaHotelClient {
     this.instance = instance;
     const { element } = instance;
     element.classList.add('hopla-hotel-client');
-    instance.onMinimize = () => instance.cleanup?.('pause');
-    instance.onRestore = () => instance.resume?.();
+    instance.onMinimize = () => {
+      instance.cleanup?.('pause');
+      this[this.activeMusic]?.pause();
+    };
+    instance.onRestore = () => {
+      instance.resume?.();
+      if (!this.musicStopped) this[this.activeMusic]?.resume();
+    };
     instance.home = (event) => {
       const link = event.target.closest('[data-browser-link]');
       if (!link) return;
       event.preventDefault();
-      if (link.dataset.browserLink === HOPLA_HOTEL_URL) this.onHome?.();
+      if (link.dataset.browserLink === HOPLA_HOTEL_URL) {
+        this.stopMusic();
+        this.onHome?.();
+      }
     };
     element.addEventListener('click', instance.home);
     // movementBounds already accounts for the real desktop and taskbar, even in arcade mode.
@@ -74,6 +124,7 @@ export class HoplaHotelClient {
   }
   showRoom(room) {
     const instance = this.instance;
+    this.room = room;
     instance.cleanup?.();
     instance.cleanup = instance.resume = null;
     const context = {
@@ -93,5 +144,6 @@ export class HoplaHotelClient {
     instance.element
       .querySelector('.window-body')
       .replaceChildren(renderHoplaHotelRoom(context, data, room));
+    this.updateMusic(room);
   }
 }

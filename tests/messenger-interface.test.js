@@ -770,6 +770,47 @@ test('Messenger keeps one independent window per contact including future contac
   ]);
 });
 
+test('incoming conversations reuse one minimized window and respect saved explicit closes', () => {
+  const contact = { id: 'future', available: true, dialogue: intro.id };
+  const closedContact = { id: 'closed', available: true, dialogue: intro.id };
+  const progression = {
+    data: {
+      conversations: {
+        future: { unread: ['incoming-message'], windowClosed: true },
+        closed: { unread: ['older-message'], windowClosed: true },
+      },
+    },
+    saves: 0,
+    save() {
+      this.saves++;
+    },
+  };
+  let opens = 0;
+  const view = {
+    element: { isConnected: false },
+    thread: { state: progression.data.conversations.future },
+    openMinimized() {
+      opens++;
+      this.element.isConnected = true;
+    },
+  };
+  const messenger = new Messenger({
+    progression,
+    primary: () => null,
+    createConversation: () => view,
+  });
+  messenger.contacts = () => [contact, closedContact];
+
+  messenger.ensureBackground(contact);
+  messenger.ensureBackground(contact);
+  messenger.restoreUnreadConversations();
+
+  assert.equal(opens, 1, 'the received conversation gets one taskbar window');
+  assert.equal(progression.data.conversations.future.windowClosed, false);
+  assert.equal(progression.data.conversations.closed.windowClosed, true);
+  assert.equal(progression.saves, 1);
+});
+
 test('queued choices survive a multi-node message sequence and only return after its last message', () => {
   const progression = new Progression(read('../src/config/story.json'));
   progression.begin();

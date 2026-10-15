@@ -28,6 +28,7 @@ function fixture() {
   let now = 1_000;
   const sentWizzes = [];
   const notifications = [];
+  const groupMessages = [];
   let groupThread;
   const contacts = {
     turbo: { id: 'turbo', available: true, online: true },
@@ -52,6 +53,8 @@ function fixture() {
       notifications.push(contact?.id);
       return true;
     },
+    onGroupMessage: (contact, incoming) =>
+      groupMessages.push([contact?.id, ...incoming.map((event) => event.id)]),
     now: () => now,
   });
   return {
@@ -59,6 +62,7 @@ function fixture() {
     orchestrator,
     sentWizzes,
     notifications,
+    groupMessages,
     storage,
     setGroupThread: (thread) => (groupThread = thread),
     get now() {
@@ -476,6 +480,31 @@ test('the group invite waits for both branches and migrates an old rest deadline
   assert.equal(scheduled, 1);
   assert.equal(received, 2);
   assert.deepEqual(notifications, ['plumber-group']);
+});
+
+test('group message callbacks fire only when a new group event is received', () => {
+  const context = fixture();
+  const { progression, orchestrator, groupMessages } = context;
+  progression.data.flags.superPlombierPostStarted = true;
+  progression.data.flags.superPlombierGroupCreated = true;
+  progression.data.flags.superPlombierGroupNotified = true;
+  progression.data.dialogues['pixelgirl-super-plombier-group'] = {
+    transcript: [{ speaker: 'contact', text: 'message déjà reçu' }],
+  };
+  let incoming = [];
+  context.setGroupThread({
+    state: { history: [] },
+    receive: () => incoming,
+  });
+
+  orchestrator.updateGroup(1000);
+  assert.deepEqual(groupMessages, []);
+  incoming = [{ id: 'pixelgirl-super-plombier-group' }];
+  orchestrator.updateGroup(2000);
+  assert.deepEqual(groupMessages, [['plumber-group', 'pixelgirl-super-plombier-group']]);
+  incoming = [];
+  orchestrator.updateGroup(3000);
+  assert.equal(groupMessages.length, 1);
 });
 
 test('group rest begins from Turb0\u2019s final transcript message, never the obsolete migration marker', () => {

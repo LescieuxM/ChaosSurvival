@@ -161,9 +161,22 @@ const desktopApplications = new DesktopApplications(
 let narrativeOrchestrator;
 const hoplaHotel = new HoplaHotelClient(manager, desktopApplications, () =>
   openBrowser('http://www.hoplahotel.fr/'),
+  () => settings.data.musicVolume,
 );
-const browser = new InternetAdventurer(manager, desktopApplications, progression, undefined, () =>
-  hoplaHotel.open(),
+const browser = new InternetAdventurer(
+  manager,
+  desktopApplications,
+  progression,
+  undefined,
+  () => hoplaHotel.open(),
+  () => hoplaHotel.stopMusic(),
+  (address) => {
+    try {
+      if (new URL(address).hostname !== 'www.hoplahotel.fr') hoplaHotel.stopMusic();
+    } catch {
+      hoplaHotel.stopMusic();
+    }
+  },
 );
 const messenger = new Messenger({
   manager,
@@ -193,7 +206,11 @@ const messenger = new Messenger({
   createConversation: (contact) => {
     const definition = dialogues[contact.dialogue] ?? pixelgirlDialogue;
     const thread =
-      contact.kind === 'decorative' || !dialogues[contact.dialogue]
+      contact.id === 'plumber-group'
+        ? (plumberGroupThread ??= new ConversationThread('plumber-group', progression, () => [
+            dialogues['pixelgirl-super-plombier-group'],
+          ]))
+        : contact.kind === 'decorative' || !dialogues[contact.dialogue]
         ? replayReactions.thread
         : new ConversationThread(contact.id, progression, () =>
             Object.values(dialogues)
@@ -251,8 +268,20 @@ narrativeOrchestrator = new NarrativeOrchestrator({
     ]);
     return plumberGroupThread;
   },
+  onGroupMessage: (contact) => {
+    if (!contact) return;
+    const view = messenger.ensureBackground(contact);
+    if (!view) return;
+    view.thread.sync();
+    if (
+      narrativeOrchestrator?.flags.superPlombierGroupNotified &&
+      !messenger.isVisible(view)
+    )
+      showMessageNotification(contact, messageNotificationId(contact));
+  },
   showGroupNotification: (contact) => {
     if (!contact) return false;
+    messenger.ensureBackground(contact);
     const id = 'group:super-plombier';
     const shown = notifications.show({
       id,
@@ -296,7 +325,7 @@ function createConversation(dialogue, contactId = 'pixelgirl', thread = replayRe
     {
       thread,
       manageWindow: (view) => messenger.attachConversation(view, contactId),
-      onDispose: (view) => messenger.disposeConversation(view),
+      onDispose: (view, dismissal) => messenger.disposeConversation(view, dismissal),
       onContactsRequested: () => messenger.open(),
       onChoiceValidated: (definition, details) =>
         narrativeOrchestrator.onChoiceValidated(definition, details),
@@ -1034,6 +1063,7 @@ function setVolume(value) {
   audio.setVolume(value);
   settings.update({ musicVolume: value });
   menuMusic.setVolume(value);
+  hoplaHotel.setMusicVolume(value);
   ui.volume.value = value * 100;
   ui.muteButton.textContent = value === 0 ? '♪̸' : '♫';
   ui.muteButton.setAttribute('aria-label', value === 0 ? 'Réactiver le son' : 'Couper le son');
@@ -1183,6 +1213,7 @@ function receiveReplayReactions() {
   const notificationKey = `${progression.data.runId}:${unread.join(',')}`;
   if (incoming.length) sounds.unlock().then(() => sounds.play('message'));
   if (
+    incoming.length &&
     !visible &&
     unread.length &&
     ['playing', 'desktop', 'paused'].includes(phase) &&

@@ -347,6 +347,22 @@ test('site and room routes only request the desktop client and never mount it in
 
 test('Hopla Hotel is a singleton with the canonical app ID and cleans up on close/clear', (t) => {
   const clock = dom(t);
+  const originalAudio = globalThis.Audio;
+  const audioInstances = [];
+  globalThis.Audio = class {
+    constructor(url) {
+      this.src = url;
+      this.currentTime = 0;
+      this.playCount = 0;
+      this.pauseCount = 0;
+      audioInstances.push(this);
+    }
+    play() { this.playCount++; return Promise.resolve(); }
+    pause() { this.pauseCount++; }
+    removeAttribute() { this.src = ''; }
+    load() {}
+  };
+  t.after(() => { globalThis.Audio = originalAudio; });
   const original = structuredClone(hoplaHotelData);
   const bounds = { minX: 0, minY: -120, maxX: 1000, maxY: 580 };
   const manager = {
@@ -401,6 +417,33 @@ test('Hopla Hotel is a singleton with the canonical app ID and cleans up on clos
   assert.equal(first.element.style.width, '940px');
   assert.equal(first.element.style.height, '658px');
   assert.equal(first.element.style.top, '-99px');
+  assert.equal(audioInstances.length, 1);
+  const drill = audioInstances[0];
+  assert.match(drill.src, /kontraa-hype-drill-music-438398\.mp3$/);
+  assert.equal(drill.volume, 0.35);
+  assert.equal(drill.loop, true);
+  assert.equal(drill.playCount, 1);
+  drill.currentTime = 19;
+  client.showRoom(hoplaHotelRooms.find((entry) => entry.id === 'cafe'));
+  assert.equal(audioInstances.length, 1);
+  assert.equal(drill.currentTime, 19, 'ordinary room navigation preserves playback position');
+  const discoRoom = hoplaHotelRooms.find((entry) => entry.id === 'discotheque');
+  client.showRoom(discoRoom);
+  assert.equal(audioInstances.length, 2);
+  const disco = audioInstances[1];
+  assert.equal(drill.currentTime, 0, 'entering the disco resets the drill');
+  assert.equal(drill.pauseCount, 1);
+  assert.match(disco.src, /producesplatinum-disco-483559\.mp3$/);
+  assert.equal(disco.volume, 0.35);
+  assert.equal(disco.loop, true);
+  client.showRoom(hoplaHotelData.room);
+  assert.equal(disco.currentTime, 0, 'leaving the disco resets its track');
+  assert.equal(disco.pauseCount, 1);
+  assert.equal(drill.playCount, 2, 'leaving the disco restarts the drill');
+  client.stopMusic();
+  assert.equal(drill.currentTime, 0, 'ending the browser session resets the active track');
+  assert.equal(client.open(), first);
+  assert.equal(drill.playCount, 3, 'returning to Hopla Hotel restarts the drill');
   assert.equal(client.open(), first);
   assert.equal(manager.windows.size, 1);
   const canvas = () => first.element.querySelector('.hotel-canvas');
@@ -431,6 +474,8 @@ test('Hopla Hotel is a singleton with the canonical app ID and cleans up on clos
   assert.equal(homes, 1);
   move();
   manager.close(first.id);
+  assert.equal(drill.src, '');
+  assert.equal(disco.src, '');
   assert.equal(client.instance, null);
   assert.equal(clock.frames.size, 0);
   assert.equal(clock.timers.size, 0);
@@ -512,6 +557,42 @@ test('room instances have independent motion/bubbles; scaled clicks, visibility 
   assert.equal(clock.frames.size, 0);
   assert.equal(clock.listeners.size, 0);
   assert.equal(canvas.handlers.click, undefined);
+});
+
+test('Hopla Hotel room rendering leaves music lifecycle to its client', (t) => {
+  const clock = dom(t);
+  const originalAudio = globalThis.Audio;
+  const instances = [];
+  globalThis.Audio = class {
+    constructor(url) {
+      this.src = url;
+      this.currentTime = 9;
+      this.volume = 1;
+      this.loop = false;
+      this.playCount = 0;
+      this.pauseCount = 0;
+      instances.push(this);
+    }
+    play() {
+      this.playCount++;
+      return Promise.resolve();
+    }
+    pause() { this.pauseCount++; }
+    removeAttribute(name) { this.removedAttribute = name; }
+    load() { this.loaded = true; }
+  };
+  t.after(() => {
+    globalThis.Audio = originalAudio;
+  });
+
+  renderHoplaHotelRoom({ onDispose() {} }, hoplaHotelData);
+  renderHoplaHotelRoom(
+    { onDispose() {} },
+    hoplaHotelData,
+    hoplaHotelRooms.find((entry) => entry.id === 'discotheque'),
+  );
+  assert.equal(instances.length, 0);
+  assert.equal(clock.frames.size, 0);
 });
 
 test('navigator opens/closes, cancels a moving instance on room changes and repeated mounts leave one listener', (t) => {

@@ -119,7 +119,7 @@ export class NotificationCenter {
     this.current = null;
     this.root.hidden = true;
     this.root.classList.remove('is-dismissing');
-    if (!['cancelled', 'replaced'].includes(item.dismissReason)) this.handled.add(item.id);
+    if (item.dismissReason !== 'replaced') this.handled.add(item.id);
     item.onDismiss?.(item.dismissReason, {
       shownAt: item.shownAt,
       expiresAt: item.expiresAt,
@@ -132,6 +132,7 @@ export class NotificationCenter {
     const queuedIndex = this.queue.findIndex((item) => item.id === id);
     if (queuedIndex >= 0) {
       this.queue.splice(queuedIndex, 1);
+      this.handled.add(id);
       return true;
     }
     if (this.current?.id === id) return this.dismiss('cancelled');
@@ -139,9 +140,12 @@ export class NotificationCenter {
   }
 
   cancelContact(contactId, type = null) {
-    this.queue = this.queue.filter(
-      (item) => item.contactId !== contactId || (type && item.type !== type),
-    );
+    const kept = [];
+    for (const item of this.queue) {
+      if (item.contactId === contactId && (!type || item.type === type)) this.handled.add(item.id);
+      else kept.push(item);
+    }
+    this.queue = kept;
     if (
       this.current?.contactId === contactId &&
       (!type || this.current.type === type)

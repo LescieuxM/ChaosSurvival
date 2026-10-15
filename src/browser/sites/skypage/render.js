@@ -1,4 +1,4 @@
-import { SKY_URL as HOME, blogUrl, articleUrl } from './urls.js';
+import { SKY_URL as HOME, blogUrl, articleUrl, commentProfileUrl } from './urls.js';
 import contacts from '../../../config/contacts.json' with { type: 'json' };
 const contactIds = new Set(
   contacts.filter((contact) => contact.id !== 'turbo').map((contact) => contact.id),
@@ -22,6 +22,11 @@ function image(path, alt, className = '') {
   element.src = path;
   element.alt = alt;
   return element;
+}
+function commentAuthorBlog(data, author) {
+  return data.blogs.find(
+    (blog) => blog.contactId && contactIds.has(blog.contactId) && blog.nickname === author,
+  );
 }
 function date(value, time) {
   const [year, month, day] = value.split('-');
@@ -145,8 +150,13 @@ export function renderSkyBlog({ url }, data, blog) {
     comments.append(node('h4', '', `Commentaires (${article.comments.length})`));
     for (const comment of article.comments) {
       const row = node('div', 'sky-comment');
+      const authorBlog = commentAuthorBlog(data, comment.author);
       row.append(
-        node('strong', '', comment.author),
+        link(
+          comment.author,
+          authorBlog ? blogUrl(authorBlog) : commentProfileUrl(comment.author),
+          'sky-comment-author',
+        ),
         node('small', '', date(comment.date, comment.time)),
         node('p', '', comment.text),
       );

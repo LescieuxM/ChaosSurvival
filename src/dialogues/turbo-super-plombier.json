@@ -136,15 +136,9 @@
         },
         {
           "speaker": "contact",
-          "text": "si tu sautes contre un mur au bon moment",
+          "text": "y a un sol buggué on peut passer à travers et ça finit la game en quelques secondes LOL",
           "delayMs": 300,
-          "typingMs": 500
-        },
-        {
-          "speaker": "contact",
-          "text": "tu traverses le niveau ptdrrr",
-          "delayMs": 300,
-          "typingMs": 420
+          "typingMs": 950
         }
       ],
       "choices": [

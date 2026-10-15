@@ -47,6 +47,18 @@ test('game music starts once at 35 percent, loops, rewinds on retries, and reset
   assert.equal(audio.playCount, 3);
 });
 
+test('game music scales the nominal 35 percent by the global music volume', () => {
+  const { instances, factory } = fixture();
+  const music = createGameMusic('/local/game.mp3', factory, 0.5);
+  music.start();
+  assert.equal(instances[0].volume, 0.175);
+  music.setMasterVolume(0);
+  assert.equal(instances[0].volume, 0);
+  music.setMasterVolume(1);
+  assert.equal(instances[0].volume, 0.35);
+  music.dispose();
+});
+
 test('game music pauses for an actual game pause and releases its media source on disposal', () => {
   const { instances, factory } = fixture();
   const music = createGameMusic('/local/game.mp3', factory);

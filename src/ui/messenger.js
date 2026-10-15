@@ -3,6 +3,7 @@ import { MessengerContacts } from './messenger-contacts.js';
 import { messengerMenu } from './messenger-menu.js';
 import { applicationName } from './identity.js';
 import { playerIdentity } from './player-identity.js';
+import { createContactAvatar } from './contact-avatar.js';
 
 export class Messenger {
   constructor({
@@ -82,10 +83,18 @@ export class Messenger {
     if (!contact) return;
     const view = this.prepareContact(contact);
     if (!view) return;
+    let restoredExisting = false;
     if (contact.kind === 'decorative' || contact.available === false) view.openOffline(contact);
-    else view.open();
+    else if (view.element?.isConnected) {
+      this.applications.restore(view.messengerInstance);
+      restoredExisting = true;
+    } else view.open();
+    if (view.thread?.state.windowClosed) {
+      view.thread.state.windowClosed = false;
+      this.progression.save();
+    }
     view.thread?.markRead?.();
-    this.onContactOpened(contact, view);
+    if (!restoredExisting) this.onContactOpened(contact, view);
     return view;
   }
   prepareContact(contact) {
@@ -102,6 +111,24 @@ export class Messenger {
     }
     return view;
   }
+  ensureBackground(contact) {
+    const view = this.prepareContact(contact);
+    if (!view) return null;
+    if (view.thread?.state.windowClosed) {
+      view.thread.state.windowClosed = false;
+      this.progression.save();
+    }
+    if (!view.element?.isConnected) view.openMinimized?.();
+    return view;
+  }
+  restoreUnreadConversations() {
+    if (!this.progression?.data) return;
+    for (const contact of this.contacts()) {
+      const state = this.progression.data.conversations?.[contact.id];
+      if (contact.available && Array.isArray(state?.unread) && state.unread.length && state.windowClosed !== true)
+        this.ensureBackground(contact);
+    }
+  }
   attachConversation(view, contactId) {
     const key = `messenger:conversation:${contactId}`;
     const instance = this.applications.attachWindow(
@@ -111,16 +138,44 @@ export class Messenger {
       'msn',
     );
     view.messengerInstance = instance;
+    instance.task.setAttribute('aria-pressed', 'true');
     view.element.dataset.messengerContact = contactId;
+    const contact = this.contacts().find((entry) => entry.id === contactId);
+    if (contactId === 'plumber-group' && contact) {
+      instance.task.classList.add('task-msn-group');
+      const avatar = createContactAvatar(contact, 'task-group-avatar');
+      avatar.style.width = '18px';
+      avatar.style.height = '18px';
+      instance.task.querySelector('.icon')?.replaceWith(avatar);
+    }
+    instance.onRestore = () => {
+      view.thread?.markRead?.();
+      if (view.thread?.state.windowClosed) {
+        view.thread.state.windowClosed = false;
+        this.progression.save();
+      }
+      instance.task.classList.remove('messenger-unread');
+      instance.task.title = view.dialogue.contact.nickname;
+      this.onContactOpened(contact ?? view.dialogue.contact, view);
+    };
     this.installMenus(
       view.element,
       () => view.dialogue.contact,
       () => Boolean(view.offlineContact),
     );
   }
-  disposeConversation(view) {
+  disposeConversation(view, dismissal) {
     view.element?.disposeMenu?.();
     const instance = view.messengerInstance;
+    if (
+      dismissal?.reason === 'close' &&
+      !view.switchingView &&
+      !view.offlineContact &&
+      view.thread
+    ) {
+      view.thread.state.windowClosed = true;
+      this.progression.save();
+    }
     if (!instance) return;
     instance.task.remove();
     this.applications.instances.delete(instance.kind);
@@ -318,6 +373,7 @@ export class Messenger {
     );
   }
   update() {
+    this.restoreUnreadConversations();
     this.roster?.renderContacts();
     const contacts = this.contacts();
     for (const instance of this.views.values()) {
@@ -330,7 +386,10 @@ export class Messenger {
         const incoming = view.thread.receive();
         if (incoming.length) {
           this.sounds.unlock().then(() => this.sounds.play('message'));
-          if (!this.isVisible(view)) this.onMessage(view.dialogue.contact, incoming);
+          if (!this.isVisible(view)) {
+            this.ensureBackground(view.dialogue.contact);
+            this.onMessage(view.dialogue.contact, incoming);
+          }
         }
       }
       view.refresh();

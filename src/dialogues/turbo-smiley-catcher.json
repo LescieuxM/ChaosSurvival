@@ -48,7 +48,7 @@
     },
     "noob-reply": {
       "messages": [
-        { "speaker": "contact", "text": "MDRRR t'as eu de la chance c'est tout", "delayMs": 0, "typingMs": 650 }
+        { "speaker": "contact", "text": "eh oh !!", "delayMs": 0, "typingMs": 650 }
       ],
       "next": "hobbies"
     },

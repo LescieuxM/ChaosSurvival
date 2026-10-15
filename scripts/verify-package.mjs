@@ -4,6 +4,7 @@ import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { extractFile as readArchiveFile, listPackage, statFile } from '@electron/asar';
+import { collectAudioReferences } from './audio-references.mjs';
 
 export const projectRoot = fileURLToPath(new URL('../', import.meta.url));
 const projectPackage = JSON.parse(await readFile(path.join(projectRoot, 'package.json'), 'utf8'));
@@ -11,6 +12,25 @@ export const buildDirectory = path.resolve(projectRoot, projectPackage.build.dir
 const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const archivePath = (filename) => filename.replaceAll('\\', '/').replace(/^\//, '');
 const extractFile = (archive, filename) => readArchiveFile(archive, path.normalize(filename));
+export function verifyRequiredAudio(audioFiles, requiredFiles) {
+  return requiredFiles.map((required) => {
+    const basename = path.posix.basename(required.path);
+    const stem = basename.slice(0, -path.posix.extname(basename).length);
+    const matches = audioFiles.filter((file) => {
+      const packagedName = path.posix.basename(file.path);
+      return (
+        (packagedName === basename || packagedName.startsWith(`${stem}-`)) &&
+        file.sha256 === required.sha256
+      );
+    });
+    assert.equal(
+      matches.length,
+      1,
+      `Ressource audio absente, altérée ou dupliquée : ${required.path}`,
+    );
+    return matches[0];
+  });
+}
 
 async function walk(directory) {
   const files = [];
@@ -67,19 +87,32 @@ export async function verifyArchive(
     );
   }
 
-  const music = verified.filter(
-    (file) => file.path.startsWith('dist/') && file.path.endsWith('.mp3'),
+  const audioFiles = verified.filter(
+    (file) => file.path.startsWith('dist/') && /\.(?:mp3|wav|ogg|m4a|aac|flac)$/i.test(file.path),
   );
-  assert.equal(music.length, 1, 'La musique doit être intégrée à l’archive');
-  assert.equal(
-    music[0].sha256,
-    digest(await readFile(path.join(projectRoot, 'assets/musiclvl1.mp3'))),
-    'La musique intégrée doit correspondre au MP3 original',
+  const audioReferences = await collectAudioReferences(projectRoot);
+  const requiredFiles = await Promise.all(
+    audioReferences.map(async ({ path: filename, absolute }) => ({
+      path: filename,
+      sha256: digest(await readFile(absolute)),
+    })),
   );
-  assert.ok(
-    ![...files].some((file) => file.endsWith('.wav')),
-    'L’ancienne musique WAV ne doit pas être embarquée',
+  const requiredAudio = verifyRequiredAudio(audioFiles, requiredFiles);
+  const musicIndex = audioReferences.findIndex(({ path: filename }) => filename === 'assets/musiclvl1.mp3');
+  assert.notEqual(musicIndex, -1, 'La musique du niveau 1 doit être référencée par le jeu');
+  const music = requiredAudio[musicIndex];
+  assert.ok(music, 'La musique du niveau 1 doit être intégrée à l’archive');
+  const runtimeFiles = verified.filter((file) => /\.(?:js|mjs|html|css)$/.test(file.path));
+  const runtimeText = await Promise.all(
+    runtimeFiles.map(async (file) => extractFile(archive, path.normalize(file.path)).toString('utf8')),
   );
+  for (const audio of requiredAudio) {
+    const packagedName = path.posix.basename(audio.path);
+    assert.ok(
+      runtimeText.some((text) => text.includes(packagedName)),
+      `URL compilée absente du code packagé : ${packagedName}`,
+    );
+  }
   assert.ok(
     verified.some((file) => /^dist\/assets\/.*\.js$/.test(file.path)),
     'JavaScript du jeu absent',
@@ -96,13 +129,21 @@ export async function verifyArchive(
   assert.equal(packaged.version, source.version, 'Version empaquetée incorrecte');
   assert.ok(files.has(packaged.main), 'Point d’entrée Electron absent de l’archive');
 
-  return { archive, version: packaged.version, files: verified, music: music[0] };
+  return {
+    archive,
+    version: packaged.version,
+    files: verified,
+    music,
+    audio: requiredAudio,
+    audioReferences,
+  };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const result = await verifyArchive(process.argv[2]);
   console.log(`OK : ${result.files.length} ressources intégrées et vérifiées par SHA-256.`);
-  console.log(`OK : musique originale intégrée (${result.music.bytes} octets).`);
+  console.log(`OK : musique du niveau 1 intégrée (${result.music.bytes} octets).`);
+  console.log(`OK : ${result.audio.length} ressources audio requises intégrées et vérifiées.`);
   console.log(
     'OK : HTML, CSS, JavaScript et Electron inclus ; aucun chemin absolu vers le projet.',
   );

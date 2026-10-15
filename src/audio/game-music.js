@@ -1,10 +1,15 @@
 const GAME_MUSIC_VOLUME = 0.35;
 
-export function createGameMusic(url, AudioConstructor = () => new Audio(url)) {
+export function createGameMusic(url, AudioConstructor = () => new Audio(url), masterVolume = 1) {
   let audio = null;
   let active = false;
   let paused = false;
   let disposed = false;
+  let volumeScale = Number.isFinite(masterVolume) ? Math.max(0, Math.min(1, masterVolume)) : 1;
+
+  function updateVolume() {
+    if (audio) audio.volume = GAME_MUSIC_VOLUME * volumeScale;
+  }
 
   function play() {
     if (disposed) return false;
@@ -23,7 +28,7 @@ export function createGameMusic(url, AudioConstructor = () => new Audio(url)) {
       audio ??= AudioConstructor();
       if (!audio) return false;
       audio.loop = true;
-      audio.volume = GAME_MUSIC_VOLUME;
+      updateVolume();
       audio.currentTime = 0;
       active = true;
       paused = false;
@@ -77,5 +82,11 @@ export function createGameMusic(url, AudioConstructor = () => new Audio(url)) {
     audio = null;
   }
 
-  return Object.freeze({ start, pause, resume, stop, dispose });
+  function setMasterVolume(value) {
+    if (!Number.isFinite(value)) return;
+    volumeScale = Math.max(0, Math.min(1, value));
+    updateVolume();
+  }
+
+  return Object.freeze({ start, pause, resume, stop, dispose, setMasterVolume });
 }

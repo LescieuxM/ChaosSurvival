@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import {
   RunnerRound,
   GROUND,
+  runnerSpeedAt,
   bestDistance,
   saveBestDistance,
 } from '../src/browser/sites/flashzone/runner-round.js';
@@ -66,17 +67,56 @@ test('boxes collide, holes cause falling, and early jumps can clear both hazards
     assert.ok(success.active, kind);
   }
 });
-test('spawns allow reaction time, hazard spacing stays jumpable and speed is capped', () => {
+test('maximum speed keeps collision checks reliable without slowing obstacle travel', () => {
+  const round = new RunnerRound(() => 0);
+  round.start(0);
+  round.elapsed = 135_000;
+  round.obstacles = [{ id: 1, kind: 'crate', x: 78, width: 22, height: 28 }];
+  round.tick(2);
+  assert.equal(round.speed, 1600);
+  assert.equal(round.active, false);
+});
+test('spawns have a safe initial approach and keep fixed world-space gaps at high speed', () => {
   for (const value of [0, 0.4, 0.9]) {
     const r = new RunnerRound(() => value);
     r.start(0);
     for (let t = 10; t <= 4500 && !r.obstacles.length; t += 10) r.tick(t);
     assert.equal(r.obstacles.length, 1);
     assert.ok((r.obstacles[0].x - 76) / r.speed > 2);
-    assert.ok(r.nextAt - r.distance >= r.speed * 1.4);
-    r.distance = 100000;
-    assert.equal(r.speed, 180);
+    assert.ok(r.nextAt - r.distance >= 145);
+    r.elapsed = 135000;
+    assert.equal(r.speed, 1600);
+    assert.ok(r.nextAt - r.distance < r.speed * 0.13);
   }
+});
+test('scroll speed follows a continuous active-time curve and resets for each run', () => {
+  const near = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-9);
+  assert.equal(runnerSpeedAt(0), 100);
+  near(runnerSpeedAt(15000), 150);
+  near(runnerSpeedAt(30000), 200);
+  near(runnerSpeedAt(45000), 300);
+  near(runnerSpeedAt(60000), 400);
+  near(runnerSpeedAt(75000), 550);
+  near(runnerSpeedAt(90000), 700);
+  near(runnerSpeedAt(105000), 900);
+  near(runnerSpeedAt(120000), 1200);
+  near(runnerSpeedAt(135000), 1600);
+  assert.equal(runnerSpeedAt(500000), 1600);
+  assert.ok(runnerSpeedAt(14999) < runnerSpeedAt(15000));
+  assert.ok(runnerSpeedAt(15001) > runnerSpeedAt(15000));
+
+  const round = new RunnerRound(() => 0);
+  round.start(0);
+  round.nextAt = Infinity;
+  for (let now = 10; now <= 15_000; now += 10) round.tick(now);
+  assert.equal(round.elapsed, 15_000);
+  near(round.speed, 150);
+  round.stop();
+  round.tick(30_000);
+  assert.equal(round.elapsed, 15_000, 'a finished run does not advance its speed clock');
+  round.start(40_000);
+  assert.equal(round.elapsed, 0);
+  assert.equal(round.speed, 100);
 });
 test('distance records persist/reset independently of other games and narrative', () => {
   const { p, storage } = fixture();
