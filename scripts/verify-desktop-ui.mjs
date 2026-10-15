@@ -1912,7 +1912,7 @@ async function verifyHoplaHotel() {
   assert.equal(await narrative(), before);
   assert.equal(
     await evaluate(
-      "(()=>{const s=JSON.parse(localStorage.getItem('chaos-survival-story-v1'));return !Object.hasOwn(s,'xdhotel')&&!Object.hasOwn(s,'hopla-hotel');})()",
+      "(()=>{const s=JSON.parse(localStorage.getItem('chaos-survival-story-v1'));return !Object.hasOwn(s,'hopla-hotel');})()",
     ),
     false,
   );

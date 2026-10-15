@@ -131,6 +131,43 @@ test('Wizz send events persist one chronological system entry for each sender wi
   assert.equal(restored.state.history.length, 4);
 });
 
+test('a malformed thread row is isolated while valid messages and other contacts survive reload', () => {
+  const values = new Map();
+  const storage = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, value),
+  };
+  const progression = new Progression(read('../src/config/story.json'), storage);
+  progression.begin();
+  const good = { key: 'good', speaker: 'contact', text: 'Historique conservé' };
+  progression.data.conversations = {
+    pixelgirl: {
+      version: 1,
+      history: [good, { key: 12, speaker: 'contact', text: 'invalid' }],
+      unread: ['good', 12],
+      activeEvent: null,
+      pendingEvents: [],
+    },
+    turbo: {
+      version: 1,
+      history: [{ key: 'turbo-1', speaker: 'player', text: 'Réponse conservée' }],
+      unread: [],
+      activeEvent: null,
+      pendingEvents: [],
+    },
+  };
+  progression.save();
+  const restored = new Progression(read('../src/config/story.json'), storage);
+  const events = () => [];
+  const pixel = new ConversationThread('pixelgirl', restored, events);
+  assert.deepEqual(pixel.state.history, [good]);
+  assert.deepEqual(pixel.state.unread, ['good']);
+  assert.equal(restored.data.conversations.turbo.history[0].text, 'Réponse conservée');
+  const again = new Progression(read('../src/config/story.json'), storage);
+  assert.deepEqual(again.data.conversations.pixelgirl.history, [good]);
+  assert.equal(again.data.conversations.turbo.history.length, 1);
+});
+
 test('Wizz rows use system presentation without an author or emoticon parsing', (t) => {
   const previous = globalThis.document;
   const row = { dataset: {} };

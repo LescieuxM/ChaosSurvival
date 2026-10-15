@@ -22,26 +22,24 @@ import { localPages } from '../src/browser/registry.js';
 import { BrowserSession } from '../src/browser/session.js';
 const room = hoplaHotelData.room;
 
-test('Hopla Hotel resolves canonical and legacy URLs, including saved histories, without admitting lookalike domains', () => {
-  for (const old of ['xdhotel.fr', 'https://www.xdhotel.fr/'])
-    assert.equal(localPages.resolve(old, {}).page.url, HOPLA_HOTEL_URL);
+test('Hopla Hotel uses only canonical URLs and drops an invalid saved tab without losing other tabs', () => {
   const oldRoom = 'http://www.xdhotel.fr/salle/hall?test=1';
-  const resolved = localPages.resolve(oldRoom, {});
-  assert.equal(resolved.page.url, `${HOPLA_HOTEL_URL}salle/hall`);
-  assert.equal(resolved.url.href, `${HOPLA_HOTEL_URL}salle/hall?test=1`);
+  assert.ok(localPages.resolve(oldRoom, {}).error);
   const saved = {
     version: 1,
     active: 'old',
     tabs: [
-      { id: 'old', title: 'XD Hotel', history: ['http://www.xdhotel.fr/', oldRoom], cursor: 1 },
+      { id: 'old', title: 'Ancien site', history: ['http://www.xdhotel.fr/', oldRoom], cursor: 1 },
+      { id: 'mixed', title: 'Hopla Hotel', history: ['http://www.xdhotel.fr/', HOPLA_HOTEL_URL], cursor: 1 },
+      { id: 'valid', title: 'Accueil', history: ['http://www.xdsearch.fr/'], cursor: 0 },
     ],
   };
   const progression = { data: { browser: structuredClone(saved) }, save() {} };
   const session = new BrowserSession(progression);
-  assert.equal(session.active, 'old');
+  assert.equal(session.active, 'mixed');
+  assert.deepEqual(session.tabs.map((tab) => tab.id), ['mixed', 'valid']);
+  assert.deepEqual(session.tabs[0].history, [HOPLA_HOTEL_URL]);
   assert.ok(localPages.resolve(session.address, {}).page);
-  session.move(-1);
-  assert.equal(localPages.resolve(session.address, {}).page.title, 'Hopla Hotel');
   assert.deepEqual(saved.tabs[0].history, ['http://www.xdhotel.fr/', oldRoom]);
   for (const address of [
     'xdhotel.fr.evil.example',
@@ -332,7 +330,7 @@ function dom(t) {
 }
 const walkTree = (node) => [node, ...node.children.flatMap(walkTree)];
 
-test('site and legacy room pages only request the desktop client and never mount it in the browser', (t) => {
+test('site and room routes only request the desktop client and never mount it in the browser', (t) => {
   dom(t);
   let launches = 0;
   for (const address of [HOPLA_HOTEL_URL, ...hoplaHotelRooms.map((room) => `${HOPLA_HOTEL_URL}salle/${room.id}`)]) {

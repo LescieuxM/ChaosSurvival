@@ -3,7 +3,7 @@
 ## Accès et fenêtre
 
 Le site local `http://www.hoplahotel.fr/` est référencé par XD Search.
-L'ancien domaine `www.xdhotel.fr` et les routes `/salle/...` restent compatibles.
+Les salles utilisent les routes canoniques `/salle/...`.
 Le bouton « Entrer dans l'hôtel » ouvre un client Windows XD indépendant ;
 aucune scène n'est montée dans Internet Adventurer.
 
