@@ -1,0 +1,69 @@
+{
+  "id": "turbo-smiley-catcher",
+  "version": 1,
+  "revision": 1,
+  "contact": {
+    "id": "turbo",
+    "name": "Turb0",
+    "nickname": "Turb0",
+    "status": "En ligne",
+    "personalMessage": "♪ BASSHUNTER - DOTA ♪",
+    "avatar": "./avatars/turbo.svg"
+  },
+  "player": {
+    "nickname": "Moi",
+    "avatar": "./avatars/player.svg"
+  },
+  "start": "opening",
+  "completion": {
+    "stayOnline": true,
+    "connection": {
+      "contactId": "luna",
+      "delayMs": 3000
+    }
+  },
+  "nodes": {
+    "opening": {
+      "messages": [
+        {
+          "speaker": "contact",
+          "text": "mdrrrr noob",
+          "delayMs": 1500,
+          "typingMs": 500
+        }
+      ],
+      "choices": [
+        { "id": "noob", "text": "c'est toi le noob mdr", "next": "noob-reply" },
+        {
+          "id": "screen",
+          "text": "attends mais toi aussi tu vois mon écran ?",
+          "next": "screen-reply"
+        },
+        {
+          "id": "leave-me-alone",
+          "text": "ahah laisse moi tranquille",
+          "next": "leave-reply"
+        }
+      ]
+    },
+    "noob-reply": {
+      "messages": [
+        { "speaker": "contact", "text": "MDRRR t'as eu de la chance c'est tout", "delayMs": 0, "typingMs": 650 }
+      ],
+      "end": true
+    },
+    "screen-reply": {
+      "messages": [
+        { "speaker": "contact", "text": "bah ouais je voyais ton jeu mdr", "delayMs": 0, "typingMs": 650 },
+        { "speaker": "contact", "text": "pourquoi tu demandes ça ???", "delayMs": 250, "typingMs": 550 }
+      ],
+      "end": true
+    },
+    "leave-reply": {
+      "messages": [
+        { "speaker": "contact", "text": "MDRRRR même pas en rêve", "delayMs": 0, "typingMs": 650 }
+      ],
+      "end": true
+    }
+  }
+}

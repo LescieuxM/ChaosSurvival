@@ -1,0 +1,308 @@
+[
+  {
+    "id": "cartouchegrise",
+    "nickname": "CartoucheGrise",
+    "theme": "cartouche",
+    "avatar": "./skypage/cartouchegrise.svg",
+    "subtitle": "ça marche ? alors on ne démonte pas tout.",
+    "description": "CartoucheGrise : jeux d'occasion, bricolage PC et petites habitudes utiles.",
+    "keywords": ["cartouchegrise", "pc", "informatique", "jeux", "occasion", "sauvegardes"],
+    "articles": [
+      {
+        "id": "carnet",
+        "title": "un carnet à côté du PC",
+        "date": "2009-01-04",
+        "paragraphs": [
+          "j'ai commencé à noter les changements que je fais sur le pc dans un vieux cahier. pas un grand projet, juste la date et ce que j'ai installé.",
+          "quand quelque chose ne marche plus, ça évite de répondre aucune idée alors que j'ai changé trois trucs la veille. la première page contient déjà une tache de café."
+        ],
+        "comments": []
+      },
+      {
+        "id": "occasion",
+        "title": "le rayon occasion",
+        "date": "2009-01-09",
+        "paragraphs": [
+          "passé au magasin pour regarder les jeux ps2 d'occasion. je lis les dos des boîtes, puis je vérifie les disques avant de décider.",
+          "j'ai pris un jeu plutôt que trois au hasard. il reste déjà deux boîtes à finir sur l'étagère. enfin trois, mais la troisième me regarde moins fort."
+        ],
+        "comments": [
+          {
+            "author": "Sk8er_du_93",
+            "date": "2009-01-10",
+            "text": "les boîtes pas finies je les retourne, problème réglé lol"
+          }
+        ]
+      },
+      {
+        "id": "copie",
+        "title": "la copie qu'on remet toujours à demain",
+        "date": "2009-01-18",
+        "paragraphs": [
+          "copié mes sauvegardes et mes documents importants sur un autre disque ce matin. j'ai ouvert quelques fichiers de la copie pour vérifier, sinon ça sert juste à se rassurer.",
+          "c'est pas passionnant mais moins long que de refaire les missions. j'ai aussi renommé trois dossiers nouveau dossier. petit exploit."
+        ],
+        "comments": [
+          {
+            "author": "LeModemEnPLS",
+            "date": "2009-01-19",
+            "text": "je viens de le faire aussi. mon dossier important s'appelait divers 2..."
+          }
+        ]
+      },
+      {
+        "id": "cables",
+        "title": "sous le bureau",
+        "date": "2009-01-23",
+        "paragraphs": [
+          "j'ai voulu ranger les câbles. j'ai retrouvé un câble d'imprimante alors que je n'ai plus cette imprimante depuis deux ans.",
+          "les câbles utiles ont maintenant une petite étiquette en papier. ça fait pas très pro mais je débranche enfin le bon truc du premier coup."
+        ],
+        "comments": []
+      },
+      {
+        "id": "manuel",
+        "title": "les manuels dans les boîtes",
+        "date": "2009-01-29",
+        "paragraphs": [
+          "j'aime bien quand un jeu a encore son manuel. les commandes, les dessins, les notes au crayon de quelqu'un avant moi.",
+          "celui acheté cette semaine a un meilleur score griffonné sur la dernière page. je le laisse, ça me fait un petit objectif pour ma prochaine partie."
+        ],
+        "comments": [
+          {
+            "author": "xX_PixelGirl_Xx",
+            "date": "2009-01-30",
+            "text": "je lis toujours le manuel dans le bus avant de rentrer :3"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "grillepain_92",
+    "nickname": "GrillePain_92",
+    "theme": "grillepain",
+    "avatar": "./skypage/grillepain.svg",
+    "subtitle": "le blog qui sert surtout à pas faire autre chose",
+    "description": "GrillePain_92 : observations inutiles, cuisine ratée et humour de forum.",
+    "keywords": ["grillepain_92", "humour", "absurde", "tartines", "forum"],
+    "articles": [
+      {
+        "id": "tartine",
+        "title": "test matériel : la tartine",
+        "date": "2009-01-08",
+        "paragraphs": [
+          "config : pain de mie, bouton 4, beurre. résultat : noir dehors blanc dedans. très bon contraste, mauvais goût.",
+          "je passe au bouton 2 demain. merci de pas me demander si ça fait tourner crysis."
+        ],
+        "comments": [
+          {
+            "author": "LeModemEnPLS",
+            "date": "2009-01-09",
+            "text": "au moins ton matériel démarre sans mot de passe"
+          }
+        ]
+      },
+      {
+        "id": "chaise",
+        "title": "ma chaise fait un bruit de canard",
+        "date": "2009-01-14",
+        "paragraphs": [
+          "elle couine à chaque fois que je bouge. au début je cherchais d'où ça venait. maintenant je fais des solos.",
+          "ma mère a dit arrête ce bruit. j'ai expliqué que je pouvais pas abandonner mon groupe comme ça. elle a pas demandé de rappel."
+        ],
+        "comments": []
+      },
+      {
+        "id": "courses",
+        "title": "liste de courses retrouvée",
+        "date": "2009-01-21",
+        "paragraphs": [
+          "j'ai retrouvé une liste dans ma poche : lait, piles, pain, truc. impossible de savoir ce que truc voulait dire.",
+          "j'ai pris une pomme. si c'était pas ça fallait être plus précis, moi du passé."
+        ],
+        "comments": [
+          {
+            "author": "Oo_bubble-princess_oO",
+            "date": "2009-01-22",
+            "text": "truc c'est forcément des bonbons, je vois pas d'autre possibilité ^^"
+          }
+        ]
+      },
+      {
+        "id": "chaussettes",
+        "title": "grande enquête sur les chaussettes",
+        "date": "2009-01-30",
+        "paragraphs": [
+          "j'ai 7 chaussettes seules. aucune ne va avec une autre. j'ai mis les deux plus proches, à trois mètres ça passe.",
+          "mise à jour : les gens se mettent rarement à trois mètres pour regarder mes pieds. enquête terminée, osef."
+        ],
+        "comments": [
+          {
+            "author": "Sk8er_du_93",
+            "date": "2009-01-31",
+            "text": "avec mes shoes trouées ça se verrait direct mdr"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "disquette44",
+    "nickname": "Disquette44",
+    "theme": "disquette",
+    "avatar": "./skypage/disquette.svg",
+    "subtitle": "chargement en cours... va chercher un goûter",
+    "description": "Disquette44 : vieux PC, cours, jeux et expériences pas toujours réussies.",
+    "keywords": ["disquette44", "vieux pc", "windows xd", "config", "cours", "crysis"],
+    "articles": [
+      {
+        "id": "ventilo",
+        "title": "le ventilateur a quelque chose à dire",
+        "date": "2009-01-03",
+        "paragraphs": [
+          "mon pc fait un bruit d'avion dès que je lance un jeu. je pensais que tout le monde avait ça. apparemment non.",
+          "j'ai baissé les réglages et maintenant ça rame moins. c'est moins beau mais au moins je vois plusieurs images par seconde."
+        ],
+        "comments": []
+      },
+      {
+        "id": "imprimante",
+        "title": "imprimer UNE page",
+        "date": "2009-01-07",
+        "paragraphs": [
+          "j'ai envoyé mon devoir à l'imprimante trois fois parce qu'il sortait rien. après elle s'est réveillée et a tout sorti d'un coup.",
+          "j'ai donc un devoir, une copie de secours et une copie pour caler le pied de la table. technologie de pointe."
+        ],
+        "comments": [
+          {
+            "author": "xX_PixelGirl_Xx",
+            "date": "2009-01-08",
+            "text": "la mienne attend toujours que je sois pressée pour manger le papier xD"
+          }
+        ]
+      },
+      {
+        "id": "crysis",
+        "title": "Crysis : mon test très scientifique",
+        "date": "2009-01-10",
+        "paragraphs": [
+          "j'ai essayé la démo avec tout au minimum. le pc a longuement réfléchi à la première plage.",
+          "j'ai fermé et relancé un vieux jeu qui tourne bien. ma config vient de me faire économiser de l'argent, c'est presque un service."
+        ],
+        "comments": []
+      },
+      {
+        "id": "maths",
+        "title": "réviser sans ouvrir dix onglets",
+        "date": "2009-01-15",
+        "paragraphs": [
+          "j'avais ouvert un onglet pour les maths. puis un forum. puis un truc sur les cartes graphiques. à la fin le cahier était toujours fermé.",
+          "j'ai débranché internet le temps de faire deux exercices. ça marche mais c'est une méthode un peu radicale pour multiplier des chiffres."
+        ],
+        "comments": [
+          {
+            "author": "°•.LuNa.°•",
+            "date": "2009-01-16",
+            "text": "je laisse le cahier sur la table de la cuisine. il y a moins d'onglets là-bas."
+          }
+        ]
+      },
+      {
+        "id": "sauvegarde",
+        "title": "partie retrouvée !",
+        "date": "2009-01-18",
+        "paragraphs": [
+          "j'ai cru avoir perdu ma partie de gta après une réinstallation. elle était dans une vieille copie de mes documents.",
+          "j'ai fait une nouvelle copie tout de suite. je veux plus jamais revoir l'école de pilotage depuis le début. même en rêve."
+        ],
+        "comments": []
+      },
+      {
+        "id": "bureau",
+        "title": "un peu de place sur le disque",
+        "date": "2009-01-28",
+        "paragraphs": [
+          "j'avais trois fois le même installateur dans mes téléchargements. et un dossier téléchargements vieux. quelle organisation.",
+          "j'ai gardé une copie des trucs utiles et rangé le reste. le pc a pas rajeuni mais moi je retrouve mes fichiers. c'est déjà pas mal."
+        ],
+        "comments": [
+          {
+            "author": "LeModemEnPLS",
+            "date": "2009-01-29",
+            "text": "j'ai téléchargements vieux et téléchargements vraiment vieux. tu me motives là"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "padsansfil",
+    "nickname": "PadSansFil",
+    "theme": "pad",
+    "avatar": "./skypage/pad.svg",
+    "subtitle": "un canapé, quatre manettes, pas assez de piles",
+    "description": "PadSansFil : consoles, parties entre amis et carnet d'un futur achat.",
+    "keywords": ["padsansfil", "consoles", "ps2", "ps3", "xbox 360", "wii", "mario kart"],
+    "articles": [
+      {
+        "id": "canape",
+        "title": "place au milieu du canapé",
+        "date": "2009-01-06",
+        "paragraphs": [
+          "on était quatre sur un canapé prévu pour trois. celui au milieu jouait avec les coudes coincés, mais refusait de changer de place.",
+          "je note pour la prochaine soirée : sortir une chaise AVANT la première partie. et garder les verres loin des manettes."
+        ],
+        "comments": [
+          {
+            "author": "Sk8er_du_93",
+            "date": "2009-01-07",
+            "text": "la chaise de cuisine c'est la vraie place du champion"
+          }
+        ]
+      },
+      {
+        "id": "sav",
+        "title": "la console part en vacances sans moi",
+        "date": "2009-01-13",
+        "paragraphs": [
+          "trois lumières rouges. j'ai vérifié la garantie et appelé le sav plutôt que de tester des recettes bizarres trouvées sur internet.",
+          "j'ai noté le numéro de dossier. en attendant j'ai ressorti la ps2, elle a pas demandé où j'étais passé."
+        ],
+        "comments": []
+      },
+      {
+        "id": "mario-kart",
+        "title": "Mario Kart à quatre",
+        "date": "2009-01-17",
+        "paragraphs": [
+          "joué sur la wii d'un pote. première course : fier de mon départ. dernière ligne droite : carapace et classement ridicule.",
+          "on a dit dernière partie au moins six fois. je sais toujours pas pourquoi on essaie de se mentir comme ça."
+        ],
+        "comments": [
+          {
+            "author": "Oo_bubble-princess_oO",
+            "date": "2009-01-18",
+            "text": "la dernière c'est celle où tu gagnes, sinon elle compte pas xD"
+          }
+        ]
+      },
+      {
+        "id": "essais",
+        "title": "essayer avant de choisir",
+        "date": "2009-01-26",
+        "paragraphs": [
+          "pour ma prochaine console j'ai testé les manettes chez deux potes. j'ai aussi regardé le prix des jeux d'occasion, pas juste celui de la boîte.",
+          "pas encore choisi. sur le forum ils se battent pour choisir à ma place, moi je veux juste avoir les jeux qui me plaisent. mon enveloppe économies reste sous la pile de magazines pour l'instant."
+        ],
+        "comments": [
+          {
+            "author": "xX_PixelGirl_Xx",
+            "date": "2009-01-27",
+            "text": "surtout prends pas celle qui a la plus jolie boîte. conseil testé et pas approuvé :')"
+          }
+        ]
+      }
+    ]
+  }
+]

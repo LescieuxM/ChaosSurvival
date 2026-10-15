@@ -1,0 +1,539 @@
+[
+  {
+    "id": "sk8er_du_93",
+    "contactId": "skater",
+    "nickname": "Sk8er_du_93",
+    "theme": "skater",
+    "avatar": "./avatars/contact-skater.svg",
+    "subtitle": "du grip, des bleus et encore un essai",
+    "description": "Sk8er_du_93 : skateboard, kickflip, spot derrière le gymnase et baskets usées.",
+    "keywords": ["sk8er_du_93", "skate", "skateboard", "kickflip", "baskets", "shoes", "gymnase"],
+    "articles": [
+      {
+        "id": "kickflip",
+        "title": "ENFIN PLAQUÉ MON KICKFLIP !!!",
+        "date": "2009-01-05",
+        "paragraphs": [
+          "après environ 800 essais et un lacet sacrifié : LES DEUX PIEDS SUR LA PLANCHE. j'ai crié comme si j'avais gagné les x games mdr",
+          "les potes disent que c'est juste un kickflip. ouais bah c'est MON kickflip. la planche a pris cher mais elle roule encore, respect."
+        ],
+        "image": "./skypage/skater-board.jpg",
+        "imageAlt": "Photo amateur d'une planche usée sur le béton",
+        "comments": [
+          {
+            "author": "LeModemEnPLS",
+            "date": "2009-01-06",
+            "text": "gg ! moi je galère déjà à rester dessus à l'arrêt"
+          },
+          {
+            "author": "Sk8er_du_93",
+            "date": "2009-01-06",
+            "text": "c'est une discipline aussi tkt"
+          }
+        ]
+      },
+      {
+        "id": "spot",
+        "title": "le spot derrière le gymnase",
+        "date": "2009-01-11",
+        "paragraphs": [
+          "3 marches, une rambarde et un mur plein de tags. pas besoin de traverser toute la ville pour rider.",
+          "on y va après les cours quand c'est sec. le coin à droite est plein de graviers, j'ai testé pour vous : ça freine très très bien..."
+        ],
+        "image": "./skypage/skater-spot.jpg",
+        "imageAlt": "Photo d'un escalier et d'une rambarde devant un mur couvert de graffitis",
+        "comments": []
+      },
+      {
+        "id": "shoes",
+        "title": "mes shoes sont MORTES",
+        "date": "2009-01-19",
+        "paragraphs": [
+          "le grip a gagné. on voit mes chaussettes à travers, c'est pas une nouvelle mode.",
+          "vous prenez quoi comme baskets qui tiennent un peu ? j'ai mis de la colle sur celles-là mais là c'est plus une réparation c'est de l'archéologie."
+        ],
+        "image": "./skypage/skater-shoes.jpg",
+        "imageAlt": "Photo au flash de baskets en toile déchirées",
+        "comments": [
+          {
+            "author": "Oo_bubble-princess_oO",
+            "date": "2009-01-20",
+            "text": "au moins tes chaussettes prennent l'air xD"
+          }
+        ]
+      },
+      {
+        "id": "gamelle",
+        "title": "VIDEO DE MA GAMELLE MDR",
+        "date": "2009-01-23",
+        "paragraphs": [
+          "mon pote a filmé au téléphone. on distingue 4 pixels de moi et 2 de la planche mais le bruit fait tout le travail.",
+          "rien de cassé sauf ma dignité. j'ai fini assis, la planche a continué sa carrière sans moi. je mets une capture parce que le fichier veut pas passer."
+        ],
+        "image": "./skypage/skater-fall.jpg",
+        "imageAlt": "Capture floue d'une chute sans gravité filmée au téléphone",
+        "comments": [
+          {
+            "author": "LeModemEnPLS",
+            "date": "2009-01-23",
+            "text": "ta planche a clairement un meilleur équilibre que nous"
+          },
+          {
+            "author": "Sk8er_du_93",
+            "date": "2009-01-24",
+            "text": "elle s'entraîne pendant que je fais mes devoirs"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "oo_bubble-princess_oo",
+    "contactId": "princess",
+    "nickname": "Oo_bubble-princess_oO",
+    "theme": "princess",
+    "avatar": "./avatars/contact-bubble.svg",
+    "subtitle": "bulles, strass & bonbons <3",
+    "description": "Oo_bubble-princess_oO : mode, accessoires, bonbons, test de princesse et coque de téléphone.",
+    "keywords": [
+      "oo_bubble-princess_oo",
+      "bonbons",
+      "princesse",
+      "mode",
+      "coque",
+      "téléphone",
+      "accessoires",
+      "personnalité"
+    ],
+    "articles": [
+      {
+        "id": "moi",
+        "title": "100% MOI !!!",
+        "date": "2009-01-04",
+        "paragraphs": [
+          "un questionnaire piqué sur un blog, fallait bien inaugurer le mien ^^",
+          "Couleur préférée ? turquoise ET rose, j'arrive pas à choisir. Sucré ou salé ? sucré, mais les frites comptent aussi.",
+          "Ton plus gros défaut ? je dis j'arrive et je suis encore en train de chercher mes bracelets. Ton rêve ? une boutique d'accessoires avec ma meilleure amie <3",
+          "Ton parfum de glace préféré ? fraise. oui même quand y'a 25 autres parfums. voilà vous savez tout, enfin presque xD"
+        ],
+        "comments": [
+          {
+            "author": "xX_PixelGirl_Xx",
+            "date": "2009-01-05",
+            "text": "j'arrive = encore 20 minutes minimum, je confirme :DDD"
+          }
+        ]
+      },
+      {
+        "id": "bonbons",
+        "title": "MON TOP 5 DES BONBONS",
+        "date": "2009-01-13",
+        "paragraphs": [
+          "classement officiel après des recherches TRÈS sérieuses dans mon sachet.",
+          "5 — les oursons : fiables, jamais déçue. 4 — les rubans acides : ça pique mais j'y retourne.",
+          "3 — les petites fraises : le goût du mercredi. 2 — les bouteilles cola qui piquent : impossible d'en manger une seule.",
+          "1 — les guimauves torsadées !!! moelleuses, jolies, imbattables. les gens qui disent que c'est du coton on peut plus être amis (je plaisante... un peu)."
+        ],
+        "image": "./skypage/princess-candy.jpg",
+        "imageAlt": "Montage coloré de cinq sortes de bonbons sur une table rose et turquoise",
+        "comments": [
+          {
+            "author": "Oo_bubble-princess_oO",
+            "date": "2009-01-14",
+            "text": "le jury a parlé, mais accepte les échantillons gratuits"
+          }
+        ]
+      },
+      {
+        "id": "rangement",
+        "title": "MISSION : retrouver mon bureau",
+        "date": "2009-01-16",
+        "paragraphs": [
+          "j'avais plus la place de poser mon cahier donc grand rangement aujourd'hui. j'ai retrouvé une règle, 3 stylos sans capuchon et le ticket de bus que je cherchais depuis lundi.",
+          "j'ai mis des étiquettes sur mes boîtes. ça fait super organisé ^^ sauf la boîte divers qui contient presque tout. mais on voit le bois du bureau, c'est déjà une victoire !"
+        ],
+        "comments": [
+          {
+            "author": "°•.LuNa.°•",
+            "date": "2009-01-17",
+            "text": "j'ai aussi une boîte divers. elle commence à demander une deuxième boîte."
+          }
+        ]
+      },
+      {
+        "id": "test",
+        "title": "TEST : QUELLE PRINCESSE ES-TU ?",
+        "date": "2009-01-20",
+        "paragraphs": [
+          "note tes lettres sur un papier, c'est un test maison donc le résultat est scientifiquement douteux xD",
+          "1. Pour sortir : A un bracelet brillant / B des baskets / C ce qui est propre. 2. Ton goûter : A des bonbons / B un sandwich / C j'ai oublié l'heure.",
+          "3. En retard : A je cherche ma barrette / B je rate le bus / C je pensais qu'on était dimanche.",
+          "Majorité de A : princesse des paillettes, tu brilles même à la cantine. Majorité de B : princesse en baskets, le carrosse peut attendre. Majorité de C : princesse du dimanche, ton royaume a besoin d'un réveil.",
+          "égalité ? princesse du mélange, prends une couronne ET un sandwich. j'ai eu A mais ça étonne personne <3"
+        ],
+        "comments": [
+          {
+            "author": "°•.LuNa.°•",
+            "date": "2009-01-21",
+            "text": "C. surtout la question du dimanche."
+          },
+          {
+            "author": "Oo_bubble-princess_oO",
+            "date": "2009-01-21",
+            "text": "bienvenue dans le royaume des réveils éteints ^^"
+          }
+        ]
+      },
+      {
+        "id": "coque",
+        "title": "ma nouvelle coque de téléphone <3",
+        "date": "2009-01-24",
+        "paragraphs": [
+          "j'ai collé les strass un par un hier. résultat : mon téléphone brille ET mon bureau aussi, j'en retrouve partout.",
+          "la photo au flash lui rend pas justice mais regardez le petit pendentif !!! vous en pensez quoi ? ma mère dit que bientôt il sera plus lourd que mon sac."
+        ],
+        "image": "./skypage/princess-phone.jpg",
+        "imageAlt": "Photo au flash d'un téléphone rose décoré de strass et d'un pendentif",
+        "comments": [
+          {
+            "author": "Oo_bubble-princess_oO",
+            "date": "2009-01-25",
+            "text": "oui mais apporte les strass, j'ai vidé ma boîte :')"
+          }
+        ]
+      },
+      {
+        "id": "photo-classe",
+        "title": "photo de classe & mèche rebelle",
+        "date": "2009-01-27",
+        "paragraphs": [
+          "j'avais préparé mon haut hier soir pour la photo de classe. ce matin tout allait bien jusqu'au vent devant le collège. ma mèche a décidé de partir vivre sa vie.",
+          "j'ai essayé de la remettre avec de l'eau aux toilettes, résultat un côté tout plat et l'autre en vacances xD j'espère au moins avoir les yeux ouverts. le photographe a dit naturel donc techniquement j'ai respecté la consigne ^^"
+        ],
+        "comments": [
+          {
+            "author": "Sk8er_du_93",
+            "date": "2009-01-28",
+            "text": "sur la mienne j'ai le sourire de quelqu'un qui vient de marcher dans une flaque"
+          },
+          {
+            "author": "Oo_bubble-princess_oO",
+            "date": "2009-01-28",
+            "text": "on va dire que c'est notre période artistique mdr"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "k7",
+    "contactId": "k7",
+    "nickname": "K7",
+    "theme": "k7",
+    "avatar": "./avatars/k7.svg",
+    "subtitle": "la basse à fond, même quand le voisin tape au mur",
+    "description": "webradio maison, eurodance, trance et remixes pas encore terminés.",
+    "keywords": ["k7", "dj-k7", "webradio", "eurodance", "trance", "techno", "chiptune", "remix", "FL Studio", "Renoise"],
+    "articles": [
+      {
+        "id": "radio-test",
+        "title": "K7 FM : ON AIR ce soir !!!",
+        "date": "2009-01-03",
+        "paragraphs": [
+          "bon voilà j'ai enfin lancé ma petite webradio depuis ma chambre. pour l'instant c'est surtout des tests, mais le son sort bien et la playlist tient sans planter (j'ai vérifié 4 fois, évidemment). je passe de l'eurodance à la trance, avec un détour techno quand j'ai envie de réveiller tout le quartier.",
+          "l'antenne c'est mon pc, ma connexion et un micro qui grésille si je le regarde de travers. je prépare des petits créneaux le soir, pas besoin d'un gros studio pour faire tourner quelques morceaux. Turb0 a écouté un essai hier à la disco et a demandé plus de basse. forcément. je lui ai dit que la basse était déjà parfaite, mais j'ai quand même remonté le niveau ^^"
+        ],
+        "comments": [
+          {"author":"Turb0","date":"2009-01-04","text":"j'ai dit PLUS de basse, pas que c'était nul hein. envoie le lien quand tu fais une vraie émission :p"},
+          {"author":"LeModemEnPLS","date":"2009-01-04","text":"ça passe sur les enceintes du pc ou faut encore installer un truc ?"}
+        ]
+      },
+      {
+        "id": "remix-bleu",
+        "title": "mon remix de Blue (dossier FINAL_12 cette fois)",
+        "date": "2009-01-10",
+        "paragraphs": [
+          "j'ai repris le remix hier soir parce que le kick sonnait trop mou. maintenant il tape mieux, sauf que le synthé du refrain arrive un peu tôt. j'ai déplacé la mesure, puis remis comme avant, puis refait une autre version. mon dossier s'appelle FINAL_12 mais je sais très bien qu'il va y avoir une version 13 demain.",
+          "je veux garder le côté eurodance qui reste dans la tête sans juste coller un beat par-dessus. les vieux sons un peu plastiques ont leur charme, mais faut doser sinon ça devient la sonnerie d'un téléphone. à force d'écouter la boucle je ne sais plus si c'est propre ou si je la connais juste par cœur. pause obligatoire, même si j'ai horreur de laisser un morceau presque fini."
+        ],
+        "comments": [
+          {"author":"Sk8er_du_93","date":"2009-01-11","text":"j'ai écouté, le refrain reste dans la tête toute la journée mdr"},
+          {"author":"x_M0RBID_x","date":"2009-01-11","text":"final_12. je parie sur final_19 avant février"}
+        ]
+      },
+      {
+        "id": "outils-compo",
+        "title": "mes logiciels et ma méthode (oui, j'ai une méthode)",
+        "date": "2009-01-19",
+        "paragraphs": [
+          "je compose surtout dans FL Studio 8 : la playlist pour arranger, le piano roll pour les notes, et plein de pistes de synthé que je finis par renommer quand je ne comprends plus rien. Renoise 2.0 vient de sortir en version finale, j'aime bien son côté tracker pour poser un motif vite fait. ça ne fait pas le morceau à ma place, dommage.",
+          "pour les prises et les découpes je passe aussi par Audacity 1.3, puis je réimporte les sons. je note le tempo, je garde une piste MIDI de secours et j'exporte des essais en wav avant de toucher aux effets. ma méthode est donc : faire une copie, écouter, changer un détail, refaire une copie. les noms de fichiers sont moins organisés que cette phrase le laisse croire."
+        ],
+        "comments": [
+          {"author":"Oo_bubble-princess_oO","date":"2009-01-20","text":"tu peux faire des sons comme dans les jeux avec ça ?"},
+          {"author":"K7","date":"2009-01-20","text":"oui, chiptune aussi ! faut juste pas confondre trois notes carrées et une mélodie ^^"}
+        ]
+      },
+      {
+        "id": "mauvais-export",
+        "title": "j'ai lancé le mauvais export en direct, bravo moi",
+        "date": "2009-01-28",
+        "paragraphs": [
+          "petit moment de gloire hier sur K7 FM : j'avais préparé une intro avec un compte à rebours, sauf que j'ai lancé l'export brut où on m'entend compter les mesures et dire 'attends c'est pas celle-là'. très pro. au moins le niveau sonore était bon, on ne peut pas tout rater en même temps.",
+          "j'ai coupé le micro, retrouvé la bonne version et repris l'émission. personne n'a appelé pour se plaindre, donc je décide que c'était une transition expérimentale. j'ai quand même mis un gros post-it sur le dossier : DIFFUSION. en rouge. avec trois points d'exclamation. la perfection demande parfois de la papeterie."
+        ],
+        "comments": [
+          {"author":"Turb0","date":"2009-01-29","text":"garde le compte à rebours, ça faisait intro de grand dj mdr"},
+          {"author":"LeModemEnPLS","date":"2009-01-29","text":"le post-it va finir sur le mauvais dossier lui aussi"}
+        ]
+      }
+    ]
+  },
+  {
+    "id": "m0rbid",
+    "contactId": "m0rbid",
+    "nickname": "x_M0RBID_x",
+    "theme": "m0rbid",
+    "avatar": "./avatars/m0rbid.svg",
+    "subtitle": "histoires de minuit, sites moches et veilleuse discrète",
+    "description": "je lis les légendes du net après minuit puis je fais semblant que tout va bien.",
+    "keywords": ["m0rbid", "légendes urbaines", "horreur", "jeux flash", "paranormal", "chaînes de mails", "sites web"],
+    "articles": [
+      {
+        "id": "ouverture",
+        "title": "j'ouvre ce blog. vous pouvez rester dans le noir",
+        "date": "2009-01-02",
+        "paragraphs": [
+          "bonjour aux gens qui lisent à une heure normale et aux autres qui ont perdu la notion du temps devant leur écran. je vais mettre ici des légendes trouvées sur le net, des vieux jeux flash et des sites qui ont l'air faits dans une cave. c'est un programme culturel très sérieux.",
+          "j'aime bien avoir peur quand je sais que je peux fermer la fenêtre. enfin, en théorie. si je ne réponds pas aux commentaires, c'est que je dors ou que j'ai entendu un bruit dans le couloir. dans les deux cas merci de respecter mon intimité."
+        ],
+        "comments": [
+          {"author":"Sk8er_du_93","date":"2009-01-03","text":"tu vas mettre des trucs qui font peur pour de vrai ?"},
+          {"author":"x_M0RBID_x","date":"2009-01-03","text":"non, juste des trucs qui font peur aux gens qui lisent les commentaires à 2 h du mat"}
+        ]
+      },
+      {
+        "id": "mail-minuit",
+        "title": "la page qui apparaît à minuit (selon un mail transféré 12 fois)",
+        "date": "2009-01-09",
+        "paragraphs": [
+          "j'ai reçu une chaîne qui raconte qu'un vieux site affiche une phrase différente si on le visite à minuit pile. évidemment le mail ne donne jamais le bon lien, juste une adresse recopiée de travers et 'envoyez à 10 personnes sinon vous allez le regretter'. la page serait noire, avec une horloge qui retarde et un message qui dit de ne pas regarder derrière soi.",
+          "le détail préféré : la personne qui raconte ça aurait fermé son navigateur, puis reçu le même mail de sa propre adresse. oui bien sûr. les serveurs ont tous décidé de faire du théâtre. j'ai lu jusqu'au bout quand même, puis j'ai vérifié l'heure trois fois. purement pour la précision de mon article."
+        ],
+        "comments": [
+          {"author":"LeModemEnPLS","date":"2009-01-10","text":"moi j'ai reçu une chaîne qui promettait un téléphone gratuit. le téléphone était un dessin"},
+          {"author":"x_M0RBID_x","date":"2009-01-10","text":"au moins le dessin ne te facture pas les appels"}
+        ]
+      },
+      {
+        "id": "dernier-couloir",
+        "title": "un jeu flash avec un couloir et beaucoup trop de portes",
+        "date": "2009-01-17",
+        "paragraphs": [
+          "j'ai trouvé un petit jeu amateur qui s'appelle Le Dernier Couloir. graphismes gris, trois clés à ramasser et une musique qui tourne en boucle comme si elle avait aussi raté son bus. il faut ouvrir les portes dans le bon ordre et lire les bouts de journal laissés par le personnage.",
+          "pas de screamer, pas de monstre qui saute à l'écran. juste une porte qui reste fermée et un texte qui change quand on revient dans la pièce. c'est presque pire parce que je peux continuer à jouer au lieu de jeter la souris. j'ai fini par arrêter quand même. la musique est restée dans ma tête pendant le dîner, ce qui est une autre forme d'horreur."
+        ],
+        "comments": [
+          {"author":"Oo_bubble-princess_oO","date":"2009-01-18","text":"j'ai essayé, j'ai surtout tourné en rond devant les portes mdr"},
+          {"author":"K7","date":"2009-01-18","text":"si tu veux je peux te faire une musique moins répétitive, enfin quand j'aurai fini mes remixes"}
+        ]
+      },
+{
+        "id": "fosse-desespoir",
+        "title": "la fosse du désespoir.",
+        "date": "2009-01-18",
+        "time": "02:43",
+        "paragraphs": [
+          "bon.",
+          "je viens de passer deux heures à lire des trucs sur une expérience de psychologie et je crois que j'ai trouvé un des trucs les plus malsains que j'ai jamais lus.",
+          "et pourtant je passe pas mal de temps sur des sites où les gens racontent avoir trouvé des cadavres dans leur grenier.",
+          "le truc dont je vais parler s'appelle la fosse du désespoir.",
+          "oui, c'est son vrai surnom.",
+          "et non, c'est pas une histoire inventée sur un forum.",
+          "ça s'est vraiment passé.",
+          "tout commence avec un psychologue américain qui s'appelait harry harlow.",
+          "dans les années 50, ce type faisait des recherches sur l'attachement.",
+          "en gros, il voulait comprendre pourquoi les bébés ont besoin de leur mère.",
+          "à l'époque, certains psychologues pensaient que les bébés s'attachaient surtout à leur mère parce qu'elle leur donnait à manger.",
+          "harlow voulait vérifier ça.",
+          "pour ses expériences, il utilisait des bébés singes rhésus.",
+          "il les séparait de leur mère et les plaçait avec deux fausses mères.",
+          "la première était faite de fil de fer.",
+          "froide, rigide, avec un biberon pour nourrir le petit.",
+          "la deuxième était recouverte de tissu doux.",
+          "elle ne donnait pas de lait.",
+          "vous devinez laquelle les bébés préféraient ?",
+          "celle en tissu.",
+          "ils passaient presque tout leur temps accrochés à elle.",
+          "quand ils avaient peur, ils couraient se réfugier contre elle.",
+          "même quand la mère en fil de fer était la seule à leur donner à manger.",
+          "donc voilà.",
+          "les bébés avaient besoin de contact, pas juste de nourriture.",
+          "ça paraît évident maintenant.",
+          "mais à l'époque, ces expériences ont beaucoup fait parler d'elles.",
+          "et si l'histoire s'arrêtait là, j'aurais probablement pas écrit cet article.",
+          "parce que harlow a continué.",
+          "et c'est là que ça commence à devenir vraiment glauque.",
+          "il s'est intéressé aux effets de l'isolement.",
+          "il voulait savoir ce qui arrivait à un singe quand on le privait de tout contact social.",
+          "alors il a commencé à élever certains singes complètement seuls.",
+          "pas de mère.",
+          "pas d'autres singes.",
+          "juste une cage.",
+          "pendant des mois.",
+          "parfois beaucoup plus longtemps.",
+          "les résultats étaient assez terrifiants.",
+          "certains singes restaient recroquevillés sur eux-mêmes.",
+          "d'autres se balançaient d'avant en arrière pendant des heures.",
+          "ils avaient énormément de mal à interagir normalement avec les autres singes quand on les remettait ensemble.",
+          "certains avaient peur du moindre contact.",
+          "d'autres devenaient agressifs.",
+          "harlow avait réussi à montrer que l'isolement pouvait profondément perturber le développement d'un animal.",
+          "on pourrait se dire qu'il avait obtenu sa réponse.",
+          "mais apparemment non.",
+          "il voulait aller encore plus loin.",
+          "dans les années 70, harlow et ses collègues ont conçu un dispositif spécialement destiné à produire un état de détresse chez des singes.",
+          "ils l'ont appelé, dans leurs publications, une chambre verticale.",
+          "mais un autre nom lui est resté.",
+          "la fosse du désespoir.",
+          "imaginez une sorte de grand récipient métallique.",
+          "étroit.",
+          "avec des parois inclinées vers l'intérieur.",
+          "au fond, un sol grillagé.",
+          "le singe pouvait voir l'ouverture au-dessus de lui.",
+          "mais il ne pouvait pas grimper pour sortir.",
+          "il n'y avait rien à faire.",
+          "rien à explorer.",
+          "personne à rejoindre.",
+          "juste attendre.",
+          "et le dispositif était justement conçu pour ça.",
+          "pour que l'animal se retrouve dans une situation dont il ne pouvait pas s'échapper.",
+          "maintenant imaginez qu'on vous enferme là-dedans.",
+          "vous ne savez pas pourquoi.",
+          "vous ne savez pas combien de temps ça va durer.",
+          "vous essayez de grimper.",
+          "vous glissez.",
+          "vous recommencez.",
+          "vous glissez encore.",
+          "au bout d'un moment, vous arrêtez peut-être d'essayer.",
+          "et les heures continuent de passer.",
+          "puis les jours.",
+          "je sais pas ce qui me dérange le plus dans cette histoire.",
+          "le fait qu'ils aient construit un appareil pareil.",
+          "ou le fait qu'ils aient observé ce qui se passait ensuite.",
+          "parce que c'était précisément ce qu'ils cherchaient.",
+          "ils voulaient étudier des comportements ressemblant à ceux de la dépression.",
+          "et pour ça, ils essayaient de les provoquer.",
+          "les singes pouvaient rester dans cette chambre pendant plusieurs semaines.",
+          "certains y ont passé jusqu'à six semaines.",
+          "les chercheurs ont décrit des animaux qui devenaient extrêmement passifs.",
+          "certains restaient immobiles, repliés sur eux-mêmes.",
+          "et quand on les sortait, les conséquences ne disparaissaient pas simplement parce que la porte était ouverte.",
+          "plusieurs présentaient encore des comportements profondément perturbés.",
+          "ce qui me fait vraiment froid dans le dos, c'est cette idée :",
+          "on peut sortir quelqu'un d'un endroit sans réussir à le sortir de ce que cet endroit lui a fait.",
+          "et je sais que c'est une phrase un peu dramatique.",
+          "mais franchement je vois pas comment le dire autrement.",
+          "j'ai essayé de comprendre pourquoi ils avaient fait ça.",
+          "apparemment, harlow voulait créer un modèle expérimental de la dépression pour pouvoir ensuite étudier des moyens de la traiter.",
+          "je comprends le raisonnement scientifique.",
+          "enfin, je crois.",
+          "mais il y a un truc qui me dépasse.",
+          "à quel moment quelqu'un a dessiné les plans de cette machine ?",
+          "à quel moment ils l'ont construite ?",
+          "à quel moment ils ont mis le premier singe dedans ?",
+          "et surtout, à quel moment ils ont décidé qu'ils avaient besoin d'en mettre d'autres ?",
+          "c'est peut-être ça qui me dérange autant.",
+          "c'est pas une histoire de savant fou dans un film.",
+          "c'était un laboratoire.",
+          "avec des chercheurs.",
+          "des protocoles.",
+          "des observations.",
+          "des résultats publiés.",
+          "tout était organisé.",
+          "tout était normal pour les gens qui travaillaient dessus.",
+          "et puis il y a le nom.",
+          "la fosse du désespoir.",
+          "je sais pas qui a trouvé que c'était une bonne idée d'appeler un dispositif comme ça.",
+          "c'est presque un nom de creepypasta.",
+          "sauf que les creepypastas, au moins, tu peux fermer la page et te dire que c'était inventé.",
+          "là non.",
+          "je suis tombée sur cette histoire parce que je cherchais des expériences scientifiques étranges.",
+          "je pensais trouver des trucs sur les rêves, l'hypnose ou des expériences ratées.",
+          "pas ça.",
+          "je vais pas mettre de photos.",
+          "vous pouvez en trouver si vous cherchez le nom de harlow.",
+          "mais je préfère prévenir que certaines sont assez difficiles à regarder.",
+          "et pour une fois je vais pas finir en faisant une blague.",
+          "je crois que ce qui me fait le plus peur, c'est pas la fosse elle-même.",
+          "c'est qu'il ait fallu la construire pour vérifier à quel point la solitude pouvait détruire un être vivant.",
+          "bonne nuit.",
+          "m0rbid"
+        ],
+        "comments": [
+          {
+            "author": "Turb0",
+            "date": "2009-01-18",
+            "time": "11:26",
+            "text": "wtf c'est vraiment arrivé ce truc ??? j'ai cherché sur google c'est horrible o_o"
+          },
+          {
+            "author": "M0RBID",
+            "date": "2009-01-18",
+            "time": "12:04",
+            "text": "ouais. c'est ça le problème."
+          },
+          {
+            "author": "DarkAngel62",
+            "date": "2009-01-18",
+            "time": "14:17",
+            "text": "Mais comment ils ont pu avoir le droit de faire ça ? C'est de la torture :("
+          },
+          {
+            "author": "M0RBID",
+            "date": "2009-01-18",
+            "time": "14:39",
+            "text": "aucune idée de comment c'était encadré à l'époque. mais visiblement ça les a pas empêchés."
+          },
+          {
+            "author": "K7",
+            "date": "2009-01-18",
+            "time": "19:52",
+            "text": "J'avais déjà entendu parler des fausses mères en tissu mais pas de la fosse... C'est vraiment dégueulasse."
+          },
+          {
+            "author": "M0RBID",
+            "date": "2009-01-18",
+            "time": "20:11",
+            "text": "pareil. je pensais que les expériences avec les fausses mères étaient le pire."
+          },
+          {
+            "author": "xxDeadDollxx",
+            "date": "2009-01-19",
+            "time": "00:38",
+            "text": "Le pire c'est qu'ils pouvaient voir la sortie mais pas l'atteindre..."
+          },
+          {
+            "author": "M0RBID",
+            "date": "2009-01-19",
+            "time": "01:02",
+            "text": "ouais. c'est le détail qui m'a le plus marquée aussi."
+          }
+        ]
+      },
+      {
+        "id": "nuit-forum",
+        "title": "j'ai lu des histoires jusqu'à trop tard",
+        "date": "2009-01-26",
+        "paragraphs": [
+          "hier j'ai enchaîné les sujets paranormaux d'un forum. les histoires deviennent toujours plus précises à partir du troisième message, ce qui est pratique pour inventer une cave, un escalier et une cousine qui ne veut pas être nommée. je me moquais un peu, puis j'ai éteint l'écran et le silence a fait son intéressant.",
+          "j'ai entendu un grattement sous le bureau. j'ai attendu cinq minutes avec le téléphone prêt à appeler quelqu'un. c'était le câble de la souris qui frottait contre le pied de la chaise. j'ai donc survécu à une attaque de périphérique. ne me demandez pas si j'ai remis la veilleuse."
+        ],
+        "comments": [
+          {"author":"Sk8er_du_93","date":"2009-01-27","text":"la souris préparait peut-être un truc depuis le début"},
+          {"author":"x_M0RBID_x","date":"2009-01-27","text":"elle n'a pas bougé depuis. on a signé un accord"}
+        ]
+      }
+    ]
+  }
+]

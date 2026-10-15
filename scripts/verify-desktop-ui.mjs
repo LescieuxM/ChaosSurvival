@@ -1,4 +1,4 @@
-﻿// Focused UI check against the local production build; no portable packaging.
+// Focused UI check against the local production build; no portable packaging.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
@@ -23,6 +23,13 @@ const menuLayoutOnly = process.argv.includes('--menu-layout-only');
 const smileyDialogueOnly = process.argv.includes('--smiley-dialogue-only');
 const newGameOnly = process.argv.includes('--new-game-only');
 const buddyOnly = process.argv.includes('--buddy-only');
+const browserOnly = process.argv.includes('--browser-only');
+const browserSecurityElectron = process.argv.includes('--browser-security-electron');
+const skyPageOnly = process.argv.includes('--skypage-only');
+const flashZoneOnly = process.argv.includes('--flashzone-only');
+const videoTubeOnly = process.argv.includes('--videotube-only');
+const wikiOnly = process.argv.includes('--wiki-only');
+const hoplaHotelOnly = process.argv.includes('--hopla-hotel-only');
 const minigameOnly =
   process.argv.includes('--minigame-only') ||
   typingOnly ||
@@ -35,6 +42,12 @@ const minigameOnly =
   smileyDialogueOnly ||
   newGameOnly ||
   buddyOnly ||
+  browserOnly ||
+  skyPageOnly ||
+  flashZoneOnly ||
+  videoTubeOnly ||
+  wikiOnly ||
+  hoplaHotelOnly ||
   stabilityOnly;
 let browserServer;
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -197,11 +210,17 @@ async function verifyNotepad() {
       const options=[...menu.querySelectorAll('button')].map(option=>{
         const r=option.getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,visible:option.contains(document.elementFromPoint(r.left+r.width/2,r.top+r.height/2))};
       });
-      return {left:rect.left,top:rect.top,buttonLeft:button.left,buttonBottom:button.bottom,inside:rect.left>=frame.left&&rect.right<=frame.right&&rect.bottom<=frame.bottom,options};
+      return {left:rect.left,top:rect.top,buttonLeft:button.left,buttonBottom:button.bottom,inside:rect.left>=frame.left&&rect.right<=frame.right&&rect.bottom<=frame.bottom,background:getComputedStyle(menu).backgroundColor,image:getComputedStyle(menu).backgroundImage,options};
     })()`);
     assert.equal(geometry.left, geometry.buttonLeft);
     assert.equal(geometry.top, geometry.buttonBottom);
     assert.equal(geometry.inside, true);
+    assert.equal(
+      geometry.background,
+      'rgb(255, 253, 244)',
+      'Notepad keeps its original menu palette',
+    );
+    assert.equal(geometry.image, 'none');
     assert.ok(geometry.options.every((option) => option.visible));
     assert.ok(geometry.options[0].bottom <= geometry.options[1].top);
     assert.equal(geometry.options[0].left, geometry.options[1].left);
@@ -546,8 +565,16 @@ try {
     ),
     0,
   );
-  if (minigameOnly) {
-    if (buddyOnly) await verifyBuddy();
+  if (browserSecurityElectron) {
+    await verifyBrowser();
+  } else if (minigameOnly) {
+    if (hoplaHotelOnly) await verifyHoplaHotel();
+    else if (wikiOnly) await verifyWiki();
+    else if (videoTubeOnly) await verifyVideoTube();
+    else if (flashZoneOnly) await verifyFlashZone();
+    else if (skyPageOnly) await verifySkyPage();
+    else if (browserOnly) await verifyBrowser();
+    else if (buddyOnly) await verifyBuddy();
     else if (newGameOnly) await verifyNewGame();
     else if (smileyDialogueOnly) await verifySmileyDialogue();
     else if (menuLayoutOnly) await verifyMenuLayout();
@@ -1220,7 +1247,8 @@ async function verifySmileyDialogue() {
       `document.querySelector('${pixel} .contact-status').textContent.includes('En ligne')`,
     ),
   );
-  assert.equal(await evaluate("!!document.querySelector('[data-contact-id=turbo]')"), false);
+  assert.equal(await evaluate("document.querySelectorAll('[data-contact-id=turbo]').length"), 1);
+  assert.equal(await evaluate("!!document.querySelector('[data-contact-id=turbo].online')"), false);
   const due = await evaluate(
     "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).contactConnections.turbo.dueAt",
   );
@@ -1326,6 +1354,1665 @@ async function physicalDrag(selector, left, top) {
     button: 'left',
     clickCount: 1,
   });
+}
+
+async function verifyHoplaHotel() {
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 1280,
+    height: 800,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  const { project } = await import('../src/browser/sites/hopla-hotel/model.js');
+  const { hoplaHotelData, hoplaHotelRooms } = await import('../src/browser/sites/hopla-hotel/index.js');
+  const room = hoplaHotelData.room;
+  await command('Page.enable');
+  await command('Network.enable');
+  const requests = [];
+  socket.addEventListener('message', ({ data }) => {
+    const message = JSON.parse(data);
+    if (message.method === 'Network.requestWillBeSent') requests.push(message.params.request.url);
+  });
+  await click('#menu-play');
+  await until(() => evaluate("!!document.querySelector('.rules-confirm')"), 'first rules');
+  await click('.rules-confirm');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'playing');
+  await doubleClick('#desktop > .desktop-icons [data-shortcut=browser]');
+  const ready = () =>
+    until(
+      () =>
+        evaluate("document.querySelector('.browser-page')?.getAttribute('aria-busy')==='false'"),
+      'hotel page ready',
+    );
+  const go = async (url) => {
+    await evaluate(
+      `document.querySelector('.browser-address input').value=${JSON.stringify(url)};document.querySelector('.browser-address').requestSubmit()`,
+    );
+    await ready();
+  };
+  const narrative = () =>
+    evaluate(
+      "(()=>{const s=JSON.parse(localStorage.getItem('chaos-survival-story-v1'));return JSON.stringify([s.current,s.completed,s.dialogues,s.choices,s.files]);})()",
+    );
+  await ready();
+  const before = await narrative();
+  assert.ok(
+    await evaluate(
+      '!!document.querySelector(\'.xd-sites [data-browser-link="http://www.hoplahotel.fr/"]\')',
+    ),
+  );
+  for (const query of ['hopla hotel', 'hotel virtuel']) {
+    await go(`xdsearch.fr/?q=${encodeURIComponent(query)}`);
+    assert.ok(
+      await evaluate(
+        '!!document.querySelector(\'.xd-search-result [data-browser-link="http://www.hoplahotel.fr/"]\')',
+      ),
+    );
+  }
+  await go('www.hoplahotel.fr');
+  assert.equal(
+    await evaluate("document.querySelector('.browser-address input').value"),
+    'http://www.hoplahotel.fr/',
+  );
+  await go('www.hoplahotel.fr');
+  assert.equal(
+    await evaluate("document.querySelector('.hopla-hotel h1').textContent"),
+    'Bienvenue à Hopla Hotel !',
+  );
+  await capture('hopla-hotel-home.png');
+  assert.equal(await evaluate("!!document.querySelector('.browser-page .hotel-intro')"), false);
+  assert.ok(
+    await evaluate(
+      "!document.querySelector('.browser-page').textContent.includes('Pose tes valises')",
+    ),
+  );
+  const browserHistory = await evaluate(
+    "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).browser)",
+  );
+  await click('.hotel-enter');
+  await until(
+    () => evaluate("!!document.querySelector('.hopla-hotel-client .hotel-canvas')"),
+    'desktop Hotel opens',
+  );
+  assert.equal(
+    await evaluate(
+      "document.querySelector('.hopla-hotel-client .window-title > span').textContent",
+    ),
+    'Hopla Hotel',
+  );
+  assert.equal(
+    await evaluate(
+      "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).browser)",
+    ),
+    browserHistory,
+  );
+  assert.equal(
+    await evaluate("document.querySelectorAll('.browser-page .hotel-canvas').length"),
+    0,
+  );
+  assert.ok(await evaluate("!!document.querySelector('.browser-page .hotel-enter')"));
+  assert.ok(await evaluate("!!document.querySelector('.task-tab[data-app=hopla-hotel]')"));
+  await until(
+    () =>
+      evaluate(
+        "getComputedStyle(document.querySelector('.hopla-hotel-client')).transform==='none'",
+      ),
+    'Hotel opening animation',
+  );
+  assert.ok(
+    await evaluate(
+      `(()=>{const h=document.querySelector('.hopla-hotel-client'),b=document.querySelector('.internet-adventurer'),d=document.querySelector('.desktop').getBoundingClientRect(),t=document.querySelector('.taskbar').getBoundingClientRect(),r=h.getBoundingClientRect();const ratio=r.width*r.height/(d.width*(t.top-d.top));return ratio>=.85&&ratio<=.9&&r.left>=d.left&&r.top>=d.top&&r.right<=d.right&&r.bottom<=t.top&&r.width>b.offsetWidth&&r.height>b.offsetHeight&&Number(h.style.zIndex)>Number(b.style.zIndex);})()`,
+    ),
+  );
+  await evaluate(
+    "for(let i=0;i<5;i++)document.querySelector('.browser-page .hotel-enter').click()",
+  );
+  assert.equal(await evaluate("document.querySelectorAll('.hopla-hotel-client').length"), 1);
+  assert.equal(
+    await evaluate("document.querySelector('.hotel-current-room').textContent"),
+    "Hall de l'hôtel",
+  );
+  // Observe the avatar's original purple shirt in the Canvas, without a production counter.
+  const location = () =>
+    evaluate(`(()=>{
+      const c=document.querySelector('.hotel-canvas');
+      const pixels=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
+      let left=c.width,top=c.height;
+      for(let y=0;y<c.height;y++) for(let x=0;x<c.width;x++) {
+        const i=(y*c.width+x)*4;
+        if(pixels[i]===162&&pixels[i+1]===132&&pixels[i+2]===220) {
+          left=Math.min(left,x);top=Math.min(top,y);
+        }
+      }
+      if(left===c.width) return '';
+      const a=(left+10-c.width/2)/16,b=(top+26-90)/8;
+      return 'case '+(Math.round((a+b)/2)+1)+', '+(Math.round((b-a)/2)+1);
+    })()`);
+  const assertCleanClient = async (definition = room) => {
+    assert.equal(await evaluate("document.querySelectorAll('.hotel-nickname').length"), 0);
+    assert.equal(
+      await evaluate("document.querySelectorAll('.hotel-room input, .hotel-room textarea').length"),
+      0,
+    );
+    assert.ok(
+      await evaluate(`(()=>{
+      const c=document.querySelector('.hotel-canvas'),ctx=c.getContext('2d');
+      return [[0,0],[c.width-1,0],[0,c.height-1],[c.width-1,c.height-1]].every(([x,y])=>{
+        const p=ctx.getImageData(x,y,1,1).data;return p[0]===0&&p[1]===0&&p[2]===0&&p[3]===255;
+      })&&getComputedStyle(document.querySelector('.hotel-stage')).backgroundColor==='rgb(0, 0, 0)'
+        &&getComputedStyle(document.querySelector('.hotel-navigator')).backgroundColor==='rgb(213, 220, 225)'
+        &&getComputedStyle(document.querySelector('.browser-page .hopla-hotel')).backgroundColor==='rgb(228, 238, 244)';
+    })()`),
+      'black render background only, in every room',
+    );
+    assert.equal(await evaluate("document.querySelector('.hotel-room-nav').children.length"), 3);
+    assert.ok(
+      await evaluate(
+        `!document.querySelector('.hotel-room').textContent.includes("Retour à l'accueil")`,
+      ),
+    );
+    assert.equal(
+      await evaluate("!!document.querySelector('.hotel-room-status, .hotel-location')"),
+      false,
+    );
+    assert.equal(
+      await evaluate(
+        "document.querySelector('.hotel-room').textContent.includes('Cliquez sur une case libre pour vous déplacer')",
+      ),
+      false,
+    );
+  };
+  await assertCleanClient();
+  assert.ok(
+    await evaluate(`(()=>{
+    const r=document.querySelector('.hotel-room'),v=r.querySelector('.hotel-viewport'),
+      t=r.querySelector('.hotel-room-nav'),b=r.querySelector('.hotel-navigator-open'),
+      rr=r.getBoundingClientRect(),vr=v.getBoundingClientRect(),tr=t.getBoundingClientRect(),br=b.getBoundingClientRect();
+    return !r.querySelector('.hotel-header,h2') && getComputedStyle(v).backgroundColor==='rgb(0, 0, 0)'
+      && vr.top===rr.top && vr.left===rr.left && vr.right===rr.right
+      && Math.abs(vr.bottom-tr.top)<1 && tr.bottom===rr.bottom && tr.width===rr.width
+      && br.left-tr.left<10 && br.bottom<=tr.bottom && getComputedStyle(t).backgroundColor==='rgb(191, 199, 205)';
+  })()`),
+    'full black scene and full-width compact toolbar at bottom',
+  );
+  const assertEarlyAmbient = async (definition) => {
+    await until(
+      () => evaluate("!!document.querySelector('.hotel-bubble')"),
+      `${definition.id}: visible ambient speech within seven seconds without input`,
+      7000,
+    );
+    assert.ok(
+      await evaluate(`(()=>{
+      const stage=document.querySelector('.hotel-stage').getBoundingClientRect();
+      return [...document.querySelectorAll('.hotel-bubble')].some(b=>{
+        const r=b.getBoundingClientRect(),s=getComputedStyle(b),author=b.querySelector('strong');
+        return ${JSON.stringify(definition.npcs.map((n) => [n.id, `${n.name} : `]))}.some(([id,name])=>b.dataset.speaker===id&&author.textContent===name)
+          && Number(s.opacity)>.95 && s.display!=='none' && s.visibility==='visible'
+          && s.backgroundColor==='rgb(255, 255, 255)' && r.width>r.height
+          && r.left>=stage.left && r.right<=stage.right && r.top>=stage.top && r.bottom<=stage.bottom;
+      });
+    })()`),
+      `${definition.id}: real DOM bubble is opaque, attributed and inside the scene`,
+    );
+    await capture(`hopla-early-${definition.id}.png`);
+  };
+  await assertEarlyAmbient(room);
+  const floorClick = async (col, row, offsetY = 0) => {
+    const point = project(col, row, room);
+    const hit = await evaluate(
+      `(()=>{const c=document.querySelector('.hotel-canvas');c.scrollIntoView({block:'center'});const r=c.getBoundingClientRect();return {x:r.left+${point.x}/c.width*r.width,y:r.top+${point.y + offsetY}/c.height*r.height};})()`,
+    );
+    await command('Input.dispatchMouseEvent', {
+      type: 'mousePressed',
+      button: 'left',
+      clickCount: 1,
+      ...hit,
+    });
+    await command('Input.dispatchMouseEvent', {
+      type: 'mouseReleased',
+      button: 'left',
+      clickCount: 1,
+      ...hit,
+    });
+  };
+  assert.ok((await location()).endsWith('case 8, 8'));
+  await floorClick(8, 7);
+  await until(async () => (await location()).endsWith('case 9, 8'), 'avatar moves');
+  await floorClick(2, 4);
+  await wait(350);
+  assert.ok((await location()).endsWith('case 9, 8'));
+  await floorClick(9, 7);
+  await floorClick(8, 8);
+  await until(async () => (await location()).endsWith('case 9, 9'), 'replace destination');
+  await floorClick(...room.npcs[0].position, -25);
+  assert.equal(
+    await evaluate(
+      "[...document.querySelectorAll('.hotel-bubble .hotel-message-text')].at(-1).textContent",
+    ),
+    room.npcs[0].dialogue,
+  );
+  assert.equal(await evaluate("!!document.querySelector('.hotel-bubble')"), true);
+  await floorClick(...room.npcs[0].position, -25);
+  assert.ok(
+    await evaluate(`(()=>{
+    const bubbles=[...document.querySelectorAll('.hotel-bubble[data-speaker="reception-xd"]')];
+    return bubbles.length===2 && bubbles.every(b=>b.querySelector('strong').textContent==='ReceptionHotel : ')
+      && bubbles[0].parentElement===bubbles[1].parentElement
+      && bubbles[0].getBoundingClientRect().bottom<=bubbles[1].getBoundingClientRect().top;
+  })()`),
+    'repeated speaker appears in successive rows with author names',
+  );
+  await capture('hopla-hotel-hall.png');
+  const assertSceneFits = async () => {
+    assert.ok(
+      await evaluate(
+        `(()=>{const w=document.querySelector('.hopla-hotel-client .window-body').getBoundingClientRect(),c=document.querySelector('.hotel-canvas').getBoundingClientRect(),h=document.querySelector('.hopla-hotel-client').getBoundingClientRect(),d=document.querySelector('.desktop').getBoundingClientRect(),t=document.querySelector('.taskbar').getBoundingClientRect();return Math.abs(c.width/c.height-4/3)<.01&&c.left>=w.left&&c.right<=w.right&&c.top>=w.top&&c.bottom<=w.bottom&&h.left>=d.left&&h.top>=d.top&&h.right<=d.right+.5&&h.bottom<=t.top+.5&&getComputedStyle(document.querySelector('.hotel-canvas')).imageRendering==='pixelated';})()`,
+      ),
+    );
+  };
+  await assertSceneFits();
+  const rect = (selector) =>
+    evaluate(
+      `(()=>{const r=document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,width:r.width,height:r.height};})()`,
+    );
+  // Exercise the same titlebar drag and CSS resize handles as the other desktop windows.
+  const drag = async (start, dx, dy) => {
+    await command('Input.dispatchMouseEvent', {
+      type: 'mousePressed',
+      button: 'left',
+      buttons: 1,
+      clickCount: 1,
+      ...start,
+    });
+    await command('Input.dispatchMouseEvent', {
+      type: 'mouseMoved',
+      button: 'left',
+      buttons: 1,
+      x: start.x + dx,
+      y: start.y + dy,
+    });
+    await command('Input.dispatchMouseEvent', {
+      type: 'mouseReleased',
+      button: 'left',
+      buttons: 0,
+      x: start.x + dx,
+      y: start.y + dy,
+    });
+    await wait(100);
+  };
+  const windowBefore = await rect('.hopla-hotel-client');
+  const bar = await rect('.hopla-hotel-client .titlebar');
+  await drag({ x: bar.x, y: bar.y }, 10, 10);
+  const moved = await rect('.hopla-hotel-client');
+  assert.ok(moved.x > windowBefore.x && moved.y > windowBefore.y);
+  assert.equal(
+    await evaluate("getComputedStyle(document.querySelector('.hopla-hotel-client')).resize"),
+    'both',
+  );
+  await drag({ x: moved.x + moved.width / 2 - 8, y: moved.y + moved.height / 2 - 8 }, -150, -100);
+  assert.ok((await rect('.hopla-hotel-client')).width < moved.width, 'native CSS resize handle');
+  await assertSceneFits();
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 800,
+    height: 600,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await wait(100);
+  await assertSceneFits();
+  await floorClick(8, 7);
+  await until(
+    async () => (await location()).endsWith('case 9, 8'),
+    'scaled clicks after desktop shrink',
+  );
+  await floorClick(...room.npcs[0].position, -25);
+  await evaluate(
+    'window.__hotelGreetingNodes=[...document.querySelectorAll(\'.hotel-bubble[data-speaker="reception-xd"]\')]',
+  );
+  assert.ok(
+    await evaluate(
+      `(()=>{const s=document.querySelector('.hotel-stage').getBoundingClientRect(),b=[...document.querySelectorAll('.hotel-bubble[data-speaker="reception-xd"]')].at(-1).getBoundingClientRect();return b.left>=s.left&&b.right<=s.right&&b.top>=s.top&&b.bottom<=s.bottom;})()`,
+    ),
+  );
+  await capture('hopla-hotel-small.png');
+  await until(
+    () => evaluate('window.__hotelGreetingNodes.every(b=>!b.isConnected)'),
+    'greeting bubbles expire while ambient conversation continues',
+    11000,
+  );
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 1280,
+    height: 800,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await click('.hotel-navigator-open');
+  assert.equal(await evaluate("document.querySelector('.hotel-navigator').hidden"), false);
+  assert.equal(await evaluate("document.querySelectorAll('[data-hotel-room]').length"), 5);
+  const panelSize = () =>
+    evaluate(`(()=>{
+    const p=document.querySelector('.hotel-navigator'),r=p.getBoundingClientRect(),
+      room=document.querySelector('.hotel-room').getBoundingClientRect(),
+      rows=[...p.querySelectorAll('.hotel-room-entry')].filter(row=>getComputedStyle(row).display!=='none'),
+      last=rows.at(-1).getBoundingClientRect(),w=document.querySelector('.hopla-hotel-client').getBoundingClientRect();
+    return {height:r.height,tail:r.bottom-last.bottom,scroll:p.scrollHeight>p.clientHeight,
+      bounded:r.top>=room.top&&r.bottom<=room.bottom&&r.left>=room.left&&r.right<=room.right,
+      window:[w.width,w.height]};
+  })()`);
+  const fullPanel = await panelSize();
+  assert.ok(fullPanel.bounded && !fullPanel.scroll);
+  assert.ok(fullPanel.tail >= 3 && fullPanel.tail <= 7, 'panel ends just after its content');
+  await evaluate(
+    "[...document.querySelectorAll('.hotel-room-entry')].slice(1).forEach(row=>row.style.display='none')",
+  );
+  const oneRoom = await panelSize();
+  assert.ok(oneRoom.height < fullPanel.height, 'panel shrinks with fewer rooms');
+  assert.ok(oneRoom.bounded && oneRoom.tail <= 12);
+  await evaluate(
+    "document.querySelectorAll('.hotel-room-entry').forEach(row=>row.style.display='')",
+  );
+  // Extra rows exist only in this isolated layout check, never in room data.
+  await evaluate(
+    `(()=>{const p=document.querySelector('.hotel-navigator'),row=p.querySelector('.hotel-room-entry');for(let i=0;i<30;i++){const clone=row.cloneNode(true);clone.dataset.layoutProbe='true';p.append(clone);}})()`,
+  );
+  const manyRooms = await panelSize();
+  assert.ok(manyRooms.bounded && manyRooms.scroll, 'long list scrolls inside the available height');
+  assert.deepEqual(manyRooms.window, fullPanel.window, 'panel never resizes the client window');
+  await evaluate("document.querySelectorAll('[data-layout-probe]').forEach(row=>row.remove())");
+  assert.deepEqual((await panelSize()).window, fullPanel.window);
+  await capture('hopla-navigator.png');
+  const panelBeforeDrag = await rect('.hotel-navigator');
+  const canvasBeforeDrag = await rect('.hotel-canvas');
+  const panelTitle = await rect('.hotel-navigator > header');
+  await drag({ x: panelTitle.x, y: panelTitle.y }, 40, -20);
+  assert.ok((await rect('.hotel-navigator')).x > panelBeforeDrag.x, 'internal panel is draggable');
+  assert.deepEqual(
+    await rect('.hotel-canvas'),
+    canvasBeforeDrag,
+    'panel does not displace the room',
+  );
+  const restoreSize = await evaluate(`(()=>{const w=document.querySelector('.hopla-hotel-client');
+    const size=[w.style.width,w.style.height];w.style.width='320px';w.style.height='220px';return size;})()`);
+  await wait(150);
+  await assertSceneFits();
+  assert.ok(
+    (await panelSize()).bounded && (await panelSize()).scroll,
+    'minimum client keeps panel bounded and scrollable',
+  );
+  assert.ok(
+    await evaluate(
+      `(()=>{const t=document.querySelector('.hotel-room-nav').getBoundingClientRect(),p=document.querySelector('.hotel-navigator').getBoundingClientRect();return p.bottom<=t.top;})()`,
+    ),
+    'navigator never covers toolbar',
+  );
+  await capture('hopla-minimum.png');
+  await click('.hotel-navigator-open');
+  assert.equal(await evaluate("document.querySelector('.hotel-navigator').hidden"), true);
+  await click('.hotel-navigator-open');
+  await evaluate(
+    `(()=>{const w=document.querySelector('.hopla-hotel-client');[w.style.width,w.style.height]=${JSON.stringify(restoreSize)};})()`,
+  );
+  await wait(150);
+  await click('.hotel-navigator-close');
+  assert.equal(await evaluate("document.querySelector('.hotel-navigator').hidden"), true);
+  const enterRoom = async (id) => {
+    await click('.hotel-navigator-open');
+    await click(`[data-hotel-room="${id}"]`);
+    await ready();
+    assert.equal(await evaluate("document.querySelector('.hotel-navigator').hidden"), true);
+  };
+  for (const destination of hoplaHotelRooms.slice(1)) {
+    await floorClick(9, 8);
+    await enterRoom(destination.id);
+    await assertEarlyAmbient(destination);
+    assert.equal(
+      await evaluate("document.querySelector('.hotel-current-room').textContent"),
+      destination.name,
+    );
+    await assertCleanClient(destination);
+    assert.ok((await location()).endsWith('case 8, 8'));
+    await wait(350);
+    assert.ok((await location()).endsWith('case 8, 8'), 'old walking path is cancelled');
+    await capture(`hopla-${destination.id}.png`);
+    await floorClick(8, 7);
+    await until(async () => (await location()).endsWith('case 9, 8'), `${destination.id} walks`);
+    const obstacle = destination.furniture.find((item) => item.type === 'table');
+    await floorClick(...obstacle.position);
+    await wait(350);
+    assert.ok((await location()).endsWith('case 9, 8'), `${destination.id} blocks furniture`);
+    await floorClick(...destination.npcs[0].position, -25);
+    assert.equal(
+      await evaluate(
+        `[...document.querySelectorAll('.hotel-bubble .hotel-message-text')].some(b=>b.textContent===${JSON.stringify(destination.npcs[0].dialogue)})`,
+      ),
+      false,
+    );
+  }
+  for (const id of ['hall', 'cafe', 'hall']) await enterRoom(id);
+  await floorClick(8, 8);
+  await until(async () => (await location()).endsWith('case 9, 9'), 'client position');
+  await wait(350);
+  await click('.hopla-hotel-client .msn-minimize');
+  assert.equal(await evaluate("document.querySelector('.hopla-hotel-client').hidden"), true);
+  await click('.task-tab[data-app=hopla-hotel]');
+  assert.equal(await evaluate("document.querySelector('.hopla-hotel-client').hidden"), false);
+  assert.ok((await location()).endsWith('case 9, 9'), 'taskbar restoration preserves position');
+  await enterRoom('cafe');
+  await floorClick(7, 8);
+  await until(async () => (await location()).endsWith('case 8, 9'), 'cafe position');
+  await wait(350);
+  await click('.hopla-hotel-client .msn-minimize');
+  await evaluate("document.querySelector('.browser-page .hotel-enter').click()");
+  assert.equal(await evaluate("document.querySelector('.hopla-hotel-client').hidden"), false);
+  assert.ok((await location()).endsWith('case 8, 9'), 'site restoration preserves position');
+  assert.equal(
+    await evaluate("document.querySelector('.hotel-current-room').textContent"),
+    'Café Hopla',
+  );
+  await click('.task-tab[data-app=browser]');
+  await click('[data-browser-action=new]');
+  await ready();
+  await go('hoplahotel.fr');
+  await click('.browser-page .hotel-enter');
+  assert.equal(await evaluate("document.querySelectorAll('.hopla-hotel-client').length"), 1);
+  assert.ok(
+    (await location()).endsWith('case 8, 9'),
+    'launching from another tab preserves the same client',
+  );
+  await click('.task-tab[data-app=browser]');
+  await ready();
+  assert.ok(await evaluate("!!document.querySelector('.browser-page .hotel-enter')"));
+  await click('[data-browser-action=back]');
+  await ready();
+  await click('[data-browser-action=forward]');
+  await ready();
+  assert.ok(await evaluate("!!document.querySelector('.browser-page .hotel-enter')"));
+  await click('.internet-adventurer .close-button');
+  assert.ok((await location()).endsWith('case 8, 9'), 'closing browser leaves client intact');
+  await click('.hopla-hotel-client .close-button');
+  assert.equal(
+    await evaluate(
+      "document.querySelectorAll('.hopla-hotel-client, .task-tab[data-app=hopla-hotel]').length",
+    ),
+    0,
+  );
+  await doubleClick('#desktop > .desktop-icons [data-shortcut=browser]');
+  await ready();
+  // Seed only this test instance's random source; timers and animation use the real clock.
+  await evaluate(
+    `(()=>{const original=Math.random;let seed=11;Math.random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);try{document.querySelector('.browser-page .hotel-enter').click();}finally{Math.random=original;}})()`,
+  );
+  assert.ok((await location()).endsWith('case 8, 8'));
+  assert.equal(
+    await evaluate("document.querySelector('.hotel-current-room').textContent"),
+    "Hall de l'hôtel",
+  );
+  await capture('hopla-desktop-window.png');
+  // Read visible shirt pixels, rather than adding permanent name labels or a debug API.
+  const npcPositions = () =>
+    evaluate(`(()=>{
+    const c=document.querySelector('.hotel-canvas'),pixels=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
+    return ${JSON.stringify(room.npcs.map((n) => [n.id, n.appearance?.shirt ?? '#f3bf43']))}.map(([id,color])=>{
+      const rgb=color.slice(1).match(/../g).map(v=>parseInt(v,16));
+      let x=0,y=0,count=0;
+      for(let i=0;i<pixels.length;i+=4) if(rgb.every((v,j)=>pixels[i+j]===v)){
+        x+=(i/4)%c.width;y+=Math.floor(i/4/c.width);count++;
+      }
+      return [id,count?Math.round(x/count):null,count?Math.round(y/count):null];
+    });
+  })()`);
+  const initialPositions = await npcPositions();
+  const receptionPosition = initialPositions.find(([id]) => id === 'reception-xd');
+  let observedMotion = false,
+    observedChat = false,
+    overlap = false;
+  await until(
+    async () => {
+      const positions = await npcPositions();
+      observedMotion ||= JSON.stringify(positions) !== JSON.stringify(initialPositions);
+      const visible = await evaluate(
+        "[...document.querySelectorAll('.hotel-bubble:not([hidden])')].map(b=>[b.dataset.speaker,b.textContent])",
+      );
+      observedChat ||= visible.some(([id]) => id !== 'reception-xd');
+      overlap ||= visible.length >= 2;
+      assert.deepEqual(
+        positions.find(([id]) => id === 'reception-xd'),
+        receptionPosition,
+      );
+      assert.ok(visible.length <= 4);
+      return observedMotion && observedChat && overlap && visible.length >= 2;
+    },
+    'autonomous visitors move and exchange messages without player input',
+    90000,
+  );
+  await capture('hopla-social-hall.png');
+  const socialState = () =>
+    evaluate(
+      "[...document.querySelectorAll('.hotel-bubble')].map(n=>[n.dataset.speaker,n.textContent,n.hidden,n.style.left,n.style.top])",
+    );
+  await click('.hopla-hotel-client .msn-minimize');
+  const pausedSocial = await socialState();
+  await wait(1200);
+  assert.deepEqual(await socialState(), pausedSocial, 'minimized simulation has no activity');
+  const immediateRestore = await evaluate(
+    "(()=>{document.querySelector('.task-tab[data-app=hopla-hotel]').click();return [...document.querySelectorAll('.hotel-bubble')].map(n=>[n.dataset.speaker,n.textContent,n.hidden,n.style.left,n.style.top]);})()",
+  );
+  assert.deepEqual(
+    immediateRestore,
+    pausedSocial,
+    'restoration preserves the active messages and positions',
+  );
+  assert.ok(
+    await evaluate(
+      `(()=>{const s=document.querySelector('.hotel-stage').getBoundingClientRect();return [...document.querySelectorAll('.hotel-bubble:not([hidden])')].every(b=>{const r=b.getBoundingClientRect();return r.left>=s.left&&r.right<=s.right&&r.top>=s.top&&r.bottom<=s.bottom&&getComputedStyle(b).backgroundColor==='rgb(255, 255, 255)'&&getComputedStyle(b).color==='rgb(0, 0, 0)';});})()`,
+    ),
+  );
+  await click('.hopla-hotel-client .close-button');
+  assert.ok(await evaluate("!!document.querySelector('.browser-page .hotel-enter')"));
+  assert.equal(await narrative(), before);
+  assert.equal(
+    await evaluate(
+      "(()=>{const s=JSON.parse(localStorage.getItem('chaos-survival-story-v1'));return !Object.hasOwn(s,'hopla-hotel');})()",
+    ),
+    false,
+  );
+  await doubleClick('#desktop > .desktop-icons [data-shortcut=computer]');
+  assert.ok(await evaluate("!!document.querySelector('.explorer-items')"));
+  await evaluate("document.querySelector('.browser-page .hotel-enter').click()");
+  await click('#windows-start');
+  await click('#return-main-menu');
+  await until(
+    () => evaluate("window.chaosDebug.snapshot().phase==='menu'"),
+    'Hotel desktop teardown',
+  );
+  assert.equal(
+    await evaluate(
+      "document.querySelectorAll('.hopla-hotel-client, .task-tab[data-app=hopla-hotel]').length",
+    ),
+    0,
+  );
+  await click('#menu-new-game');
+  await click('#menu-confirm-yes');
+  await until(
+    () => evaluate("window.chaosDebug.snapshot().phase==='rules'"),
+    'Hotel New Game reset',
+  );
+  await click('.rules-confirm');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'Hotel fresh run');
+  await doubleClick('#desktop > .desktop-icons [data-shortcut=browser]');
+  await ready();
+  await go('hoplahotel.fr');
+  await click('.browser-page .hotel-enter');
+  assert.equal(await evaluate("document.querySelectorAll('.hopla-hotel-client').length"), 1);
+  assert.ok((await location()).endsWith('case 8, 8'), 'fresh client after New Game');
+  await click('.hopla-hotel-client .close-button');
+  assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
+  assert.ok(
+    requests.every((url) => url.startsWith(gameUrl)),
+    JSON.stringify(requests),
+  );
+  console.log(
+    'OK: single desktop Hotel window, unchanged browser homepage/history, bounded resize, five populated rooms, no permanent nicknames, reception-only click dialogue, scaled clicks/collisions/NPCs, autonomous movement/conversations and simultaneous white bubbles, frozen minimized social state/restoration, repeated room changes, close/relaunch, menu teardown/New Game, unchanged story/save and local requests; no Electron.',
+  );
+}
+
+async function verifyWiki() {
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 1280,
+    height: 800,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await command('Page.enable');
+  await command('Network.enable');
+  const requests = [];
+  socket.addEventListener('message', ({ data }) => {
+    const m = JSON.parse(data);
+    if (m.method === 'Network.requestWillBeSent') requests.push(m.params.request.url);
+  });
+  await click('#menu-play');
+  await until(() => evaluate("!!document.querySelector('.rules-confirm')"), 'first rules');
+  await click('.rules-confirm');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'playing');
+  await doubleClick('#desktop > .desktop-icons [data-shortcut=browser]');
+  const ready = () =>
+    until(
+      () =>
+        evaluate("document.querySelector('.browser-page')?.getAttribute('aria-busy')==='false'"),
+      'page ready',
+    );
+  const go = async (url) => {
+    await evaluate(
+      `document.querySelector('.browser-address input').value=${JSON.stringify(url)};document.querySelector('.browser-address').requestSubmit()`,
+    );
+    await ready();
+  };
+  await ready();
+  const saved = JSON.parse(await evaluate("localStorage.getItem('chaos-survival-story-v1')"));
+  await click('.xd-sites [data-browser-link="http://www.wiki.fr/"]');
+  await ready();
+  assert.equal(
+    await evaluate("document.querySelector('.wiki h1').textContent"),
+    'Bienvenue sur Wiki',
+  );
+  assert.deepEqual(
+    await evaluate(
+      "(()=>{const s=getComputedStyle(document.querySelector('.wiki h1'));return [s.color,s.fontStyle,s.textShadow];})()",
+    ),
+    ['rgb(17, 17, 17)', 'normal', 'none'],
+  );
+  await capture('wiki-home.png');
+  await click('.wiki-sidebar [data-browser-link="http://www.wiki.fr/articles"]');
+  await ready();
+  const articles = await evaluate(
+    "[...document.querySelectorAll('.wiki-content [data-browser-link]')].map(a=>({title:a.textContent,url:a.dataset.browserLink}))",
+  );
+  assert.equal(articles.length, 16);
+  for (const article of articles) {
+    await go('wiki.fr/articles');
+    await click(`.wiki-content [data-browser-link="${article.url}"]`);
+    await ready();
+    assert.equal(await evaluate("document.querySelector('.wiki h1').textContent"), article.title);
+    const sectionCount = await evaluate(
+      "document.querySelectorAll('.wiki-article-section').length",
+    );
+    assert.ok(sectionCount >= 2 && sectionCount <= 6);
+    assert.equal(await evaluate("document.querySelectorAll('.wiki-toc li').length"), sectionCount);
+    await click('.wiki-toc li:last-child a');
+    assert.ok(await evaluate("document.querySelector('.browser-page').scrollTop>0"));
+    assert.equal(
+      await evaluate("document.querySelector('.browser-address input').value"),
+      article.url,
+    );
+    await go(`xdsearch.fr/?q=${encodeURIComponent(article.title)}`);
+    assert.ok(
+      await evaluate(
+        `!!document.querySelector('.xd-search-result [data-browser-link="${article.url}"]')`,
+      ),
+    );
+  }
+  await go('wiki.fr/article/internet');
+  await click('.wiki-content [data-browser-link="http://www.wiki.fr/article/blog"]');
+  await ready();
+  assert.equal(await evaluate("document.querySelector('.wiki h1').textContent"), 'Blog');
+  await click('[data-browser-action=back]');
+  await ready();
+  assert.equal(await evaluate("document.querySelector('.wiki h1').textContent"), 'Internet');
+  await click('[data-browser-action=forward]');
+  await ready();
+  assert.equal(await evaluate("document.querySelector('.wiki h1').textContent"), 'Blog');
+  await evaluate(
+    "document.querySelector('.wiki-search input').value='MUSIQUE ELECTRONIQUE';document.querySelector('.wiki-search').requestSubmit()",
+  );
+  await ready();
+  await click(
+    '.wiki-content [data-browser-link="http://www.wiki.fr/article/musique-electronique"]',
+  );
+  await ready();
+  assert.equal(
+    await evaluate("document.querySelector('.wiki h1').textContent"),
+    'Musique électronique',
+  );
+  await click('.wiki-sidebar .wiki-random');
+  await ready();
+  assert.ok(
+    articles
+      .map((article) => article.url)
+      .includes(await evaluate("document.querySelector('.browser-address input').value")),
+  );
+  assert.ok(
+    articles
+      .map((article) => article.title)
+      .includes(await evaluate("document.querySelector('.wiki h1').textContent")),
+  );
+  for (const query of [
+    '<script>alert(1)</script>',
+    '<img src=x onerror=alert(1)>',
+    'javascript:alert(1)',
+    'data:text/html,<script>alert(1)</script>',
+    'file:///C:/Windows/',
+    '../../../../',
+  ]) {
+    await evaluate(
+      `document.querySelector('.wiki-search input').value=${JSON.stringify(query)};document.querySelector('.wiki-search').requestSubmit()`,
+    );
+    await ready();
+    assert.ok(await evaluate("!!document.querySelector('.wiki-empty')"));
+    assert.equal(await evaluate("document.querySelector('.wiki-search input').value"), query);
+    assert.equal(
+      await evaluate("document.querySelectorAll('.wiki script,.wiki iframe,.wiki webview').length"),
+      0,
+    );
+  }
+  await go('wiki.fr/article/primates');
+  await capture('wiki-article.png');
+  await evaluate("document.querySelector('.internet-adventurer').style.width='500px'");
+  await capture('wiki-narrow.png');
+  assert.ok(
+    await evaluate(
+      "(()=>{const p=document.querySelector('.browser-page'),r=p.getBoundingClientRect();return p.scrollWidth<=p.clientWidth+1&&[...document.querySelectorAll('.wiki-infobox,.wiki-toc')].every(n=>{const b=n.getBoundingClientRect();return b.right<=r.right&&b.left>=r.left;});})()",
+    ),
+  );
+  const after = JSON.parse(await evaluate("localStorage.getItem('chaos-survival-story-v1')"));
+  delete saved.browser;
+  delete after.browser;
+  assert.deepEqual(after, saved);
+  assert.ok(
+    requests.every(
+      (url) => !/^https?:/.test(url) || new URL(url).origin === new URL(gameUrl).origin,
+    ),
+  );
+  assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
+  console.log(
+    'OK: Wiki home/catalogue, 16 articles and search indexing, TOCs, internal links, back/forward, title search, random article, hostile searches, resize, unchanged narrative/save and local requests; no Electron.',
+  );
+}
+
+async function verifyVideoTube() {
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 1280,
+    height: 800,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await command('Page.enable');
+  await command('Network.enable');
+  const requests = [];
+  socket.addEventListener('message', ({ data }) => {
+    const m = JSON.parse(data);
+    if (m.method === 'Network.requestWillBeSent') requests.push(m.params.request.url);
+  });
+  await click('#menu-play');
+  await until(() => evaluate("!!document.querySelector('.rules-confirm')"), 'first rules');
+  await click('.rules-confirm');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'playing');
+  await doubleClick('#desktop > .desktop-icons [data-shortcut=browser]');
+  const ready = () =>
+    until(
+      () =>
+        evaluate("document.querySelector('.browser-page')?.getAttribute('aria-busy')==='false'"),
+      'page ready',
+    );
+  const go = async (url) => {
+    await evaluate(
+      `document.querySelector('.browser-address input').value=${JSON.stringify(url)};document.querySelector('.browser-address').requestSubmit()`,
+    );
+    await ready();
+  };
+  await ready();
+  const saved = await evaluate("localStorage.getItem('chaos-survival-story-v1')");
+  assert.ok(
+    await evaluate(
+      '!!document.querySelector(\'.xd-sites [data-browser-link="http://www.videotube.fr/"]\')',
+    ),
+  );
+  await click('.xd-sites [data-browser-link="http://www.videotube.fr/"]');
+  await ready();
+  assert.equal(await evaluate("document.querySelectorAll('.videotube-card').length"), 7);
+  await evaluate(
+    "Promise.all([...document.querySelectorAll('.videotube img')].map(img=>img.decode()))",
+  );
+  await capture('videotube-home.png');
+  const ids = [
+    'numa-numa',
+    'chocolate-rain',
+    'leave-britney-alone',
+    'dramatic-chipmunk',
+    'laughing-baby',
+    'sneezing-baby-panda',
+    'what-what',
+  ];
+  const titles = [
+    'Numa Numa Dance',
+    'Chocolate Rain',
+    'LEAVE BRITNEY ALONE!',
+    'Dramatic Chipmunk',
+    'Laughing Baby',
+    'Sneezing Baby Panda',
+    'What What (In the Butt)',
+  ];
+  await evaluate(
+    'window.__videoIds=[];window.chaosVideo={open:async id=>{window.__videoIds.push(id);return {ok:true};}}',
+  );
+  for (let index = 0; index < ids.length; index++) {
+    if (index) await go('videotube.fr');
+    await click(
+      `.videotube-card [data-browser-link="http://www.videotube.fr/watch/${ids[index]}"]`,
+    );
+    await ready();
+    assert.equal(
+      await evaluate("document.querySelector('.videotube h2').textContent"),
+      titles[index],
+    );
+    assert.equal(
+      await evaluate("document.querySelectorAll('.videotube-comments article').length"),
+      3,
+    );
+    assert.ok(
+      await evaluate(
+        "/Note : [1-5] sur 5/.test(document.querySelector('.videotube-stars').getAttribute('aria-label'))",
+      ),
+    );
+    assert.equal(await evaluate("document.querySelector('.videotube-watch').disabled"), false);
+    await evaluate("document.querySelector('.videotube-player img').decode()");
+    {
+      const address = await evaluate("document.querySelector('.browser-address input').value");
+      const tabs = await evaluate("document.querySelectorAll('.browser-tab').length");
+      await click('.videotube-watch');
+      await until(
+        () =>
+          evaluate(
+            "document.querySelector('.videotube-open-status').textContent.startsWith('Vidéo ouverte')",
+          ),
+        'external button response',
+      );
+      assert.equal(
+        await evaluate("document.querySelector('.browser-address input').value"),
+        address,
+      );
+      assert.equal(await evaluate("document.querySelectorAll('.browser-tab').length"), tabs);
+    }
+    if (index === 1) {
+      await capture('videotube-watch.png');
+      await evaluate('window.chaosVideo.open=async()=>{throw new Error("Simulated failure")};');
+      await click('.videotube-watch');
+      await until(
+        () =>
+          evaluate(
+            "document.querySelector('.videotube-open-status').textContent.startsWith('Impossible')",
+          ),
+        'external error',
+      );
+      await evaluate(
+        'window.chaosVideo.open=async id=>{window.__videoIds.push(id);return {ok:true};};',
+      );
+      await evaluate("document.querySelector('.internet-adventurer').style.width='500px'");
+      assert.ok(
+        await evaluate(
+          "(()=>{const r=document.querySelector('.videotube-player').getBoundingClientRect(),p=document.querySelector('.browser-page').getBoundingClientRect();return r.left>=p.left&&r.right<=p.right;})()",
+        ),
+      );
+    }
+    await go(`xdsearch.fr/?q=${encodeURIComponent(titles[index])}`);
+    assert.ok(
+      await evaluate(
+        `!!document.querySelector('.xd-search-result [data-browser-link="http://www.videotube.fr/watch/${ids[index]}"]')`,
+      ),
+    );
+  }
+  assert.deepEqual(await evaluate('window.__videoIds'), ids);
+  for (const url of [
+    'javascript:alert(1)',
+    'data:text/html,<script>alert(1)</script>',
+    'file:///C:/Windows/',
+  ]) {
+    await go(url);
+    assert.ok(await evaluate("!!document.querySelector('.browser-error')"));
+  }
+  const before = JSON.parse(saved),
+    after = JSON.parse(await evaluate("localStorage.getItem('chaos-survival-story-v1')"));
+  delete before.browser;
+  delete after.browser;
+  assert.deepEqual(after, before);
+  assert.ok(
+    requests.every(
+      (url) => !/^https?:/.test(url) || new URL(url).origin === new URL(gameUrl).origin,
+    ),
+  );
+  assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
+  console.log(
+    'OK: VideoTube 7 cards/pages/images/comments/ratings, internal links/search, external-ID bridge simulated with success/failure, all watch buttons enabled, resize, hostile URLs, unchanged narrative/save and local requests; no Electron or real browser opened.',
+  );
+}
+
+async function verifyFlashZone() {
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 1280,
+    height: 800,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await command('Page.enable');
+  await command('Network.enable');
+  const requests = [];
+  socket.addEventListener('message', ({ data }) => {
+    const m = JSON.parse(data);
+    if (m.method === 'Network.requestWillBeSent') requests.push(m.params.request.url);
+  });
+  await click('#menu-play');
+  await until(() => evaluate("!!document.querySelector('.rules-confirm')"), 'first rules');
+  await click('.rules-confirm');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'playing');
+  await doubleClick('#desktop > .desktop-icons [data-shortcut=browser]');
+  const ready = () =>
+    until(
+      () =>
+        evaluate("document.querySelector('.browser-page')?.getAttribute('aria-busy')==='false'"),
+      'page ready',
+    );
+  const go = async (url) => {
+    await evaluate(
+      `document.querySelector('.browser-address input').value=${JSON.stringify(url)};document.querySelector('.browser-address').requestSubmit()`,
+    );
+    await ready();
+  };
+  await ready();
+  const narrative = await evaluate(
+    "JSON.stringify([JSON.parse(localStorage.getItem('chaos-survival-story-v1')).dialogues,JSON.parse(localStorage.getItem('chaos-survival-story-v1')).completed])",
+  );
+  assert.ok(
+    await evaluate(
+      '!!document.querySelector(\'.xd-sites [data-browser-link="http://www.flashzone.fr/"]\')',
+    ),
+  );
+  await click('.xd-sites [data-browser-link="http://www.flashzone.fr/"]');
+  await ready();
+  assert.equal(await evaluate("document.querySelectorAll('.flashzone-card').length"), 3);
+  await evaluate(
+    "Promise.all([...document.querySelectorAll('.flashzone img')].map(img=>img.decode()))",
+  );
+  await capture('flashzone-home.png');
+  await click('.flashzone-card [data-browser-link="http://www.flashzone.fr/jeux/bubble-pop"]');
+  await ready();
+  await evaluate(
+    'window.__bubbleShift=0;window.__bubbleRaf=requestAnimationFrame;window.__bubbleNow=performance.now.bind(performance);window.requestAnimationFrame=fn=>window.__bubbleRaf(t=>fn(t+window.__bubbleShift));performance.now=()=>window.__bubbleNow()+window.__bubbleShift',
+  );
+  await click('.bubble-play');
+  await until(() => evaluate("document.querySelectorAll('.bubble-target').length>0"), 'bubbles');
+  await click('.bubble-target');
+  assert.equal(
+    await evaluate("document.querySelector('.bubble-stats strong').textContent"),
+    'Score : 10',
+  );
+  await capture('flashzone-bubble-playing.png');
+  await evaluate('window.__bubbleShift+=30001');
+  await until(
+    () => evaluate("!document.querySelector('.bubble-result').hidden"),
+    '30 second result',
+  );
+  assert.equal(
+    await evaluate("document.querySelector('.bubble-result strong').textContent"),
+    'Score final : 10',
+  );
+  assert.equal(
+    await evaluate(
+      "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).flashzone.bestScores['bubble-pop']",
+    ),
+    10,
+  );
+  await capture('flashzone-bubble-result.png');
+  await click('.bubble-replay');
+  assert.equal(
+    await evaluate("document.querySelector('.bubble-stats strong').textContent"),
+    'Score : 0',
+  );
+  await click('[data-browser-action=new]');
+  await ready();
+  await go('flashzone.fr/jeux/bubble-pop');
+  assert.equal(await evaluate("document.querySelector('.bubble-intro').hidden"), false);
+  await click('.bubble-play');
+  await click('.bubble-target');
+  await click('.internet-adventurer .close-button');
+  await evaluate('window.__bubbleShift+=60000');
+  await click('#windows-start');
+  await click('#menu-browser');
+  await ready();
+  assert.equal(await evaluate("document.querySelector('.bubble-intro').hidden"), false);
+  assert.equal(
+    await evaluate(
+      "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).flashzone.bestScores['bubble-pop']",
+    ),
+    10,
+  );
+  await go('xdsearch.fr/?q=bubble%20pop');
+  assert.ok(
+    await evaluate(
+      '!!document.querySelector(\'.xd-search-result [data-browser-link="http://www.flashzone.fr/jeux/bubble-pop"]\')',
+    ),
+  );
+  await evaluate(
+    "document.dispatchEvent(new CustomEvent('windows-xd:open-url',{detail:{url:'http://www.flashzone.fr/jeux/bubble-pop'}}))",
+  );
+  await ready();
+  assert.ok(await evaluate("!!document.querySelector('.bubble-play')"));
+  await evaluate('window.__bubbleShift=0');
+  await go('flashzone.fr/jeux/avoid-the-squares');
+  assert.equal(await evaluate("document.querySelector('.squares-intro').hidden"), false);
+  await click('.squares-play');
+  assert.equal(await evaluate("document.querySelectorAll('.squares-enemy').length"), 2);
+  await evaluate(
+    "(()=>{const a=document.querySelector('.squares-arena'),r=a.getBoundingClientRect();a.dispatchEvent(new PointerEvent('pointermove',{clientX:r.left+100,clientY:r.top+100,bubbles:true}));})()",
+  );
+  const startPosition = await evaluate("document.querySelector('.squares-player').style.left");
+  assert.ok(parseFloat(startPosition) > 0 && parseFloat(startPosition) < 40);
+  await capture('flashzone-squares-playing.png');
+  await wait(1100);
+  await evaluate(
+    "(()=>{const a=document.querySelector('.squares-arena'),e=document.querySelector('.squares-enemy').getBoundingClientRect();a.dispatchEvent(new PointerEvent('pointermove',{clientX:e.left+e.width/2,clientY:e.top+e.height/2,bubbles:true}));})()",
+  );
+  await until(
+    () => evaluate("!document.querySelector('.squares-result').hidden"),
+    'squares collision',
+  );
+  const squaresBest = await evaluate(
+    "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).flashzoneBestTimes['avoid-the-squares']",
+  );
+  assert.ok(squaresBest >= 750);
+  await capture('flashzone-squares-result.png');
+  await click('.squares-replay');
+  assert.equal(await evaluate("document.querySelector('.squares-result').hidden"), true);
+  await evaluate("document.querySelector('.internet-adventurer').style.width='500px'");
+  const squareSize = await evaluate(
+    "(()=>{const r=document.querySelector('.squares-player').getBoundingClientRect();return {w:r.width,h:r.height};})()",
+  );
+  assert.ok(Math.abs(squareSize.w - squareSize.h) < 0.2);
+  await click('[data-browser-action=new]');
+  await ready();
+  await go('flashzone.fr/jeux/avoid-the-squares');
+  assert.equal(await evaluate("document.querySelector('.squares-intro').hidden"), false);
+  await go('xdsearch.fr/?q=avoid%20the%20squares');
+  assert.ok(
+    await evaluate(
+      '!!document.querySelector(\'.xd-search-result [data-browser-link="http://www.flashzone.fr/jeux/avoid-the-squares"]\')',
+    ),
+  );
+  assert.equal(
+    await evaluate(
+      "JSON.stringify([JSON.parse(localStorage.getItem('chaos-survival-story-v1')).dialogues,JSON.parse(localStorage.getItem('chaos-survival-story-v1')).completed])",
+    ),
+    narrative,
+  );
+  await go('flashzone.fr');
+  await click('.flashzone-card [data-browser-link="http://www.flashzone.fr/jeux/pixel-runner"]');
+  await ready();
+  await click('.runner-play');
+  assert.ok(await evaluate("document.activeElement===document.querySelector('.runner-canvas')"));
+  for (const code of ['Space', 'ArrowUp']) {
+    assert.equal(
+      await evaluate(
+        `(()=>{const c=document.querySelector('.runner-canvas');const e=new KeyboardEvent('keydown',{code:'${code}',cancelable:true});c.dispatchEvent(e);return e.defaultPrevented;})()`,
+      ),
+      true,
+    );
+  }
+  assert.equal(
+    await evaluate(
+      "(()=>{const i=document.querySelector('.browser-address input');i.focus();const e=new KeyboardEvent('keydown',{code:'Space',cancelable:true});i.dispatchEvent(e);return e.defaultPrevented;})()",
+    ),
+    false,
+  );
+  await wait(250);
+  const runnerTab = await evaluate(
+    "document.querySelector('.browser-tab[aria-selected=true] [data-browser-action=select]').dataset.tabId",
+  );
+  await evaluate("window.__runnerRoot=document.querySelector('.pixel-runner')");
+  await click('[data-browser-action=new]');
+  const pausedDistance = await evaluate(
+    "window.__runnerRoot.querySelector('.runner-distance').textContent",
+  );
+  await ready();
+  assert.equal(
+    await evaluate("window.__runnerRoot.querySelector('.runner-distance').textContent"),
+    pausedDistance,
+  );
+  await go('flashzone.fr/jeux/pixel-runner');
+  assert.equal(await evaluate("document.querySelector('.runner-intro').hidden"), false);
+  const otherRunnerTab = await evaluate(
+    "document.querySelector('.browser-tab[aria-selected=true] [data-browser-action=select]').dataset.tabId",
+  );
+  await click(`.browser-tab [data-browser-action=select][data-tab-id="${runnerTab}"]`);
+  await ready();
+  assert.equal(await evaluate("document.querySelector('.runner-intro').hidden"), true);
+  await click(`.browser-tab [data-browser-action=close][data-tab-id="${otherRunnerTab}"]`);
+  await wait(250);
+  assert.ok(await evaluate("document.querySelector('.pixel-runner')===window.__runnerRoot"));
+  const resumedDistance = await evaluate("document.querySelector('.runner-distance').textContent");
+  assert.notEqual(resumedDistance, 'Distance : 0 m');
+  await capture('flashzone-runner-playing.png');
+  await until(
+    () => evaluate("!document.querySelector('.runner-result').hidden"),
+    'runner collision',
+    15000,
+  );
+  const runnerBest = await evaluate(
+    "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).flashzoneBestDistances['pixel-runner']",
+  );
+  assert.ok(runnerBest > 400);
+  await capture('flashzone-runner-result.png');
+  await click('.runner-replay');
+  assert.equal(await evaluate("document.querySelector('.runner-result').hidden"), true);
+  await go('xdsearch.fr/?q=pixel%20runner');
+  assert.ok(
+    await evaluate(
+      '!!document.querySelector(\'.xd-search-result [data-browser-link="http://www.flashzone.fr/jeux/pixel-runner"]\')',
+    ),
+  );
+  await command('Page.reload');
+  await until(() => evaluate("window.chaosDebug?.snapshot().phase==='menu'"), 'restart');
+  assert.equal(
+    await evaluate(
+      "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).flashzone.bestScores['bubble-pop']",
+    ),
+    10,
+  );
+  await click('#menu-new-game');
+  assert.equal(
+    await evaluate(
+      "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).flashzoneBestDistances['pixel-runner']",
+    ),
+    runnerBest,
+  );
+  assert.equal(
+    await evaluate(
+      "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).flashzoneBestTimes['avoid-the-squares']",
+    ),
+    squaresBest,
+  );
+  await click('#menu-confirm-yes');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='rules'"), 'New Game');
+  assert.equal(
+    await evaluate("JSON.parse(localStorage.getItem('chaos-survival-story-v1')).flashzone"),
+    undefined,
+  );
+  assert.equal(
+    await evaluate(
+      "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).flashzoneBestTimes",
+    ),
+    undefined,
+  );
+  assert.equal(
+    await evaluate(
+      "JSON.parse(localStorage.getItem('chaos-survival-story-v1')).flashzoneBestDistances",
+    ),
+    undefined,
+  );
+  assert.ok(
+    requests.every(
+      (url) => !/^https?:/.test(url) || new URL(url).origin === new URL(gameUrl).origin,
+    ),
+  );
+  assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
+  console.log(
+    'OK: FlashZone three games, keyboard/pointer controls, collision/replay/resize, Runner tab suspension/resume, browser close/reopen, search, independent records/restart/New Game, unchanged narrative and local requests; no Electron.',
+  );
+}
+
+async function verifySkyPage() {
+  await command('Page.enable');
+  await command('Network.enable');
+  const requests = [];
+  socket.addEventListener('message', ({ data }) => {
+    const message = JSON.parse(data);
+    if (message.method === 'Network.requestWillBeSent') requests.push(message.params.request.url);
+  });
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 1280,
+    height: 800,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await click('#menu-play');
+  await until(() => evaluate("!!document.querySelector('.rules-confirm')"), 'first rules');
+  await click('.rules-confirm');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'first level');
+  await doubleClick('#desktop > .desktop-icons [data-shortcut=browser]');
+  const ready = () =>
+    until(
+      () =>
+        evaluate(
+          "document.querySelector('.internet-adventurer .browser-page')?.getAttribute('aria-busy')==='false'",
+        ),
+      'SkyPage ready',
+    );
+  const go = async (address) => {
+    await evaluate(
+      `document.querySelector('.browser-address input').value=${JSON.stringify(address)};document.querySelector('.browser-address').requestSubmit()`,
+    );
+    await ready();
+  };
+  const page = () => evaluate("document.querySelector('.browser-page').textContent");
+  const openLink = async (url) => {
+    await evaluate(
+      `([...document.querySelectorAll('.skypage [data-browser-link]')].find(link=>link.dataset.browserLink===${JSON.stringify(url)})).click()`,
+    );
+    await ready();
+  };
+  await ready();
+  const narrative = await evaluate(
+    "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).dialogues)",
+  );
+  assert.deepEqual(
+    await evaluate(
+      "[...document.querySelectorAll('.xd-sites a')].map(link=>link.dataset.browserLink)",
+    ),
+    [
+      'http://www.xdsearch.fr/',
+      'http://www.skypage.fr/',
+      'http://www.forumjeu.fr/',
+      'http://www.flashzone.fr/',
+      'http://www.videotube.fr/',
+      'http://www.wiki.fr/',
+      'http://www.hoplahotel.fr/',
+    ],
+  );
+  await capture('xd-search-sites.png');
+  await click('.xd-sites [data-browser-link="http://www.skypage.fr/"]');
+  await ready();
+  assert.ok((await page()).includes('Bienvenue sur SkyPage !'));
+  assert.deepEqual(
+    await evaluate("[...document.querySelectorAll('.sky-friends a')].map(link=>link.textContent)"),
+    ['xX_PixelGirl_Xx', '°•.LuNa.°•', 'Sk8er_du_93', 'Oo_bubble-princess_oO'],
+  );
+  assert.equal(await evaluate("document.querySelectorAll('.sky-discovery').length"), 0);
+  assert.ok((await page()).includes('Aucun blog visité récemment.'));
+  assert.equal(await evaluate("document.querySelector('.sky-nav').textContent"), 'Accueil');
+  await capture('skypage-home.png');
+  await openLink('http://www.skypage.fr/pixelgirl');
+  assert.equal(await evaluate("document.querySelectorAll('.sky-post').length"), 6);
+  assert.ok((await page()).includes('Bring Me to Life'));
+  assert.ok(await evaluate("document.querySelectorAll('.sky-comment').length>0"));
+  await evaluate(
+    "Promise.all([...document.querySelectorAll('.skypage img')].map(image=>image.decode()))",
+  );
+  await capture('skypage-pixelgirl.png');
+  await openLink('http://www.skypage.fr/pixelgirl?article=paint');
+  assert.equal(await evaluate("document.querySelectorAll('.sky-post').length"), 1);
+  await evaluate("document.querySelector('.sky-illustration').decode()");
+  assert.equal(await evaluate("document.querySelectorAll('.sky-comment').length"), 2);
+  await capture('skypage-pixelgirl-paint.png');
+  await click('[data-browser-action=back]');
+  await ready();
+  assert.equal(await evaluate("document.querySelectorAll('.sky-post').length"), 6);
+  await click('[data-browser-action=forward]');
+  await ready();
+  assert.equal(await evaluate("document.querySelectorAll('.sky-post').length"), 1);
+  await openLink('http://www.skypage.fr/');
+  await go('skypage.fr/luna');
+  assert.equal(await evaluate("document.querySelectorAll('.sky-post').length"), 5);
+  assert.ok((await page()).includes('somewhere only we know'));
+  await evaluate(
+    "Promise.all([...document.querySelectorAll('.skypage img')].map(image=>image.decode()))",
+  );
+  await capture('skypage-luna.png');
+  await openLink('http://www.skypage.fr/luna?article=photos');
+  await evaluate("document.querySelector('.sky-illustration').decode()");
+  await capture('skypage-luna-night.png');
+  assert.equal(
+    await evaluate(
+      "document.querySelectorAll('.skypage input,.skypage textarea,.skypage button').length",
+    ),
+    0,
+  );
+  for (const [query, address] of [
+    ['pixelgirl', 'http://www.skypage.fr/pixelgirl'],
+    ['luna', 'http://www.skypage.fr/luna'],
+    ['evanescence', 'http://www.skypage.fr/pixelgirl'],
+    ['kickflip', 'http://www.skypage.fr/sk8er_du_93'],
+    ['coque téléphone', 'http://www.skypage.fr/oo_bubble-princess_oo'],
+  ]) {
+    await go('xdsearch.fr');
+    await evaluate(
+      `document.querySelector('.xd-search-form input').value=${JSON.stringify(query)};document.querySelector('.xd-search-form').requestSubmit()`,
+    );
+    await ready();
+    assert.ok(
+      await evaluate(
+        `!!document.querySelector('.xd-search-result [data-browser-link="${address}"]')`,
+      ),
+    );
+    await click(`.xd-search-result [data-browser-link="${address}"]`);
+    await ready();
+    assert.ok(await evaluate("!!document.querySelector('.sky-blog-layout')"));
+  }
+  for (const [id, nickname, count] of [
+    ['sk8er_du_93', 'Sk8er_du_93', 4],
+    ['oo_bubble-princess_oo', 'Oo_bubble-princess_oO', 6],
+    ['cartouchegrise', 'CartoucheGrise', 5],
+    ['grillepain_92', 'GrillePain_92', 4],
+    ['disquette44', 'Disquette44', 6],
+    ['padsansfil', 'PadSansFil', 4],
+  ]) {
+    await go(`skypage.fr/${id}`);
+    assert.equal(
+      await evaluate("document.querySelector('.sky-blog-title h2').textContent"),
+      nickname,
+    );
+    assert.equal(await evaluate("document.querySelectorAll('.sky-post').length"), count);
+    await evaluate(
+      "Promise.all([...document.querySelectorAll('.skypage img')].map(image=>image.decode()))",
+    );
+    await evaluate("document.querySelector('.sky-illustration')?.scrollIntoView({block:'center'})");
+    await capture(`skypage-${id}.png`);
+    await go('skypage.fr');
+    assert.equal(
+      await evaluate("document.querySelector('.sky-discovery a').textContent"),
+      nickname,
+    );
+  }
+  await click('[data-browser-action=new]');
+  await ready();
+  await go('skypage.fr/luna');
+  assert.equal(await evaluate("document.querySelectorAll('.browser-tab').length"), 2);
+  await go('skypage.fr/turbo');
+  assert.ok((await page()).includes('Erreur 404'));
+  await go('skypage.fr/luna');
+  await evaluate(
+    "document.querySelector('.internet-adventurer').style.width='440px';document.querySelector('.internet-adventurer').style.height='380px'",
+  );
+  await wait(100);
+  const fits = await evaluate(
+    "(()=>{const page=document.querySelector('.browser-page');return {width:page.clientWidth,content:page.scrollWidth};})()",
+  );
+  assert.equal(fits.width, fits.content);
+  await capture('skypage-luna-small.png');
+  assert.equal(
+    await evaluate(
+      "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).dialogues)",
+    ),
+    narrative,
+  );
+  const tabs = await evaluate(
+    "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).browser.tabs)",
+  );
+  await command('Page.reload');
+  await until(() => evaluate("window.chaosDebug?.snapshot().phase==='menu'"), 'SkyPage restart');
+  await click('#menu-play');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'resumed game');
+  await click('#windows-start');
+  await click('#menu-browser');
+  await ready();
+  assert.ok((await page()).includes('°•.LuNa.°•'));
+  assert.equal(
+    await evaluate(
+      "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).browser.tabs)",
+    ),
+    tabs,
+  );
+  await click('#windows-start');
+  await click('#return-main-menu');
+  await click('#menu-new-game');
+  await click('#menu-confirm-yes');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='rules'"), 'SkyPage New Game');
+  await click('.rules-confirm');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'fresh game');
+  await click('#windows-start');
+  await click('#menu-browser');
+  await ready();
+  await go('skypage.fr');
+  assert.equal(await evaluate("document.querySelectorAll('.sky-discovery').length"), 0);
+  await go('skypage.fr/pixelgirl');
+  assert.equal(await evaluate("document.querySelectorAll('.sky-post').length"), 6);
+  assert.ok(
+    requests.every(
+      (address) => !/^https?:/.test(address) || new URL(address).origin === new URL(gameUrl).origin,
+    ),
+    JSON.stringify(requests),
+  );
+  assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
+  console.log(
+    'OK: nine SkyPage routes from fresh game, forty posts/comments, local photos/decorations, recent visits, article links, back/forward, XD Search, tabs, small window, restart/New Game, unchanged dialogues and no external requests; no Electron.',
+  );
+}
+
+async function verifyBrowser() {
+  await command('Page.enable');
+  await command('Network.enable');
+  const requests = [];
+  socket.addEventListener('message', ({ data }) => {
+    const message = JSON.parse(data);
+    if (message.method === 'Network.requestWillBeSent') requests.push(message.params.request.url);
+  });
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 1280,
+    height: 800,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  assert.ok(
+    await evaluate("!!document.querySelector('#desktop > .desktop-icons [data-shortcut=browser]')"),
+  );
+  await click('#menu-play');
+  await until(() => evaluate("!!document.querySelector('.rules-confirm')"), 'first rules');
+  await click('.rules-confirm');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'first level');
+  await doubleClick('#desktop > .desktop-icons [data-shortcut=browser]');
+  const ready = () =>
+    until(
+      () =>
+        evaluate(
+          "document.querySelector('.internet-adventurer .browser-page')?.getAttribute('aria-busy')==='false'",
+        ),
+      'browser page ready',
+    );
+  const url = () => evaluate("document.querySelector('.browser-address input').value");
+  const save = () =>
+    evaluate("JSON.parse(localStorage.getItem('chaos-survival-story-v1')).browser");
+  const go = async (address) => {
+    await evaluate(
+      `document.querySelector('.browser-address input').value=${JSON.stringify(address)};document.querySelector('.browser-address').requestSubmit()`,
+    );
+    await ready();
+  };
+  await ready();
+  assert.equal(await url(), 'http://www.xdsearch.fr/');
+  assert.equal(await evaluate("document.querySelectorAll('.internet-adventurer').length"), 1);
+  await capture('internet-adventurer-xd-search.png');
+  await evaluate(
+    "document.querySelector('.browser-address input').value='inconnu.fr';document.querySelector('.browser-address').requestSubmit();document.querySelector('.browser-address input').value='xdsearch.fr';document.querySelector('.browser-address').requestSubmit()",
+  );
+  await ready();
+  assert.ok(await evaluate("!!document.querySelector('.xd-search-logo')"));
+  for (const address of ['www.xdsearch.fr', 'xdsearch.fr', 'http://www.xdsearch.fr']) {
+    await go(address);
+    assert.equal(await url(), 'http://www.xdsearch.fr/');
+  }
+  await evaluate(
+    "document.querySelector('.xd-search-form input').value='zebragalactique';document.querySelector('.xd-search-form').requestSubmit()",
+  );
+  await ready();
+  assert.ok(
+    await evaluate(
+      "document.querySelector('.browser-page').textContent.includes('Aucun résultat trouvé pour « zebragalactique ».')",
+    ),
+  );
+  assert.equal(await evaluate("document.querySelectorAll('.xd-search-result').length"), 0);
+  await evaluate(
+    "document.querySelector('.xd-search-form input').value='INTERNET';document.querySelector('.xd-search-form').requestSubmit()",
+  );
+  await ready();
+  assert.ok((await evaluate("document.querySelectorAll('.xd-search-result').length")) >= 1);
+  const searchHome = '.xd-search-result a[data-browser-link="http://www.xdsearch.fr/"]';
+  assert.equal(
+    await evaluate(`document.querySelector(${JSON.stringify(searchHome)}).getAttribute('href')`),
+    '#',
+  );
+  await click(searchHome);
+  await ready();
+  assert.equal(await url(), 'http://www.xdsearch.fr/');
+  await click('[data-browser-action=back]');
+  await ready();
+  assert.ok((await url()).includes('?q=INTERNET'));
+  await click('[data-browser-action=forward]');
+  await ready();
+  assert.equal(await url(), 'http://www.xdsearch.fr/');
+  await go('forumjeu.fr');
+  assert.ok((await evaluate("document.querySelectorAll('.forum-categories tbody tr').length")) > 0);
+  await click('.forum-categories tbody tr:first-child td:first-child a');
+  await ready();
+  assert.ok((await evaluate("document.querySelectorAll('.forum-topics tbody tr').length")) > 0);
+  await click('.forum-topics tbody tr:first-child a');
+  await ready();
+  assert.ok((await evaluate("document.querySelectorAll('.forum-message').length")) > 0);
+  await click('.forum-breadcrumb a');
+  await ready();
+  assert.equal(await url(), 'http://www.forumjeu.fr/');
+  console.log(
+    'OK: ForumJeu home, category, discussion messages and return link through internal navigation.',
+  );
+  await go('xdsearch.fr/page-inexistante');
+  assert.ok(
+    await evaluate("document.querySelector('.browser-error').textContent.includes('Erreur 404')"),
+  );
+  await go('site-inconnu.fr');
+  assert.ok(
+    await evaluate(
+      "document.querySelector('.browser-error').textContent.includes('ne peut pas afficher cette page Web')",
+    ),
+  );
+  const count = (await save()).tabs[0].history.length;
+  await click('[data-browser-action=reload]');
+  await ready();
+  assert.equal((await save()).tabs[0].history.length, count);
+  await click('[data-browser-action=home]');
+  await ready();
+  assert.equal(await url(), 'http://www.xdsearch.fr/');
+  const first = (await save()).active;
+  await click('[data-browser-action=new]');
+  await ready();
+  await go('xdsearch.fr/autre');
+  assert.equal((await save()).tabs.length, 2);
+  await click(`[data-browser-action=select][data-tab-id="${first}"]`);
+  await ready();
+  assert.equal(await url(), 'http://www.xdsearch.fr/');
+  await evaluate(
+    "document.dispatchEvent(new CustomEvent('windows-xd:open-url',{detail:{url:'http://www.flashzone.fr/jeux/mon-jeu'}}))",
+  );
+  await ready();
+  assert.equal((await save()).tabs.length, 3);
+  assert.equal(await evaluate("document.querySelectorAll('.internet-adventurer').length"), 1);
+  assert.equal(await url(), 'http://www.flashzone.fr/jeux/mon-jeu');
+  await go('javascript:window.__browserAttack=true');
+  assert.equal(await evaluate('window.__browserAttack'), undefined);
+  await go('file:///C:/Windows/system.ini');
+  assert.ok(await evaluate("!!document.querySelector('.browser-error')"));
+  // Exercise the actual form and DOM, rather than merely testing URL parsing.
+  await evaluate('window.__inputExecuted=0;window.alert=()=>window.__inputExecuted++');
+  const attacks = [
+    '<script>alert(1)</script>',
+    '<img src=x onerror=alert(1)>',
+    'javascript:alert(1)',
+    'data:text/html,<script>alert(1)</script>',
+    'file:///C:/Windows/',
+    '../../../../',
+    'devtools://devtools/',
+  ];
+  for (const attack of attacks) {
+    await go(attack);
+    assert.ok(await evaluate("!!document.querySelector('.browser-error')"));
+    await go('xdsearch.fr');
+    await evaluate(
+      `document.querySelector('.xd-search-form input').value=${JSON.stringify(attack)};document.querySelector('.xd-search-form').requestSubmit()`,
+    );
+    await ready();
+    assert.equal(await evaluate("document.querySelector('.xd-search-form input').value"), attack);
+    assert.equal(
+      await evaluate(
+        "document.querySelectorAll('.browser-page script,.browser-page iframe,.browser-page webview,.browser-page [onerror]').length",
+      ),
+      0,
+    );
+    assert.equal(await evaluate('window.__inputExecuted'), 0);
+  }
+  if (browserSecurityElectron) {
+    assert.equal(await evaluate('typeof require'), 'undefined');
+    assert.equal(await evaluate('typeof process'), 'undefined');
+    assert.deepEqual(await evaluate('Object.keys(window.chaosWindow).sort()'), [
+      'getFullscreen',
+      'onFullscreenChanged',
+      'setFullscreen',
+    ]);
+    assert.equal(await evaluate('window.chaosWindow.getFullscreen()'), false);
+    assert.equal(await evaluate('window.chaosWindow.setFullscreen(false)'), false);
+    await evaluate(
+      "const script=document.createElement('script');script.textContent='window.__inputExecuted++';document.body.append(script);script.remove()",
+    );
+    assert.equal(await evaluate('window.__inputExecuted'), 0);
+    console.log(
+      'OK: Electron production CSP blocks inline scripts, no renderer Node.js, restricted fullscreen preload works, hostile address/search inputs stay inert.',
+    );
+  }
+  const active = (await save()).active;
+  await click(`[data-browser-action=close][data-tab-id="${active}"]`);
+  await ready();
+  assert.equal((await save()).tabs.length, 2);
+  await go('xdsearch.fr/?q=<script>alert(1)</script>');
+  assert.equal(
+    await evaluate("document.querySelectorAll('.browser-page script,.browser-page iframe').length"),
+    0,
+  );
+  await capture('internet-adventurer-tabs.png');
+  await physicalDrag('.internet-adventurer .titlebar', 0, 20);
+  await evaluate(
+    "const w=document.querySelector('.internet-adventurer');w.style.width='560px';w.style.height='340px'",
+  );
+  await wait(100);
+  const geometry = await evaluate(
+    "(()=>{const w=document.querySelector('.internet-adventurer'),r=w.getBoundingClientRect();return {left:r.left,top:r.top,width:r.width,height:r.height,bottom:r.bottom,taskbar:document.querySelector('.taskbar').getBoundingClientRect().top,resize:getComputedStyle(w).resize};})()",
+  );
+  assert.ok(geometry.left >= 0 && geometry.top >= 0 && geometry.bottom <= geometry.taskbar);
+  assert.equal(geometry.width, 560);
+  assert.equal(geometry.height, 340);
+  assert.equal(geometry.resize, 'both');
+  await click('.internet-adventurer .msn-minimize');
+  assert.equal(await evaluate("document.querySelector('.internet-adventurer').hidden"), true);
+  await click('[data-app=browser]');
+  assert.equal(await evaluate("document.querySelector('.internet-adventurer').hidden"), false);
+  const retained = await save();
+  await click('.internet-adventurer .close-button');
+  assert.equal(await evaluate("!!document.querySelector('[data-app=browser]')"), false);
+  await click('#windows-start');
+  await click('#menu-browser');
+  await ready();
+  assert.deepEqual(await save(), retained);
+  await command('Page.reload');
+  await until(() => evaluate("window.chaosDebug?.snapshot().phase==='menu'"), 'browser restart');
+  await click('#menu-play');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'resume level');
+  await click('#windows-start');
+  await click('#menu-browser');
+  await ready();
+  assert.deepEqual(await save(), retained);
+  // Closing the final tab closes the same Windows XD application.
+  for (const tab of (await save()).tabs) {
+    await click(`[data-browser-action=close][data-tab-id="${tab.id}"]`);
+    if (await evaluate("!!document.querySelector('.internet-adventurer')")) await ready();
+  }
+  assert.equal(await evaluate("!!document.querySelector('.internet-adventurer')"), false);
+  await click('#windows-start');
+  await click('#menu-browser');
+  await ready();
+  assert.equal((await save()).tabs.length, 1);
+  assert.equal(await url(), 'http://www.xdsearch.fr/');
+  await click('#windows-start');
+  await click('#return-main-menu');
+  await click('#menu-new-game');
+  await click('#menu-confirm-yes');
+  await until(
+    () => evaluate("window.chaosDebug.snapshot().phase==='rules'"),
+    'browser New Game reset',
+  );
+  assert.equal(
+    await evaluate("JSON.parse(localStorage.getItem('chaos-survival-story-v1')).browser"),
+    undefined,
+  );
+  await click('.rules-confirm');
+  await until(() => evaluate("window.chaosDebug.snapshot().phase==='playing'"), 'new level');
+  await click('#windows-start');
+  await click('#menu-browser');
+  await ready();
+  assert.equal((await save()).tabs.length, 1);
+  assert.equal((await save()).tabs[0].history.length, 1);
+  assert.equal(await url(), 'http://www.xdsearch.fr/');
+  assert.ok(
+    requests.every(
+      (address) => !/^https?:/.test(address) || new URL(address).origin === new URL(gameUrl).origin,
+    ),
+    JSON.stringify(requests),
+  );
+  assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
+  console.log(
+    `OK: local browser launch, XD Search/results/errors, URL aliases, independent tab histories, link API, reload/home, window drag/resize/taskbar, session persistence, last-tab closure, New Game and zero external requests; ${browserSecurityElectron ? 'Electron production document' : 'no Electron'}.`,
+  );
 }
 
 async function verifyBuddy() {
@@ -2516,6 +4203,52 @@ async function verifyMessengerWindows() {
   const pixel = '[data-messenger-contact="pixelgirl"]';
   const skater = '[data-messenger-contact="skater"]';
   const bubble = '[data-messenger-contact="princess"]';
+  let rosterMenuStyle;
+  const verifyBlueMenus = async (windowSelector, name) => {
+    for (let index = 1; index <= 5; index++) {
+      const opener = `${windowSelector} .messenger-menu-group:nth-child(${index}) > button`;
+      const panel = `${windowSelector} .messenger-menu-group:nth-child(${index}) .messenger-dropdown`;
+      await physicalClick(opener);
+      const state = await evaluate(`(()=>{
+        const p=document.querySelector('${panel}'),w=document.querySelector('${windowSelector}'),
+          s=getComputedStyle(p),r=p.getBoundingClientRect(),wr=w.getBoundingClientRect(),
+          items=[...p.querySelectorAll('button')],center=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
+        return {hidden:p.hidden,background:s.backgroundImage,border:s.borderTopColor,opacity:s.opacity,
+          visible:p.contains(center),bounded:r.left>=wr.left&&r.right<=wr.right&&r.top>=wr.top&&r.bottom<=wr.bottom,
+          disabled:items.filter(b=>b.disabled).every(b=>getComputedStyle(b).color==='rgb(105, 126, 145)'),
+          separators:items.slice(1).every(b=>getComputedStyle(b).borderTopColor==='rgb(167, 199, 226)')};
+      })()`);
+      assert.equal(state.hidden, false);
+      assert.ok(
+        state.background.includes('rgb(225, 242, 255)') &&
+          state.background.includes('rgb(198, 226, 248)'),
+        'blue gradient covers the open panel',
+      );
+      assert.equal(state.border, 'rgb(102, 153, 195)');
+      assert.equal(state.opacity, '1');
+      assert.ok(state.visible && state.bounded && state.disabled && state.separators);
+      const shared = [state.background, state.border];
+      if (!rosterMenuStyle) rosterMenuStyle = shared;
+      assert.deepEqual(
+        shared,
+        rosterMenuStyle,
+        'roster and conversation use the same dropdown skin',
+      );
+      const option = await evaluate(
+        `(()=>{const r=document.querySelector('${panel} button:not(:disabled)').getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};})()`,
+      );
+      await command('Input.dispatchMouseEvent', { type: 'mouseMoved', x: option.x, y: option.y });
+      assert.ok(
+        await evaluate(
+          `getComputedStyle(document.querySelector('${panel} button:not(:disabled)')).backgroundImage.includes('rgb(54, 137, 206)')`,
+        ),
+        'physical hover highlights the actual option',
+      );
+      await capture(`messenger-menu-${name}-${index}.png`);
+      await physicalClick(opener);
+      assert.equal(await evaluate(`document.querySelector('${panel}').hidden`), true);
+    }
+  };
   await click('#windows-start');
   await click('#menu-messenger');
   assert.ok(await evaluate(`!!document.querySelector('${roster} .messenger-contact-list')`));
@@ -2542,6 +4275,7 @@ async function verifyMessengerWindows() {
     );
   };
   await assertOrder();
+  await verifyBlueMenus(roster, 'roster');
   await capture('messenger-contacts-list.png');
   const saved = await evaluate(
     "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).dialogues)",
@@ -2550,9 +4284,29 @@ async function verifyMessengerWindows() {
     evaluate(
       `document.querySelector('[data-contact-id=${id}]').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`,
     );
+  for (const id of ['luna', 'turbo']) {
+    await openContact(id);
+    const selector = `[data-messenger-contact="${id}"]`;
+    assert.ok(
+      await evaluate(`(()=>{
+      const w=document.querySelector('${selector}'),slot=w.querySelector('.msn-webcam-placeholder'),
+        portrait=w.querySelector('.conversation-contact-portrait'),img=portrait.querySelector('img');
+      return slot && slot.parentElement===portrait && slot.getBoundingClientRect().top>=img.getBoundingClientRect().bottom
+        && !slot.matches('button,a,input,video') && !slot.querySelector('button,a,input,video')
+        && slot.tabIndex===-1 && !slot.onclick && !w.querySelector('.conversation-return');
+    })()`),
+      'inactive webcam below unchanged contact avatar',
+    );
+    await capture(`messenger-refresh-${id}.png`);
+    await click(`${selector} .msn-minimize`);
+    assert.equal(await evaluate(`document.querySelector('${selector}').hidden`), true);
+    await click(`[data-app="messenger:conversation:${id}"]`);
+    await click(`${selector} .close-button`);
+  }
   await openContact('skater');
   await openContact('princess');
   await openContact('pixelgirl');
+  await verifyBlueMenus(pixel, 'pixelgirl');
   assert.equal(await evaluate("document.querySelectorAll('[data-messenger-contact]').length"), 3);
   assert.equal(await evaluate(`document.querySelector('${roster}').hidden`), false);
   assert.equal(await evaluate("!!document.querySelector('#messenger-contacts')"), false);
@@ -2680,6 +4434,14 @@ async function verifyMessengerWindows() {
   }
   await assertOrder();
   await menuAction(pixel, 'Actions', 'Émoticônes');
+  assert.ok(
+    await evaluate(`(()=>{
+    const buttons=[...document.querySelectorAll('[data-messenger-view=emoticons] .messenger-emoticons button')];
+    const cat=buttons.find(b=>b.textContent===':3');
+    return cat && !cat.querySelector('.msn-emoticon');
+  })()`),
+    ':3 remains a textual shortcut in the emoticon palette',
+  );
   await click('[data-messenger-view=emoticons] .messenger-emoticons button');
   assert.equal(await evaluate("document.querySelector('.emoticon-preview').textContent"), ':)');
   await click('[data-messenger-view=emoticons] .close-button');
@@ -2813,6 +4575,31 @@ async function verifyMessengerWindows() {
     'original unanswered choices preserved after message-only replay',
   );
   await capture('messenger-independent-windows.png');
+  assert.ok(
+    await evaluate(`(()=>{
+    const w=document.querySelector('${pixel}'),p=w.querySelector('.conversation-portraits'),
+      r=p.getBoundingClientRect(),imgs=[...p.querySelectorAll('img')];
+    return imgs.every(img=>{const a=img.getBoundingClientRect();return a.top>=r.top&&a.bottom<=r.bottom&&Math.abs(a.width-a.height)<1;})
+      && !w.querySelector('.conversation-return') && w.querySelector('.msn-webcam-placeholder').tabIndex===-1;
+  })()`),
+    'both avatars fit at the normal conversation size without distortion',
+  );
+  const conversationSize = await evaluate(
+    `(()=>{const w=document.querySelector('${pixel}');const size=[w.style.width,w.style.height];w.style.width='500px';w.style.height='460px';return size;})()`,
+  );
+  await wait(100);
+  assert.ok(
+    await evaluate(`(()=>{const w=document.querySelector('${pixel}'),p=w.querySelector('.conversation-portraits'),h=w.querySelector('.conversation-history');
+    return p.getBoundingClientRect().bottom<=w.querySelector('.msn-tools').getBoundingClientRect().top
+      && h.clientWidth>200 && w.querySelector('.window-body').scrollWidth<=w.querySelector('.window-body').clientWidth;
+  })()`),
+    'resized conversation keeps messages and portrait column inside the window',
+  );
+  await capture('messenger-refresh-small.png');
+  await evaluate(
+    `(()=>{const w=document.querySelector('${pixel}');[w.style.width,w.style.height]=${JSON.stringify(conversationSize)};})()`,
+  );
+  await wait(100);
   const history = await evaluate(
     "JSON.stringify(JSON.parse(localStorage.getItem('chaos-survival-story-v1')).conversations.pixelgirl.history)",
   );

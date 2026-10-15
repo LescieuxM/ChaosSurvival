@@ -45,6 +45,7 @@ function fixture(t) {
   manager.windows.set(1, { element, preview: false });
   manager.enableDrag(element);
   const event = (x, y, button = false) => ({
+    button: 0,
     clientX: x,
     clientY: y,
     pointerId: 1,
@@ -67,6 +68,18 @@ test('arcade dragging uses desktop coordinates above and below its unchanged spa
   bar.handlers.pointerup();
   bar.handlers.pointermove(event(-10000, -10000));
   assert.equal(element.style.top, '334px');
+});
+
+test('secondary mouse buttons do not start a window drag', (t) => {
+  const { manager, element, bar, event } = fixture(t);
+  for (const button of [1, 2]) {
+    bar.handlers.pointerdown({ ...event(100, 200), button });
+    bar.handlers.pointermove(event(300, 400));
+    assert.equal(element.style.left, '50px');
+    assert.equal(element.style.top, '60px');
+    assert.equal(manager.dragged.has(element), false);
+    bar.handlers.pointerup();
+  }
 });
 
 test('resize preserves dragged arcade positions and clamps them to the current taskbar', (t) => {

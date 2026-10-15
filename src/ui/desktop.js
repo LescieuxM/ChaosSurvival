@@ -38,6 +38,9 @@ export function mountDesktop(root, best) {
       <button data-shortcut="msn">
         ${icon('msn')}<span>${applicationName('messenger')}</span>
       </button>
+      <button data-shortcut="browser">
+        ${icon('browser')}<span>${applicationName('browser')}</span>
+      </button>
       <button data-shortcut="arcade">
         ${icon(arcadeLauncher.icon)}<span>${arcadeLauncher.name}</span>
       </button>
@@ -123,7 +126,7 @@ export function mountDesktop(root, best) {
           aria-label="Volume de la musique"
       /></label>
     </section>
-    <div class="toast" id="toast" hidden>
+    <div class="toast" id="toast" role="button" tabindex="0" hidden>
       <header>
         ${icon('msn')} ${applicationName('messenger')}
         <button id="dismiss-toast" aria-label="Fermer la notification">×</button>
@@ -132,7 +135,6 @@ export function mountDesktop(root, best) {
         <span class="toast-avatar">${icon('msn')}</span>
         <p><strong id="toast-contact"></strong><span id="toast-message"></span></p>
       </div>
-      <button class="xp-button" id="toast-open" hidden>Ouvrir la conversation</button>
     </div>
     <div class="wizz-label" id="wizz-label" hidden>
       WIZZ !!!<small>quelqu’un veut ton attention.</small>
@@ -163,6 +165,9 @@ export function mountDesktop(root, best) {
       </button>
       <button id="menu-buddy" data-start-app="buddy">${icon('buddy')} Buddy</button>
       <button id="menu-messenger">${icon('msn')} ${applicationName('messenger')}</button>
+      <button id="menu-browser" data-start-app="browser">
+        ${icon('browser')} ${applicationName('browser')}
+      </button>
       <button data-system-app="computer">${icon('computer')} Poste de travail</button>
       <button data-system-app="folder">${icon('folder')} Mes documents</button>
       <button data-system-app="bin">${icon('bin')} Corbeille</button>
@@ -213,7 +218,6 @@ export function mountDesktop(root, best) {
     dialogSecondary: select('#dialog-secondary'),
     feedbackLayer: select('#feedback-layer'),
     toast: select('#toast'),
-    toastOpen: select('#toast-open'),
     toastContact: select('#toast-contact'),
     toastMessage: select('#toast-message'),
     dismissToast: select('#dismiss-toast'),

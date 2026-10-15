@@ -20,9 +20,20 @@ import { ConversationWindow } from '../src/ui/conversation.js';
 
 const read = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url)));
 const intro = read('../src/dialogues/pixelgirl-intro.json');
+const turboScene = read('../src/dialogues/turbo-smiley-catcher.json');
 
 test('display order is explicit, independent of creation order, and stable within connection groups', () => {
-  const order = ['skater', 'luna', 'modem', 'pixelgirl', 'princess', 'offline', 'turbo'];
+  const order = [
+    'skater',
+    'luna',
+    'modem',
+    'pixelgirl',
+    'princess',
+    'offline',
+    'turbo',
+    'k7',
+    'm0rbid',
+  ];
   const source = visibleContacts({ [intro.id]: intro }, []);
   const before = JSON.stringify(source);
   assert.deepEqual(
@@ -120,6 +131,43 @@ test('Wizz send events persist one chronological system entry for each sender wi
   assert.equal(restored.state.history.length, 4);
 });
 
+test('a malformed thread row is isolated while valid messages and other contacts survive reload', () => {
+  const values = new Map();
+  const storage = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, value),
+  };
+  const progression = new Progression(read('../src/config/story.json'), storage);
+  progression.begin();
+  const good = { key: 'good', speaker: 'contact', text: 'Historique conservé' };
+  progression.data.conversations = {
+    pixelgirl: {
+      version: 1,
+      history: [good, { key: 12, speaker: 'contact', text: 'invalid' }],
+      unread: ['good', 12],
+      activeEvent: null,
+      pendingEvents: [],
+    },
+    turbo: {
+      version: 1,
+      history: [{ key: 'turbo-1', speaker: 'player', text: 'Réponse conservée' }],
+      unread: [],
+      activeEvent: null,
+      pendingEvents: [],
+    },
+  };
+  progression.save();
+  const restored = new Progression(read('../src/config/story.json'), storage);
+  const events = () => [];
+  const pixel = new ConversationThread('pixelgirl', restored, events);
+  assert.deepEqual(pixel.state.history, [good]);
+  assert.deepEqual(pixel.state.unread, ['good']);
+  assert.equal(restored.data.conversations.turbo.history[0].text, 'Réponse conservée');
+  const again = new Progression(read('../src/config/story.json'), storage);
+  assert.deepEqual(again.data.conversations.pixelgirl.history, [good]);
+  assert.equal(again.data.conversations.turbo.history.length, 1);
+});
+
 test('Wizz rows use system presentation without an author or emoticon parsing', (t) => {
   const previous = globalThis.document;
   const row = { dataset: {} };
@@ -215,7 +263,7 @@ test('profiles reuse stable windows and update current status/message without ch
     field = (selector) => instance.element.querySelector(selector);
   assert.equal(field('.messenger-profile img').src, './avatars/turbo.svg');
   assert.equal(field('img').src, undefined, 'the titlebar icon is not overwritten');
-  assert.equal(field('h3').textContent, 'xX_TURBO_59_Xx');
+  assert.equal(field('h3').textContent, 'Turb0');
   assert.equal(field('.profile-status').textContent, 'Hors ligne');
   const before = JSON.stringify([progression.data.dialogues, progression.data.choices]);
   progression.data.contactConnections.turbo = { status: 'online' };
@@ -526,7 +574,7 @@ test('the menu CRT is original and distinct from the desktop computer', () => {
 
 test('main contacts are visible offline initially and become available in place without duplicates', () => {
   const locked = visibleContacts({ [intro.id]: intro }, []);
-  assert.equal(locked.length, 7);
+  assert.equal(locked.length, 9);
   assert.ok(
     locked.every(
       (contact) => !contact.online && contact.status === 'Hors ligne' && !contact.available,
@@ -539,11 +587,13 @@ test('main contacts are visible offline initially and become available in place 
   const unlocked = visibleContacts({ [intro.id]: intro }, [intro.id]);
   assert.deepEqual(
     locked
-      .filter((contact) => ['pixelgirl', 'turbo', 'luna', 'offline'].includes(contact.id))
+      .filter((contact) =>
+        ['pixelgirl', 'turbo', 'luna', 'offline', 'k7', 'm0rbid'].includes(contact.id),
+      )
       .map((contact) => contact.nickname),
-    ['xX_PixelGirl_Xx', 'xX_TURBO_59_Xx', '°•.LuNa.°•', '0FFLINE'],
+    ['xX_PixelGirl_Xx', 'Turb0', '°•.LuNa.°•', '0FFLINE', 'K7', 'x_M0RBID_x'],
   );
-  assert.equal(unlocked.length, 7);
+  assert.equal(unlocked.length, 9);
   const pixel = unlocked.find((contact) => contact.id === 'pixelgirl');
   assert.equal(pixel.nickname, intro.contact.nickname);
   assert.equal(pixel.online, true);
@@ -552,12 +602,47 @@ test('main contacts are visible offline initially and become available in place 
     turbo: { status: 'online' },
   });
   assert.equal(connected.find((contact) => contact.id === 'turbo').online, true);
-  assert.equal(new Set(connected.map((contact) => contact.id)).size, 7);
+  assert.equal(new Set(connected.map((contact) => contact.id)).size, 9);
+  for (const [id, nickname, personalMessage] of [
+    ['k7', 'K7', '♫ ON AIR !!!'],
+    ['m0rbid', 'x_M0RBID_x', ''],
+  ]) {
+    const contact = locked.find((entry) => entry.id === id);
+    assert.equal(contact.kind, 'decorative');
+    assert.equal(contact.nickname, nickname);
+    assert.equal(contact.personalMessage, personalMessage);
+    assert.equal(contact.status, 'Hors ligne');
+    assert.equal(contact.online, false);
+    assert.equal(contact.available, false);
+    assert.equal(contact.dialogue, undefined);
+    assert.equal(contact.connection, undefined);
+  }
   assert.ok(locked.every((contact) => !['Raph', 'SUPER_BUDDY'].includes(contact.nickname)));
   const future = { ...intro, id: 'future-contact', contact: { ...intro.contact, name: 'Future' } };
   const roster = [{ id: 'future', kind: 'narrative', dialogue: future.id }];
   assert.deepEqual(visibleContacts({ [future.id]: future }, [], roster), []);
   assert.equal(visibleContacts({ [future.id]: future }, [future.id], roster)[0].id, 'future');
+});
+
+test('Turb0 keeps the existing connection presence and unlocks the scene conversation from its saved flag', () => {
+  const definitions = { [intro.id]: intro, [turboScene.id]: turboScene };
+  const connected = visibleContacts(definitions, [], undefined, { turbo: { status: 'online' } });
+  const turboOnline = connected.find((contact) => contact.id === 'turbo');
+  assert.equal(turboOnline.online, true);
+  assert.equal(turboOnline.available, false);
+  const restored = visibleContacts(
+    definitions,
+    [],
+    undefined,
+    { turbo: { status: 'online' } },
+    {},
+    { turboSmileyScene3ArrivalTriggered: true },
+  );
+  const turboUnlocked = restored.find((contact) => contact.id === 'turbo');
+  assert.equal(turboUnlocked.nickname, 'Turb0');
+  assert.equal(turboUnlocked.online, true);
+  assert.equal(turboUnlocked.available, true);
+  assert.equal(turboUnlocked.dialogue, turboScene.id);
 });
 
 test('locked contacts use read-only windows and resolve current availability after unlocking', () => {
@@ -629,7 +714,7 @@ test('contact presence does not unlock stories or alter saved dialogue data and 
     undefined,
     restored.data.contactConnections,
   );
-  assert.equal(fresh.length, 7);
+  assert.equal(fresh.length, 9);
   assert.ok(fresh.every((contact) => !contact.online && !contact.available));
 });
 
@@ -663,9 +748,13 @@ test('Messenger keeps one independent window per contact including future contac
   assert.equal(messenger.openContact(roster[0]), primary);
   const skater = messenger.openContact(roster[1]);
   const princess = messenger.openContact(roster[2]);
+  const beforePrepare = records.length;
+  const preparedFuture = messenger.prepareContact(roster[3]);
+  assert.equal(records.length, beforePrepare, 'preparing an incoming scene does not open a window');
   const future = messenger.openContact(roster[3]);
   assert.notEqual(skater, princess);
   assert.notEqual(future, primary);
+  assert.equal(future, preparedFuture, 'the notification reuses the prepared private window');
   assert.equal(messenger.openContact(roster[1]), skater);
   assert.equal(messenger.openContact(roster[3]), future);
   assert.deepEqual(created, ['skater', 'princess', 'future']);

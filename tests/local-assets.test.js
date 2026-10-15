@@ -24,6 +24,8 @@ test('local resource requests cannot escape the game directory or use external o
     'chaos://game/..%5csecret.txt',
     'chaos://game/C:%5csecret.txt',
     'chaos://game/assets/%00music.mp3',
+    'chaos://game/index.html:secret',
+    'chaos://user:password@game/index.html',
   ])
     assert.equal(resolveLocalAsset(root, url), null, url);
 });

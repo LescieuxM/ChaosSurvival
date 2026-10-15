@@ -19,7 +19,7 @@ Les autres dialogues conservent leurs délais. Les délais absolus `receiveDueAt
 permettent aussi aux branches de continuer lorsque MSN est fermé ou réduit.
 
 `completion.stayOnline` conserve le contact en ligne à la fin. Le champ
-`completion.connection` programme la connexion d'un contact, ici TURBO après
+`completion.connection` programme la connexion d'un contact, ici Turb0 après
 2,2 secondes. `DialogueEvents` sauvegarde ce délai puis son état dans
 `contactConnections`, sans lancer de conversation. Un contact avec
 `connection: true` dans le catalogue n'apparaît qu'après cet événement ; il

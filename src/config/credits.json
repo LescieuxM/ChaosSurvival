@@ -1,0 +1,27 @@
+{
+  "title": "Chaos Survival",
+  "heading": "CRÉDITS",
+  "sections": [
+    {
+      "id": "creation",
+      "title": "CRÉATION ET DÉVELOPPEMENT",
+      "lines": ["Chaos Survival", "Création et développement : Pixe"]
+    },
+    {
+      "id": "graphics",
+      "title": "RESSOURCES GRAPHIQUES",
+      "lines": [
+        "Certaines ressources graphiques de Chaos Survival ont été créées à l'aide d'outils de génération d'images par intelligence artificielle d'OpenAI, utilisés via Codex."
+      ]
+    },
+    {
+      "id": "music",
+      "title": "MUSIQUE",
+      "lines": ["Best Game Console — DJARTMUSIC", "Source : Pixabay"],
+      "sourceLink": {
+        "label": "Page officielle de la musique sur Pixabay",
+        "url": "https://pixabay.com/music/video-games-best-game-console-301284/"
+      }
+    }
+  ]
+}

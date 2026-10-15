@@ -2,6 +2,7 @@ import { DialogueSession } from '../story/dialogue.js';
 import { ConversationThread } from '../story/conversation-thread.js';
 import { applicationName } from './identity.js';
 import { playerIdentity } from './player-identity.js';
+import { webcamPlaceholder } from './webcam-placeholder.js';
 
 import { appendMessageText } from './message-text.js';
 export { appendMessageText } from './message-text.js';
@@ -20,12 +21,16 @@ export class ConversationWindow {
       onWindowState = () => {},
       thread,
       onContactsRequested,
+      onChoiceValidated = () => {},
+      onLink = () => {},
       manageWindow,
       onDispose,
       player = playerIdentity,
     } = {},
   ) {
     this.onContactsRequested = onContactsRequested;
+    this.onChoiceValidated = onChoiceValidated;
+    this.onLink = onLink;
     this.manageWindow = manageWindow;
     this.onDispose = onDispose;
     this.player = player;
@@ -50,6 +55,12 @@ export class ConversationWindow {
     const session = new DialogueSession(definition, this.progression);
     this.sessions.set(definition.id, session);
     return session;
+  }
+  chooseResponse(definition, session, choiceId) {
+    const nodeId = session.state.node;
+    const choice = session.choose(choiceId);
+    this.onChoiceValidated?.(definition, { nodeId, choice });
+    return choice;
   }
   openOffline(contact) {
     if (this.element?.isConnected && this.offlineContact?.id === contact.id) return this.restore();
@@ -106,10 +117,11 @@ export class ConversationWindow {
               <div class="contact-typing" role="status" aria-live="polite" hidden></div>
             </div>
             <div class="conversation-portraits">
-              <img class="story-avatar contact-avatar" alt="Avatar du contact" /><img
-                class="story-avatar player-avatar"
-                alt="Votre avatar"
-              />
+              <div class="conversation-contact-portrait">
+                <img class="story-avatar contact-avatar" alt="Avatar du contact" />
+                ${webcamPlaceholder()}
+              </div>
+              <img class="story-avatar player-avatar" alt="Votre avatar" />
             </div>
           </div>
           <div class="msn-tools">
@@ -269,8 +281,16 @@ export class ConversationWindow {
     }
     const author = document.createElement('small');
     author.textContent = `${message.speaker === 'player' ? (this.player ?? playerIdentity).nickname : this.dialogue.contact.nickname} dit :`;
-    const copy = document.createElement('p');
-    appendMessageText(copy, message.text);
+    const copy = document.createElement(message.type === 'link' ? 'a' : 'p');
+    if (message.type === 'link') {
+      copy.href = '#';
+      copy.className = 'conversation-link';
+      copy.textContent = message.text;
+      copy.addEventListener('click', (event) => {
+        event.preventDefault();
+        this.onLink(message.url);
+      });
+    } else appendMessageText(copy, message.text);
     row.append(author, copy);
     if (message.type === 'file') this.renderTransfer(row, message.fileKey);
     (this.flow ?? this.log).append(row);
@@ -367,24 +387,15 @@ export class ConversationWindow {
         this.element.querySelector('.contact-status').textContent = stayOnline
           ? `${this.dialogue.contact.status} · ${this.dialogue.contact.personalMessage ?? ''}`
           : 'Partie choisir une image perso';
-        const button = document.createElement('button');
-        button.className = 'xp-button';
-        button.classList.add('conversation-return');
-        button.textContent = 'Retour au bureau';
         const pendingFile = this.session.state.transcript.some(
           (entry) =>
             entry.type === 'file' &&
             this.progression.data.files[entry.fileKey]?.status === 'pending',
         );
-        button.disabled = pendingFile;
         if (!pendingFile) this.onCheckpoint(this.dialogue.id);
         if (pendingFile) this.typing.textContent = 'Termine le transfert quand tu le souhaites.';
-        button.addEventListener('click', () => {
-          const id = Number(this.element.dataset.windowId);
-          this.manager.close(id);
-        });
         if (!this.thread.pendingResponses.length && !this.thread.hasPendingMessages) {
-          this.choices.replaceChildren(button);
+          this.choices.replaceChildren();
           this.responseSignature = JSON.stringify([false, []]);
         } else {
           this.element.classList.remove('contact-away');
@@ -446,7 +457,12 @@ export class ConversationWindow {
           panel.querySelectorAll('button').forEach((item) => {
             item.disabled = true;
           });
-          session.choose(choice.id);
+          ConversationWindow.prototype.chooseResponse.call(
+            this,
+            group.definition,
+            session,
+            choice.id,
+          );
           this.dialogue = definition;
           this.session = session;
           this.pending = null;
@@ -471,6 +487,136 @@ export class ConversationWindow {
       }
     }
     if (groups.length) this.element.classList.remove('contact-away');
+  }
+  finishImmediately(random = Math.random, log = (message) => console.info(message)) {
+    if (
+      this.offlineContact ||
+      !this.element?.isConnected ||
+      this.devFastForwarding ||
+      !this.thread ||
+      !this.session ||
+      (this.session.state.finished &&
+        !this.thread.pendingResponses.length &&
+        !this.thread.hasPendingMessages)
+    )
+      return false;
+
+    this.devFastForwarding = true;
+    const nickname = this.dialogue.contact.nickname;
+    let choiceNumber = 0;
+    let operations = 0;
+    const maxOperations = 1000;
+    log(`[DEV] Conversation : ${nickname}`);
+    try {
+      this.pending = null;
+      this.receiving = false;
+      if (this.typing) this.typing.textContent = '';
+      if (this.typingIndicator) {
+        this.typingIndicator.textContent = '';
+        this.typingIndicator.hidden = true;
+        this.typingIndicator.classList.remove('is-typing');
+      }
+
+      const events = this.thread.getEvents();
+      while (operations++ < maxOperations) {
+        // Deliver one scripted message at a time through DialogueSession so its
+        // transcript and save data stay identical to ordinary playback.
+        let delivered = false;
+        for (const definition of events) {
+          const session = this.sessionFor(definition);
+          if (session.state.finished) continue;
+          const message = session.nextMessage();
+          if (!message) continue;
+          delete session.state.receiveDueAt;
+          session.deliver();
+          this.thread.sync();
+          this.appendHistory();
+          delivered = true;
+          break;
+        }
+        if (delivered) continue;
+
+        const transferEvent = events.find((definition) => {
+          const session = this.sessionFor(definition);
+          return session.node.transfer && session.activeTransfer?.status === 'pending';
+        });
+        if (transferEvent) {
+          const session = this.sessionFor(transferEvent);
+          const file = session.activeTransfer;
+          const accepted = Number(random()) >= 0.5;
+          if (accepted) {
+            this.progression.finishTransfer(file.key);
+            this.onFilesChanged();
+          } else session.declineTransfer(file.key);
+          log(`[DEV] Transfert ${accepted ? 'accepté' : 'refusé'} : "${file.name}"`);
+          continue;
+        }
+
+        // Resolve automatic joins, then make the same persisted choice record
+        // used by the normal response buttons.
+        let advanced = false;
+        for (const definition of events) {
+          const session = this.sessionFor(definition);
+          const unresolvedTransfer =
+            session.node.transfer &&
+            !['complete', 'declined'].includes(session.activeTransfer?.status);
+          if (session.state.finished || session.choices.length || unresolvedTransfer) continue;
+          if (session.advance()) {
+            advanced = true;
+            break;
+          }
+          if (session.state.finished) {
+            this.onCheckpoint(definition.id);
+            advanced = true;
+            break;
+          }
+        }
+        if (advanced) continue;
+
+        if (this.thread.hasPendingMessages) continue;
+        const group = this.thread.pendingResponses[0];
+        if (group) {
+          const session = this.sessionFor(group.definition);
+          const choices = session.offerChoices();
+          if (!choices.length) continue;
+          const value = Number(random());
+          const index = Number.isFinite(value)
+            ? Math.min(choices.length - 1, Math.max(0, Math.floor(value * choices.length)))
+            : 0;
+          const choice = choices[index];
+          this.chooseResponse(group.definition, session, choice.id);
+          choiceNumber++;
+          log(`[DEV] Choix ${choiceNumber} : "${choice.text}"`);
+          this.thread.sync();
+          this.appendHistory();
+          continue;
+        }
+
+        const unfinished = events.some((definition) => {
+          const session = this.sessionFor(definition);
+          return !session.state.finished && !session.node.transfer;
+        });
+        if (!unfinished) {
+          this.dialogue = this.thread.activeDefinition ?? this.dialogue;
+          this.session = this.sessionFor(this.dialogue);
+          this.element.classList.toggle('contact-away', !this.dialogue.completion?.stayOnline);
+          this.pending = null;
+          this.receiving = false;
+          this.thread.markRead();
+          this.appendHistory();
+          this.renderResponses();
+          if (this.typing) this.typing.textContent = '';
+          this.scrollLatest();
+          log('[DEV] Conversation terminée');
+          return true;
+        }
+        return false;
+      }
+      log(`[DEV] Conversation interrompue : limite d'étapes atteinte`);
+      return false;
+    } finally {
+      this.devFastForwarding = false;
+    }
   }
   tick(time) {
     if (!this.element?.isConnected || this.offlineContact) return;

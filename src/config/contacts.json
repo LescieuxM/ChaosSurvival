@@ -4,7 +4,7 @@
     "kind": "decorative",
     "nickname": "Sk8er_du_93",
     "status": "Hors ligne",
-    "personalMessage": "parti rider, laisse un com sur mon skyblog",
+    "personalMessage": "parti rider, laisse un com sur mon skypage",
     "avatar": "./avatars/contact-skater.svg"
   },
   {
@@ -31,10 +31,12 @@
   },
   {
     "id": "turbo",
-    "kind": "decorative",
+    "kind": "narrative",
+    "dialogue": "turbo-smiley-catcher",
+    "unlockFlag": "turboSmileyScene3ArrivalTriggered",
     "connection": true,
     "visibleInitially": true,
-    "nickname": "xX_TURBO_59_Xx",
+    "nickname": "Turb0",
     "status": "En ligne",
     "personalMessage": "♫ BASSHUNTER - DOTA ♫",
     "avatar": "./avatars/turbo.svg"
@@ -43,6 +45,7 @@
     "id": "luna",
     "kind": "narrative",
     "dialogue": "luna-intro",
+    "connection": true,
     "visibleInitially": true,
     "nickname": "°•.LuNa.°•",
     "status": "Hors ligne",
@@ -59,5 +62,23 @@
     "status": "Hors ligne",
     "personalMessage": "",
     "avatar": "./avatars/offline.svg"
+  },
+  {
+    "id": "k7",
+    "kind": "decorative",
+    "visibleInitially": true,
+    "nickname": "K7",
+    "status": "Hors ligne",
+    "personalMessage": "♫ ON AIR !!!",
+    "avatar": "./avatars/k7.svg"
+  },
+  {
+    "id": "m0rbid",
+    "kind": "decorative",
+    "visibleInitially": true,
+    "nickname": "x_M0RBID_x",
+    "status": "Hors ligne",
+    "personalMessage": "",
+    "avatar": "./avatars/m0rbid.svg"
   }
 ]

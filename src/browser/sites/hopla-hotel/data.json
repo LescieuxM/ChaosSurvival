@@ -1,0 +1,485 @@
+{
+  "name": "Hopla Hotel",
+  "description": "Un hôtel virtuel pour se retrouver et explorer des salons en pixel art.",
+  "welcome": "Retrouve tes amis, explore les salons et fais de nouvelles rencontres !",
+  "room": {
+    "id": "hall",
+    "name": "Hall de l'hôtel",
+    "description": "Le point de rendez-vous de l'hôtel, avec son accueil et ses canapés.",
+    "width": 10,
+    "height": 10,
+    "spawn": [7, 7],
+    "blocked": [],
+    "furniture": [
+      { "id": "sofa", "type": "sofa", "position": [1, 6], "size": [3, 1], "blocking": true },
+      { "id": "table", "type": "table", "position": [2, 4], "size": [2, 1], "blocking": true },
+      { "id": "plant-left", "type": "plant", "position": [0, 0], "size": [1, 1], "blocking": true },
+      {
+        "id": "plant-right",
+        "type": "plant",
+        "position": [8, 0],
+        "size": [1, 1],
+        "blocking": true
+      },
+      { "id": "reception", "type": "counter", "position": [4, 1], "size": [3, 1], "blocking": true }
+    ],
+    "npcs": [
+      {
+        "id": "receptionhotel",
+        "name": "ReceptionHotel",
+        "position": [5, 4],
+        "blocking": true,
+        "direction": "south",
+        "dialogue": "Bienvenue sur Hopla Hotel ! Amuse-toi bien ;)",
+        "followUp": "Ici, il n'y a pas de crédits à dépenser ;)"
+      },
+      {
+        "id": "darkflo",
+        "name": "DarkFlo",
+        "position": [2, 2],
+        "blocking": true,
+        "direction": "south",
+        "dialogue": "slt, tu viens d arriver ?",
+        "appearance": {
+          "shirt": "#5682ad",
+          "hair": "#292831"
+        },
+        "behavior": {
+          "idle": [16000, 55000],
+          "moveChance": 0.8,
+          "messages": ["cc tlm", "ya du lag ou c moi", "^^"]
+        }
+      },
+      {
+        "id": "cerise",
+        "name": "Cerise",
+        "position": [3, 8],
+        "blocking": true,
+        "direction": "west",
+        "dialogue": "cc ^^",
+        "appearance": {
+          "shirt": "#cf6997",
+          "hair": "#ab643c"
+        },
+        "behavior": {
+          "idle": [45000, 120000],
+          "moveChance": 0.45,
+          "messages": ["jre", "pfff les devoirs"]
+        }
+      },
+      {
+        "id": "pixelgirl",
+        "name": "PixelGirl",
+        "position": [8, 3],
+        "blocking": true,
+        "direction": "south",
+        "dialogue": "salut !",
+        "appearance": {
+          "shirt": "#79a465",
+          "hair": "#272334"
+        },
+        "behavior": {
+          "idle": [16000, 55000],
+          "moveChance": 0.8,
+          "messages": ["cc tlm", "ya du lag ou c moi", "^^"]
+        }
+      }
+    ]
+  },
+  "rooms": [
+    {
+      "id": "cafe",
+      "name": "Café Hopla",
+      "description": "Des tables, une lumière chaleureuse et une pause entre deux discussions.",
+      "width": 10,
+      "height": 10,
+      "spawn": [7, 7],
+      "blocked": [],
+      "palette": {
+        "background": "#493b36",
+        "wallLeft": "#d79767",
+        "wallRight": "#b56f4d",
+        "tileBorder": "#9d7352",
+        "floorA": "#f5d8a2",
+        "floorB": "#e4bc8a"
+      },
+      "decor": { "posters": [{ "position": [0, 3], "text": "CAFE", "color": "#fff0c2" }] },
+      "furniture": [
+        { "id": "bar", "type": "counter", "position": [5, 1], "size": [3, 1], "blocking": true },
+        { "id": "table-a", "type": "table", "position": [1, 3], "blocking": true },
+        { "id": "chair-a", "type": "chair", "position": [1, 2], "blocking": true },
+        { "id": "chair-b", "type": "chair", "position": [2, 3], "blocking": true },
+        { "id": "table-b", "type": "table", "position": [2, 6], "blocking": true },
+        { "id": "chair-c", "type": "chair", "position": [1, 6], "blocking": true },
+        { "id": "chair-d", "type": "chair", "position": [2, 7], "blocking": true },
+        { "id": "plant", "type": "plant", "position": [0, 0], "blocking": true }
+      ],
+      "npcs": [
+        {
+          "id": "cafemax",
+          "name": "CafeMax",
+          "position": [5, 4],
+          "blocking": true,
+          "direction": "south",
+          "dialogue": "Salut ! Ici, on prend le temps de faire une petite pause.",
+          "behavior": {
+            "idle": [55000, 125000],
+            "moveChance": 0.45,
+            "messages": ["slt tout le monde ^^", "je reviens dans 2 min"]
+          }
+        },
+        {
+          "id": "titefolle",
+          "name": "TiteFolle",
+          "position": [3, 2],
+          "blocking": true,
+          "direction": "south",
+          "dialogue": "cc, tu prends quoi ?",
+          "appearance": {
+            "shirt": "#d47985",
+            "hair": "#ad713e"
+          },
+          "behavior": {
+            "idle": [16000, 55000],
+            "moveChance": 0.8,
+            "messages": ["cc tlm", "ya du lag ou c moi", "^^"]
+          }
+        },
+        {
+          "id": "xmel0dy",
+          "name": "xMel0dy",
+          "position": [6, 6],
+          "blocking": true,
+          "direction": "west",
+          "dialogue": "Bonjour, je fais une pause entre deux devoirs.",
+          "appearance": {
+            "shirt": "#5a999f",
+            "hair": "#553848"
+          },
+          "behavior": {
+            "idle": [45000, 120000],
+            "moveChance": 0.45,
+            "messages": ["jre", "pfff les devoirs"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "discotheque",
+      "name": "Discothèque",
+      "description": "Une piste colorée, des enceintes et un coin salon pour refaire la soirée.",
+      "width": 10,
+      "height": 10,
+      "spawn": [7, 7],
+      "blocked": [],
+      "palette": {
+        "background": "#28243e",
+        "wallLeft": "#7b5798",
+        "wallRight": "#493e73",
+        "tileBorder": "#55445e",
+        "floorA": "#84759e",
+        "floorB": "#9a87b0"
+      },
+      "decor": {
+        "floorAreas": [
+          {
+            "position": [3, 3],
+            "size": [4, 4],
+            "colors": ["#ee88b2", "#75cbe3", "#eadf83", "#a698dd"]
+          }
+        ],
+        "posters": [{ "position": [0, 3], "text": "DANCE", "color": "#efa4d0" }],
+        "lights": [
+          { "position": [0, 1], "color": "#f08cbb" },
+          { "position": [3, 0], "color": "#80d8ef" },
+          { "position": [7, 0], "color": "#ecd66c" }
+        ]
+      },
+      "furniture": [
+        { "id": "speaker-a", "type": "speaker", "position": [1, 1], "blocking": true },
+        { "id": "speaker-b", "type": "speaker", "position": [8, 1], "blocking": true },
+        {
+          "id": "lounge",
+          "type": "sofa",
+          "position": [1, 7],
+          "size": [3, 1],
+          "blocking": true,
+          "color": "#a383c7"
+        },
+        { "id": "table", "type": "table", "position": [2, 5], "blocking": true }
+      ],
+      "npcs": [
+        {
+          "id": "dj-k7",
+          "name": "DJ-K7",
+          "position": [7, 4],
+          "blocking": true,
+          "direction": "south",
+          "dialogue": "Jolie piste, hein ? J'ai passé plus de temps sur les couleurs que sur ma tenue.",
+          "behavior": {
+            "idle": [55000, 125000],
+            "moveChance": 0.45,
+            "messages": ["slt tout le monde ^^", "je reviens dans 2 min"]
+          }
+        },
+        {
+          "id": "miss-l0ve",
+          "name": "miss-l0ve",
+          "position": [2, 3],
+          "blocking": true,
+          "direction": "south",
+          "dialogue": "cc, ca va ?",
+          "appearance": {
+            "shirt": "#c968ae",
+            "hair": "#442d30"
+          },
+          "behavior": {
+            "idle": [16000, 55000],
+            "moveChance": 0.8,
+            "messages": ["cc tlm", "ya du lag ou c moi", "^^"]
+          }
+        },
+        {
+          "id": "bgdu62",
+          "name": "BGdu62",
+          "position": [5, 6],
+          "blocking": true,
+          "direction": "west",
+          "dialogue": "slt ^^",
+          "appearance": {
+            "shirt": "#6596ba",
+            "hair": "#a57542"
+          },
+          "behavior": {
+            "idle": [45000, 120000],
+            "moveChance": 0.45,
+            "messages": ["jre", "pfff les devoirs"]
+          }
+        },
+        {
+          "id": "turb0",
+          "name": "Turb0",
+          "position": [8, 8],
+          "blocking": true,
+          "direction": "south",
+          "dialogue": "Bonsoir !",
+          "appearance": {
+            "shirt": "#d58b52",
+            "hair": "#312a28"
+          },
+          "behavior": {
+            "idle": [16000, 55000],
+            "moveChance": 0.8,
+            "messages": ["cc tlm", "ya du lag ou c moi", "^^"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "detente",
+      "name": "Salon détente",
+      "description": "Un salon tranquille, des tapis et un peu de verdure.",
+      "width": 10,
+      "height": 10,
+      "spawn": [7, 7],
+      "blocked": [],
+      "palette": {
+        "background": "#304442",
+        "wallLeft": "#8eaf98",
+        "wallRight": "#668a7c",
+        "tileBorder": "#b0a088",
+        "floorA": "#e5dcc5",
+        "floorB": "#d5cbb4"
+      },
+      "decor": {
+        "floorAreas": [{ "position": [2, 3], "size": [5, 3], "colors": ["#91b4b0", "#7fa19e"] }],
+        "posters": [{ "position": [0, 3], "text": "ZEN", "color": "#c6dec8" }]
+      },
+      "furniture": [
+        {
+          "id": "sofa-a",
+          "type": "sofa",
+          "position": [1, 6],
+          "size": [3, 1],
+          "blocking": true,
+          "color": "#7ea1ae"
+        },
+        {
+          "id": "sofa-b",
+          "type": "sofa",
+          "position": [5, 1],
+          "size": [3, 1],
+          "blocking": true,
+          "color": "#7ea1ae"
+        },
+        { "id": "table", "type": "table", "position": [3, 4], "size": [2, 1], "blocking": true },
+        { "id": "plant-a", "type": "plant", "position": [0, 0], "blocking": true },
+        { "id": "plant-b", "type": "plant", "position": [8, 2], "blocking": true }
+      ],
+      "npcs": [
+        {
+          "id": "pauseclope",
+          "name": "PauseClope",
+          "position": [6, 5],
+          "blocking": true,
+          "direction": "west",
+          "dialogue": "Je coupe un peu les écrans ce soir... enfin, après cette visite ;)",
+          "behavior": {
+            "idle": [55000, 125000],
+            "moveChance": 0.45,
+            "messages": ["slt tout le monde ^^", "je reviens dans 2 min"]
+          }
+        },
+        {
+          "id": "nuage17",
+          "name": "Nuage17",
+          "position": [2, 2],
+          "blocking": true,
+          "direction": "south",
+          "dialogue": "Salut, on se pose ici ?",
+          "appearance": {
+            "shirt": "#b3789b",
+            "hair": "#8d5834"
+          },
+          "behavior": {
+            "idle": [16000, 55000],
+            "moveChance": 0.8,
+            "messages": ["cc tlm", "ya du lag ou c moi", "^^"]
+          }
+        },
+        {
+          "id": "biscuitsec",
+          "name": "BiscuitSec",
+          "position": [8, 5],
+          "blocking": true,
+          "direction": "west",
+          "dialogue": "slt, tranquille ?",
+          "appearance": {
+            "shirt": "#5f9c8a",
+            "hair": "#373130"
+          },
+          "behavior": {
+            "idle": [45000, 120000],
+            "moveChance": 0.45,
+            "messages": ["jre", "pfff les devoirs"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "jeux",
+      "name": "Salle de jeux",
+      "description": "Des bornes rétro et des affiches pour les amateurs de pixels.",
+      "width": 10,
+      "height": 10,
+      "spawn": [7, 7],
+      "blocked": [],
+      "palette": {
+        "background": "#25374e",
+        "wallLeft": "#629bbd",
+        "wallRight": "#406987",
+        "tileBorder": "#788a9e",
+        "floorA": "#b3c7dd",
+        "floorB": "#d6e4ec"
+      },
+      "decor": {
+        "posters": [
+          { "position": [0, 3], "text": "PLAY", "color": "#f4d36d" },
+          { "position": [5, 0], "text": "PIXEL", "color": "#9fdcda" }
+        ]
+      },
+      "furniture": [
+        {
+          "id": "arcade-a",
+          "type": "arcade",
+          "position": [1, 1],
+          "blocking": true,
+          "color": "#bf5e79"
+        },
+        {
+          "id": "arcade-b",
+          "type": "arcade",
+          "position": [3, 1],
+          "blocking": true,
+          "color": "#558eae"
+        },
+        {
+          "id": "arcade-c",
+          "type": "arcade",
+          "position": [7, 1],
+          "blocking": true,
+          "color": "#b58f42"
+        },
+        { "id": "table", "type": "table", "position": [2, 5], "size": [2, 1], "blocking": true },
+        { "id": "chair", "type": "chair", "position": [2, 6], "blocking": true },
+        { "id": "plant", "type": "plant", "position": [0, 8], "blocking": true }
+      ],
+      "npcs": [
+        {
+          "id": "fredoux2",
+          "name": "Fredoux2",
+          "position": [5, 4],
+          "blocking": true,
+          "direction": "south",
+          "dialogue": "Ces bornes, c'est juste pour le décor. Mais ça donne envie de ressortir sa vieille console !",
+          "behavior": {
+            "idle": [55000, 125000],
+            "moveChance": 0.45,
+            "messages": ["slt tout le monde ^^", "je reviens dans 2 min"]
+          }
+        },
+        {
+          "id": "supermariofan",
+          "name": "SuperMarioFan",
+          "position": [1, 4],
+          "blocking": true,
+          "direction": "south",
+          "dialogue": "slt, tu joues a quoi ?",
+          "appearance": {
+            "shirt": "#ce7161",
+            "hair": "#514235"
+          },
+          "behavior": {
+            "idle": [16000, 55000],
+            "moveChance": 0.8,
+            "messages": ["cc tlm", "ya du lag ou c moi", "^^"]
+          }
+        },
+        {
+          "id": "panda666",
+          "name": "Panda666",
+          "position": [4, 7],
+          "blocking": true,
+          "direction": "west",
+          "dialogue": "cc, encore une partie ?",
+          "appearance": {
+            "shirt": "#70a8a2",
+            "hair": "#2f2c35"
+          },
+          "behavior": {
+            "idle": [45000, 120000],
+            "moveChance": 0.45,
+            "messages": ["jre", "pfff les devoirs"]
+          }
+        },
+        {
+          "id": "skull",
+          "name": "Skull",
+          "position": [8, 3],
+          "blocking": true,
+          "direction": "south",
+          "dialogue": "Salut, plutôt PC ou console ?",
+          "appearance": {
+            "shirt": "#a39854",
+            "hair": "#774b31"
+          },
+          "behavior": {
+            "idle": [16000, 55000],
+            "moveChance": 0.8,
+            "messages": ["cc tlm", "ya du lag ou c moi", "^^"]
+          }
+        }
+      ]
+    }
+  ]
+}

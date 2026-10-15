@@ -1,0 +1,155 @@
+.videotube {
+  background: #fff;
+  color: #222;
+  padding: 10px;
+  font:
+    12px Arial,
+    sans-serif;
+  min-height: 100%;
+}
+.videotube a {
+  color: #174eae;
+  text-decoration: none;
+}
+.videotube a:hover {
+  text-decoration: underline;
+}
+.videotube-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  background: linear-gradient(#fafafa, #e6e6e6);
+}
+.videotube-header > span {
+  font-size: 11px;
+  color: #666;
+}
+.videotube .videotube-logo {
+  color: #222;
+  font:
+    bold 24px Arial,
+    sans-serif;
+  letter-spacing: -1px;
+}
+.videotube-logo strong {
+  color: #b82724;
+  border-bottom: 3px solid #b82724;
+  margin-left: 2px;
+}
+.videotube h2 {
+  font-size: 16px;
+  margin: 12px 0 8px;
+}
+.videotube-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+.videotube-card {
+  min-width: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ddd;
+}
+.videotube-card > a {
+  display: block;
+  font-weight: bold;
+  line-height: 1.3;
+}
+.videotube-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 9/5;
+  object-fit: contain;
+  border: 1px solid #aaa;
+  padding: 2px;
+  box-sizing: border-box;
+  margin-bottom: 5px;
+  background: #eee;
+}
+.videotube-card p {
+  color: #666;
+  font-size: 11px;
+  margin: 3px 0;
+}
+.videotube-stars {
+  color: #b82724;
+  letter-spacing: 1px;
+  font-size: 15px;
+}
+.videotube-meta {
+  color: #666;
+  margin: 6px 0 10px;
+}
+.videotube-player {
+  position: relative;
+  max-width: 580px;
+  border: 4px solid #333;
+  border-bottom-width: 18px;
+  background: #111;
+}
+.videotube-player img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 9/5;
+  object-fit: contain;
+  opacity: 0.8;
+}
+.videotube-watch {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 90%;
+  padding: 9px 14px;
+  border: 1px outset #ddd;
+  background: linear-gradient(#fff, #ddd);
+  color: #222;
+  font:
+    bold 12px Arial,
+    sans-serif;
+  cursor: pointer;
+}
+.videotube-watch:disabled {
+  color: #777;
+  cursor: default;
+}
+.videotube-open-status {
+  color: #666;
+  font-size: 11px;
+}
+.videotube-description {
+  padding: 10px;
+  background: #f3f3f3;
+  border: 1px solid #ddd;
+}
+.videotube-comments h3 {
+  background: #eee;
+  border-bottom: 1px solid #ccc;
+  padding: 6px;
+  font-size: 13px;
+}
+.videotube-comments article {
+  padding: 7px 4px;
+  border-bottom: 1px dotted #ccc;
+  overflow-wrap: anywhere;
+}
+.videotube-comments strong {
+  color: #174eae;
+}
+.videotube-comments p {
+  margin: 5px 0;
+  white-space: pre-wrap;
+}
+.videotube-disclaimer {
+  display: block;
+  color: #777;
+  margin-top: 10px;
+  font-size: 10px;
+}

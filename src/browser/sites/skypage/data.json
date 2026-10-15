@@ -1,0 +1,251 @@
+{
+  "title": "SkyPage",
+  "welcome": "Bienvenue sur SkyPage !",
+  "description": "Un petit coin du Web pour raconter sa journée, montrer ses dessins et partager ses chansons préférées. À chacun son blog !",
+  "blogs": [
+    {
+      "id": "pixelgirl",
+      "contactId": "pixelgirl",
+      "nickname": "xX_PixelGirl_Xx",
+      "theme": "pixelgirl",
+      "avatar": "./avatars/pixelgirl.svg",
+      "subtitle": "☆ mes dessins, mes amis et un peu n'importe quoi ☆",
+      "description": "Le blog rose de PixelGirl : dessins sur Paint, Evanescence et petits jeux PC ou Flash.",
+      "keywords": [
+        "pixelgirl",
+        "blog",
+        "skypage",
+        "dessins",
+        "paint",
+        "evanescence",
+        "Bring Me to Life",
+        "jeux",
+        "flash"
+      ],
+      "articles": [
+        {
+          "id": "bienvenue",
+          "title": "Bienvenue sur mon blog !!!",
+          "date": "2009-01-03",
+          "paragraphs": [
+            "heyyy :D bon j'ai enfin réussi à choisir un fond. j'en avais mis un avec des étoiles MAIS on voyait plus rien mdr",
+            "ici je vais mettre mes dessins, mes chansons et les trucs qui me font rire. si vous aimez pas le rose... mauvaise nouvelle :')"
+          ],
+          "comments": [
+            {
+              "author": "Oo_bubble-princess_oO",
+              "date": "2009-01-03",
+              "text": "premier comm !! ton fond est trop beau <3"
+            },
+            {
+              "author": "Sk8er_du_93",
+              "date": "2009-01-04",
+              "text": "j'ai les yeux roses maintenant lol. bienvenue sur skypage !"
+            }
+          ]
+        },
+        {
+          "id": "paint",
+          "title": "Mes dessins sur Paint",
+          "date": "2009-01-06",
+          "paragraphs": [
+            "voilà mon chef-d'œuvre : un chat qui veut devenir une étoile. oui il ressemble à une boîte de céréales MAIS c'est le style",
+            "j'ai fait chaque carré à la souris. ma main demande des vacances xD je garde les erreurs, ça lui donne une personnalité"
+          ],
+          "image": "./skypage/pixelgirl-paint.svg",
+          "imageAlt": "Dessin sur Paint d'un chat rose carré sous un ciel d'étoiles",
+          "comments": [
+            {
+              "author": "°•.LuNa.°•",
+              "date": "2009-01-06",
+              "text": "j'aime bien ses petites oreilles. garde les carrés."
+            },
+            {
+              "author": "xX_PixelGirl_Xx",
+              "date": "2009-01-07",
+              "text": "des néons SUR LE CHAT ??? t'es irrécupérable mdr"
+            }
+          ]
+        },
+        {
+          "id": "musiques",
+          "title": "MUSIQUES TRISTES",
+          "date": "2009-01-10",
+          "paragraphs": [
+            "Evanescence — Bring Me to Life. encore. oui. le piano du début est trop beau, je monte le son juste pour ça",
+            "j'appelle ça mes musiques tristes mais après je chante tellement fort que ma mère ferme la porte. ambiance concert dans ma chambre, public : un coussin"
+          ],
+          "comments": [
+            {
+              "author": "Oo_bubble-princess_oO",
+              "date": "2009-01-10",
+              "text": "je veux une place au prochain concert du coussin !!!"
+            },
+            {
+              "author": "°•.LuNa.°•",
+              "date": "2009-01-11",
+              "text": "le piano me plaît aussi. je l'écoute plutôt doucement."
+            }
+          ]
+        },
+        {
+          "id": "jeux",
+          "title": "Mes jeux préférés",
+          "date": "2009-01-14",
+          "paragraphs": [
+            "j'aime les petits jeux PC et les jeux Flash qui tiennent en une fenêtre. tu te dis juste une partie et après tu réalises que t'as oublié ton goûter",
+            "mes préférés ont trois couleurs, des graphismes faits sur paint et un score qui clignote pour rien. pas besoin que ce soit sérieux pour que ce soit drôle :3"
+          ],
+          "comments": [
+            {
+              "author": "Sk8er_du_93",
+              "date": "2009-01-14",
+              "text": "le vrai défi c'est de pas renverser son jus sur le clavier"
+            },
+            {
+              "author": "xX_PixelGirl_Xx",
+              "date": "2009-01-15",
+              "text": "j'ai déjà perdu à ce défi. on en parle plus."
+            }
+          ]
+        },
+        {
+          "id": "cookies",
+          "title": "opération cookies : bilan mitigé",
+          "date": "2009-01-17",
+          "paragraphs": [
+            "j'ai voulu faire des cookies pour le goûter. la recette disait laisser de la place entre les boules. j'ai pensé que c'était un conseil facultatif... ERREUR",
+            "j'ai sorti UN cookie de la taille de la plaque ptdrrr. on l'a découpé comme une pizza. pas super présentable mais personne a laissé sa part :DDD"
+          ],
+          "comments": [
+            {
+              "author": "Oo_bubble-princess_oO",
+              "date": "2009-01-18",
+              "text": "une pizza cookie ?? garde-moi une part la prochaine fois <3"
+            },
+            {
+              "author": "xX_PixelGirl_Xx",
+              "date": "2009-01-18",
+              "text": "je vais écrire recette familiale pour faire genre c'était prévu"
+            }
+          ]
+        },
+        {
+          "id": "reveil",
+          "title": "le réveil a gagné cette manche",
+          "date": "2009-01-26",
+          "paragraphs": [
+            "ce matin j'ai négocié 5 minutes avec mon réveil. apparemment il a accepté 25. MERCI POUR RIEN",
+            "partie avec une tartine dans la main et le bonnet à l'envers. j'étais à l'heure mais mon petit déjeuner a fini en miettes dans mon écharpe xD demain je prépare mon sac avant de dormir. enfin normalement."
+          ],
+          "comments": [
+            {
+              "author": "LeModemEnPLS",
+              "date": "2009-01-26",
+              "text": "moi je mets le réveil loin du lit. maintenant je fais juste une sieste par terre"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "luna",
+      "contactId": "luna",
+      "nickname": "°•.LuNa.°•",
+      "theme": "luna",
+      "avatar": "./avatars/luna.svg",
+      "subtitle": "quelques images et des choses qui passent",
+      "description": "Le blog de Luna : Somewhere Only We Know, photos de nuit, dessins et journées ordinaires.",
+      "keywords": [
+        "luna",
+        "blog",
+        "skypage",
+        "dessins",
+        "photos",
+        "nuit",
+        "lune",
+        "somewhere only we know"
+      ],
+      "articles": [
+        {
+          "id": "somewhere",
+          "title": "somewhere only we know",
+          "date": "2009-01-02",
+          "paragraphs": [
+            "j'ai remis cette chanson dans mon lecteur mp3. elle me rappelle les trajets en bus et les chemins qu'on prend sans vraiment y penser.",
+            "parfois une chanson suffit à retrouver une après-midi entière. même les détails minuscules, comme le froid sur les mains en rentrant."
+          ],
+          "comments": [
+            {
+              "author": "xX_PixelGirl_Xx",
+              "date": "2009-01-03",
+              "text": "j'aime bien quand tu racontes des trucs comme ça :3"
+            }
+          ]
+        },
+        {
+          "id": "photos",
+          "title": "photos de nuit",
+          "date": "2009-01-08",
+          "paragraphs": [
+            "quelques images prises près de chez moi. l'appareil n'aime pas beaucoup la nuit, presque tout est flou.",
+            "je les garde quand même. le lampadaire fait une petite île de lumière et le reste de la rue est tranquille."
+          ],
+          "image": "./skypage/luna-night.svg",
+          "imageAlt": "Illustration granuleuse d'une rue déserte et d'un lampadaire sous le ciel nocturne",
+          "comments": [
+            {
+              "author": "Oo_bubble-princess_oO",
+              "date": "2009-01-09",
+              "text": "la lumière est jolie, même avec le flou."
+            }
+          ]
+        },
+        {
+          "id": "dessins",
+          "title": "dessins",
+          "date": "2009-01-12",
+          "paragraphs": [
+            "j'ai essayé de dessiner la lune avec la souris. les contours tremblent un peu. je n'ai pas eu envie de recommencer.",
+            "j'ai choisi du violet parce que le noir faisait trop vide. c'est juste un petit dessin pour le fond du blog."
+          ],
+          "image": "./skypage/luna-moon.svg",
+          "imageAlt": "Dessin amateur d'une lune pâle et d'étoiles sur un fond violet",
+          "comments": [
+            {
+              "author": "xX_PixelGirl_Xx",
+              "date": "2009-01-13",
+              "text": "ta lune est beaucoup plus classe que mon chat-céréales xD"
+            }
+          ]
+        },
+        {
+          "id": "dimanche",
+          "title": "un dimanche",
+          "date": "2009-01-18",
+          "paragraphs": [
+            "il a plu presque toute la journée. j'ai lu près de la fenêtre, puis fait du thé et oublié de le boire pendant qu'il était chaud.",
+            "j'avais prévu de sortir. finalement j'ai rangé quelques photos sur le pc. rien de particulier, mais ça m'a fait du bien."
+          ],
+          "comments": []
+        },
+        {
+          "id": "basilic",
+          "title": "le basilic sur le rebord",
+          "date": "2009-01-22",
+          "paragraphs": [
+            "j'ai posé un petit pot de basilic près de la fenêtre de la cuisine. il penche toujours vers la lumière, même quand je tourne le pot.",
+            "je pensais oublier de l'arroser. finalement je regarde la terre en préparant mon petit déjeuner. c'est agréable d'avoir quelque chose de vert à côté des vitres froides."
+          ],
+          "comments": [
+            {
+              "author": "xX_PixelGirl_Xx",
+              "date": "2009-01-23",
+              "text": "le mien a tenu 4 jours :') je lui avais pourtant choisi un joli pot"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -151,6 +151,12 @@ export class MainMenu {
     this.element.querySelector('.menu-options-panel').append(catalog);
     this.element.querySelector('.menu-music-credit').textContent =
       `Musique niveau 1 : ${trackIdentity.artist} — ${trackIdentity.title} (${trackIdentity.source})`;
+    const graphicCredit = document.createElement('small');
+    graphicCredit.textContent =
+      "Certaines ressources graphiques de Chaos Survival ont été créées à l'aide des outils de génération d'images par intelligence artificielle intégrés à Codex (OpenAI).";
+    this.element
+      .querySelector('.menu-music-credit')
+      .append(document.createElement('br'), graphicCredit);
     this.find = (selector) => this.element.querySelector(selector);
     this.find('#menu-play').addEventListener('click', () =>
       this.run(() => this.actions.play(this.progression.hasSave)),

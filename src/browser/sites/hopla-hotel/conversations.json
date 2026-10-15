@@ -1,0 +1,934 @@
+[
+  {
+    "id": "hall-1",
+    "room": "hall",
+    "participants": [
+      "darkflo",
+      "pixelgirl"
+    ],
+    "messages": [
+      {
+        "speaker": "darkflo",
+        "text": "tu crois que le bleu rend mieux sur ton dessin ?",
+        "delay": 700
+      },
+      {
+        "speaker": "pixelgirl",
+        "text": "oui, garde-le, ça fait plus doux ^^",
+        "delay": 1600
+      },
+      {
+        "speaker": "darkflo",
+        "text": "ok vendu, j'hésitais depuis tout à l'heure",
+        "delay": 3450
+      },
+      {
+        "speaker": "pixelgirl",
+        "text": "et puis le rouge faisait un peu panneau stop mdr",
+        "delay": 2350
+      }
+    ],
+    "opening": true
+  },
+  {
+    "id": "hall-2",
+    "room": "hall",
+    "participants": [
+      "pixelgirl",
+      "darkflo"
+    ],
+    "messages": [
+      {
+        "speaker": "pixelgirl",
+        "text": "vous partez déjà vers la disco ???",
+        "delay": 1300
+      },
+      {
+        "speaker": "darkflo",
+        "text": "pas encore, je cherche Cerise",
+        "delay": 2350
+      },
+      {
+        "speaker": "pixelgirl",
+        "text": "elle discutait près de l'entrée y a deux minutes",
+        "delay": 5100
+      },
+      {
+        "speaker": "darkflo",
+        "text": "ok je regarde, merci !",
+        "delay": 4000
+      }
+    ]
+  },
+  {
+    "id": "hall-3",
+    "room": "hall",
+    "participants": [
+      "cerise",
+      "pixelgirl",
+      "darkflo"
+    ],
+    "messages": [
+      {
+        "speaker": "cerise",
+        "text": "vous avez eu le contrôle de maths ?",
+        "delay": 1900
+      },
+      {
+        "speaker": "pixelgirl",
+        "text": "demain matin, j'ai rien révisé MDR",
+        "delay": 4000
+      },
+      {
+        "speaker": "darkflo",
+        "text": "pareil... je vais regretter ce soir",
+        "delay": 2900
+      },
+      {
+        "speaker": "cerise",
+        "text": "allez, courage, c'est que des maths ^^",
+        "delay": 1800
+      }
+    ]
+  },
+  {
+    "id": "hall-4",
+    "room": "hall",
+    "participants": [
+      "darkflo",
+      "pixelgirl"
+    ],
+    "messages": [
+      {
+        "speaker": "darkflo",
+        "text": "j'ai enfin terminé mon dessin ^^",
+        "delay": 700
+      },
+      {
+        "speaker": "pixelgirl",
+        "text": "ah OUAIS ? tu peux me montrer ???",
+        "delay": 1800
+      },
+      {
+        "speaker": "darkflo",
+        "text": "attends, j'hésite encore sur la couleur du fond",
+        "delay": 4550
+      },
+      {
+        "speaker": "pixelgirl",
+        "text": "mets du bleu, ça ira bien avec le reste :)",
+        "delay": 3450
+      }
+    ]
+  },
+  {
+    "id": "hall-5",
+    "room": "hall",
+    "participants": [
+      "cerise",
+      "darkflo"
+    ],
+    "messages": [
+      {
+        "speaker": "cerise",
+        "text": "je cherche un coin un peu calme",
+        "delay": 1300
+      },
+      {
+        "speaker": "darkflo",
+        "text": "le salon détente est tranquille",
+        "delay": 3450
+      },
+      {
+        "speaker": "cerise",
+        "text": "merci, j'vais m'y poser",
+        "delay": 2350
+      },
+      {
+        "speaker": "darkflo",
+        "text": "à tout à l'heure ^^",
+        "delay": 5100
+      }
+    ]
+  },
+  {
+    "id": "hall-6",
+    "room": "hall",
+    "participants": [
+      "pixelgirl",
+      "cerise"
+    ],
+    "messages": [
+      {
+        "speaker": "pixelgirl",
+        "text": "les plantes étaient déjà là hier ?",
+        "delay": 1900
+      },
+      {
+        "speaker": "cerise",
+        "text": "oui, t'avais pas remarqué ?",
+        "delay": 5100
+      },
+      {
+        "speaker": "pixelgirl",
+        "text": "j'étais surtout en train de chercher l'entrée lol",
+        "delay": 4000
+      },
+      {
+        "speaker": "cerise",
+        "text": "ça arrive, le hall est grand",
+        "delay": 2900
+      }
+    ]
+  },
+  {
+    "id": "cafe-1",
+    "room": "cafe",
+    "participants": [
+      "titefolle",
+      "xmel0dy"
+    ],
+    "messages": [
+      {
+        "speaker": "titefolle",
+        "text": "g encore deux exos à faire ce soir",
+        "delay": 700
+      },
+      {
+        "speaker": "xmel0dy",
+        "text": "moi c'est physique, j'comprends rien au dernier",
+        "delay": 4550
+      },
+      {
+        "speaker": "titefolle",
+        "text": "pourquoi ils donnent tout le même jour sérieux",
+        "delay": 3450
+      },
+      {
+        "speaker": "xmel0dy",
+        "text": "tkt, on regardera ça demain à la pause",
+        "delay": 2350
+      }
+    ]
+  },
+  {
+    "id": "cafe-2",
+    "room": "cafe",
+    "participants": [
+      "cafemax",
+      "titefolle"
+    ],
+    "messages": [
+      {
+        "speaker": "cafemax",
+        "text": "je vous sers quoi ?",
+        "delay": 1300
+      },
+      {
+        "speaker": "titefolle",
+        "text": "un chocolat chaud stp ^^",
+        "delay": 2350
+      },
+      {
+        "speaker": "cafemax",
+        "text": "et un biscuit avec ?",
+        "delay": 5100
+      },
+      {
+        "speaker": "titefolle",
+        "text": "oui, mais pas le truc tout sec de la dernière fois",
+        "delay": 4000
+      },
+      {
+        "speaker": "cafemax",
+        "text": "promis, j'ai trouvé un paquet meilleur",
+        "delay": 2900
+      }
+    ]
+  },
+  {
+    "id": "cafe-3",
+    "room": "cafe",
+    "participants": [
+      "xmel0dy",
+      "cafemax"
+    ],
+    "messages": [
+      {
+        "speaker": "xmel0dy",
+        "text": "t'as écouté le dernier Indochine ?",
+        "delay": 1900
+      },
+      {
+        "speaker": "cafemax",
+        "text": "pas encore, j'écoute toujours l'ancien album",
+        "delay": 4000
+      },
+      {
+        "speaker": "xmel0dy",
+        "text": "on me l a prêté hier, y a deux chansons cool",
+        "delay": 2900
+      },
+      {
+        "speaker": "cafemax",
+        "text": "tu me le passeras ? j te dirai",
+        "delay": 1800
+      }
+    ]
+  },
+  {
+    "id": "cafe-4",
+    "room": "cafe",
+    "participants": [
+      "titefolle",
+      "cafemax",
+      "xmel0dy"
+    ],
+    "messages": [
+      {
+        "speaker": "titefolle",
+        "text": "quelqu'un a vu ma tasse ?",
+        "delay": 700
+      },
+      {
+        "speaker": "cafemax",
+        "text": "elle est juste devant toi",
+        "delay": 1800
+      },
+      {
+        "speaker": "titefolle",
+        "text": "ah oui mdr, j'regardais partout",
+        "delay": 4550
+      },
+      {
+        "speaker": "xmel0dy",
+        "text": "t'as vraiment besoin d'une pause toi ^^",
+        "delay": 3450
+      }
+    ]
+  },
+  {
+    "id": "cafe-5",
+    "room": "cafe",
+    "participants": [
+      "cafemax",
+      "xmel0dy"
+    ],
+    "messages": [
+      {
+        "speaker": "cafemax",
+        "text": "il pleut encore chez toi ?",
+        "delay": 1300
+      },
+      {
+        "speaker": "xmel0dy",
+        "text": "depuis ce matin, c'est déprimant",
+        "delay": 3450
+      },
+      {
+        "speaker": "cafemax",
+        "text": "ici aussi, j'avais prévu de sortir",
+        "delay": 2350
+      },
+      {
+        "speaker": "xmel0dy",
+        "text": "garde le chocolat alors ^^",
+        "delay": 5100
+      }
+    ]
+  },
+  {
+    "id": "cafe-6",
+    "room": "cafe",
+    "participants": [
+      "titefolle",
+      "xmel0dy"
+    ],
+    "messages": [
+      {
+        "speaker": "titefolle",
+        "text": "la prof a ramassé les cahiers ce matin",
+        "delay": 1900
+      },
+      {
+        "speaker": "xmel0dy",
+        "text": "et t'avais fait les exos ?",
+        "delay": 5100
+      },
+      {
+        "speaker": "titefolle",
+        "text": "presque... y en a un que j'ai oublié",
+        "delay": 4000
+      },
+      {
+        "speaker": "xmel0dy",
+        "text": "ça se verra peut-être un peu",
+        "delay": 2900
+      },
+      {
+        "speaker": "titefolle",
+        "text": "tkt, mon écriture est très grande ^^",
+        "delay": 1800
+      }
+    ]
+  },
+  {
+    "id": "discotheque-1",
+    "room": "discotheque",
+    "participants": [
+      "miss-l0ve",
+      "bgdu62"
+    ],
+    "messages": [
+      {
+        "speaker": "miss-l0ve",
+        "text": "ils sont où tes potes, tu les as retrouvés ?",
+        "delay": 700
+      },
+      {
+        "speaker": "bgdu62",
+        "text": "pas encore, j les ai perdus en arrivant",
+        "delay": 4550
+      },
+      {
+        "speaker": "miss-l0ve",
+        "text": "reste avec nous, ils vont finir par te voir",
+        "delay": 3450
+      },
+      {
+        "speaker": "bgdu62",
+        "text": "ouais, j'vais leur envoyer un message",
+        "delay": 2350
+      }
+    ]
+  },
+  {
+    "id": "discotheque-2",
+    "room": "discotheque",
+    "participants": [
+      "dj-k7",
+      "turb0"
+    ],
+    "messages": [
+      {
+        "speaker": "dj-k7",
+        "text": "c'est le morceau de Daft Punk que tu voulais, Turb0",
+        "delay": 1300
+      },
+      {
+        "speaker": "turb0",
+        "text": "oui, remets la grosse basse mdr",
+        "delay": 1600
+      },
+      {
+        "speaker": "dj-k7",
+        "text": "tu l'as demandé trois fois déjà",
+        "delay": 5100
+      },
+      {
+        "speaker": "turb0",
+        "text": "et alors, il est bien ^^",
+        "delay": 4000
+      }
+    ],
+    "opening": true
+  },
+  {
+    "id": "discotheque-3",
+    "room": "discotheque",
+    "participants": [
+      "bgdu62",
+      "miss-l0ve"
+    ],
+    "messages": [
+      {
+        "speaker": "bgdu62",
+        "text": "ta veste va bien avec la musique",
+        "delay": 1900
+      },
+      {
+        "speaker": "miss-l0ve",
+        "text": "merci, j l'ai choisie au hasard lol",
+        "delay": 4000
+      },
+      {
+        "speaker": "bgdu62",
+        "text": "ça marche quand même",
+        "delay": 2900
+      },
+      {
+        "speaker": "miss-l0ve",
+        "text": "je vais dire que c'était fait exprès alors",
+        "delay": 1800
+      }
+    ]
+  },
+  {
+    "id": "discotheque-4",
+    "room": "discotheque",
+    "participants": [
+      "turb0",
+      "dj-k7"
+    ],
+    "messages": [
+      {
+        "speaker": "turb0",
+        "text": "les enceintes font trembler les meubles",
+        "delay": 700
+      },
+      {
+        "speaker": "dj-k7",
+        "text": "c'est surtout les basses, j'ai touché à rien",
+        "delay": 1800
+      },
+      {
+        "speaker": "turb0",
+        "text": "le coin là-bas est plus calme",
+        "delay": 4550
+      },
+      {
+        "speaker": "dj-k7",
+        "text": "viens, on pourra s'entendre parler",
+        "delay": 3450
+      }
+    ]
+  },
+  {
+    "id": "discotheque-5",
+    "room": "discotheque",
+    "participants": [
+      "miss-l0ve",
+      "bgdu62",
+      "turb0"
+    ],
+    "messages": [
+      {
+        "speaker": "miss-l0ve",
+        "text": "y a pas grand monde pour l'instant",
+        "delay": 1300
+      },
+      {
+        "speaker": "bgdu62",
+        "text": "mes potes arrivent après manger",
+        "delay": 3450
+      },
+      {
+        "speaker": "turb0",
+        "text": "moi je reste pas tard ce soir",
+        "delay": 2350
+      },
+      {
+        "speaker": "miss-l0ve",
+        "text": "on verra, la soirée commence à peine ^^",
+        "delay": 5100
+      }
+    ]
+  },
+  {
+    "id": "discotheque-6",
+    "room": "discotheque",
+    "participants": [
+      "dj-k7",
+      "turb0"
+    ],
+    "messages": [
+      {
+        "speaker": "dj-k7",
+        "text": "tu connais le remix qui vient de passer ?",
+        "delay": 1900
+      },
+      {
+        "speaker": "turb0",
+        "text": "je connais le morceau, pas cette version",
+        "delay": 5100
+      },
+      {
+        "speaker": "dj-k7",
+        "text": "les remix changent parfois tout le rythme",
+        "delay": 4000
+      },
+      {
+        "speaker": "turb0",
+        "text": "j'demanderai à mon frère, il a le nom",
+        "delay": 2900
+      }
+    ]
+  },
+  {
+    "id": "detente-1",
+    "room": "detente",
+    "participants": [
+      "nuage17",
+      "biscuitsec"
+    ],
+    "messages": [
+      {
+        "speaker": "nuage17",
+        "text": "tu viens souvent te poser ici ?",
+        "delay": 700
+      },
+      {
+        "speaker": "biscuitsec",
+        "text": "quand j'ai fini les cours, surtout",
+        "delay": 4550
+      },
+      {
+        "speaker": "nuage17",
+        "text": "c'est calme, ça fait du bien",
+        "delay": 3450
+      },
+      {
+        "speaker": "biscuitsec",
+        "text": "ouais, on peut parler sans crier",
+        "delay": 2350
+      }
+    ]
+  },
+  {
+    "id": "detente-2",
+    "room": "detente",
+    "participants": [
+      "pauseclope",
+      "nuage17"
+    ],
+    "messages": [
+      {
+        "speaker": "pauseclope",
+        "text": "ta journée s'est bien passée ?",
+        "delay": 1300
+      },
+      {
+        "speaker": "nuage17",
+        "text": "plutôt oui, on a fini une heure plus tôt",
+        "delay": 2350
+      },
+      {
+        "speaker": "pauseclope",
+        "text": "la chance, j'ai attendu le bus sous la pluie",
+        "delay": 5100
+      },
+      {
+        "speaker": "nuage17",
+        "text": "aie... j'espère qu'il faisait pas trop froid",
+        "delay": 4000
+      }
+    ]
+  },
+  {
+    "id": "detente-3",
+    "room": "detente",
+    "participants": [
+      "biscuitsec",
+      "nuage17"
+    ],
+    "messages": [
+      {
+        "speaker": "biscuitsec",
+        "text": "mon pote m a encore laissé en plan",
+        "delay": 1900
+      },
+      {
+        "speaker": "nuage17",
+        "text": "il a peut-être raté son bus",
+        "delay": 4000
+      },
+      {
+        "speaker": "biscuitsec",
+        "text": "il habite à cinq minutes à pied lol",
+        "delay": 2900
+      },
+      {
+        "speaker": "nuage17",
+        "text": "bon, là c'est peut-être juste qu'il est en retard",
+        "delay": 1800
+      }
+    ]
+  },
+  {
+    "id": "detente-4",
+    "room": "detente",
+    "participants": [
+      "nuage17",
+      "pauseclope",
+      "biscuitsec"
+    ],
+    "messages": [
+      {
+        "speaker": "nuage17",
+        "text": "on pourrait changer le tapis un de ces jours",
+        "delay": 700
+      },
+      {
+        "speaker": "pauseclope",
+        "text": "je le trouve bien comme ça",
+        "delay": 1800
+      },
+      {
+        "speaker": "biscuitsec",
+        "text": "moi aussi, le vert va avec les meubles",
+        "delay": 4550
+      },
+      {
+        "speaker": "nuage17",
+        "text": "bon, vous avez gagné ^^",
+        "delay": 3450
+      }
+    ]
+  },
+  {
+    "id": "detente-5",
+    "room": "detente",
+    "participants": [
+      "pauseclope",
+      "biscuitsec"
+    ],
+    "messages": [
+      {
+        "speaker": "pauseclope",
+        "text": "tu connais les autres habitués ?",
+        "delay": 1300
+      },
+      {
+        "speaker": "biscuitsec",
+        "text": "deux ou trois, on se croise après les cours",
+        "delay": 3450
+      },
+      {
+        "speaker": "pauseclope",
+        "text": "j'ai vu les mêmes hier soir",
+        "delay": 2350
+      },
+      {
+        "speaker": "biscuitsec",
+        "text": "ils restent parfois jusqu à la fermeture",
+        "delay": 5100
+      }
+    ]
+  },
+  {
+    "id": "detente-6",
+    "room": "detente",
+    "participants": [
+      "biscuitsec",
+      "nuage17"
+    ],
+    "messages": [
+      {
+        "speaker": "biscuitsec",
+        "text": "le surveillant m a confisqué mon mp3",
+        "delay": 1900
+      },
+      {
+        "speaker": "nuage17",
+        "text": "t'avais les écouteurs en cours ?",
+        "delay": 5100
+      },
+      {
+        "speaker": "biscuitsec",
+        "text": "non, dans le couloir, j'ai pas compris",
+        "delay": 4000
+      },
+      {
+        "speaker": "nuage17",
+        "text": "essaie de lui demander demain",
+        "delay": 2900
+      },
+      {
+        "speaker": "biscuitsec",
+        "text": "ouais, j'vais voir ça tranquillement",
+        "delay": 1800
+      }
+    ]
+  },
+  {
+    "id": "jeux-1",
+    "room": "jeux",
+    "participants": [
+      "supermariofan",
+      "panda666"
+    ],
+    "messages": [
+      {
+        "speaker": "supermariofan",
+        "text": "alors, toujours team PS3 ?",
+        "delay": 700
+      },
+      {
+        "speaker": "panda666",
+        "text": "ouais, j'aime bien la manette",
+        "delay": 4550
+      },
+      {
+        "speaker": "supermariofan",
+        "text": "moi j'ai une 360, on se dispute pour rien",
+        "delay": 3450
+      },
+      {
+        "speaker": "panda666",
+        "text": "du moment qu'il y a de bons jeux ^^",
+        "delay": 2350
+      }
+    ]
+  },
+  {
+    "id": "jeux-2",
+    "room": "jeux",
+    "participants": [
+      "skull",
+      "fredoux2"
+    ],
+    "messages": [
+      {
+        "speaker": "skull",
+        "text": "mon PC rame encore sur Crysis",
+        "delay": 1300
+      },
+      {
+        "speaker": "fredoux2",
+        "text": "t'as baissé les détails ?",
+        "delay": 2350
+      },
+      {
+        "speaker": "skull",
+        "text": "oui, surtout les ombres, ça aide un peu",
+        "delay": 5100
+      },
+      {
+        "speaker": "fredoux2",
+        "text": "c'est déjà un jeu bien gourmand",
+        "delay": 4000
+      }
+    ]
+  },
+  {
+    "id": "jeux-3",
+    "room": "jeux",
+    "participants": [
+      "supermariofan",
+      "skull"
+    ],
+    "messages": [
+      {
+        "speaker": "supermariofan",
+        "text": "j'ai recommencé GTA Vice City, c'est trop bien",
+        "delay": 1900
+      },
+      {
+        "speaker": "skull",
+        "text": "t'en es où ?",
+        "delay": 4000
+      },
+      {
+        "speaker": "supermariofan",
+        "text": "toujours au début, j'traîne partout",
+        "delay": 2900
+      },
+      {
+        "speaker": "skull",
+        "text": "bon courage pour les missions en voiture",
+        "delay": 1800
+      },
+      {
+        "speaker": "supermariofan",
+        "text": "je les rate tout le temps mdr",
+        "delay": 4550
+      }
+    ]
+  },
+  {
+    "id": "jeux-4",
+    "room": "jeux",
+    "participants": [
+      "panda666",
+      "supermariofan",
+      "fredoux2"
+    ],
+    "messages": [
+      {
+        "speaker": "panda666",
+        "text": "j'ai fait le meilleur temps !",
+        "delay": 700
+      },
+      {
+        "speaker": "supermariofan",
+        "text": "t'as coupé dans l'herbe au virage",
+        "delay": 1800
+      },
+      {
+        "speaker": "fredoux2",
+        "text": "ça dépend si c'était interdit ou pas",
+        "delay": 4550
+      },
+      {
+        "speaker": "panda666",
+        "text": "c'était pas marqué, donc ça compte ^^",
+        "delay": 3450
+      },
+      {
+        "speaker": "supermariofan",
+        "text": "facile de trouver une règle après coup",
+        "delay": 2350
+      }
+    ]
+  },
+  {
+    "id": "jeux-5",
+    "room": "jeux",
+    "participants": [
+      "fredoux2",
+      "skull"
+    ],
+    "messages": [
+      {
+        "speaker": "fredoux2",
+        "text": "tu rejoues encore aux vieux jeux PC ?",
+        "delay": 1300
+      },
+      {
+        "speaker": "skull",
+        "text": "oui, j'ai réinstallé Age of Empires II",
+        "delay": 3450
+      },
+      {
+        "speaker": "fredoux2",
+        "text": "bonne idée, il a pas trop vieilli",
+        "delay": 2350
+      },
+      {
+        "speaker": "skull",
+        "text": "on y jouait chez mon cousin le mercredi",
+        "delay": 5100
+      }
+    ]
+  },
+  {
+    "id": "jeux-6",
+    "room": "jeux",
+    "participants": [
+      "supermariofan",
+      "panda666"
+    ],
+    "messages": [
+      {
+        "speaker": "supermariofan",
+        "text": "je bloque sur le dernier niveau",
+        "delay": 1900
+      },
+      {
+        "speaker": "panda666",
+        "text": "moi aussi, y a trop de trucs à l'écran",
+        "delay": 5100
+      },
+      {
+        "speaker": "supermariofan",
+        "text": "tu disais que c'était facile pourtant",
+        "delay": 4000
+      },
+      {
+        "speaker": "panda666",
+        "text": "le début oui, après c'est autre chose mdr",
+        "delay": 2900
+      }
+    ]
+  }
+]

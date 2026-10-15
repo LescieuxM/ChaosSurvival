@@ -38,6 +38,8 @@ function harness() {
     frame: 0,
     pauseGeneration: 0,
     toastUntil: 0,
+    storyToastKind: null,
+    storyToastContactId: null,
     wizzUntil: 0,
     sparkleUntil: -Infinity,
     lastLateness: null,

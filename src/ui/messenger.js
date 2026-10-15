@@ -17,6 +17,7 @@ export class Messenger {
     settings,
     onWindowState,
     onMessage = () => {},
+    onContactOpened = () => {},
   }) {
     Object.assign(this, {
       manager,
@@ -30,6 +31,7 @@ export class Messenger {
       settings,
       onWindowState,
       onMessage,
+      onContactOpened,
     });
     this.conversations = new Map();
     this.views = new Map();
@@ -41,7 +43,12 @@ export class Messenger {
       undefined,
       this.progression.data.contactConnections,
       this.progression.data.contactProfiles,
+      this.progression.data.flags,
     );
+  }
+  unreadCount(contact) {
+    const unread = this.progression.data.conversations?.[contact.id]?.unread;
+    return Array.isArray(unread) ? unread.filter((key) => typeof key === 'string').length : 0;
   }
   open() {
     const existing = this.views.get('contacts');
@@ -64,7 +71,7 @@ export class Messenger {
       thread: this.primary().thread,
       getContactDefinitions: this.definitions,
       onContactSelected: (contact) => this.openContact(contact),
-      getUnread: (contact) => this.progression.data.conversations?.[contact.id]?.unread.length ?? 0,
+      getUnread: (contact) => this.unreadCount(contact),
     });
     this.installMenus(instance.element, () => this.roster.selectedContact);
     this.roster.renderContacts();
@@ -73,13 +80,26 @@ export class Messenger {
   openContact(contact) {
     contact = this.contacts().find((entry) => entry.id === contact.id);
     if (!contact) return;
+    const view = this.prepareContact(contact);
+    if (!view) return;
+    if (contact.kind === 'decorative' || contact.available === false) view.openOffline(contact);
+    else view.open();
+    view.thread?.markRead?.();
+    this.onContactOpened(contact, view);
+    return view;
+  }
+  prepareContact(contact) {
+    contact = this.contacts().find((entry) => entry.id === contact.id);
+    if (!contact) return;
     let view = contact.id === 'pixelgirl' ? this.primary() : this.conversations.get(contact.id);
     if (!view) {
       view = this.createConversation(contact);
       this.conversations.set(contact.id, view);
     }
-    if (contact.kind === 'decorative' || contact.available === false) view.openOffline(contact);
-    else view.open();
+    if (contact.available && view.offlineContact) {
+      view.closeForViewSwitch?.();
+      view.offlineContact = null;
+    }
     return view;
   }
   attachConversation(view, contactId) {
@@ -127,6 +147,8 @@ export class Messenger {
     });
     instance = this.applications.attachWindow(`messenger:${key}`, id, title, 'msn');
     instance.element.classList.add('messenger-panel');
+    if (['emoticons', 'options', 'about'].includes(key))
+      instance.element.classList.add('messenger-secondary');
     instance.element.dataset.messengerView = key;
     this.views.set(key, instance);
     this.onWindowState();

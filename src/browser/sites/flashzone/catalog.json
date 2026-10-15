@@ -1,0 +1,59 @@
+{
+  "name": "FlashZone",
+  "description": "Des jeux Flash gratuits pour une petite pause sur le Web !",
+  "games": [
+    {
+      "id": "bubble-pop",
+      "title": "Bubble Pop",
+      "description": "Éclate les bulles ! 30 secondes pour faire exploser le compteur.",
+      "thumbnail": "./flashzone/bubble-pop.svg",
+      "category": "Arcade",
+      "rating": 4,
+      "plays": 18427,
+      "added": "2009-01-16",
+      "route": "http://www.flashzone.fr/jeux/bubble-pop",
+      "component": "bubble-pop",
+      "keywords": ["bulles", "bubble pop", "arcade", "clic"]
+    },
+    {
+      "id": "avoid-the-squares",
+      "title": "Avoid the Squares",
+      "description": "Évite les carrés rouges le plus longtemps possible ! Combien de secondes tiendras-tu ?",
+      "thumbnail": "./flashzone/avoid-the-squares.svg",
+      "category": "Arcade",
+      "rating": 4,
+      "plays": 12364,
+      "added": "2009-01-20",
+      "route": "http://www.flashzone.fr/jeux/avoid-the-squares",
+      "component": "avoid-the-squares",
+      "keywords": ["avoid the squares", "carrés", "jeu esquive", "arcade"]
+    },
+    {
+      "id": "pixel-runner",
+      "title": "Pixel Runner",
+      "description": "Cours, saute et évite les obstacles ! Jusqu'où iras-tu ?",
+      "thumbnail": "./flashzone/pixel-runner.svg",
+      "category": "Plateforme",
+      "rating": 4,
+      "plays": 9631,
+      "added": "2009-01-24",
+      "route": "http://www.flashzone.fr/jeux/pixel-runner",
+      "component": "pixel-runner",
+      "keywords": ["pixel runner", "jeu plateforme", "runner", "jeu flash"]
+    },
+    {
+      "id": "super-plombier-flash",
+      "title": "Super Plombier Flash",
+      "description": "Le plombier le plus rapide du web ! Saute, évite les ennemis et atteins le drapeau avant la fin du chrono !",
+      "longDescription": "Le plombier le plus rapide du web !\nSaute, évite les ennemis et atteins le drapeau avant la fin du chrono !",
+      "thumbnail": "./flashzone/super-plombier-flash.svg",
+      "category": "Plateforme",
+      "rating": 5,
+      "plays": 1,
+      "added": "2009-01-28",
+      "route": "http://www.flashzone.fr/jeux/super-plombier-flash",
+      "component": "super-plombier-flash",
+      "keywords": ["super plombier flash", "plateforme", "plombier", "pixels", "jeu flash"]
+    }
+  ]
+}

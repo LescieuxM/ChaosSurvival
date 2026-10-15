@@ -1,0 +1,76 @@
+.credits-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 120000;
+  overflow-y: auto;
+  background: #0e1726;
+  color: #e9eff7;
+  padding: clamp(18px, 5vw, 54px) 18px;
+  box-sizing: border-box;
+  font:
+    14px/1.7 Tahoma,
+    Verdana,
+    sans-serif;
+  overflow-wrap: anywhere;
+}
+.credits-screen:focus-visible {
+  outline: 2px solid #90c4f3;
+  outline-offset: -4px;
+}
+.credits-panel {
+  max-width: 660px;
+  margin: 0 auto;
+  border: 1px solid #496688;
+  background: #162235;
+  box-shadow: 0 3px 12px #0004;
+}
+.credits-panel header {
+  background: linear-gradient(#294564, #1c304b);
+  border-bottom: 1px solid #56779b;
+  padding: 20px 26px;
+}
+.credits-panel h1,
+.credits-panel h2 {
+  margin: 0;
+  font-family: Tahoma, Verdana, sans-serif;
+  color: #e9eff7;
+  text-shadow: none;
+  letter-spacing: 1px;
+  font-style: normal;
+  line-height: 1.5;
+}
+.credits-panel h1 {
+  font-size: 27px;
+}
+.credits-panel h2 {
+  font-size: 13px;
+  color: #a5caec;
+}
+.credits-panel p {
+  margin: 8px 0 0;
+}
+.credits-panel header p {
+  margin: 0 0 4px;
+}
+.credits-panel > section {
+  padding: 22px 26px;
+}
+.credits-panel > section + section {
+  border-top: 1px solid #354b65;
+}
+.credits-source {
+  font-size: 12px;
+}
+.credits-source a {
+  color: #acd6ff;
+  text-decoration: underline;
+}
+.credits-source a:focus-visible {
+  outline: 1px solid #acd6ff;
+  outline-offset: 3px;
+}
+.credits-source small {
+  display: block;
+  margin-top: 4px;
+  color: #bac9da;
+}

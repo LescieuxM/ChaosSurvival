@@ -1,0 +1,671 @@
+{
+  "name": "Wiki",
+  "motto": "L'encyclopédie libre",
+  "description": "Une encyclopédie pour découvrir les sciences, les techniques et la culture.",
+  "welcome": "Wiki rassemble des articles consacrés aux connaissances, aux objets et aux pratiques de la vie quotidienne. Parcourez un thème, recherchez un titre ou laissez le hasard vous proposer une lecture.",
+  "featured": "internet",
+  "facts": [
+    {
+      "article": "internet",
+      "text": "Le Web est l'un des services d'Internet, et non le réseau lui-même."
+    },
+    {
+      "article": "systeme-solaire",
+      "text": "Depuis la définition adoptée en 2006, le Système solaire compte huit planètes."
+    },
+    {
+      "article": "tour-eiffel",
+      "text": "La construction de la tour Eiffel s'est achevée en 1889."
+    },
+    {
+      "article": "primates",
+      "text": "L'être humain appartient à l'ordre des primates."
+    }
+  ],
+  "articles": [
+    {
+      "id": "internet",
+      "title": "Internet",
+      "theme": "Informatique et Internet",
+      "intro": "Internet est un ensemble de réseaux informatiques interconnectés à l'échelle mondiale. Il permet à des machines différentes d'échanger des données grâce à des protocoles communs. Il ne se confond pas avec le Web : les pages consultées dans un navigateur ne constituent qu'une partie de ses services.",
+      "sections": [
+        {
+          "id": "origines",
+          "title": "Des premiers réseaux à Internet",
+          "paragraphs": [
+            "Ses origines se trouvent dans les recherches sur la communication entre ordinateurs et la transmission par paquets. ARPANET relie ses premiers ordinateurs en 1969. Plutôt que de réserver une liaison continue à chaque échange, les informations sont découpées en unités que le réseau transporte et que le destinataire rassemble.",
+            "L'adoption de TCP/IP par ARPANET en 1983 facilite les échanges entre réseaux. Des universités et des organismes de recherche participent ensuite à cet ensemble."
+          ]
+        },
+        {
+          "id": "web",
+          "title": "Le développement du Web",
+          "paragraphs": [
+            "Le Web, proposé au CERN par Tim Berners-Lee en 1989, rend la consultation de documents reliés par des hyperliens plus accessible au cours des années 1990.",
+            "Une page Web peut être reliée à une autre par un hyperlien, même si leurs documents se trouvent sur des ordinateurs différents. Ce principe facilite la consultation : le lecteur suit un sujet sans avoir à connaître l'organisation matérielle du réseau. Il ne supprime pas les autres services, qui continuent à employer leurs propres logiciels."
+          ]
+        },
+        {
+          "id": "adressage",
+          "title": "Adresses et circulation des données",
+          "paragraphs": [
+            "Ces activités reposent sur des logiciels et des règles distincts. Une adresse de site est traduite en information utilisable par les machines. Le navigateur demande ensuite les documents nécessaires à l'affichage. Une connexion rapide améliore le confort, mais la taille des fichiers et la disponibilité des serveurs interviennent également.",
+            "Les noms de domaine rendent les adresses plus faciles à retenir. Ils ne désignent pas nécessairement une seule machine : un service peut utiliser plusieurs serveurs. Le trajet suivi par les données n'est pas toujours identique, et la communication dépend d'équipements administrés par des organismes différents."
+          ]
+        },
+        {
+          "id": "services",
+          "title": "Services et usages",
+          "paragraphs": [
+            "En 2009, Internet sert à envoyer du courrier électronique, discuter, rechercher des informations et transférer des fichiers. Des services tels que XD Search orientent les lecteurs vers des pages ; les blogs et les forums permettent de publier des textes. La messagerie instantanée facilite les échanges entre personnes connectées au même moment."
+          ]
+        },
+        {
+          "id": "acces",
+          "title": "Accès domestique",
+          "paragraphs": [
+            "L'accès domestique utilise notamment des lignes téléphoniques, l'ADSL ou le câble. Les usages varient selon les équipements et le coût des abonnements.",
+            "Les connexions domestiques sont partagées entre les activités de l'ordinateur. Un téléchargement volumineux peut ralentir d'autres échanges. La réception des données et leur envoi n'ont pas toujours le même débit, ce qui intervient notamment dans le partage de photographies."
+          ]
+        },
+        {
+          "id": "information",
+          "title": "Lecture de l'information",
+          "paragraphs": [
+            "La présence d'une information en ligne ne garantit ni son exactitude ni sa pérennité : identifier son auteur, sa date et ses sources reste une étape importante de la lecture."
+          ]
+        }
+      ],
+      "related": ["messagerie-instantanee", "blog", "forum-internet", "reseau-social"]
+    },
+    {
+      "id": "windows-xd",
+      "title": "Windows XD",
+      "theme": "Informatique et Internet",
+      "intro": "Windows XD est un système d'exploitation à interface graphique. Son environnement de travail donne accès à des applications, à des documents et à différents outils depuis un bureau. Les commandes sont représentées par des icônes, des boutons et des menus afin d'organiser les activités courantes sur un ordinateur personnel.",
+      "sections": [
+        {
+          "id": "bureau",
+          "title": "Bureau et raccourcis",
+          "paragraphs": [
+            "Le bureau présente des raccourcis vers les fichiers et les programmes. Un clic sélectionne une icône, tandis qu'un double-clic ouvre l'élément correspondant. Les icônes peuvent être réorganisées. Les applications disposent généralement d'une fenêtre dont la barre de titre permet le déplacement ; plusieurs fenêtres peuvent rester ouvertes en même temps.",
+            "Le placement des icônes peut être adapté aux habitudes de l'utilisateur. Une sélection permet de repérer un élément sans l'ouvrir ; sur une zone libre du bureau, un rectangle de sélection peut englober plusieurs icônes. Cette organisation est indépendante de l'ordre des applications dans le menu Démarrer."
+          ]
+        },
+        {
+          "id": "fenetres",
+          "title": "Fenêtres et barre des tâches",
+          "paragraphs": [
+            "La barre des tâches rassemble les fenêtres ouvertes et permet de retrouver une application réduite. La fenêtre au premier plan reçoit les interactions qui la concernent. Réduire une fenêtre la retire temporairement du bureau, sans équivaloir à sa fermeture. Cette distinction facilite le passage d'une tâche à une autre.",
+            "Cliquer sur une fenêtre la ramène au premier plan. Son déplacement ne modifie pas l'emplacement des icônes qu'elle recouvre. La barre des tâches conserve un accès aux applications ouvertes, tandis que la fermeture d'un document indépendant laisse les autres fenêtres disponibles."
+          ]
+        },
+        {
+          "id": "navigation",
+          "title": "Menu Démarrer",
+          "paragraphs": [
+            "Le menu Démarrer propose des raccourcis vers les applications disponibles. Son organisation complète celle du bureau : un logiciel n'a pas besoin d'y posséder une icône pour être accessible.",
+            "Les raccourcis d'applications peuvent être réordonnés par glisser-déposer. Un clic conserve son rôle de lancement ; déplacer une entrée sert uniquement à organiser la liste. Buddy et Windows Love Messenger peuvent être retrouvés depuis ce menu, sans imposer la présence d'un raccourci supplémentaire sur le bureau."
+          ]
+        },
+        {
+          "id": "explorateur",
+          "title": "Poste de travail et dossiers",
+          "paragraphs": [
+            "Le Poste de travail présente les périphériques et une arborescence de dossiers, avec des commandes pour revenir en arrière ou remonter au dossier parent.",
+            "Parmi les périphériques disponibles figurent un disque local, un lecteur CD/DVD vide et une clé USB. Les dossiers s'ouvrent dans l'explorateur et le chemin courant reste visible. Un lecteur vide affiche une indication adaptée ; il ne présente pas un contenu qui n'est pas disponible."
+          ]
+        },
+        {
+          "id": "fichiers",
+          "title": "Documents et applications associées",
+          "paragraphs": [
+            "Les fichiers sont identifiés par un nom et une extension. Selon leur type et leur association, ils s'ouvrent dans une application adaptée. Le Bloc-notes permet de consulter et modifier des textes ; la visionneuse affiche les images. Ouvrir un document conserve l'explorateur à son emplacement et place le document dans une fenêtre indépendante.",
+            "Dans le Bloc-notes, le menu Fichier propose l'enregistrement et la fermeture. Le raccourci Ctrl+S enregistre également les modifications. Fermer un texte modifié demande une confirmation. La visionneuse ajuste l'image à sa fenêtre en conservant ses proportions ; elle ne propose pas d'édition de l'image."
+          ]
+        },
+        {
+          "id": "applications",
+          "title": "Communication, navigation et assistance",
+          "paragraphs": [
+            "Internet Adventurer donne accès aux pages Web, Windows Love Messenger à la liste de contacts et aux discussions. Buddy propose des conseils sous forme de bulles. Des jeux sont également disponibles. Ces outils remplissent des fonctions différentes ; leur présence dans un environnement commun permet de passer de la communication à la consultation de documents sans réorganiser le bureau.",
+            "Buddy s'ouvre à la demande depuis le menu Démarrer et peut être masqué. Ses conseils apparaissent dans des bulles : aucun champ ne permet de lui répondre. Internet Adventurer organise les pages dans des onglets avec des commandes de navigation. Windows Love Messenger sépare la liste de contacts des fenêtres de conversation."
+          ]
+        }
+      ],
+      "info": [
+        ["Type", "Système d'exploitation"],
+        ["Interface", "Bureau, fenêtres et menus"],
+        ["Accès aux programmes", "Menu Démarrer et raccourcis"]
+      ],
+      "related": ["internet", "messagerie-instantanee", "photographie-numerique"]
+    },
+    {
+      "id": "messagerie-instantanee",
+      "title": "Messagerie instantanée",
+      "theme": "Informatique et Internet",
+      "intro": "La messagerie instantanée est une forme de communication permettant d'échanger rapidement des messages entre utilisateurs d'un réseau. Les participants disposent d'une liste de contacts et de fenêtres de discussion. Elle se distingue du courrier électronique par l'attention portée à la présence des interlocuteurs et au déroulement immédiat de l'échange.",
+      "sections": [
+        {
+          "id": "presence",
+          "title": "Contacts et présence",
+          "paragraphs": [
+            "Chaque personne apparaît généralement sous un pseudonyme, parfois accompagné d'un avatar et d'un message personnel. Un indicateur signale un état de connexion, comme en ligne ou hors ligne. Cet état ne garantit pas qu'une personne regarde son écran : elle peut être occupée ou avoir laissé son logiciel ouvert pendant une autre activité.",
+            "Les listes de contacts permettent de retrouver des interlocuteurs connus sans parcourir un annuaire à chaque connexion. En 2009, Windows Love Messenger fait partie des services utilisés pour ces échanges. Les discussions sont organisées par contact ; une fenêtre peut être réduite pendant que d'autres tâches sont effectuées sur l'ordinateur."
+          ]
+        },
+        {
+          "id": "messages",
+          "title": "Messages et expression",
+          "paragraphs": [
+            "Le texte constitue le support principal. Les émoticônes complètent les mots pour suggérer une expression ou préciser le ton d'une phrase. Les abréviations sont fréquentes dans les échanges familiers, mais leur sens dépend des habitudes du groupe. Une conversation écrite ne transmet pas automatiquement toutes les nuances d'une conversation orale.",
+            "Certains logiciels indiquent qu'un interlocuteur prépare un message. Des notifications attirent l'attention sur un nouvel échange et des fonctions comme le Wizz peuvent accompagner la discussion.",
+            "L'historique rassemble les messages envoyés et reçus, ce qui permet de relire un passage ou de poursuivre un échange après avoir fermé sa fenêtre."
+          ]
+        },
+        {
+          "id": "fichiers",
+          "title": "Échanges de fichiers",
+          "paragraphs": [
+            "La messagerie peut également proposer un transfert de fichier, que le destinataire accepte ou refuse. Ce mécanisme ne remplace pas une vérification de l'origine du document. Le nom d'un fichier ne suffit pas à déterminer son contenu, et l'identité affichée par un compte doit être distinguée de la confiance accordée à son utilisateur."
+          ]
+        }
+      ],
+      "related": ["internet", "windows-xd", "reseau-social"]
+    },
+    {
+      "id": "adobe-flash",
+      "title": "Adobe Flash",
+      "theme": "Informatique et Internet",
+      "intro": "Adobe Flash est une technologie de création et de diffusion de contenus multimédias interactifs. En 2009, elle est utilisée pour des animations, des jeux et certaines interfaces Web. Elle associe des éléments graphiques, du son et des instructions qui réagissent aux actions du visiteur dans un environnement de lecture adapté.",
+      "sections": [
+        {
+          "id": "creation",
+          "title": "Création des contenus",
+          "paragraphs": [
+            "Le travail d'animation s'organise notamment autour d'une scène et d'une chronologie. Des objets peuvent être placés sur des calques, déplacés ou transformés au fil des images. Les graphiques vectoriels décrivent des formes plutôt qu'une grille de points ; ils peuvent être redimensionnés tout en conservant des contours nets, selon le contenu utilisé.",
+            "Flash peut aussi intégrer des images matricielles et des sons. Un langage de programmation, ActionScript, permet d'ajouter des comportements : un bouton change de page, une cible répond à un clic ou un personnage se déplace. Le résultat dépend donc autant de la conception graphique que des règles écrites par le créateur."
+          ]
+        },
+        {
+          "id": "diffusion",
+          "title": "Lecture et chargement",
+          "paragraphs": [
+            "Les contenus sont souvent distribués sous forme de fichiers SWF lus par Flash Player. Dans un navigateur, leur lecture nécessite un composant compatible. La vitesse de chargement dépend du poids des images, des sons et des animations. Les créateurs cherchent ainsi à limiter les ressources nécessaires, notamment pour les visiteurs disposant de connexions lentes."
+          ]
+        },
+        {
+          "id": "outils",
+          "title": "Outils et dénominations",
+          "paragraphs": [
+            "La technologie a été développée sous le nom de Macromedia Flash avant le rachat de Macromedia par Adobe en 2005. Les contenus publiés sur Internet présentent des qualités et des usages variés : publicité animée, présentation pédagogique, dessin animé court ou petite application. Le terme Flash peut désigner les outils de création ou la technologie de lecture."
+          ]
+        },
+        {
+          "id": "jeux",
+          "title": "Jeux et interactivité",
+          "paragraphs": [
+            "Les portails de jeux sur navigateur, tels que FlashZone, participent à la popularité de ce format. Une partie peut être courte et accessible sans installation séparée du jeu. Les commandes sont souvent simples, mais la réussite repose sur les collisions, le temps, les déplacements ou les choix du joueur, comme dans d'autres formes de jeu vidéo."
+          ]
+        }
+      ],
+      "related": ["internet", "jeu-video", "pixel-art"]
+    },
+    {
+      "id": "blog",
+      "title": "Blog",
+      "theme": "Informatique et Internet",
+      "intro": "Un blog est un site composé de publications généralement présentées de la plus récente à la plus ancienne. Son auteur peut y raconter son quotidien, commenter l'actualité ou développer un sujet particulier. Le billet, qui possède souvent une date et un titre, constitue l'unité habituelle de cette forme de publication.",
+      "sections": [
+        {
+          "id": "organisation",
+          "title": "Organisation d'un blog",
+          "paragraphs": [
+            "L'accueil rassemble les billets récents, tandis que des archives permettent de consulter les publications plus anciennes. Des catégories ou des mots-clés regroupent parfois les textes par thème. Un billet peut contenir des photographies et des liens. Les commentaires, lorsqu'ils sont disponibles, donnent aux lecteurs un espace de réaction distinct du texte de l'auteur.",
+            "Le rythme des publications dépend de la personne qui tient le blog. Certains servent de journal personnel, d'autres de carnet technique ou de chronique culturelle. Leur intérêt peut venir autant du sujet abordé que de la manière de le présenter. Un blog n'est pas nécessairement un compte rendu complet de la vie de son propriétaire."
+          ]
+        },
+        {
+          "id": "plateformes",
+          "title": "Plateformes et personnalisation",
+          "paragraphs": [
+            "Des plateformes comme SkyPage proposent un cadre commun pour publier et retrouver des blogs. Elles évitent d'avoir à préparer chaque page manuellement. Le choix des couleurs, des images et des titres permet néanmoins de donner une identité particulière à un espace personnel. Cette personnalisation joue un rôle dans la manière dont les lecteurs le reconnaissent.",
+            "Au cours des années 2000, les blogs offrent une place importante à l'expression individuelle sur Internet. Des échanges se forment entre auteurs qui se lisent et se citent. Les liens entre billets peuvent faire circuler une discussion d'un site à l'autre, sans qu'elle possède forcément un point de départ unique ou une conclusion commune."
+          ]
+        },
+        {
+          "id": "lecture",
+          "title": "Lecture et publication",
+          "paragraphs": [
+            "Un lecteur peut comparer les dates, suivre les sources mentionnées et distinguer récit personnel et information vérifiable. Publier une image ou citer une personne suppose également de réfléchir à ses droits et à sa vie privée. Le caractère public d'un blog donne aux billets une portée qui dépasse parfois le petit cercle auquel leur auteur pensait s'adresser."
+          ]
+        }
+      ],
+      "related": ["internet", "reseau-social", "photographie-numerique", "forum-internet"]
+    },
+    {
+      "id": "jeu-video",
+      "title": "Jeu vidéo",
+      "theme": "Jeux vidéo et culture numérique",
+      "intro": "Un jeu vidéo est une activité interactive dont les règles sont mises en œuvre par un dispositif électronique. Le joueur agit sur des images et des sons au moyen de commandes. Les objectifs peuvent porter sur l'adresse, la réflexion, l'exploration ou la coopération, avec des durées et des publics très différents.",
+      "sections": [
+        {
+          "id": "histoire",
+          "title": "Des expériences aux machines commerciales",
+          "paragraphs": [
+            "Les premières expériences de jeux sur ordinateur précèdent leur diffusion commerciale. Dans les années 1970, les bornes d'arcade et les consoles domestiques élargissent leur public. Pong, commercialisé par Atari en 1972, propose une représentation simple du tennis de table. Les cartouches permettent ensuite de changer de jeu sans remplacer l'ensemble de la console."
+          ]
+        },
+        {
+          "id": "supports",
+          "title": "Ordinateurs et consoles",
+          "paragraphs": [
+            "Les ordinateurs personnels, les consoles et les machines portables développent des catalogues et des usages distincts. Les capacités graphiques progressent, des scènes en trois dimensions complétant les images en deux dimensions. En 2009, Xbox 360, PlayStation 3 et Nintendo Wii illustrent des approches différentes de l'équipement domestique et des commandes proposées aux joueurs."
+          ]
+        },
+        {
+          "id": "genres",
+          "title": "Genres et règles",
+          "paragraphs": [
+            "Les catégories servent à décrire les actions dominantes : plateforme, course, stratégie, aventure, rôle, sport ou énigme. Elles ne constituent pas des frontières strictes. Un jeu peut combiner exploration et combat, ou demander à la fois des réflexes et une planification. Les conditions de réussite sont définies par ses règles plutôt que par sa seule apparence."
+          ]
+        },
+        {
+          "id": "apprentissage",
+          "title": "Apprentissage et difficulté",
+          "paragraphs": [
+            "La difficulté dépend notamment de la précision des commandes, du temps disponible et des informations fournies au joueur. L'apprentissage repose sur l'observation et les essais. Une présentation claire des objectifs aide à comprendre les erreurs ; un score, une durée ou un niveau atteint peut ensuite permettre de comparer plusieurs parties d'une même activité.",
+            "Les commandes font partie de cette expérience. Un clavier, une manette ou une souris ne proposent pas les mêmes gestes, et une règle simple peut demander de l'entraînement. La précision d'un mouvement compte autant que la compréhension de l'objectif."
+          ]
+        },
+        {
+          "id": "reseau",
+          "title": "Pratiques en réseau",
+          "paragraphs": [
+            "Internet facilite le jeu à plusieurs, les échanges de conseils et la découverte de petits jeux sur navigateur. Des forums discutent de titres comme Crysis ou TrackMania Nations Forever. Les portails tels que FlashZone proposent des parties rapides. Ces pratiques complètent le jeu solitaire, sans imposer une manière unique de jouer ou de participer à une communauté."
+          ]
+        }
+      ],
+      "related": ["pixel-art", "adobe-flash", "forum-internet", "internet"]
+    },
+    {
+      "id": "pixel-art",
+      "title": "Pixel art",
+      "theme": "Jeux vidéo et culture numérique",
+      "intro": "Le pixel art est une technique d'image numérique dans laquelle le placement des pixels joue un rôle explicite dans la construction des formes. Le créateur travaille sur une grille et choisit les points qui représentent les contours, les couleurs et les ombres. La précision du dessin ne dépend pas seulement de sa définition.",
+      "sections": [
+        {
+          "id": "technique",
+          "title": "Dessin sur une grille",
+          "paragraphs": [
+            "Un pixel est un élément d'une image matricielle. Une petite grille oblige à sélectionner les détails utiles pour reconnaître un objet. Une palette limitée donne une cohérence aux personnages et aux décors ; les teintes séparent les plans et suggèrent les volumes.",
+            "Les diagonales forment des marches dont le rythme influence la lisibilité. L'épaisseur des contours compte également. Le tramage, qui alterne des points de couleurs différentes, peut suggérer une nuance intermédiaire sans ajouter une nouvelle couleur à la palette."
+          ]
+        },
+        {
+          "id": "jeux",
+          "title": "Jeux, animation et affichage",
+          "paragraphs": [
+            "Les limites de mémoire et de résolution des premières machines ont favorisé des images économes. Les personnages mobiles utilisent souvent des sprites. Une marche est représentée par plusieurs dessins successifs : quelques changements de silhouette suffisent à rendre le mouvement reconnaissable.",
+            "En 2009, cette technique reste aussi un choix graphique, même sur des équipements plus puissants. L'agrandissement peut conserver les pixels ou les lisser. Une compression avec perte risque de modifier les contours ; les formats sans perte préservent mieux le dessin et sa palette."
+          ]
+        }
+      ],
+      "related": ["jeu-video", "photographie-numerique", "adobe-flash"],
+      "notice": "Cet article est une ébauche concernant les arts numériques."
+    },
+    {
+      "id": "musique-electronique",
+      "title": "Musique électronique",
+      "theme": "Jeux vidéo et culture numérique",
+      "intro": "La musique électronique désigne des pratiques musicales utilisant des dispositifs électroniques pour produire ou transformer le son. Elle ne correspond pas à un genre unique. Elle peut prendre la forme d'une œuvre expérimentale, d'une chanson ou d'une musique destinée à la danse, avec des instruments et des méthodes de composition variés.",
+      "sections": [
+        {
+          "id": "instruments",
+          "title": "Instruments et production",
+          "paragraphs": [
+            "Les synthétiseurs créent des sons à partir de signaux dont la fréquence et la forme peuvent être modifiées. Les boîtes à rythmes organisent des percussions, tandis que les échantillonneurs enregistrent puis rejouent des fragments sonores. Ces outils peuvent être employés séparément ou reliés à un ordinateur qui sert à préparer, enregistrer et assembler les différentes parties.",
+            "Le travail peut porter sur une mélodie, mais aussi sur le timbre, la répétition ou l'évolution progressive d'une texture. Une séquence ne se réduit donc pas à la présence d'un battement régulier. Les techniques d'enregistrement et de montage permettent de déplacer des sons dans le temps, de les superposer et d'équilibrer leurs niveaux."
+          ]
+        },
+        {
+          "id": "genres",
+          "title": "Techno et house",
+          "paragraphs": [
+            "La techno se développe notamment à Detroit durant les années 1980, avec une place importante donnée aux sons synthétiques et aux motifs rythmiques. La house, associée à Chicago, s'appuie également sur les pratiques des clubs et des disc-jockeys. Ces courants présentent de nombreuses variantes et leurs appellations ne décrivent pas toutes les caractéristiques d'un morceau."
+          ]
+        },
+        {
+          "id": "trance-dance",
+          "title": "Trance et dance",
+          "paragraphs": [
+            "La trance privilégie souvent des phrases répétées, des nappes et des montées qui préparent un retour marqué du rythme. Le terme dance regroupe des productions destinées à la danse, parfois proches de la chanson populaire. Dans les années 1990 et 2000, les échanges entre ces formes donnent naissance à des morceaux aux structures et aux tempos différents."
+          ]
+        },
+        {
+          "id": "diffusion",
+          "title": "Diffusion et écoute",
+          "paragraphs": [
+            "En 2009, disques, radios, soirées et Internet contribuent à leur circulation. Un même morceau peut exister en version courte ou en arrangement plus long pour le mixage. Les jeux vidéo utilisent également des sons électroniques, parfois issus de puces sonores. L'instrument employé ne suffit cependant pas à déterminer le genre ou l'intention d'une composition."
+          ]
+        }
+      ],
+      "related": ["jeu-video", "internet", "forum-internet"]
+    },
+    {
+      "id": "forum-internet",
+      "title": "Forum Internet",
+      "theme": "Jeux vidéo et culture numérique",
+      "intro": "Un forum Internet est un espace de discussion organisé en sujets et en messages. Les participants répondent sans devoir être connectés au même moment. Les échanges restent généralement accessibles pour être relus, ce qui distingue le forum d'une conversation instantanée et permet de développer des discussions sur plusieurs jours ou plusieurs semaines.",
+      "sections": [
+        {
+          "id": "structure",
+          "title": "Structure des discussions",
+          "paragraphs": [
+            "Les catégories regroupent les sujets selon des thèmes. Un sujet commence par un message qui présente une question, une information ou une proposition. Les réponses s'ajoutent dans un ordre identifiable. Le titre aide les lecteurs à choisir une discussion ; une formulation précise facilite aussi la recherche de conversations anciennes portant sur le même problème.",
+            "Les participants utilisent habituellement des pseudonymes et peuvent posséder un profil. Une citation permet de rappeler le passage auquel une réponse se rapporte. Les signatures et les avatars servent à reconnaître les habitués, sans constituer à eux seuls une preuve d'identité. Les usages dépendent des règles et des possibilités de chaque forum."
+          ]
+        },
+        {
+          "id": "communaute",
+          "title": "Communautés et échanges",
+          "paragraphs": [
+            "Les forums réunissent des personnes autour d'une activité ou d'un intérêt. ForumJeu est un exemple francophone consacré aux discussions sur les jeux vidéo et aux échanges entre internautes. Conseils techniques, avis et récits de parties peuvent y côtoyer des conversations plus générales. La diversité des participants produit parfois des désaccords sur une même question.",
+            "Les informations accumulées forment une ressource utile pour un nouveau venu. Une solution publiée dans un ancien sujet peut aider d'autres lecteurs, même si son auteur n'est plus présent. Il reste nécessaire de vérifier la date et le contexte : un conseil pour un logiciel ou un équipement donné ne s'applique pas automatiquement à toutes les situations."
+          ]
+        },
+        {
+          "id": "regles",
+          "title": "Règles et modération",
+          "paragraphs": [
+            "Les règles encadrent notamment les propos insultants, la publicité et les messages répétés. La modération peut déplacer un sujet ou intervenir lorsqu'un échange devient difficile à suivre. Un forum repose aussi sur les habitudes de ses membres : relire sa réponse, préciser une demande et distinguer opinion et fait contribuent à maintenir des discussions compréhensibles."
+          ]
+        }
+      ],
+      "related": ["internet", "jeu-video", "blog", "messagerie-instantanee"]
+    },
+    {
+      "id": "reseau-social",
+      "title": "Réseau social",
+      "theme": "Jeux vidéo et culture numérique",
+      "intro": "Un réseau social désigne un ensemble de relations entre personnes ou organisations. Sur Internet, l'expression s'applique aussi aux services qui permettent de créer un profil, de déclarer des contacts et de partager des contenus. Le réseau de relations ne se confond pas avec le logiciel qui en propose une représentation à l'écran.",
+      "sections": [
+        {
+          "id": "profils",
+          "title": "Profils et relations",
+          "paragraphs": [
+            "Un profil rassemble les informations qu'une personne choisit de présenter. Il peut comprendre un pseudonyme, une image et des publications. Les relations déclarées permettent de retrouver des connaissances ou de suivre certaines activités. Elles peuvent correspondre à des amis proches, à des camarades de classe ou simplement à des personnes partageant un intérêt.",
+            "Les services n'organisent pas tous les échanges de la même manière. Certains favorisent des groupes, d'autres les pages individuelles ou les messages adressés à un cercle choisi. Le nombre de contacts affiché n'indique pas nécessairement la qualité des relations. Une personne peut également participer à plusieurs espaces sans y employer les mêmes informations ou habitudes."
+          ]
+        },
+        {
+          "id": "essor",
+          "title": "Popularisation dans les années 2000",
+          "paragraphs": [
+            "Les communautés en ligne existaient avant les sites centrés sur les profils. Forums, listes de diffusion et espaces personnels ont déjà permis à des internautes de se retrouver. Dans les années 2000, la simplification des interfaces et le développement des connexions domestiques rendent le partage de textes et d'images plus accessible à un public élargi.",
+            "En 2009, la publication de photographies, les discussions de groupe et la recherche d'anciens camarades font partie des usages courants de ces services. Les blogs, comme ceux de SkyPage, présentent une autre manière de créer des liens entre auteurs et lecteurs. Les vidéos partagées sur VideoTube peuvent aussi devenir le point de départ d'échanges entre connaissances."
+          ]
+        },
+        {
+          "id": "vie-privee",
+          "title": "Public et privé",
+          "paragraphs": [
+            "La visibilité d'une publication dépend des choix proposés par le service et des réglages de son auteur. Une image peut circuler au-delà de son premier destinataire. Comprendre à qui l'on s'adresse, respecter les personnes représentées et limiter les informations personnelles publiées constituent des précautions utiles, indépendamment de la popularité ou de la taille d'un réseau."
+          ]
+        }
+      ],
+      "related": ["internet", "blog", "messagerie-instantanee", "photographie-numerique"]
+    },
+    {
+      "id": "chat-domestique",
+      "title": "Chat domestique",
+      "theme": "Culture générale",
+      "intro": "Le chat domestique est un mammifère carnivore de la famille des félidés, généralement désigné par le nom scientifique Felis catus. Il vit auprès des humains dans des milieux variés. Sa petite taille ne l'empêche pas de conserver des comportements de prédateur, notamment l'observation, l'approche silencieuse et la capture de proies.",
+      "sections": [
+        {
+          "id": "anatomie",
+          "title": "Anatomie et perception",
+          "paragraphs": [
+            "Le corps souple, les griffes rétractiles et la dentition du chat sont adaptés à la chasse. Les oreilles mobiles localisent les sons, tandis que les vibrisses renseignent sur l'environnement proche. Sa vision convient à une faible lumière, mais pas à l'obscurité totale ; sa perception des couleurs diffère de celle des humains.",
+            "Les robes et les tailles sont variées, chez les races sélectionnées comme chez les animaux sans pedigree. L'âge et la condition physique influencent l'activité et l'agilité."
+          ]
+        },
+        {
+          "id": "comportement",
+          "title": "Comportement et relations avec les humains",
+          "paragraphs": [
+            "Le chat organise une partie de ses activités autour d'un territoire et communique par les odeurs, les postures et les vocalisations. Sa queue et ses oreilles doivent être observées dans leur contexte. Le ronronnement accompagne souvent la proximité, sans prouver à lui seul le bien-être. Un chat nourri conserve des comportements de poursuite et alterne repos et activité.",
+            "La domestication est liée à une longue proximité avec les humains, qui a pu être favorisée par les rongeurs attirés par les réserves alimentaires. Le chat occupe une place importante dans l'Égypte ancienne et devient un animal de compagnie fréquent. Sa sociabilité varie selon ses expériences ; son autonomie n'exclut ni des besoins ni des relations sociales."
+          ]
+        }
+      ],
+      "info": [
+        ["Classe", "Mammifères"],
+        ["Famille", "Félidés"],
+        ["Nom scientifique", "Felis catus"]
+      ],
+      "related": ["primates"]
+    },
+    {
+      "id": "tour-eiffel",
+      "title": "Tour Eiffel",
+      "theme": "Culture générale",
+      "intro": "La tour Eiffel est une tour métallique située à Paris, près de la Seine et du Champ-de-Mars. Construite pour l'Exposition universelle de 1889, elle est devenue un monument associé à la capitale française. Son nom renvoie à Gustave Eiffel, dont l'entreprise a assuré la construction de cet ouvrage de fer.",
+      "sections": [
+        {
+          "id": "construction",
+          "title": "Projet et construction",
+          "paragraphs": [
+            "Le projet d'une tour de 300 mètres s'inscrit dans la préparation de l'Exposition universelle, organisée l'année du centenaire de la Révolution française. Les ingénieurs Maurice Koechlin et Émile Nouguier participent à sa conception, avec l'intervention de l'architecte Stephen Sauvestre. L'ouvrage repose sur quatre piles qui convergent vers une structure de plus en plus étroite.",
+            "Le chantier commence en janvier 1887 et la construction s'achève le 31 mars 1889. Des éléments préparés en atelier sont assemblés sur place, à l'aide de rivets. La précision des dessins et de la fabrication joue un rôle essentiel. La tour illustre ainsi les possibilités des constructions métalliques à une époque marquée par les ponts et les grandes charpentes."
+          ]
+        },
+        {
+          "id": "usages",
+          "title": "Visite et réception du monument",
+          "paragraphs": [
+            "La tour suscite d'abord des critiques autant que de la curiosité. Elle accueille des visiteurs qui découvrent la ville depuis ses plateformes. Ses étages sont accessibles par des escaliers et des ascenseurs selon les parcours proposés. Les installations et les conditions d'accès évoluent au fil de son exploitation, sans modifier le principe général de sa structure."
+          ]
+        },
+        {
+          "id": "entretien",
+          "title": "Usages techniques et entretien",
+          "paragraphs": [
+            "Des expériences scientifiques et des activités de transmission radio contribuent à son utilité au-delà de l'Exposition. La présence d'antennes modifie la hauteur totale mesurée au sommet ; il convient donc de distinguer la tour initiale de ses équipements. L'entretien du métal et la peinture sont nécessaires pour protéger l'ouvrage contre la corrosion et conserver son état."
+          ]
+        },
+        {
+          "id": "culture",
+          "title": "Place dans la culture",
+          "paragraphs": [
+            "La silhouette de la tour apparaît dans les photographies, les affiches et de nombreuses représentations de Paris. Son caractère immédiatement reconnaissable en fait un repère dans le paysage urbain. En 2009, le monument possède déjà une longue histoire touristique : il est à la fois un lieu de visite, un ouvrage d'ingénierie et un symbole partagé par des publics très différents."
+          ]
+        }
+      ],
+      "info": [
+        ["Lieu", "Paris, France"],
+        ["Achèvement", "1889"],
+        ["Matériau principal", "Fer puddlé"]
+      ],
+      "related": ["photographie-numerique"]
+    },
+    {
+      "id": "systeme-solaire",
+      "title": "Système solaire",
+      "theme": "Culture générale",
+      "intro": "Le Système solaire comprend le Soleil et les objets liés à lui par la gravitation. Le Soleil est une étoile dont le rayonnement fournit l'essentiel de l'énergie reçue par la Terre. Les planètes, leurs satellites et de nombreux petits corps parcourent des orbites différentes, avec des tailles et des compositions très variées.",
+      "sections": [
+        {
+          "id": "soleil",
+          "title": "Le Soleil",
+          "paragraphs": [
+            "Le Soleil contient la majeure partie de la masse du Système solaire. Dans son intérieur, des réactions de fusion nucléaire libèrent de l'énergie. L'observation de sa surface montre notamment des taches et des variations d'activité. Sa lumière met plusieurs minutes à atteindre la Terre ; les distances astronomiques rendent ainsi le temps de propagation sensible."
+          ]
+        },
+        {
+          "id": "planetes",
+          "title": "Les huit planètes",
+          "paragraphs": [
+            "Dans l'ordre croissant de leur distance moyenne au Soleil se trouvent Mercure, Vénus, la Terre, Mars, Jupiter, Saturne, Uranus et Neptune. Les quatre premières sont des planètes rocheuses, relativement petites. Les quatre suivantes sont beaucoup plus grandes et possèdent des enveloppes gazeuses importantes, sans présenter toutes la même composition ni la même structure interne.",
+            "La décision de l'Union astronomique internationale adoptée en 2006 distingue les planètes des planètes naines. Pluton appartient à cette seconde catégorie. La classification tient notamment compte de la forme de l'objet et de son rôle dans son voisinage orbital ; elle ne se résume pas à fixer une taille minimale commune à tous les corps célestes."
+          ]
+        },
+        {
+          "id": "petits-corps",
+          "title": "Satellites, astéroïdes et comètes",
+          "paragraphs": [
+            "Un satellite naturel gravite autour d'une planète ou d'un autre corps. La Lune est celui de la Terre. De nombreux astéroïdes occupent une région située entre Mars et Jupiter, mais d'autres suivent des orbites différentes. Les comètes contiennent des matières volatiles qui peuvent produire une chevelure et des queues lorsqu'elles se rapprochent du Soleil."
+          ]
+        },
+        {
+          "id": "regions-lointaines",
+          "title": "Régions lointaines et échelles",
+          "paragraphs": [
+            "Au-delà de Neptune, des objets glacés appartiennent notamment à la ceinture de Kuiper. Tous ces ensembles ne forment pas des frontières nettes comparables à celles d'une carte. Les distances entre les corps sont immenses par rapport à leurs dimensions : les schémas destinés à présenter les planètes ne respectent donc pas toujours simultanément l'échelle des tailles et celle des distances."
+          ]
+        },
+        {
+          "id": "observation",
+          "title": "Observation et exploration",
+          "paragraphs": [
+            "La connaissance du Système solaire repose sur des observations depuis la Terre et sur des sondes spatiales. Les instruments étudient la lumière, les champs et les surfaces rencontrées. Les images permettent des comparaisons, mais doivent être interprétées avec leurs conditions de prise de vue. Une couleur ou une forme visible ne fournit pas à elle seule toute la composition d'un objet."
+          ]
+        }
+      ],
+      "info": [
+        ["Étoile centrale", "Soleil"],
+        ["Planètes", "8"],
+        ["Satellite de la Terre", "Lune"]
+      ],
+      "related": ["photographie-numerique"]
+    },
+    {
+      "id": "dinosaures",
+      "title": "Dinosaures",
+      "theme": "Culture générale",
+      "intro": "Les dinosaures constituent un groupe de vertébrés apparu pendant le Trias, au Mésozoïque. Ils comprennent des animaux de tailles et de modes de vie très divers. Les oiseaux descendent de dinosaures théropodes et appartiennent à ce groupe : parler de leur extinction exige donc de distinguer les dinosaures non aviens des oiseaux.",
+      "sections": [
+        {
+          "id": "diversite",
+          "title": "Diversité des formes",
+          "paragraphs": [
+            "Certains dinosaures marchent sur deux membres, d'autres sur quatre. Des espèces herbivores possèdent des dents adaptées à leur alimentation, des plaques ou des cornes ; les carnivores présentent d'autres combinaisons anatomiques. Les grandes dimensions de certains sauropodes ne représentent pas tous les dinosaures, parmi lesquels figurent aussi des animaux relativement petits et légers."
+          ]
+        },
+        {
+          "id": "periodes",
+          "title": "Périodes et milieux",
+          "paragraphs": [
+            "Le Trias, le Jurassique et le Crétacé correspondent à des périodes successives, et non à un décor unique où toutes les espèces auraient vécu ensemble. Les continents, les climats et les végétations changent au cours de ces longues durées. Les reptiles marins et les ptérosaures, malgré leur présence fréquente dans les mêmes illustrations, ne sont pas des dinosaures."
+          ]
+        },
+        {
+          "id": "fossiles",
+          "title": "Fossiles et reconstitutions",
+          "paragraphs": [
+            "Les connaissances proviennent des os, des dents, des empreintes et d'autres traces conservées dans les roches. Une empreinte peut renseigner sur un déplacement sans révéler tous les détails de l'animal. Un squelette permet de proposer une posture ou des dimensions, mais les parties molles sont moins souvent préservées et demandent des comparaisons supplémentaires.",
+            "Des découvertes de dinosaures à plumes renforcent les liens avec les oiseaux. Les reconstitutions changent lorsque de nouveaux fossiles apportent des éléments ; une image ancienne ne correspond donc pas forcément à l'état des connaissances de 2009. Les hypothèses sur les couleurs et certains comportements doivent être distinguées des caractères directement observables dans les restes disponibles."
+          ]
+        },
+        {
+          "id": "extinction",
+          "title": "Crise de la fin du Crétacé",
+          "paragraphs": [
+            "Les dinosaures non aviens disparaissent lors d'une crise biologique située à la fin du Crétacé, il y a environ 65 millions d'années selon les datations couramment utilisées en 2009. L'impact d'un astéroïde et les changements environnementaux font partie des explications étudiées. Cette extinction touche aussi d'autres groupes, tandis que certaines lignées, dont les oiseaux, survivent."
+          ]
+        }
+      ],
+      "related": ["primates"]
+    },
+    {
+      "id": "photographie-numerique",
+      "title": "Photographie numérique",
+      "theme": "Culture générale",
+      "intro": "La photographie numérique enregistre une image sous forme de données plutôt que sur une pellicule photosensible. La lumière traverse un objectif et atteint un capteur électronique. Les informations recueillies sont traitées puis conservées dans un fichier, que l'on peut consulter, copier ou imprimer à l'aide d'équipements adaptés.",
+      "sections": [
+        {
+          "id": "capteur",
+          "title": "Capteur et définition",
+          "paragraphs": [
+            "Les capteurs CCD et CMOS convertissent la lumière reçue en signaux électriques. Une image est décrite par des pixels, dont le nombre contribue à sa définition. Ce nombre ne suffit pas à évaluer sa qualité : l'objectif, la taille du capteur, l'exposition et le traitement influencent aussi les détails, les couleurs et le bruit visible."
+          ]
+        },
+        {
+          "id": "prise-de-vue",
+          "title": "Mise au point et exposition",
+          "paragraphs": [
+            "La mise au point détermine la zone qui apparaît nette. L'ouverture, le temps de pose et la sensibilité interviennent dans l'enregistrement de la lumière. Une pose longue facilite certaines prises de vue peu éclairées, mais rend les mouvements plus difficiles à figer. Les automatismes proposent des réglages, sans supprimer ces contraintes physiques."
+          ]
+        },
+        {
+          "id": "evolution",
+          "title": "Diffusion des appareils",
+          "paragraphs": [
+            "Les recherches sur les capteurs précèdent les appareils destinés au grand public : le CCD est inventé en 1969. Les usages scientifiques et professionnels contribuent au développement de la technique. Dans les années 1990 puis 2000, les appareils numériques deviennent plus accessibles, avec des capacités de stockage et des écrans de consultation qui facilitent leur utilisation quotidienne.",
+            "En 2009, compacts, appareils reflex et téléphones équipés d'un appareil photo coexistent. Leurs objectifs et leurs possibilités de réglage ne sont pas identiques. La visualisation immédiate permet de vérifier une prise et de recommencer, mais un écran de petite taille ne révèle pas toujours les défauts qui apparaissent sur une impression ou un affichage plus grand."
+          ]
+        },
+        {
+          "id": "fichiers",
+          "title": "Fichiers et circulation",
+          "paragraphs": [
+            "Le format JPEG réduit la taille des fichiers par une compression avec perte ; certains appareils enregistrent aussi des données brutes. Classer les images et conserver plusieurs copies limite les risques de disparition. Les blogs et les réseaux sociaux facilitent le partage, mais diffuser une photographie demande de tenir compte des personnes représentées et des droits attachés à l'image."
+          ]
+        }
+      ],
+      "related": ["pixel-art", "blog", "reseau-social", "windows-xd"]
+    },
+    {
+      "id": "primates",
+      "title": "Primates",
+      "theme": "Culture générale",
+      "intro": "Les primates forment un ordre de mammifères comprenant notamment les lémuriens, les tarsiers, les singes et les grands singes. L'être humain appartient lui aussi à cet ordre. Les ressemblances entre ces animaux traduisent une histoire évolutive commune, mais leurs tailles, leurs milieux et leurs comportements présentent une diversité importante.",
+      "sections": [
+        {
+          "id": "caracteristiques",
+          "title": "Caractéristiques générales",
+          "paragraphs": [
+            "De nombreux primates possèdent des mains capables de saisir, des ongles sur plusieurs doigts et des yeux orientés vers l'avant. La combinaison des deux yeux aide à percevoir le relief. Ces caractères connaissent des exceptions et des variations : on ne peut pas reconnaître chaque espèce à partir d'une liste de propriétés strictement identiques chez tous les représentants.",
+            "La vie dans les arbres a joué un rôle important dans l'évolution du groupe, mais tous les primates ne sont pas exclusivement arboricoles. Les formes de déplacement comprennent le saut, la marche à quatre membres et la suspension. Les régimes alimentaires associent selon les espèces fruits, feuilles, graines, insectes ou d'autres ressources disponibles dans leur environnement."
+          ]
+        },
+        {
+          "id": "groupes",
+          "title": "Lémuriens, loris et tarsiers",
+          "paragraphs": [
+            "Les lémuriens sont naturellement présents à Madagascar. Certaines espèces ont également été introduites dans des îles voisines, notamment aux Comores. Ils appartiennent aux strepsirrhiniens, qui comprennent aussi les loris. Les tarsiers occupent une place distincte parmi les haplorrhiniens, avec les singes. Les différences portent notamment sur l'anatomie sensorielle, mais ne se résument pas à opposer des animaux simples et des animaux perfectionnés."
+          ]
+        },
+        {
+          "id": "singes",
+          "title": "Singes et hominoïdes",
+          "paragraphs": [
+            "Les singes du Nouveau Monde vivent en Amérique, tandis que les singes de l'Ancien Monde sont originaires d'Afrique et d'Asie. Les hominoïdes comprennent les gibbons et les grands singes, dépourvus de queue. Parmi ces derniers figurent les orangs-outans, les gorilles, les chimpanzés, les bonobos et les humains. Le vocabulaire courant ne reflète pas toujours précisément ces catégories zoologiques."
+          ]
+        },
+        {
+          "id": "evolution",
+          "title": "Ancêtres communs et évolution",
+          "paragraphs": [
+            "Les espèces actuelles résultent de lignées ayant divergé à partir d'ancêtres communs. L'être humain ne descend donc pas d'un chimpanzé actuel.",
+            "L'évolution du groupe ne forme pas une échelle qui conduirait nécessairement à l'être humain. Chaque lignée possède sa propre histoire. Les fossiles, les caractères anatomiques et les comparaisons génétiques aident à établir les parentés. Une ressemblance liée à un même mode de vie ne suffit pas, à elle seule, à déterminer la proximité de deux espèces."
+          ]
+        },
+        {
+          "id": "vie-sociale",
+          "title": "Vie sociale et conservation",
+          "paragraphs": [
+            "Les relations sociales vont de petits groupes à des organisations plus nombreuses, avec des apprentissages et des communications variés. La destruction des habitats et la chasse menacent plusieurs espèces ; leur étude s'appuie sur l'observation et la comparaison, sans effacer leurs différences.",
+            "La communication peut faire intervenir des sons, des expressions et des gestes. Les jeunes apprennent au contact d'autres individus, mais les comportements ne sont pas identiques d'une espèce à l'autre. Observer plusieurs groupes dans leur milieu permet de distinguer les habitudes locales des tendances plus générales."
+          ]
+        }
+      ],
+      "info": [
+        ["Rang zoologique", "Ordre"],
+        ["Classe", "Mammifères"],
+        ["Espèce humaine", "Homo sapiens"]
+      ],
+      "related": ["chat-domestique", "dinosaures"]
+    }
+  ]
+}

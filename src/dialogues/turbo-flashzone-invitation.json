@@ -1,0 +1,40 @@
+{
+  "id": "turbo-flashzone-invitation",
+  "version": 1,
+  "revision": 1,
+  "contact": {
+    "id": "turbo",
+    "name": "Turb0",
+    "nickname": "Turb0",
+    "status": "En ligne",
+    "personalMessage": "♪ BASSHUNTER - DOTA ♪",
+    "avatar": "./avatars/turbo.svg"
+  },
+  "player": {
+    "nickname": "Moi",
+    "avatar": "./avatars/player.svg"
+  },
+  "start": "invitation",
+  "completion": {
+    "stayOnline": true
+  },
+  "nodes": {
+    "invitation": {
+      "messages": [
+        { "speaker": "contact", "text": "attends j'ai mieux", "delayMs": 350, "typingMs": 280 },
+        { "speaker": "contact", "text": "tu connais super plombier flash ?", "delayMs": 200, "typingMs": 420 },
+        { "speaker": "contact", "text": "mon record c'est 12,43 secondes mdr", "delayMs": 250, "typingMs": 500 },
+        { "speaker": "contact", "text": "essaie de faire mieux", "delayMs": 250, "typingMs": 350 },
+        {
+          "speaker": "contact",
+          "type": "link",
+          "text": "http://www.flashzone.fr/jeux/super-plombier-flash",
+          "url": "http://www.flashzone.fr/jeux/super-plombier-flash",
+          "delayMs": 250,
+          "typingMs": 450
+        }
+      ],
+      "end": true
+    }
+  }
+}

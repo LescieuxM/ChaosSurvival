@@ -110,17 +110,12 @@ test('failed reset writes never replace the active run and retries discard the o
     assert.equal(storage.getItem(HISTORY_KEY), null);
   }
 });
-test('malformed JSON and malformed nested data safely return to first-launch state', () => {
+test('unreadable saves fall back safely while malformed optional records are isolated', () => {
   for (const broken of [
     '{broken',
     'null',
     '[]',
     '{"version":1}',
-    JSON.stringify({ ...new Progression(story).data, started: true, dialogues: { broken: null } }),
-    JSON.stringify({
-      ...new Progression(story).data,
-      files: { broken: { status: 'complete', name: null } },
-    }),
   ]) {
     const storage = memory();
     storage.setItem(ACTIVE, broken);
@@ -129,6 +124,77 @@ test('malformed JSON and malformed nested data safely return to first-launch sta
     assert.equal(progression.current.id, 'arcade-1');
     progression.begin();
     assert.equal(new Progression(story, storage).hasSave, true);
+  }
+  const storage = memory();
+  const source = new Progression(story);
+  source.begin();
+  source.complete('arcade-1', { score: 1400 });
+  source.data.dialogues.broken = null;
+  source.data.files.broken = { status: 'complete', name: null };
+  source.data.dialogues.valid = {
+    node: 'start', cursor: 0, transcript: [{ speaker: 'contact', text: 'saved' }], finished: false,
+  };
+  source.data.flashzone = { bestScores: { 'bubble-pop': 2500 } };
+  source.data.flashzoneBestTimes = { 'avoid-the-squares': 18.4 };
+  source.data.desktopIcons = { 'shortcut:bin': { col: 2, row: 1 } };
+  source.data.textFiles = { 'c:/notes.txt': { text: 'kept', original: 'source' } };
+  storage.setItem(ACTIVE, JSON.stringify(source.data));
+  const restored = new Progression(story, storage);
+  assert.equal(restored.current.id, 'pixelgirl-hello');
+  assert.deepEqual(restored.data.results['arcade-1'], { score: 1400 });
+  assert.equal(restored.data.dialogues.broken, undefined);
+  assert.equal(restored.data.files.broken, undefined);
+  assert.equal(restored.data.dialogues.valid.transcript[0].text, 'saved');
+  assert.equal(restored.data.flashzone.bestScores['bubble-pop'], 2500);
+  assert.equal(restored.data.flashzoneBestTimes['avoid-the-squares'], 18.4);
+  assert.deepEqual(restored.data.desktopIcons['shortcut:bin'], { col: 2, row: 1 });
+  assert.equal(restored.data.textFiles['c:/notes.txt'].text, 'kept');
+});
+
+test('old saves without recently added optional fields retain story state and receive defaults', () => {
+  const storage = memory();
+  const saved = new Progression(story).data;
+  saved.started = true;
+  saved.completed = ['arcade-1'];
+  saved.current = 'pixelgirl-hello';
+  delete saved.choiceOffers;
+  delete saved.files;
+  delete saved.tutorials;
+  delete saved.anomalies;
+  storage.setItem(ACTIVE, JSON.stringify(saved));
+  const restored = new Progression(story, storage);
+  assert.equal(restored.current.id, 'pixelgirl-hello');
+  assert.deepEqual(restored.data.completed, ['arcade-1']);
+  assert.deepEqual(restored.data.choiceOffers, {});
+  assert.deepEqual(restored.data.files, {});
+  assert.deepEqual(restored.data.tutorials, {});
+});
+
+test('reloading preserves valid narrative deadlines and contact status while dropping only malformed status entries', () => {
+  const storage = memory();
+  const progression = new Progression(story, storage);
+  progression.begin();
+  progression.data.contactConnections = {
+    turbo: { status: 'online' },
+    luna: { status: 'pending', dueAt: 123456 },
+    broken: { status: 'pending', dueAt: null },
+  };
+  progression.data.dialogues['turbo-smiley-catcher'] = {
+    node: 'response-1', cursor: 0, transcript: [], finished: false, receiveDueAt: 123999,
+  };
+  progression.data.dialogues.finished = {
+    node: 'end', cursor: 0, transcript: [], finished: true,
+  };
+  progression.save();
+  for (let i = 0; i < 3; i++) {
+    const restored = new Progression(story, storage);
+    assert.deepEqual(restored.data.contactConnections, {
+      turbo: { status: 'online' },
+      luna: { status: 'pending', dueAt: 123456 },
+    });
+    assert.equal(restored.data.dialogues['turbo-smiley-catcher'].receiveDueAt, 123999);
+    assert.equal(restored.data.dialogues.finished.finished, true);
+    restored.save();
   }
 });
 test('confirmed NEW GAME also discards corrupt archives rather than restoring stale data', () => {
@@ -234,4 +300,23 @@ test('preferences validate corrupt values and complete deletion removes active a
   assert.equal(storage.getItem('another-app'), 'keep');
   assert.equal(new Progression(story, storage).hasSave, false);
   assert.deepEqual(new UserSettings(storage).data, settings.defaults);
+});
+
+test('individual damaged preferences default independently of valid saved preferences', () => {
+  const storage = memory();
+  storage.setItem(
+    SETTINGS_KEY,
+    JSON.stringify({
+      version: 1,
+      musicVolume: 'bad',
+      effectsVolume: 0.3,
+      fullscreen: 'yes',
+      startMenuOrder: ['settings', null, 'settings'],
+    }),
+  );
+  const settings = new UserSettings(storage);
+  assert.equal(settings.data.musicVolume, settings.defaults.musicVolume);
+  assert.equal(settings.data.effectsVolume, 0.3);
+  assert.equal(settings.data.fullscreen, settings.defaults.fullscreen);
+  assert.deepEqual(settings.data.startMenuOrder, ['settings']);
 });

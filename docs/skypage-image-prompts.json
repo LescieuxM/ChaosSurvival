@@ -1,0 +1,30 @@
+{
+  "tool": "image_gen (built-in)",
+  "export": "JPEG 480x360, quality 65; original generation retained outside project.",
+  "images": [
+    {
+      "path": "public/skypage/skater-board.jpg",
+      "prompt": "Create an original local photo asset for a fictional French Skyblog in January 2009. Landscape 4:3 composition. A badly scuffed skateboard on rough concrete, close-up snapshot looking down, chipped graphic and worn trucks, empty frame of people. Deliberately ordinary amateur compact camera / low resolution camera-phone quality, slight blur, JPEG-like compression, imperfect crop and exposure. Photorealistic photograph, NOT a drawing, NOT pixel art, NOT Paint, NOT a polished commercial photo. No narrative hints, no ominous elements, no watermarks, no written words. Only the photo, no website frame."
+    },
+    {
+      "path": "public/skypage/skater-spot.jpg",
+      "prompt": "Create an original local photo asset for a fictional French Skyblog in January 2009. Landscape 4:3 composition. An empty suburban French school gym exterior skate spot, three concrete steps, metal handrail and a graffiti-covered concrete wall, everyday daylight, no legible words. Deliberately ordinary amateur compact camera / low resolution camera-phone quality, slight blur, JPEG-like compression, imperfect crop and exposure. Photorealistic photograph, NOT a drawing, NOT pixel art, NOT Paint, NOT a polished commercial photo. No narrative hints, no ominous elements, no watermarks, no written words. Only the photo, no website frame."
+    },
+    {
+      "path": "public/skypage/skater-shoes.jpg",
+      "prompt": "Create an original local photo asset for a fictional French Skyblog in January 2009. Landscape 4:3 composition. A pair of heavily torn black canvas skate shoes on a bedroom floor, ripped sides from skateboard grip, close-up with direct camera flash, no brands. Deliberately ordinary amateur compact camera / low resolution camera-phone quality, slight blur, JPEG-like compression, imperfect crop and exposure. Photorealistic photograph, NOT a drawing, NOT pixel art, NOT Paint, NOT a polished commercial photo. No narrative hints, no ominous elements, no watermarks, no written words. Only the photo, no website frame."
+    },
+    {
+      "path": "public/skypage/skater-fall.jpg",
+      "prompt": "Create an original local photo asset for a fictional French Skyblog in January 2009. Landscape 4:3 composition. A blurry still frame from a 2009 low resolution mobile phone video: a teenage skater in baggy jeans harmlessly losing balance and sitting on pavement, board rolling nearby, friends legs at edge, no injury, no overlays or video controls. Deliberately ordinary amateur compact camera / low resolution camera-phone quality, slight blur, JPEG-like compression, imperfect crop and exposure. Photorealistic photograph, NOT a drawing, NOT pixel art, NOT Paint, NOT a polished commercial photo. No narrative hints, no ominous elements, no watermarks, no written words. Only the photo, no website frame."
+    },
+    {
+      "path": "public/skypage/princess-candy.jpg",
+      "prompt": "Create an original local photo asset for a fictional French Skyblog in January 2009. Landscape 4:3 composition. A kitschy amateur 2009 blog photo collage of five kinds of candy: gummy bears, sour ribbons, strawberry chews, fizzy cola bottles, marshmallow twists, scattered on a turquoise and pink table, tiny glitter highlights, no text or branding. Deliberately ordinary amateur compact camera / low resolution camera-phone quality, slight blur, JPEG-like compression, imperfect crop and exposure. Photorealistic photograph, NOT a drawing, NOT pixel art, NOT Paint, NOT a polished commercial photo. No narrative hints, no ominous elements, no watermarks, no written words. Only the photo, no website frame."
+    },
+    {
+      "path": "public/skypage/princess-phone.jpg",
+      "prompt": "Create an original local photo asset for a fictional French Skyblog in January 2009. Landscape 4:3 composition. A cheap 2009 pink candybar mobile phone with a pink rhinestone case and small dangling bead charm, amateur digital compact camera flash snapshot on a teenage girl's desk, turquoise notebook nearby, no branding or readable screen text. Deliberately ordinary amateur compact camera / low resolution camera-phone quality, slight blur, JPEG-like compression, imperfect crop and exposure. Photorealistic photograph, NOT a drawing, NOT pixel art, NOT Paint, NOT a polished commercial photo. No narrative hints, no ominous elements, no watermarks, no written words. Only the photo, no website frame."
+    }
+  ]
+}

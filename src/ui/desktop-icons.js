@@ -9,17 +9,25 @@ const validCell = (cell) =>
   cell.row >= 0;
 const same = (a, b) => a?.col === b?.col && a?.row === b?.row;
 
-export function iconGrid(width, height, taskbarHeight = 40, iconHeight = 90) {
+export function iconGrid(width, height, taskbarHeight = 40, iconHeight = 90, iconWidth = 100) {
+  const horizontalSpace = Math.max(0, width - MARGIN * 2 - iconWidth);
+  const cols = Math.max(1, 1 + Math.round(horizontalSpace / WIDTH));
   return {
-    cols: Math.max(1, Math.floor((width - MARGIN * 2) / WIDTH)),
+    // Spread fixed-size cells evenly between both margins, including the last.
+    cols,
+    step: cols > 1 ? horizontalSpace / (cols - 1) : WIDTH,
     rows: Math.max(1, 1 + Math.floor((height - taskbarHeight - MARGIN - iconHeight) / HEIGHT)),
   };
 }
 export function nearestIconCell(x, y, grid) {
   return {
-    col: Math.max(0, Math.min(grid.cols - 1, Math.round((x - MARGIN) / WIDTH))),
+    col: Math.max(0, Math.min(grid.cols - 1, Math.round((x - MARGIN) / grid.step))),
     row: Math.max(0, Math.min(grid.rows - 1, Math.round((y - MARGIN) / HEIGHT))),
   };
+}
+export function iconCellLeft(cell, grid, width, iconWidth, edge = 'left') {
+  const col = edge === 'right' ? grid.cols - 1 : cell.col;
+  return MARGIN + col * grid.step;
 }
 export function layoutIconCells(ids, saved, grid) {
   const cells = [];
@@ -28,15 +36,21 @@ export function layoutIconCells(ids, saved, grid) {
   const result = new Map();
   const free = (cell) => ![...result.values()].some((used) => same(used, cell));
   // Reserve existing custom positions before assigning newly unlocked icons.
-  const inside = (id) => saved[id].col < grid.cols && saved[id].row < grid.rows;
+  const desiredFor = (id) => ({
+    col: saved[id].edge === 'right' ? grid.cols - 1 : Math.min(saved[id].col, grid.cols - 1),
+    row: Math.min(saved[id].row, grid.rows - 1),
+  });
+  const inside = (id) =>
+    (saved[id].edge === 'right' || saved[id].col < grid.cols) && saved[id].row < grid.rows;
   const stored = ids.filter((id) => Object.hasOwn(saved, id) && validCell(saved[id]));
   // Valid cells keep priority over icons temporarily clamped after a resize.
-  stored.sort((a, b) => Number(inside(b)) - Number(inside(a)));
+  stored.sort(
+    (a, b) =>
+      Number(saved[b].edge === 'right') - Number(saved[a].edge === 'right') ||
+      Number(inside(b)) - Number(inside(a)),
+  );
   for (const id of stored) {
-    const desired = {
-      col: Math.min(saved[id].col, grid.cols - 1),
-      row: Math.min(saved[id].row, grid.rows - 1),
-    };
+    const desired = desiredFor(id);
     const cell = free(desired)
       ? desired
       : [...cells]
@@ -170,20 +184,38 @@ export class DesktopIcons {
       rect.height,
       this.desktop.querySelector('.taskbar').getBoundingClientRect().height,
       Math.max(0, ...buttons.map((button) => button.offsetHeight)),
+      Math.max(0, ...buttons.map((button) => button.offsetWidth)),
     );
+    let changed = false;
+    // Legacy saves store absolute cells only. Treat their former last column as
+    // right-anchored once, then retain that intent on later resizes.
+    if (!this.hasRefreshed) {
+      for (const id of buttons.map((button) => this.id(button))) {
+        const position = this.saved[id];
+        if (
+          validCell(position) &&
+          position.edge !== 'right' &&
+          position.col > 0 &&
+          position.col >= this.grid.cols - 1
+        ) {
+          position.edge = 'right';
+          changed = true;
+        }
+      }
+      this.hasRefreshed = true;
+    }
     this.cells = layoutIconCells(
       buttons.map((button) => this.id(button)),
       this.saved,
       this.grid,
     );
-    let changed = false;
     for (const button of buttons) {
       const id = this.id(button),
         cell = this.cells.get(id);
       button.setAttribute('aria-pressed', String(this.selectedIds.has(id)));
       button.style.visibility = cell ? '' : 'hidden';
       if (!cell) continue;
-      button.style.left = `${MARGIN + cell.col * WIDTH}px`;
+      button.style.left = `${iconCellLeft(cell, this.grid, rect.width, button.offsetWidth, this.saved[id]?.edge)}px`;
       button.style.top = `${MARGIN + cell.row * HEIGHT}px`;
       if (!validCell(this.saved[id])) {
         this.saved[id] = { ...cell };
@@ -306,12 +338,12 @@ export class DesktopIcons {
       this.suppressClick = drag.button;
       const anchor = this.cells.get(this.id(drag.button));
       let delta = {
-        col: Math.round((event.clientX - drag.x) / WIDTH),
+        col: Math.round((event.clientX - drag.x) / this.grid.step),
         row: Math.round((event.clientY - drag.y) / HEIGHT),
       };
       if (drag.items.length === 1) {
         const desired = nearestIconCell(
-          parseFloat(drag.button.style.left) + event.clientX - drag.x,
+          MARGIN + anchor.col * this.grid.step + event.clientX - drag.x,
           parseFloat(drag.button.style.top) + event.clientY - drag.y,
           this.grid,
         );
@@ -324,7 +356,10 @@ export class DesktopIcons {
         this.grid,
       );
       if (moved) {
-        for (const [id, cell] of moved) this.saved[id] = cell;
+        for (const [id, cell] of moved) {
+          this.saved[id] =
+            cell.col === this.grid.cols - 1 ? { ...cell, edge: 'right' } : { ...cell };
+        }
         this.persist();
       }
     }

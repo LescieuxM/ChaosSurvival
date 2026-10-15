@@ -17,6 +17,7 @@ export class MessengerContacts {
         undefined,
         this.progression.data.contactConnections,
         this.progression.data.contactProfiles,
+        this.progression.data.flags,
       ),
     );
     const unreadFor = (contact) => this.getUnread?.(contact) ?? this.thread.state.unread.length;

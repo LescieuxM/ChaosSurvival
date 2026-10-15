@@ -1,0 +1,164 @@
+{
+  "name": "ForumJeu",
+  "description": "Forums de jeux vidéo, blabla 15-18 ans, consoles et informatique.",
+  "categories": [
+    {
+      "id": "blabla-15-18", "name": "Blabla 15-18 ans", "description": "La récré sans la sonnerie. Discussions, délires et prises de tête.",
+      "topics": [
+        {"id":"une-copine","title":"[ALERTE] J'AI UNE COPINE","date":"2009-01-06","posts":[
+          {"author":"PseudoEnCarton","time":"18:01","text":"elle m'a demandé mon msn. c'est bon les gars je suis plus célibataire"},
+          {"author":"GrillePain_92","time":"18:03","text":"elle veut les réponses de maths"},
+          {"author":"PseudoEnCarton","time":"18:04","text":"elle a dit salut avec DEUX points d'exclamation"},
+          {"author":"Turb0","time":"18:07","text":"2 points = 2 exercices. owned mdr"},
+          {"author":"LeModemEnPLS","time":"18:09","text":"attends au moins qu'elle accepte ton invitation avant de réserver la salle"}
+        ]},
+        {"id":"fille-cs","title":"une fille qui joue à CS ça existe ?","date":"2009-01-09","posts":[
+          {"author":"FragileDuClavier","time":"20:02","text":"sur mon serveur y'a une fille au micro. elle nous met une branlée j'ai honte"},
+          {"author":"KevinDuNet","time":"20:03","text":"fake les filles savent pas viser c'est son frère qui joue"},
+          {"author":"FragileDuClavier","time":"20:05","text":"ou alors t'es juste nul ?"},
+          {"author":"GrillePain_92","time":"20:06","text":"Kevin découvre que la souris marche aussi sans son autorisation"},
+          {"author":"KevinDuNet","time":"20:08","text":"tg je demandais juste"},
+          {"author":"Turb0","time":"20:10","text":"go refaire un duel au lieu de parler du micro. si tu perds encore tu changes d'excuse"},
+          {"author":"FragileDuClavier","time":"20:12","text":"j'ai reperdu. je vais manger des pâtes c'est plus dans mes capacités"}
+        ]},
+        {"id":"ebay","title":"[HELP] j'ai mis mon petit frère sur ebay","date":"2009-01-12","locked":true,"posts":[
+          {"author":"PseudoEnCarton","time":"17:00","text":"j'avais écrit peu servi mais bruyant. c'était un brouillon hein j'ai rien publié. ma mère l'a vu quand même"},
+          {"author":"GrillePain_92","time":"17:04","text":"les frais de port doivent faire mal"},
+          {"author":"KevinDuNet","time":"17:06","text":"[Message supprimé par la modération]"},
+          {"author":"LeModemEnPLS","time":"17:09","text":"ton frère va te vendre avec le pc maintenant"}
+        ]},
+        {"id":"maths","title":"demain contrôle de maths j'ai rien révisé","date":"2009-01-15","posts":[
+          {"author":"Disquette44","time":"22:04","text":"les fonctions affines c'est quoi en français normal svp"},
+          {"author":"GrillePain_92","time":"22:06","text":"des lignes"},
+          {"author":"Disquette44","time":"22:07","text":"merci jvais avoir 20 avec ça"},
+          {"author":"CartoucheGrise","time":"22:10","text":"y = ax + b. regarde ton cours et fais deux exercices, t'as encore une heure"},
+          {"author":"Sk8er_du_93","time":"22:12","text":"et dors après. j'ai testé le contrôle avec 3 heures de sommeil, mauvaise idée"},
+          {"author":"Disquette44","time":"22:14","text":"bon go réviser. si vous me voyez revenir dites moi de partir"}
+        ]},
+        {"id":"histoires-web-minuit","title":"vous avez déjà eu peur d'une légende sur le net ?","date":"2009-01-24","posts":[
+          {"author":"x_M0RBID_x","time":"20:11","text":"pas les histoires de grand-mère, les chaînes de mails avec un site qui apparaît à minuit et une menace écrite en rouge. y en a une qui vous a vraiment fait flipper ou vous avez tous fermé la fenêtre en rigolant ?"},
+          {"author":"PseudoEnCarton","time":"20:15","text":"un mail disait que mon écran allait s'éteindre à 00:00. j'ai attendu. il s'est éteint parce que j'avais oublié la veille"},
+          {"author":"LeModemEnPLS","time":"20:19","text":"j'ai eu un truc qui disait transfère à 10 personnes sinon malheur. j'ai transféré à personne et j'ai surtout eu la paix"},
+          {"author":"GrillePain_92","time":"20:23","text":"moi j'ai peur des pièces jointes de 8 mo, ça compte ?"},
+          {"author":"CartoucheGrise","time":"20:27","text":"les chaînes inventent souvent une histoire pour pousser à cliquer ou transférer. supprime le message si le lien te paraît douteux"},
+          {"author":"x_M0RBID_x","time":"20:31","text":"je demandais qui avait eu peur, pas qui avait laissé son pc en économie d'énergie. réponse acceptée quand même"}
+        ]}
+      ]
+    },
+    {
+      "id":"jeux-pc","name":"Jeux PC","description":"Parties en réseau, configs fatiguées et sauvegardes qu'on aurait dû copier.",
+      "topics":[
+        {"id":"cs16","title":"vous jouez encore à Counter Strike 1.6 ?","date":"2009-01-07","posts":[
+          {"author":"FragileDuClavier","time":"19:02","text":"tout le monde est passé à source ou y'a encore du monde sur 1.6 ?"},
+          {"author":"Turb0","time":"19:04","text":"1.6 tous les soirs. de_dust2, tu connais les murs par leur prénom"},
+          {"author":"KevinDuNet","time":"19:06","text":"source est plus beau"},
+          {"author":"CartoucheGrise","time":"19:08","text":"ça dépend surtout où jouent tes potes. les deux ont du monde"},
+          {"author":"FragileDuClavier","time":"19:11","text":"mon pc préfère 1.6, il vote avec son ventilateur"},
+          {"author":"Turb0","time":"19:14","text":"le mien aussi mais je dis que c'est pour le skill ^^"}
+        ]},
+        {"id":"crysis","title":"mon pc fait tourner Crysis ?","date":"2009-01-10","posts":[
+          {"author":"Disquette44","time":"16:01","text":"athlon 64, 1 go de ram, geforce 7600. on m'a prêté crysis, ça va passer ?"},
+          {"author":"CartoucheGrise","time":"16:05","text":"en baissant tout peut-être, mais n'attends pas des miracles. essaie déjà la démo"},
+          {"author":"GrillePain_92","time":"16:07","text":"oui en diaporama"},
+          {"author":"Disquette44","time":"16:09","text":"putain même le menu fait réfléchir mon pc"}
+        ]},
+        {"id":"gratuit","title":"un bon jeu gratuit sur PC ?","date":"2009-01-14","posts":[
+          {"author":"LeModemEnPLS","time":"18:10","text":"pas un téléchargement qui dure jusqu'à dimanche svp"},
+          {"author":"Turb0","time":"18:12","text":"TrackMania Nations Forever. courses gratuites, et là vous pourrez enfin essayer de battre mes temps"},
+          {"author":"Sk8er_du_93","time":"18:15","text":"j'y joue un peu. j'ai surtout appris à tomber de la piste"},
+          {"author":"CartoucheGrise","time":"18:17","text":"il est bien, prends-le sur le site officiel plutôt qu'un pack bizarre"},
+          {"author":"LeModemEnPLS","time":"18:20","text":"ok ça télécharge. ma mère va encore vouloir téléphoner pile au mauvais moment"},
+          {"author":"x_M0RBID_x","time":"18:23","text":"y a aussi des petits jeux flash gratuits qui durent 5 minutes. j'en ai trouvé un avec un couloir et des portes, pas besoin d'une carte graphique de la nasa"}
+        ]},
+        {"id":"gta-sa","title":"j'ai perdu ma sauvegarde sur GTA SA","date":"2009-01-18","posts":[
+          {"author":"Disquette44","time":"14:03","text":"réinstallé le jeu et ma partie a disparu. j'étais enfin après l'école de pilotage..."},
+          {"author":"CartoucheGrise","time":"14:07","text":"regarde si le dossier des sauvegardes est encore dans tes documents avant de toucher à autre chose"},
+          {"author":"Disquette44","time":"14:12","text":"retrouvé dans ma vieille copie de mes documents. je bénis mon moi du mois dernier"}
+        ]},
+        {"id":"jeux-flash-horreur","title":"les petits jeux flash d'horreur vous vous en souvenez ?","date":"2009-01-22","posts":[
+          {"author":"x_M0RBID_x","time":"17:32","text":"je parle des jeux amateurs avec trois décors, une clé à trouver et une musique qui tourne en boucle. vous en aviez un préféré ou vous cliquiez juste partout jusqu'à trouver la sortie ?"},
+          {"author":"Disquette44","time":"17:38","text":"j'en ai essayé un où fallait sortir d'un manoir. j'ai perdu plus de temps à trouver le bouton démarrer qu'à jouer"},
+          {"author":"GrillePain_92","time":"17:41","text":"le meilleur effet spécial c'était le curseur qui ramait quand le son démarrait"},
+          {"author":"CartoucheGrise","time":"17:46","text":"j'aimais bien ceux où on fouillait des objets. quand c'est juste un flash blanc et un cri je ferme l'onglet"},
+          {"author":"PseudoEnCarton","time":"17:50","text":"j'ai pas peur moi. enfin je joue sans le son parce que mes parents regardent la télé"},
+          {"author":"x_M0RBID_x","time":"17:54","text":"le courage est intact, les haut-parleurs sont juste en congé. je note"}
+        ]}
+      ]
+    },
+    {
+      "id":"consoles","name":"Consoles","description":"PS3, Xbox 360, Wii et les vieilles consoles qui refusent de mourir.",
+      "topics":[
+        {"id":"ps3-xbox360","title":"PS3 VS XBOX 360","date":"2009-01-20","posts":[
+          {"author":"PadSansFil","time":"18:00","text":"ma 360 est partie au SAV, j'hésite à changer de console. j'ai économisé, vous prendriez une PS3 ou une autre 360 ? j'aime les courses et GTA"},
+          {"author":"Turb0","time":"18:02","text":"360. forza 2. débat terminé merci bonsoir"},
+          {"author":"BluRayMan","time":"18:03","text":"ps3, pas besoin de payer pour jouer en ligne"},
+          {"author":"PadSansFil","time":"18:05","text":"mes potes ont les deux ça aide pas"},
+          {"author":"Turb0","time":"18:06","text":"sur 360 tu joues, sur ps3 tu expliques pourquoi t'as payé plus cher"},
+          {"author":"BluRayMan","time":"18:08","text":"ton chauffage d'appoint en plastique tu peux le garder"},
+          {"author":"CartoucheGrise","time":"18:10","text":"regarde les jeux qui t'intéressent et le prix total. gta iv existe sur les deux"},
+          {"author":"KevinDuNet","time":"18:11","text":"achete une ps2 et des chips"},
+          {"author":"PadSansFil","time":"18:13","text":"j'ai déjà la ps2 et j'ai mangé les chips"},
+          {"author":"Turb0","time":"18:15","text":"viens tester forza chez un pote et après tu choisis. c'est mieux que leurs tableaux de chiffres"},
+          {"author":"BluRayMan","time":"18:17","text":"le connard qui dit débat terminé puis fait 4 posts mdr"},
+          {"author":"Turb0","time":"18:19","text":"bah vous aviez pas compris du premier coup ^^"},
+          {"author":"Sk8er_du_93","time":"18:21","text":"je viens pour les jeux de skate. le reste osef"},
+          {"author":"PadSansFil","time":"18:24","text":"je vais essayer les deux samedi. merci aux 2 réponses utiles"},
+          {"author":"GrillePain_92","time":"18:26","text":"2 réponses utiles sur ce forum, record battu"},
+          {"author":"CartoucheGrise","time":"18:28","text":"pense à la manette aussi, c'est toi qui vas la tenir"}
+        ]},
+        {"id":"wii","title":"la Wii c'est pour les gamins ?","date":"2009-01-17","posts":[
+          {"author":"PadSansFil","time":"17:01","text":"on a joué à mario kart chez un pote hier, franchement c'était bien"},
+          {"author":"KevinDuNet","time":"17:03","text":"agiter les bras devant sa télé ça fait gay ton truc"},
+          {"author":"Sk8er_du_93","time":"17:05","text":"tg on parle de mario kart, pas de tes bras"},
+          {"author":"CartoucheGrise","time":"17:07","text":"avec quatre manettes c'est cool. tout dépend des jeux"},
+          {"author":"KevinDuNet","time":"17:09","text":"c'est des graphismes de bébé"},
+          {"author":"PadSansFil","time":"17:11","text":"ça t'empêche pas de perdre aux jeux de bébé"},
+          {"author":"GrillePain_92","time":"17:14","text":"owned"}
+        ]},
+        {"id":"red-ring","title":"red ring of death HELP","date":"2009-01-13","posts":[
+          {"author":"PadSansFil","time":"16:02","text":"3 lumières rouges. c'est mort ? j'ai rien changé"},
+          {"author":"Turb0","time":"16:06","text":"regarde la garantie et contacte le SAV. ouvre pas la console pour une astuce de forum"},
+          {"author":"PadSansFil","time":"16:09","text":"elle est encore garantie, je vais appeler. quelle merde"},
+          {"author":"CartoucheGrise","time":"16:12","text":"garde ton numéro de dossier. courage pour l'attente"}
+        ]},
+        {"id":"ps2","title":"meilleur jeu de la PS2 ?","date":"2009-01-08","posts":[
+          {"author":"CartoucheGrise","time":"20:01","text":"je cherche un jeu d'occasion, dites un seul titre chacun sinon on va remplir 8 pages"},
+          {"author":"BluRayMan","time":"20:03","text":"Final Fantasy X"},
+          {"author":"Sk8er_du_93","time":"20:04","text":"Tony Hawk's Pro Skater 3. toujours aussi bien"},
+          {"author":"Turb0","time":"20:06","text":"Gran Turismo 4. permis en or ou rien"},
+          {"author":"GrillePain_92","time":"20:08","text":"gta san andreas. voila j'ai respecté une consigne pour une fois"}
+        ]}
+      ]
+    },
+    {
+      "id":"informatique","name":"Informatique","description":"Windows XD, installations, virus et matériel. Les questions qui finissent en redémarrage.",
+      "topics":[
+        {"id":"pc-rame","title":"mon PC rame depuis que j'ai installé un truc","date":"2009-01-05","posts":[
+          {"author":"Disquette44","time":"17:02","text":"une barre pour avoir des smileys et maintenant mon navigateur prend tout l'écran"},
+          {"author":"CartoucheGrise","time":"17:06","text":"tu connais au moins le nom du programme ? évite de réinstaller d'autres packs pour corriger le premier"},
+          {"author":"Disquette44","time":"17:09","text":"j'ai désinstallé la barre dans le panneau de config, ça va déjà mieux"},
+          {"author":"LeModemEnPLS","time":"17:12","text":"les smileys qui coûtent une demi fenêtre, quelle affaire"}
+        ]},
+        {"id":"virus-xp","title":"comment enlever un virus sur Windows XD","date":"2009-01-11","posts":[
+          {"author":"LeModemEnPLS","time":"19:01","text":"un site me dit que j'ai 450 virus et veut ma carte bancaire. l'antivirus installé dit rien"},
+          {"author":"CartoucheGrise","time":"19:04","text":"ne paie pas ce site. ferme la page et lance une analyse avec ton antivirus habituel à jour"},
+          {"author":"LeModemEnPLS","time":"19:08","text":"ok. analyse en cours. j'ai pas téléchargé leur logiciel"},
+          {"author":"Disquette44","time":"19:10","text":"450 virus ça ferait quand même du monde dans le salon"},
+          {"author":"LeModemEnPLS","time":"19:22","text":"rien détecté. j'ai surtout eu 450 sueurs froides"},
+          {"author":"x_M0RBID_x","time":"19:25","text":"si la page clignote en rouge et compte des menaces, c'est elle qui essaie de te faire peur. ferme-la sans rien installer"}
+        ]},
+        {"id":"vista","title":"Vista c'est vraiment de la merde ?","date":"2009-01-16","posts":[
+          {"author":"BluRayMan","time":"18:04","text":"nouveau pc avec vista. tout le monde me dit de remettre xd mais chez moi ça marche"},
+          {"author":"CartoucheGrise","time":"18:08","text":"si ça marche garde-le. les problèmes dépendent aussi des pilotes et de la config"},
+          {"author":"Disquette44","time":"18:11","text":"sur mon vieux pc c'était lent. j'ai pas exactement une machine de compétition"},
+          {"author":"BluRayMan","time":"18:15","text":"bon je vais pas casser un truc qui marche pour gagner une dispute"}
+        ]},
+        {"id":"ie-plante","title":"Internet Adventurer plante tout le temps","date":"2009-01-21","posts":[
+          {"author":"LeModemEnPLS","time":"17:01","text":"internet adventurer se ferme quand j'ouvre trop d'onglets. j'ai encore une barre d'outils de trop ?"},
+          {"author":"CartoucheGrise","time":"17:05","text":"essaie sans les modules complémentaires pour voir si ça vient de là"},
+          {"author":"LeModemEnPLS","time":"17:14","text":"sans le module du vieux lecteur ça marche. j'aurais dû commencer par ça au lieu d'insulter le clavier"}
+        ]}
+      ]
+    }
+  ]
+}

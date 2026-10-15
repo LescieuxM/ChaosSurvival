@@ -26,67 +26,99 @@ function freshData(story) {
     tutorials: {},
   };
 }
-function validSaved(saved, story) {
-  const ids = new Set(story.sequences.map((item) => item.id));
-  return (
-    record(saved) &&
-    saved.version === 1 &&
-    (saved.level1Launches === undefined ||
-      (Number.isInteger(saved.level1Launches) && saved.level1Launches >= 0)) &&
-    (saved.replayReactions === undefined ||
-      (Array.isArray(saved.replayReactions) &&
-        saved.replayReactions.every(
-          (event) =>
-            record(event) &&
-            Number.isInteger(event.attempt) &&
-            typeof event.id === 'string' &&
-            typeof event.template === 'string' &&
-            Number.isFinite(event.dueAt) &&
-            typeof event.ready === 'boolean',
-        ))) &&
-    (saved.started === undefined || typeof saved.started === 'boolean') &&
-    (saved.current === null || ids.has(saved.current)) &&
-    Array.isArray(saved.completed) &&
-    saved.completed.every((id) => ids.has(id)) &&
-    Array.isArray(saved.choices) &&
-    saved.choices.every(
-      (item) => record(item) && typeof item.key === 'string' && typeof item.choice === 'string',
-    ) &&
-    ['flags', 'dialogues', 'results'].every((key) => record(saved[key])) &&
-    ['choiceOffers', 'files', 'anomalies', 'dialogueArchives'].every(
-      (key) => saved[key] === undefined || record(saved[key]),
-    ) &&
-    Object.values(saved.choiceOffers ?? {}).every(
-      (items) =>
-        Array.isArray(items) &&
-        items.every(
-          (item) => record(item) && typeof item.id === 'string' && typeof item.text === 'string',
-        ),
-    ) &&
-    Object.values(saved.files ?? {}).every(
-      (item) =>
-        record(item) &&
-        typeof item.id === 'string' &&
-        typeof item.name === 'string' &&
-        ['pending', 'declined', 'complete'].includes(item.status) &&
-        (!item.launch || (record(item.launch) && typeof item.launch.game === 'string')),
-    ) &&
-    Object.values(saved.dialogues).every(
-      (item) =>
-        record(item) &&
-        typeof item.node === 'string' &&
-        Number.isInteger(item.cursor) &&
-        item.cursor >= 0 &&
-        typeof item.finished === 'boolean' &&
-        Array.isArray(item.transcript) &&
-        item.transcript.every(
-          (message) =>
-            record(message) &&
-            ['contact', 'player'].includes(message.speaker) &&
-            typeof message.text === 'string',
-        ),
-    )
+function validSaved(saved) {
+  return record(saved) && saved.version === 1 && Array.isArray(saved.completed);
+}
+
+const validPrimitiveRecord = (value) =>
+  Object.fromEntries(
+    Object.entries(value).filter(
+      ([key, item]) =>
+        !['__proto__', 'constructor', 'prototype'].includes(key) &&
+        ['string', 'number', 'boolean'].includes(typeof item) &&
+        (typeof item !== 'number' || Number.isFinite(item)),
+    ),
   );
+
+function normalizeSaved(saved, story) {
+  const ids = new Set(story.sequences.map((item) => item.id));
+  if (!Array.isArray(saved.choices)) saved.choices = [];
+  if (!record(saved.flags)) saved.flags = {};
+  if (!record(saved.dialogues)) saved.dialogues = {};
+  if (!record(saved.results)) saved.results = {};
+  saved.completed = [...new Set(saved.completed.filter((id) => ids.has(id)))];
+  if (saved.current !== null && !ids.has(saved.current)) {
+    const last = [...saved.completed]
+      .reverse()
+      .find((id) => story.sequences.find((item) => item.id === id)?.next);
+    saved.current = last ? story.sequences.find((item) => item.id === last).next : story.start;
+  }
+  if (saved.current === undefined) {
+    const last = [...saved.completed]
+      .reverse()
+      .find((id) => story.sequences.find((item) => item.id === id)?.next);
+    saved.current = last ? story.sequences.find((item) => item.id === last).next : story.start;
+  }
+  if (typeof saved.started !== 'boolean')
+    saved.started = Boolean(
+      saved.completed.length || saved.choices.length || Object.keys(saved.dialogues).length,
+    );
+  saved.choices = saved.choices.filter(
+    (item) => record(item) && typeof item.key === 'string' && typeof item.choice === 'string',
+  );
+  const choiceKeys = new Set();
+  saved.choices = saved.choices.filter((item) => {
+    if (choiceKeys.has(item.key)) return false;
+    choiceKeys.add(item.key);
+    return true;
+  });
+  saved.flags = validPrimitiveRecord(saved.flags);
+  for (const key of ['choiceOffers', 'files', 'anomalies', 'dialogueArchives', 'tutorials'])
+    if (!record(saved[key])) saved[key] = {};
+  for (const [key, offers] of Object.entries(saved.choiceOffers)) {
+    if (!Array.isArray(offers)) {
+      delete saved.choiceOffers[key];
+      continue;
+    }
+    saved.choiceOffers[key] = offers.filter(
+      (item) => record(item) && typeof item.id === 'string' && typeof item.text === 'string',
+    );
+  }
+  for (const [key, file] of Object.entries(saved.files))
+    if (
+      !record(file) || typeof file.id !== 'string' || typeof file.name !== 'string' ||
+      !['pending', 'declined', 'complete'].includes(file.status) ||
+      (file.launch != null && (!record(file.launch) || typeof file.launch.game !== 'string'))
+    ) delete saved.files[key];
+  for (const [id, state] of Object.entries(saved.dialogues)) {
+    if (
+      !record(state) || typeof state.node !== 'string' || !Number.isInteger(state.cursor) ||
+      state.cursor < 0 || typeof state.finished !== 'boolean' || !Array.isArray(state.transcript)
+    ) {
+      delete saved.dialogues[id];
+      continue;
+    }
+    state.transcript = state.transcript.filter(
+      (message) => record(message) && ['contact', 'player'].includes(message.speaker) &&
+        typeof message.text === 'string' &&
+        (message.type !== 'file' || typeof message.fileKey === 'string'),
+    );
+    if (state.receiveDueAt !== undefined && !Number.isFinite(state.receiveDueAt))
+      delete state.receiveDueAt;
+  }
+  if (
+    saved.level1Launches !== undefined &&
+    (!Number.isInteger(saved.level1Launches) || saved.level1Launches < 0)
+  )
+    delete saved.level1Launches;
+  if (saved.replayReactions !== undefined) {
+    if (!Array.isArray(saved.replayReactions)) saved.replayReactions = [];
+    else saved.replayReactions = saved.replayReactions.filter(
+      (event) => record(event) && Number.isInteger(event.attempt) && typeof event.id === 'string' &&
+        typeof event.template === 'string' && Number.isFinite(event.dueAt) && typeof event.ready === 'boolean',
+    );
+  }
+  return saved;
 }
 
 export function validateStory(story) {
@@ -114,7 +146,7 @@ export class Progression {
     this.data = freshData(story);
     try {
       const saved = JSON.parse(storage?.getItem(STORAGE_KEY) ?? 'null');
-      if (validSaved(saved, story)) this.data = saved;
+      if (validSaved(saved)) this.data = normalizeSaved(saved, story);
       else if (saved !== null) this.corrupt = true;
     } catch {
       this.corrupt = true;

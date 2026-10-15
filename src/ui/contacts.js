@@ -14,6 +14,7 @@ export function visibleContacts(
   roster = contacts,
   connections = {},
   profiles = {},
+  flags = {},
 ) {
   return roster.flatMap((contact) => {
     const message = profiles?.[contact.id]?.personalMessage;
@@ -32,11 +33,22 @@ export function visibleContacts(
       ];
     }
     const definition = definitions[contact.dialogue];
-    const available = Boolean(definition && unlocked.includes(contact.dialogue));
+    const available = Boolean(
+      definition &&
+        (unlocked.includes(contact.dialogue) ||
+          (contact.unlockFlag && flags[contact.unlockFlag] === true)),
+    );
     if (!available && !contact.visibleInitially) return [];
     const metadata = { ...contact, ...definition?.contact, id: contact.id };
     Object.assign(metadata, personalMessage);
-    const online = available && !contact.alwaysOffline && metadata.status !== 'Hors ligne';
-    return [{ ...metadata, online, available, status: online ? metadata.status : 'Hors ligne' }];
+    const online =
+      !contact.alwaysOffline &&
+      (contact.connection ? connected : metadata.status !== 'Hors ligne' && available);
+    const status = online
+      ? metadata.status === 'Hors ligne'
+        ? 'En ligne'
+        : metadata.status
+      : 'Hors ligne';
+    return [{ ...metadata, online, available, status }];
   });
 }

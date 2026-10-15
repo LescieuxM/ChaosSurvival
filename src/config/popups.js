@@ -14,7 +14,7 @@ export const popupContent = {
       status: 'En ligne · lâche tes coms',
       messages: [
         'wesh ça va ?',
-        'va sur mon skyblog et lâche tes coms !!',
+        'va sur mon skypage et lâche tes coms !!',
         'article 12 : toi + moi = les vrais',
       ],
     },
@@ -91,7 +91,7 @@ export const popupContent = {
       ],
     },
     {
-      name: 'Miss_Skyblog',
+      name: 'Miss_SkyPage',
       status: 'En ligne · 100 coms = nouvel article',
       messages: [
         'nouvel article : mes bestah <3',
@@ -177,7 +177,7 @@ export const popupContent = {
     {
       title: 'Une erreur est survenue',
       heading: 'La mémoire est presque pleine.',
-      message: 'Probablement à cause des 42 onglets de votre Skyblog.',
+      message: 'Probablement à cause des 42 onglets de votre SkyPage.',
     },
     {
       title: 'Winamp — Lecture interrompue',
