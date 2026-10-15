@@ -20,9 +20,20 @@ import { ConversationWindow } from '../src/ui/conversation.js';
 
 const read = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url)));
 const intro = read('../src/dialogues/pixelgirl-intro.json');
+const turboScene = read('../src/dialogues/turbo-smiley-catcher.json');
 
 test('display order is explicit, independent of creation order, and stable within connection groups', () => {
-  const order = ['skater', 'luna', 'modem', 'pixelgirl', 'princess', 'offline', 'turbo', 'k7', 'm0rbid'];
+  const order = [
+    'skater',
+    'luna',
+    'modem',
+    'pixelgirl',
+    'princess',
+    'offline',
+    'turbo',
+    'k7',
+    'm0rbid',
+  ];
   const source = visibleContacts({ [intro.id]: intro }, []);
   const before = JSON.stringify(source);
   assert.deepEqual(
@@ -539,7 +550,9 @@ test('main contacts are visible offline initially and become available in place 
   const unlocked = visibleContacts({ [intro.id]: intro }, [intro.id]);
   assert.deepEqual(
     locked
-      .filter((contact) => ['pixelgirl', 'turbo', 'luna', 'offline', 'k7', 'm0rbid'].includes(contact.id))
+      .filter((contact) =>
+        ['pixelgirl', 'turbo', 'luna', 'offline', 'k7', 'm0rbid'].includes(contact.id),
+      )
       .map((contact) => contact.nickname),
     ['xX_PixelGirl_Xx', 'Turb0', '°•.LuNa.°•', '0FFLINE', 'K7', 'x_M0RBID_x'],
   );
@@ -572,6 +585,27 @@ test('main contacts are visible offline initially and become available in place 
   const roster = [{ id: 'future', kind: 'narrative', dialogue: future.id }];
   assert.deepEqual(visibleContacts({ [future.id]: future }, [], roster), []);
   assert.equal(visibleContacts({ [future.id]: future }, [future.id], roster)[0].id, 'future');
+});
+
+test('Turb0 keeps the existing connection presence and unlocks the scene conversation from its saved flag', () => {
+  const definitions = { [intro.id]: intro, [turboScene.id]: turboScene };
+  const connected = visibleContacts(definitions, [], undefined, { turbo: { status: 'online' } });
+  const turboOnline = connected.find((contact) => contact.id === 'turbo');
+  assert.equal(turboOnline.online, true);
+  assert.equal(turboOnline.available, false);
+  const restored = visibleContacts(
+    definitions,
+    [],
+    undefined,
+    { turbo: { status: 'online' } },
+    {},
+    { turboSmileyScene3ArrivalTriggered: true },
+  );
+  const turboUnlocked = restored.find((contact) => contact.id === 'turbo');
+  assert.equal(turboUnlocked.nickname, 'Turb0');
+  assert.equal(turboUnlocked.online, true);
+  assert.equal(turboUnlocked.available, true);
+  assert.equal(turboUnlocked.dialogue, turboScene.id);
 });
 
 test('locked contacts use read-only windows and resolve current availability after unlocking', () => {
@@ -677,9 +711,13 @@ test('Messenger keeps one independent window per contact including future contac
   assert.equal(messenger.openContact(roster[0]), primary);
   const skater = messenger.openContact(roster[1]);
   const princess = messenger.openContact(roster[2]);
+  const beforePrepare = records.length;
+  const preparedFuture = messenger.prepareContact(roster[3]);
+  assert.equal(records.length, beforePrepare, 'preparing an incoming scene does not open a window');
   const future = messenger.openContact(roster[3]);
   assert.notEqual(skater, princess);
   assert.notEqual(future, primary);
+  assert.equal(future, preparedFuture, 'the notification reuses the prepared private window');
   assert.equal(messenger.openContact(roster[1]), skater);
   assert.equal(messenger.openContact(roster[3]), future);
   assert.deepEqual(created, ['skater', 'princess', 'future']);

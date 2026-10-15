@@ -1,7 +1,13 @@
 // Completion effects use saved deadlines, so closing MSN or the app cannot lose them.
 export class DialogueEvents {
-  constructor(progression, definitions, onConnection = () => {}) {
+  constructor(
+    progression,
+    definitions,
+    onConnection = () => {},
+    { deferredConnectionDialogues = [] } = {},
+  ) {
     Object.assign(this, { progression, definitions, onConnection });
+    this.deferredConnectionDialogues = new Set(deferredConnectionDialogues);
   }
   update(now = Date.now(), notify = true) {
     const data = this.progression.data;
@@ -12,7 +18,7 @@ export class DialogueEvents {
         this.progression.complete(sequence.id, { dialogue: definition.id });
       if (!data.completed.includes(sequence.id)) continue;
       const connection = definition.completion.connection;
-      if (!connection) continue;
+      if (!connection || this.deferredConnectionDialogues.has(definition.id)) continue;
       data.contactConnections ??= {};
       if (!data.contactConnections[connection.contactId]) {
         data.contactConnections[connection.contactId] = {
@@ -34,5 +40,18 @@ export class DialogueEvents {
       this.progression.save();
       this.onConnection(id);
     }
+  }
+  triggerConnection(contactId, now = Date.now(), notify = true) {
+    const deferred = [...this.deferredConnectionDialogues]
+      .map((id) => this.definitions[id]?.completion?.connection)
+      .find((connection) => connection?.contactId === contactId);
+    if (!deferred) return false;
+    const data = this.progression.data;
+    data.contactConnections ??= {};
+    if (data.contactConnections[contactId]?.status === 'online') return false;
+    data.contactConnections[contactId] = { status: 'pending', dueAt: now };
+    this.progression.save();
+    this.update(now, notify);
+    return data.contactConnections[contactId].status === 'online';
   }
 }

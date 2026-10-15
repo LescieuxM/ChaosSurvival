@@ -669,7 +669,48 @@ test('floating navigator drag and resize stay in the scene and cleanup removes i
   );
   const find = (cls) => walkTree(root).find((item) => item.className === cls);
   assert.equal(find('hotel-header'), undefined);
-  assert.equal(find('hotel-chat-space').children.length, 0);
+  const chatInput = find('hotel-chat-input');
+  const chatSpace = find('hotel-chat-space');
+  const chatMode = find('hotel-chat-mode');
+  assert.equal(chatSpace.children[0].className, 'hotel-chat-mode');
+  assert.equal(chatSpace.children[1], chatInput);
+  let focused = false;
+  chatInput.focus = () => {
+    focused = true;
+  };
+  const messagesBeforeEnter = find('hotel-messages').children.length;
+  assert.deepEqual(chatMode.children.map((option) => option.textContent), ['Parler', 'Crier']);
+  chatInput.value = 'Bonjour';
+  chatInput.handlers.input();
+  assert.equal(chatInput.style.fontWeight, 'normal');
+  chatMode.value = 'shout';
+  chatMode.handlers.change();
+  assert.equal(chatInput.value, 'Bonjour', 'changing mode keeps the draft');
+  assert.equal(chatInput.style.fontWeight, 'bold');
+  chatInput.value = 'Bonjour encore';
+  chatInput.handlers.input();
+  assert.equal(chatInput.style.fontWeight, 'bold', 'shout mode applies while typing');
+  for (const mode of ['shout', 'speak']) {
+    chatMode.value = mode;
+    chatMode.handlers.change();
+    chatInput.value = 'Message temporaire';
+    let prevented = false,
+      stopped = false;
+    chatInput.handlers.keydown({
+      key: 'Enter',
+      preventDefault() {
+        prevented = true;
+      },
+      stopPropagation() {
+        stopped = true;
+      },
+    });
+    assert.equal(prevented, true);
+    assert.equal(stopped, true);
+    assert.equal(chatInput.value, '');
+    assert.equal(focused, true);
+  }
+  assert.equal(find('hotel-messages').children.length, messagesBeforeEnter);
   const viewport = find('hotel-viewport'),
     panel = find('hotel-navigator');
   const header = panel.children[0];

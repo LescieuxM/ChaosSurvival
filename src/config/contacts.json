@@ -31,7 +31,9 @@
   },
   {
     "id": "turbo",
-    "kind": "decorative",
+    "kind": "narrative",
+    "dialogue": "turbo-smiley-catcher",
+    "unlockFlag": "turboSmileyScene3ArrivalTriggered",
     "connection": true,
     "visibleInitially": true,
     "nickname": "Turb0",

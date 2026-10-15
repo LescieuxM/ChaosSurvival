@@ -21,12 +21,14 @@ export class ConversationWindow {
       onWindowState = () => {},
       thread,
       onContactsRequested,
+      onChoiceValidated = () => {},
       manageWindow,
       onDispose,
       player = playerIdentity,
     } = {},
   ) {
     this.onContactsRequested = onContactsRequested;
+    this.onChoiceValidated = onChoiceValidated;
     this.manageWindow = manageWindow;
     this.onDispose = onDispose;
     this.player = player;
@@ -51,6 +53,12 @@ export class ConversationWindow {
     const session = new DialogueSession(definition, this.progression);
     this.sessions.set(definition.id, session);
     return session;
+  }
+  chooseResponse(definition, session, choiceId) {
+    const nodeId = session.state.node;
+    const choice = session.choose(choiceId);
+    this.onChoiceValidated?.(definition, { nodeId, choice });
+    return choice;
   }
   openOffline(contact) {
     if (this.element?.isConnected && this.offlineContact?.id === contact.id) return this.restore();
@@ -439,7 +447,12 @@ export class ConversationWindow {
           panel.querySelectorAll('button').forEach((item) => {
             item.disabled = true;
           });
-          session.choose(choice.id);
+          ConversationWindow.prototype.chooseResponse.call(
+            this,
+            group.definition,
+            session,
+            choice.id,
+          );
           this.dialogue = definition;
           this.session = session;
           this.pending = null;
@@ -464,6 +477,136 @@ export class ConversationWindow {
       }
     }
     if (groups.length) this.element.classList.remove('contact-away');
+  }
+  finishImmediately(random = Math.random, log = (message) => console.info(message)) {
+    if (
+      this.offlineContact ||
+      !this.element?.isConnected ||
+      this.devFastForwarding ||
+      !this.thread ||
+      !this.session ||
+      (this.session.state.finished &&
+        !this.thread.pendingResponses.length &&
+        !this.thread.hasPendingMessages)
+    )
+      return false;
+
+    this.devFastForwarding = true;
+    const nickname = this.dialogue.contact.nickname;
+    let choiceNumber = 0;
+    let operations = 0;
+    const maxOperations = 1000;
+    log(`[DEV] Conversation : ${nickname}`);
+    try {
+      this.pending = null;
+      this.receiving = false;
+      if (this.typing) this.typing.textContent = '';
+      if (this.typingIndicator) {
+        this.typingIndicator.textContent = '';
+        this.typingIndicator.hidden = true;
+        this.typingIndicator.classList.remove('is-typing');
+      }
+
+      const events = this.thread.getEvents();
+      while (operations++ < maxOperations) {
+        // Deliver one scripted message at a time through DialogueSession so its
+        // transcript and save data stay identical to ordinary playback.
+        let delivered = false;
+        for (const definition of events) {
+          const session = this.sessionFor(definition);
+          if (session.state.finished) continue;
+          const message = session.nextMessage();
+          if (!message) continue;
+          delete session.state.receiveDueAt;
+          session.deliver();
+          this.thread.sync();
+          this.appendHistory();
+          delivered = true;
+          break;
+        }
+        if (delivered) continue;
+
+        const transferEvent = events.find((definition) => {
+          const session = this.sessionFor(definition);
+          return session.node.transfer && session.activeTransfer?.status === 'pending';
+        });
+        if (transferEvent) {
+          const session = this.sessionFor(transferEvent);
+          const file = session.activeTransfer;
+          const accepted = Number(random()) >= 0.5;
+          if (accepted) {
+            this.progression.finishTransfer(file.key);
+            this.onFilesChanged();
+          } else session.declineTransfer(file.key);
+          log(`[DEV] Transfert ${accepted ? 'accepté' : 'refusé'} : "${file.name}"`);
+          continue;
+        }
+
+        // Resolve automatic joins, then make the same persisted choice record
+        // used by the normal response buttons.
+        let advanced = false;
+        for (const definition of events) {
+          const session = this.sessionFor(definition);
+          const unresolvedTransfer =
+            session.node.transfer &&
+            !['complete', 'declined'].includes(session.activeTransfer?.status);
+          if (session.state.finished || session.choices.length || unresolvedTransfer) continue;
+          if (session.advance()) {
+            advanced = true;
+            break;
+          }
+          if (session.state.finished) {
+            this.onCheckpoint(definition.id);
+            advanced = true;
+            break;
+          }
+        }
+        if (advanced) continue;
+
+        if (this.thread.hasPendingMessages) continue;
+        const group = this.thread.pendingResponses[0];
+        if (group) {
+          const session = this.sessionFor(group.definition);
+          const choices = session.offerChoices();
+          if (!choices.length) continue;
+          const value = Number(random());
+          const index = Number.isFinite(value)
+            ? Math.min(choices.length - 1, Math.max(0, Math.floor(value * choices.length)))
+            : 0;
+          const choice = choices[index];
+          this.chooseResponse(group.definition, session, choice.id);
+          choiceNumber++;
+          log(`[DEV] Choix ${choiceNumber} : "${choice.text}"`);
+          this.thread.sync();
+          this.appendHistory();
+          continue;
+        }
+
+        const unfinished = events.some((definition) => {
+          const session = this.sessionFor(definition);
+          return !session.state.finished && !session.node.transfer;
+        });
+        if (!unfinished) {
+          this.dialogue = this.thread.activeDefinition ?? this.dialogue;
+          this.session = this.sessionFor(this.dialogue);
+          this.element.classList.toggle('contact-away', !this.dialogue.completion?.stayOnline);
+          this.pending = null;
+          this.receiving = false;
+          this.thread.markRead();
+          this.appendHistory();
+          this.renderResponses();
+          if (this.typing) this.typing.textContent = '';
+          this.scrollLatest();
+          log('[DEV] Conversation terminée');
+          return true;
+        }
+        return false;
+      }
+      log(`[DEV] Conversation interrompue : limite d'étapes atteinte`);
+      return false;
+    } finally {
+      this.devFastForwarding = false;
+    }
   }
   tick(time) {
     if (!this.element?.isConnected || this.offlineContact) return;

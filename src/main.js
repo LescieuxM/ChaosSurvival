@@ -87,6 +87,18 @@ const ui = mountDesktop(document.getElementById('app'), best);
 const state = new GameState(chart.gameplay);
 const audio = new AudioEngine(chart.volume);
 const progression = new Progression(story, storyStorage);
+const turboSceneFlags = progression.data.flags;
+if (
+  !turboSceneFlags.turboSmileyScene3ArrivalTriggered &&
+  (turboSceneFlags.turboSmileyScene3Opened ||
+    turboSceneFlags.turboSmileyScene3Notified ||
+    progression.data.contactConnections?.turbo?.status === 'online' ||
+    (turboSceneFlags.turboSmileyScene3 &&
+      progression.data.dialogues['pixelgirl-smiley-victory']?.finished))
+) {
+  turboSceneFlags.turboSmileyScene3ArrivalTriggered = true;
+  progression.save();
+}
 const buddy = new Buddy(ui.desktop, progression);
 const replayReactions = new ReplayReactions(progression, dialogues, replayConfig);
 const settings = new UserSettings(storyStorage, chart.volume);
@@ -100,6 +112,7 @@ const sounds = new DesktopSounds(
 );
 let cancelVictory = () => {};
 let storyToastAction = null;
+let storyToastContactId = null;
 let msnArrivalTimer;
 let timeline;
 let configurationError;
@@ -163,14 +176,32 @@ const messenger = new Messenger({
   settings,
   onWindowState: syncSystemWindows,
   onMessage: (contact) => {
-    ui.toastContact.textContent = contact.nickname;
-    ui.toastMessage.textContent = 't’a envoyé un nouveau message.';
-    ui.toast.hidden = false;
-    ui.toastOpen.hidden = false;
-    ui.toast.classList.add('story-toast');
-    const entry = messenger.contacts().find((item) => item.nickname === contact.nickname);
-    storyToastAction = () => openConversation(false, entry);
-    toastUntil = audio.time + 6;
+    if (contact.id === 'turbo' && progression.data.flags.turboSmileyScene3ArrivalTriggered) {
+      const flags = progression.data.flags;
+      if (flags.turboSmileyScene3Opened) {
+        messenger.conversations.get('turbo')?.thread.markRead();
+        return;
+      }
+      if (flags.turboSmileyScene3Notified || flags.turboSmileyScene3MessageNotificationDueAt)
+        return;
+      flags.turboSmileyScene3MessageNotificationDueAt = Date.now() + 550;
+      progression.save();
+      return;
+    }
+    showMessageNotification(contact);
+  },
+  onContactOpened: (contact) => {
+    if (contact.id !== 'turbo' || !progression.data.flags.turboSmileyScene3ArrivalTriggered) return;
+    progression.data.flags.turboSmileyScene3Opened = true;
+    delete progression.data.flags.turboSmileyScene3MessageNotificationDueAt;
+    progression.save();
+    if (storyToastContactId === 'turbo') {
+      ui.toast.hidden = true;
+      ui.toastOpen.hidden = true;
+      storyToastAction = null;
+      storyToastContactId = null;
+      toastUntil = 0;
+    }
   },
   createConversation: (contact) => {
     const definition = dialogues[contact.dialogue] ?? pixelgirlDialogue;
@@ -203,18 +234,27 @@ const miniGameLauncher = new MiniGameLauncher(
       activeDialogue = dialogues[progression.current.dialogue];
   },
 );
-const dialogueEvents = new DialogueEvents(progression, dialogues, (contactId) => {
-  const contact = messenger.contacts().find((entry) => entry.id === contactId);
-  if (!contact) return;
-  ui.toastContact.textContent = contact.nickname;
-  ui.toastMessage.textContent = 'est maintenant en ligne.';
-  toastUntil = audio.time + 6;
-  ui.toast.hidden = false;
-  ui.toastOpen.hidden = true;
-  ui.toast.classList.add('story-toast');
-  storyToastAction = null;
-  sounds.unlock().then(() => sounds.play('online'));
-});
+const dialogueEvents = new DialogueEvents(
+  progression,
+  dialogues,
+  (contactId) => {
+    const contact = messenger.contacts().find((entry) => entry.id === contactId);
+    if (!contact) return;
+    ui.toastContact.textContent = contact.nickname;
+    ui.toastMessage.textContent =
+      contactId === 'turbo' ? ' vient de se connecter' : ' est maintenant en ligne.';
+    toastUntil = audio.time + (contactId === 'turbo' ? 0.7 : 6);
+    ui.toast.hidden = false;
+    ui.toastOpen.hidden = true;
+    ui.toast.classList.add('story-toast');
+    storyToastAction = null;
+    storyToastContactId = null;
+    sounds.unlock().then(() => sounds.play('online'));
+    if (contactId === 'turbo' && progression.data.flags.turboSmileyScene3ArrivalTriggered)
+      prepareTurboSceneMessage();
+  },
+  { deferredConnectionDialogues: ['pixelgirl-smiley-victory'] },
+);
 let restoringStory = false;
 function createConversation(dialogue, contactId = 'pixelgirl', thread = replayReactions.thread) {
   return new ConversationWindow(
@@ -239,10 +279,74 @@ function createConversation(dialogue, contactId = 'pixelgirl', thread = replayRe
       manageWindow: (view) => messenger.attachConversation(view, contactId),
       onDispose: (view) => messenger.disposeConversation(view),
       onContactsRequested: () => messenger.open(),
-      isUnlocked: () => progression.data.unlockedConversations.includes(dialogue.id),
+      onChoiceValidated: (definition, { nodeId }) => {
+        if (
+          definition.id !== 'pixelgirl-smiley-victory' ||
+          nodeId !== definition.start ||
+          progression.data.flags.turboSmileyScene3ArrivalTriggered
+        )
+          return;
+        progression.data.flags.turboSmileyScene3ArrivalTriggered = true;
+        progression.save();
+        dialogueEvents.triggerConnection('turbo');
+      },
+      isUnlocked: () =>
+        progression.data.unlockedConversations.includes(dialogue.id) ||
+        (dialogue.id === 'turbo-smiley-catcher' &&
+          progression.data.flags.turboSmileyScene3ArrivalTriggered),
       onWindowState: syncSystemWindows,
     },
   );
+}
+function prepareTurboSceneMessage() {
+  if (
+    !progression.data.flags.turboSmileyScene3ArrivalTriggered ||
+    progression.data.contactConnections?.turbo?.status !== 'online'
+  )
+    return;
+  const definition = dialogues['turbo-smiley-catcher'];
+  const saved = progression.data.dialogues[definition.id];
+  if (saved?.finished || saved?.transcript?.length) return;
+  const contact = messenger.contacts().find((entry) => entry.id === 'turbo');
+  if (!contact?.available) return;
+  const view = messenger.prepareContact(contact);
+  if (!view) return;
+  view.thread.schedule(definition);
+  const pending = progression.data.dialogues[definition.id];
+  if (pending && Number.isFinite(pending.receiveDueAt)) {
+    pending.receiveDueAt = Date.now();
+    progression.save();
+  }
+}
+function showMessageNotification(contact) {
+  const entry = messenger.contacts().find((item) => item.id === contact.id);
+  if (!entry) return;
+  ui.toastContact.textContent = contact.nickname;
+  ui.toastMessage.textContent =
+    contact.id === 'turbo' ? ' vous a envoyé un message' : 't’a envoyé un nouveau message.';
+  ui.toast.hidden = false;
+  ui.toastOpen.hidden = false;
+  ui.toast.classList.add('story-toast');
+  storyToastAction = () => openConversation(false, entry);
+  storyToastContactId = contact.id;
+  toastUntil = audio.time + 6;
+}
+function flushTurboMessageNotification() {
+  const flags = progression.data.flags;
+  const dueAt = flags.turboSmileyScene3MessageNotificationDueAt;
+  if (!Number.isFinite(dueAt)) return;
+  if (flags.turboSmileyScene3Opened) {
+    delete flags.turboSmileyScene3MessageNotificationDueAt;
+    progression.save();
+    return;
+  }
+  if (Date.now() < dueAt) return;
+  const contact = messenger.contacts().find((item) => item.id === 'turbo');
+  if (!contact?.online) return;
+  delete flags.turboSmileyScene3MessageNotificationDueAt;
+  flags.turboSmileyScene3Notified = true;
+  progression.save();
+  showMessageNotification(contact);
 }
 progression.register('arcade', async (sequence) => {
   if (sequence.level !== chart.level)
@@ -1014,13 +1118,28 @@ const arcadeShortcut = ui.desktop.querySelector('[data-shortcut="arcade"]');
 arcadeShortcut.title = `${arcadeLauncher.name}\nDouble-cliquer pour jouer / rejouer le niveau 1\nMusique : ${trackIdentity.displayName}`;
 // Vite removes this entire import and handler from production builds.
 if (import.meta.env.DEV) {
-  import('./dev/finish-shortcut.js').then(({ installDevelopmentVictoryShortcut }) => {
+  import('./dev/finish-shortcut.js').then((shortcuts) => {
+    const { installDevelopmentVictoryShortcut, installDevelopmentConversationShortcut } = shortcuts;
     installDevelopmentVictoryShortcut(document, () => {
       if (rules.active) return null;
       if (['playing', 'paused'].includes(phase)) return { finish: () => finishGame(true) };
       const game = miniGameLauncher.active;
       if (phase === 'desktop' && game?.element?.isConnected && !game.finished) return game;
       return null;
+    });
+    installDevelopmentConversationShortcut(document, () => {
+      const topWindow = [...manager.windows.values()]
+        .filter(({ element }) => element.isConnected && !element.hidden)
+        .sort((a, b) => Number(b.element.style.zIndex) - Number(a.element.style.zIndex))[0];
+      const contactId = topWindow?.element.dataset.messengerContact;
+      if (!contactId || topWindow.element.classList.contains('contact-offline')) return null;
+      return [conversation, ...messenger.conversations.values()].find(
+        (view) =>
+          view.element === topWindow.element &&
+          view.element?.isConnected &&
+          !view.element.hidden &&
+          !view.offlineContact,
+      );
     });
   });
 }
@@ -1047,9 +1166,11 @@ function receiveReplayReactions() {
     requestAnimationFrame(receiveReplayReactions);
     return;
   }
+  prepareTurboSceneMessage();
   const incoming = replayReactions.flush();
   dialogueEvents.update(Date.now(), phase !== 'menu');
   messenger.update();
+  flushTurboMessageNotification();
   buddy.update();
   const visible = !conversation.offlineContact && messenger.isVisible(conversation);
   const unread = replayReactions.thread.state.unread;

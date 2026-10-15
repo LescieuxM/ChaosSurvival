@@ -43,7 +43,32 @@ export function renderHotelRoom({ onDispose, onResume, navigate }, data, room = 
   browserButton.type = 'button';
   browserButton.setAttribute('aria-expanded', 'false');
   const chatSpace = node('div', undefined, 'hotel-chat-space');
-  chatSpace.setAttribute('aria-hidden', 'true');
+  const chatMode = node('select', undefined, 'hotel-chat-mode');
+  chatMode.setAttribute('aria-label', 'Mode de discussion');
+  for (const mode of ['Parler', 'Crier']) {
+    const option = node('option', mode);
+    option.value = mode === 'Crier' ? 'shout' : 'speak';
+    chatMode.append(option);
+  }
+  const chatInput = node('input', undefined, 'hotel-chat-input');
+  chatInput.type = 'text';
+  chatInput.setAttribute('aria-label', 'Écrire un message');
+  chatInput.setAttribute('autocomplete', 'off');
+  const updateChatWeight = () => {
+    chatInput.style.fontWeight = chatMode.value === 'shout' ? 'bold' : 'normal';
+  };
+  chatMode.value = 'speak';
+  chatMode.addEventListener('change', updateChatWeight);
+  chatInput.addEventListener('input', updateChatWeight);
+  chatInput.addEventListener('keydown', (event) => {
+    event.stopPropagation();
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      chatInput.value = '';
+      chatInput.focus();
+    }
+  });
+  chatSpace.append(chatMode, chatInput);
   navigation.append(browserButton, chatSpace, node('span', room.name, 'hotel-current-room'));
   const viewport = node('div', undefined, 'hotel-viewport');
   const stage = node('div', undefined, 'hotel-stage');

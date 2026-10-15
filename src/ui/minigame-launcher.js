@@ -10,6 +10,7 @@ export class MiniGameLauncher {
     beforeOpen = () => {},
     rules,
     onVictory = () => {},
+    onFinish = () => {},
   ) {
     Object.assign(this, {
       definitions,
@@ -19,6 +20,7 @@ export class MiniGameLauncher {
       beforeOpen,
       rules,
       onVictory,
+      onFinish,
     });
     this.active = null;
   }
@@ -41,6 +43,7 @@ export class MiniGameLauncher {
     this.beforeOpen();
     if (!this.active?.element?.isConnected || this.active.definition.id !== definition.id)
       this.active = createMiniGame(definition, this.manager, this.sounds, (result) => {
+        this.onFinish(definition, result);
         const sequence = this.progression.current;
         if (
           sequence?.type === 'minigame' &&

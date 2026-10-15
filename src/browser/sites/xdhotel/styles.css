@@ -201,18 +201,49 @@
   display: flex;
   flex: none;
   align-items: center;
-  gap: 8px;
-  min-height: 36px;
-  padding: 4px 6px;
+  gap: 7px;
+  min-height: 40px;
+  padding: 5px 8px;
   box-sizing: border-box;
-  border-top: 2px solid #727d85;
-  background: #bfc7cd;
-  box-shadow: inset 0 1px #f4f6f7;
-  color: #202930;
+  border-top: 2px solid #f4f7f8;
+  background: linear-gradient(180deg, #dce4e9 0%, #bac6ce 48%, #aab8c1 100%);
+  box-shadow: inset 0 1px #fff, 0 -1px #7b8992;
+  color: #253744;
 }
 .hotel-chat-space {
+  display: flex;
+  align-items: center;
   flex: 1;
+  gap: 5px;
   min-width: 0;
+}
+.hotel-chat-mode {
+  flex: none;
+  height: 25px;
+  padding: 2px 19px 2px 6px;
+  border: 1px solid #74838c;
+  border-radius: 3px;
+  background: linear-gradient(#fff, #e2e8eb 55%, #cbd5da);
+  box-shadow: inset 1px 1px #fff, 1px 1px #8d9aa2;
+  color: #273b49;
+  font: bold 11px Tahoma, sans-serif;
+}
+.hotel-chat-input {
+  width: 100%;
+  min-width: 0;
+  height: 25px;
+  box-sizing: border-box;
+  padding: 3px 8px;
+  border: 1px solid #87949b;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow: inset 1px 1px 2px #aeb8bd, 0 1px #eef1f2;
+  color: #243642;
+  font: 12px Tahoma, sans-serif;
+}
+.hotel-chat-input:focus {
+  outline: 1px solid #557c91;
+  outline-offset: 0;
 }
 .hotel-current-room {
   overflow: hidden;
@@ -222,13 +253,15 @@
 }
 .hotel-navigator-open,
 .hotel-navigator button {
-  border: 1px solid #59656e;
-  padding: 3px 8px;
-  background: #d5dce1;
+  border: 1px solid #657681;
+  border-radius: 3px;
+  padding: 4px 9px;
+  background: linear-gradient(#f7f9fa, #d8e0e4 52%, #bdc9cf);
   box-shadow:
-    inset 1px 1px #ffffff,
-    inset -1px -1px #8a969f;
-  color: #202930;
+    inset 1px 1px #fff,
+    inset -1px -1px #9eabb2,
+    0 1px #87959d;
+  color: #263b49;
   font:
     bold 11px Tahoma,
     sans-serif;
@@ -242,13 +275,13 @@
 }
 .hotel-navigator-open:hover,
 .hotel-navigator button:hover {
-  background: #e5eaf0;
+  background: linear-gradient(#fff, #e6ecef 52%, #ced9de);
 }
 .hotel-navigator-open:active,
 .hotel-navigator-open[aria-expanded='true'],
 .hotel-navigator button:active {
-  box-shadow: inset 1px 1px #697783;
-  background: #abb8c1;
+  box-shadow: inset 1px 1px 3px #687780, 0 1px #e8edef;
+  background: linear-gradient(#aebbc3, #cad4d9);
 }
 .hotel-navigator-icon {
   position: relative;

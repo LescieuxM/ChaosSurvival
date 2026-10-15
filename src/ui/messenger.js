@@ -17,6 +17,7 @@ export class Messenger {
     settings,
     onWindowState,
     onMessage = () => {},
+    onContactOpened = () => {},
   }) {
     Object.assign(this, {
       manager,
@@ -30,6 +31,7 @@ export class Messenger {
       settings,
       onWindowState,
       onMessage,
+      onContactOpened,
     });
     this.conversations = new Map();
     this.views = new Map();
@@ -41,6 +43,7 @@ export class Messenger {
       undefined,
       this.progression.data.contactConnections,
       this.progression.data.contactProfiles,
+      this.progression.data.flags,
     );
   }
   unreadCount(contact) {
@@ -77,13 +80,26 @@ export class Messenger {
   openContact(contact) {
     contact = this.contacts().find((entry) => entry.id === contact.id);
     if (!contact) return;
+    const view = this.prepareContact(contact);
+    if (!view) return;
+    if (contact.kind === 'decorative' || contact.available === false) view.openOffline(contact);
+    else view.open();
+    view.thread?.markRead?.();
+    this.onContactOpened(contact, view);
+    return view;
+  }
+  prepareContact(contact) {
+    contact = this.contacts().find((entry) => entry.id === contact.id);
+    if (!contact) return;
     let view = contact.id === 'pixelgirl' ? this.primary() : this.conversations.get(contact.id);
     if (!view) {
       view = this.createConversation(contact);
       this.conversations.set(contact.id, view);
     }
-    if (contact.kind === 'decorative' || contact.available === false) view.openOffline(contact);
-    else view.open();
+    if (contact.available && view.offlineContact) {
+      view.closeForViewSwitch?.();
+      view.offlineContact = null;
+    }
     return view;
   }
   attachConversation(view, contactId) {
