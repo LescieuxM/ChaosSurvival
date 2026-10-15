@@ -392,13 +392,6 @@ button.messenger-contact-row:hover {
 .story-desktop .equalizer {
   display: none;
 }
-.story-toast {
-  cursor: pointer;
-}
-.story-toast > #toast-open {
-  margin: 0 12px 12px;
-  width: calc(100% - 24px);
-}
 .popup-narrative {
   width: 620px;
   height: 530px;

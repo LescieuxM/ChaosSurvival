@@ -57,13 +57,11 @@ import { ReplayReactions } from './story/replays.js';
 import { DialogueEvents } from './story/dialogue-events.js';
 import { resetGameToInitialState as resetSession, recoverGameReset } from './story/reset-game.js';
 import { applicationName, trackIdentity } from './ui/identity.js';
+import { NotificationCenter, ENTER_ANIMATION_MS, EXIT_ANIMATION_MS } from './ui/notifications.js';
 
 const BEST_SCORE_KEY = 'chaos-survival-best';
 const DEFAULT_VOLUME = 0.55;
-const CONNECTION_TOAST_ENTRY_MS = 300;
 const MIN_CONNECTION_TOAST_VISIBLE_MS = 3000;
-const CONNECTION_TOAST_MIN_DURATION_MS =
-  CONNECTION_TOAST_ENTRY_MS + MIN_CONNECTION_TOAST_VISIBLE_MS;
 const TURBO_MESSAGE_NOTIFICATION_GAP_MS = 2000;
 const SUPER_PLOMBIER_INVITATION_DELAY_MS = 10_000;
 const SYNC_OFFSET_KEY = `chaos-sync-${music.source.sha256}`;
@@ -92,6 +90,13 @@ const ui = mountDesktop(document.getElementById('app'), best);
 
 const state = new GameState(chart.gameplay);
 const audio = new AudioEngine(chart.volume);
+const notifications = new NotificationCenter({
+  root: ui.toast,
+  contact: ui.toastContact,
+  message: ui.toastMessage,
+  dismissButton: ui.dismissToast,
+  getTime: (clock) => (clock === 'game' ? audio.time * 1000 : Date.now()),
+});
 const progression = new Progression(story, storyStorage);
 const turboSceneFlags = progression.data.flags;
 if (
@@ -117,11 +122,7 @@ const sounds = new DesktopSounds(
   () => (menuMusic.active || phase === 'paused' ? menuMusic.context : audio.context),
 );
 let cancelVictory = () => {};
-let storyToastAction = null;
-let storyToastContactId = null;
-let storyToastKind = null;
-let msnArrivalTimer;
-let connectionToastTimer;
+let turboConnectionNotificationActive = false;
 let timeline;
 let configurationError;
 let director;
@@ -140,7 +141,6 @@ function setPhase(next) {
 let duration = chart.durationSeconds;
 let lastTime = 0;
 let frame = 0;
-let toastUntil = 0;
 let wizzUntil = 0;
 let sparkleUntil = -Infinity;
 let lastLateness = null;
@@ -192,30 +192,23 @@ const messenger = new Messenger({
       if (!flags.superPlombierInvitationNotificationShown) {
         flags.superPlombierInvitationNotificationShown = true;
         progression.save();
-        showMessageNotification(contact);
+        showMessageNotification(contact, 'turbo-flashzone-invitation-message');
       }
       return;
     }
     if (contact.id === 'turbo' && progression.data.flags.turboSmileyScene3ArrivalTriggered) {
       return;
     }
-    showMessageNotification(contact);
+    showMessageNotification(contact, messageNotificationId(contact));
   },
   onContactOpened: (contact) => {
+    notifications.cancelContact(contact.id, 'message');
+    notifications.cancel(`connection:${contact.id}`);
     if (contact.id !== 'turbo' || !progression.data.flags.turboSmileyScene3ArrivalTriggered) return;
-    clearTimeout(connectionToastTimer);
-    connectionToastTimer = undefined;
+    turboConnectionNotificationActive = false;
     progression.data.flags.turboSmileyScene3Opened = true;
     delete progression.data.flags.turboSmileyScene3MessageNotificationDueAt;
     progression.save();
-    storyToastKind = null;
-    if (storyToastContactId === 'turbo') {
-      ui.toast.hidden = true;
-      ui.toastOpen.hidden = true;
-      storyToastAction = null;
-      storyToastContactId = null;
-      toastUntil = 0;
-    }
   },
   createConversation: (contact) => {
     const definition = dialogues[contact.dialogue] ?? pixelgirlDialogue;
@@ -416,40 +409,41 @@ function recordSuperPlombierInvitation() {
     progression.save();
   }
 }
-function showMessageNotification(contact) {
-  const entry = messenger.contacts().find((item) => item.id === contact.id);
-  if (!entry) return;
-  if (storyToastKind === 'connection') finishContactConnectionToast();
-  ui.toastContact.textContent = contact.nickname;
-  ui.toastMessage.textContent =
-    contact.id === 'turbo' ? ' vous a envoyé un message' : 't’a envoyé un nouveau message.';
-  ui.toast.hidden = false;
-  ui.toastOpen.hidden = false;
-  ui.toast.classList.add('story-toast');
-  storyToastAction = () => openConversation(false, entry);
-  storyToastContactId = contact.id;
-  storyToastKind = 'message';
-  toastUntil = audio.time + 6;
+function messageNotificationId(contact) {
+  const unread = progression.data.conversations?.[contact.id]?.unread;
+  const key = Array.isArray(unread) ? unread.filter((item) => typeof item === 'string').join('|') : '';
+  return `message:${contact.id}:${key || 'unread'}`;
 }
-function showContactConnectionNotification(contact) {
-  if (storyToastKind === 'connection') finishContactConnectionToast();
+
+function showMessageNotification(contact, id = messageNotificationId(contact), onShow, delayMs = 0) {
+  if (!messenger.contacts().some((item) => item.id === contact.id)) return;
+  notifications.show({
+    id,
+    type: 'message',
+    contactId: contact.id,
+    contact: contact.nickname,
+    message: contact.id === 'turbo' ? ' vous a envoy\u00e9 un message' : 't\u2019a envoy\u00e9 un nouveau message.',
+    durationMs: 6000,
+    clock: 'game',
+    policy: 'queue',
+    priority: 'important',
+    delayMs,
+    delayClock: delayMs > 0 ? 'real' : 'game',
+    action: () => {
+      const target = messenger.contacts().find((item) => item.id === contact.id);
+      if (target) openConversation(false, target);
+    },
+    onShow,
+  });
+}
+
+function showContactConnectionNotification(contact, options = {}) {
   const contactId = contact.id;
-  ui.toastContact.textContent = contact.nickname;
-  ui.toastMessage.textContent = ' vient de se connecter';
-  ui.toast.hidden = false;
-  ui.toastOpen.hidden = true;
-  ui.toast.classList.add('story-toast');
-  storyToastAction = () => {
-    const notifiedContact = messenger.contacts().find((entry) => entry.id === contactId);
-    if (notifiedContact) openConversation(false, notifiedContact);
-  };
-  storyToastContactId = contactId;
-  storyToastKind = 'connection';
   const displayDurationMs = Math.max(
-    contactId === 'turbo' ? 700 : 6000,
-    CONNECTION_TOAST_MIN_DURATION_MS,
+    options.durationMs ?? (contactId === 'turbo' ? 700 : 6000),
+    ENTER_ANIMATION_MS + MIN_CONNECTION_TOAST_VISIBLE_MS,
   );
-  toastUntil = audio.time + displayDurationMs / 1000;
+  if (contactId === 'turbo') turboConnectionNotificationActive = true;
   if (
     contactId === 'turbo' &&
     progression.data.flags.turboSmileyScene3ArrivalTriggered &&
@@ -457,43 +451,41 @@ function showContactConnectionNotification(contact) {
     !progression.data.flags.turboSmileyScene3Notified
   ) {
     progression.data.flags.turboSmileyScene3MessageNotificationDueAt =
-      Date.now() + displayDurationMs + TURBO_MESSAGE_NOTIFICATION_GAP_MS;
+      Date.now() + displayDurationMs + EXIT_ANIMATION_MS + TURBO_MESSAGE_NOTIFICATION_GAP_MS;
     progression.save();
   }
-  clearTimeout(connectionToastTimer);
-  connectionToastTimer = setTimeout(() => finishContactConnectionToast(contactId), displayDurationMs);
+  notifications.show({
+    id: `connection:${contactId}`,
+    type: 'connection',
+    contactId,
+    contact: contact.nickname,
+    message: ' vient de se connecter',
+    durationMs: displayDurationMs,
+    clock: 'real',
+    policy: 'queue',
+    priority: 'important',
+    action: () => {
+      const target = messenger.contacts().find((entry) => entry.id === contactId);
+      if (target) openConversation(false, target);
+    },
+    onDismiss: (reason, timing) => {
+      if (contactId === 'turbo') {
+        turboConnectionNotificationActive = false;
+        finishTurboConnectionToast();
+      }
+      options.onDismiss?.(reason, timing);
+    },
+  });
 }
-function finishContactConnectionToast(expectedContactId = storyToastContactId) {
-  if (storyToastKind !== 'connection' || storyToastContactId !== expectedContactId) return;
-  if (expectedContactId === 'turbo') {
-    finishTurboConnectionToast();
-    return;
-  }
-  clearTimeout(connectionToastTimer);
-  connectionToastTimer = undefined;
-  ui.toast.hidden = true;
-  ui.toastOpen.hidden = true;
-  storyToastAction = null;
-  storyToastContactId = null;
-  storyToastKind = null;
-  toastUntil = 0;
-}
+
 function finishTurboConnectionToast() {
-  clearTimeout(connectionToastTimer);
-  connectionToastTimer = undefined;
-  if (storyToastKind !== 'connection' || storyToastContactId !== 'turbo') return;
-  ui.toast.hidden = true;
-  ui.toastOpen.hidden = true;
-  storyToastAction = null;
-  storyToastContactId = null;
-  storyToastKind = null;
-  toastUntil = 0;
   const flags = progression.data.flags;
   if (flags.turboSmileyScene3Opened || flags.turboSmileyScene3Notified) return;
   flags.turboSmileyScene3MessageNotificationDueAt =
     Date.now() + TURBO_MESSAGE_NOTIFICATION_GAP_MS;
   progression.save();
 }
+
 function flushTurboMessageNotification() {
   const flags = progression.data.flags;
   const dueAt = flags.turboSmileyScene3MessageNotificationDueAt;
@@ -503,14 +495,16 @@ function flushTurboMessageNotification() {
     progression.save();
     return;
   }
+  if (turboConnectionNotificationActive) return;
   if (!progression.data.dialogues['turbo-smiley-catcher']?.transcript?.length) return;
   if (Date.now() < dueAt) return;
   const contact = messenger.contacts().find((item) => item.id === 'turbo');
   if (!contact?.online) return;
-  delete flags.turboSmileyScene3MessageNotificationDueAt;
-  flags.turboSmileyScene3Notified = true;
-  progression.save();
-  showMessageNotification(contact);
+  showMessageNotification(contact, 'turbo-smiley-scene3-message', () => {
+    delete flags.turboSmileyScene3MessageNotificationDueAt;
+    flags.turboSmileyScene3Notified = true;
+    progression.save();
+  });
 }
 progression.register('arcade', async (sequence) => {
   if (sequence.level !== chart.level)
@@ -620,9 +614,6 @@ async function resetGameToInitialState() {
       progression,
       stop: () => {
         buddy.setActive(false);
-        clearTimeout(msnArrivalTimer);
-        clearTimeout(connectionToastTimer);
-        connectionToastTimer = undefined;
         pauseGeneration++;
         cancelAnimationFrame(frame);
         audio.stop(true);
@@ -634,8 +625,8 @@ async function resetGameToInitialState() {
         taskbarOrder.cancel();
         manager.clear();
         miniGameLauncher.reset();
-        storyToastAction = null;
-        ui.toast.hidden = true;
+        notifications.clear();
+        turboConnectionNotificationActive = false;
         action = secondaryAction = () => {};
         clearEffects();
       },
@@ -657,7 +648,6 @@ async function resetGameToInitialState() {
         arcadeSequenceId = story.start;
         arcadeReplay = false;
         notifiedMessages = '';
-        toastUntil = 0;
         ui.best.textContent = '000000';
         manager.sequence = 0;
         manager.z = 10;
@@ -802,7 +792,6 @@ async function startGame() {
   arcadeReplay = progression.data.completed.includes('arcade-1');
   if (progression.current?.type === 'arcade') arcadeSequenceId = progression.current.id;
   ui.desktop.classList.remove('story-desktop');
-  storyToastAction = null;
   setPhase('loading');
   returnMenu.disabled = true;
   if (!progression.hasSave) progression.begin();
@@ -869,10 +858,6 @@ function tick() {
   ui.desktop.classList.toggle('on-beat', Boolean(beat && time - beat.time < 0.12));
   ui.desktop.classList.toggle('music-accent', Boolean(beat?.accent && time - beat.time < 0.1));
   ui.desktop.classList.toggle('music-sparkle', time < sparkleUntil);
-  if (now >= toastUntil) {
-    if (storyToastKind === 'connection') finishContactConnectionToast();
-    else ui.toast.hidden = true;
-  }
   if (now >= wizzUntil) {
     ui.desktop.classList.remove('wizz');
     ui.wizzLabel.hidden = true;
@@ -1060,18 +1045,18 @@ function feedback(x, y, points, onBeat) {
   ui.feedbackLayer.append(label);
   label.addEventListener('animationend', () => label.remove(), { once: true });
 }
+let gameplayNotificationSequence = 0;
 function notify(contact, message) {
-  if (storyToastAction && !ui.toast.hidden) return;
-  if (storyToastKind === 'connection') finishContactConnectionToast();
-  storyToastAction = null;
-  storyToastContactId = null;
-  storyToastKind = null;
-  ui.toastOpen.hidden = true;
-  ui.toast.classList.remove('story-toast');
-  ui.toastContact.textContent = contact;
-  ui.toastMessage.textContent = message;
-  ui.toast.hidden = false;
-  toastUntil = audio.time + 4.5;
+  notifications.show({
+    id: `gameplay:${++gameplayNotificationSequence}`,
+    type: 'gameplay',
+    contact,
+    message,
+    durationMs: 4500,
+    clock: 'game',
+    policy: 'replace',
+    priority: 'transient',
+  });
 }
 function wizz() {
   ui.desktop.classList.remove('wizz');
@@ -1081,18 +1066,10 @@ function wizz() {
   wizzUntil = audio.time + 0.65;
 }
 function clearEffects() {
-  clearTimeout(msnArrivalTimer);
-  clearTimeout(connectionToastTimer);
-  connectionToastTimer = undefined;
-  storyToastAction = null;
-  storyToastContactId = null;
-  storyToastKind = null;
-  ui.toast.classList.remove('story-toast');
-  ui.toastOpen.hidden = true;
-  toastUntil = 0;
+  notifications.clear();
+  turboConnectionNotificationActive = false;
   wizzUntil = 0;
   sparkleUntil = -Infinity;
-  ui.toast.hidden = true;
   ui.wizzLabel.hidden = true;
   ui.desktop.classList.remove('wizz', 'on-beat', 'music-accent', 'music-sparkle');
   ui.desktop.style.setProperty('--music-intensity', 0);
@@ -1123,28 +1100,23 @@ function showStoryDesktop(announce) {
   ui.chaosCaption.textContent = 'Le bureau est calme. Place aux amis.';
   if (announce) {
     const contact = messenger.contacts().find((entry) => entry.id === 'pixelgirl');
-    if (contact) showContactConnectionNotification(contact);
+    if (contact)
+      showContactConnectionNotification(contact, {
+        durationMs: ENTER_ANIMATION_MS + MIN_CONNECTION_TOAST_VISIBLE_MS,
+        onDismiss: (_reason, timing) => {
+          if (phase !== 'desktop' || conversation.element?.isConnected) return;
+          const pixelGirl = messenger.contacts().find((entry) => entry.id === 'pixelgirl');
+          if (!pixelGirl) return;
+          const delayMs = Math.max(0, timing.expiresAt - timing.dismissedAt);
+          showMessageNotification(
+            pixelGirl,
+            'pixelgirl-first-message',
+            () => sounds.play('message'),
+            delayMs,
+          );
+        },
+      });
     sounds.play('online');
-    clearTimeout(msnArrivalTimer);
-    msnArrivalTimer = setTimeout(() => {
-      if (phase !== 'desktop' || conversation.element?.isConnected) return;
-      if (storyToastContactId === 'pixelgirl' && storyToastKind === 'connection') {
-        clearTimeout(connectionToastTimer);
-        connectionToastTimer = undefined;
-        ui.toast.hidden = true;
-        toastUntil = 0;
-      }
-      ui.toastMessage.textContent = 't’a envoyé un nouveau message.';
-      ui.toast.hidden = false;
-      ui.toastOpen.hidden = false;
-      const contact = messenger.contacts().find((entry) => entry.id === 'pixelgirl');
-      if (contact) {
-        storyToastAction = () => openConversation(false, contact);
-      }
-      storyToastContactId = 'pixelgirl';
-      storyToastKind = 'message';
-      sounds.play('message');
-    }, CONNECTION_TOAST_MIN_DURATION_MS);
   }
   renderDesktopFiles();
   debug.render();
@@ -1156,15 +1128,6 @@ async function openConversation(restore = false, contact = null) {
     ui.modalLayer.hidden = true;
     ui.playfield.inert = false;
   }
-  if (contact && storyToastKind === 'connection' && storyToastContactId === contact.id) {
-    clearTimeout(connectionToastTimer);
-    connectionToastTimer = undefined;
-    storyToastAction = null;
-    storyToastContactId = null;
-    storyToastKind = null;
-    toastUntil = 0;
-  }
-  ui.toast.hidden = true;
   sounds.unlock();
   if (contact) messenger.openContact(contact);
   else if (restore === true) conversation.restore();
@@ -1231,14 +1194,6 @@ ui.pauseButton.addEventListener('click', pauseGame);
 ui.helpButton.addEventListener('click', help);
 ui.dialogAction.addEventListener('click', () => action());
 ui.dialogSecondary.addEventListener('click', () => secondaryAction());
-ui.dismissToast.addEventListener('click', () => {
-  if (storyToastKind === 'connection') finishContactConnectionToast();
-  else ui.toast.hidden = true;
-});
-ui.toastOpen.addEventListener('click', () => storyToastAction?.());
-ui.toast.addEventListener('click', (event) => {
-  if (!event.target.closest('button')) storyToastAction?.();
-});
 ui.menuMessenger.addEventListener('click', () => {
   setStartMenuOpen(false);
   openMessenger();
@@ -1370,7 +1325,7 @@ function receiveReplayReactions() {
   buddy.update();
   const visible = !conversation.offlineContact && messenger.isVisible(conversation);
   const unread = replayReactions.thread.state.unread;
-  if (visible && !unread.length && storyToastAction === openConversation) ui.toast.hidden = true;
+  if (visible && !unread.length) notifications.cancelContact('pixelgirl', 'message');
   const notificationKey = `${progression.data.runId}:${unread.join(',')}`;
   if (incoming.length) sounds.unlock().then(() => sounds.play('message'));
   if (
@@ -1380,16 +1335,10 @@ function receiveReplayReactions() {
     notificationKey !== notifiedMessages
   ) {
     notifiedMessages = notificationKey;
-    ui.toastContact.textContent = pixelgirlDialogue.contact.nickname;
-    ui.toastMessage.textContent = 't’a envoyé un nouveau message.';
-    ui.toast.hidden = false;
-    ui.toastOpen.hidden = false;
-    ui.toast.classList.add('story-toast');
-    storyToastAction = openConversation;
-    storyToastContactId = 'pixelgirl';
-    storyToastKind = 'message';
-    toastUntil = audio.time + 6;
+    const contact = messenger.contacts().find((entry) => entry.id === 'pixelgirl');
+    if (contact) showMessageNotification(contact, `replay:${notificationKey}`);
   }
+  notifications.update();
   requestAnimationFrame(receiveReplayReactions);
 }
 receiveReplayReactions();

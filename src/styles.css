@@ -1173,6 +1173,15 @@ h1 .title-star {
   box-shadow: 0 4px 20px #17375844;
   z-index: 450;
   animation: toast-in 0.3s ease-out;
+  cursor: pointer;
+}
+.toast:focus-visible {
+  outline: 2px solid #154f91;
+  outline-offset: 2px;
+}
+.toast.is-dismissing {
+  animation: toast-out 0.18s ease-in forwards;
+  pointer-events: none;
 }
 .toast > header {
   display: flex;
@@ -1195,6 +1204,7 @@ h1 .title-star {
   color: #668ab3;
   font-size: 16px;
   padding: 0 2px;
+  cursor: pointer;
 }
 .toast > div {
   display: flex;
@@ -1549,6 +1559,16 @@ h1 .title-star {
   to {
     opacity: 1;
     transform: none;
+  }
+}
+@keyframes toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px);
   }
 }
 @keyframes points {
