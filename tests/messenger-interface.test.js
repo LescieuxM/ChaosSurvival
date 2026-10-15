@@ -22,7 +22,7 @@ const read = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url)));
 const intro = read('../src/dialogues/pixelgirl-intro.json');
 
 test('display order is explicit, independent of creation order, and stable within connection groups', () => {
-  const order = ['skater', 'luna', 'modem', 'pixelgirl', 'princess', 'offline', 'turbo'];
+  const order = ['skater', 'luna', 'modem', 'pixelgirl', 'princess', 'offline', 'turbo', 'k7', 'm0rbid'];
   const source = visibleContacts({ [intro.id]: intro }, []);
   const before = JSON.stringify(source);
   assert.deepEqual(
@@ -215,7 +215,7 @@ test('profiles reuse stable windows and update current status/message without ch
     field = (selector) => instance.element.querySelector(selector);
   assert.equal(field('.messenger-profile img').src, './avatars/turbo.svg');
   assert.equal(field('img').src, undefined, 'the titlebar icon is not overwritten');
-  assert.equal(field('h3').textContent, 'xX_TURBO_59_Xx');
+  assert.equal(field('h3').textContent, 'Turb0');
   assert.equal(field('.profile-status').textContent, 'Hors ligne');
   const before = JSON.stringify([progression.data.dialogues, progression.data.choices]);
   progression.data.contactConnections.turbo = { status: 'online' };
@@ -526,7 +526,7 @@ test('the menu CRT is original and distinct from the desktop computer', () => {
 
 test('main contacts are visible offline initially and become available in place without duplicates', () => {
   const locked = visibleContacts({ [intro.id]: intro }, []);
-  assert.equal(locked.length, 7);
+  assert.equal(locked.length, 9);
   assert.ok(
     locked.every(
       (contact) => !contact.online && contact.status === 'Hors ligne' && !contact.available,
@@ -539,11 +539,11 @@ test('main contacts are visible offline initially and become available in place 
   const unlocked = visibleContacts({ [intro.id]: intro }, [intro.id]);
   assert.deepEqual(
     locked
-      .filter((contact) => ['pixelgirl', 'turbo', 'luna', 'offline'].includes(contact.id))
+      .filter((contact) => ['pixelgirl', 'turbo', 'luna', 'offline', 'k7', 'm0rbid'].includes(contact.id))
       .map((contact) => contact.nickname),
-    ['xX_PixelGirl_Xx', 'xX_TURBO_59_Xx', '°•.LuNa.°•', '0FFLINE'],
+    ['xX_PixelGirl_Xx', 'Turb0', '°•.LuNa.°•', '0FFLINE', 'K7', 'x_M0RBID_x'],
   );
-  assert.equal(unlocked.length, 7);
+  assert.equal(unlocked.length, 9);
   const pixel = unlocked.find((contact) => contact.id === 'pixelgirl');
   assert.equal(pixel.nickname, intro.contact.nickname);
   assert.equal(pixel.online, true);
@@ -552,7 +552,21 @@ test('main contacts are visible offline initially and become available in place 
     turbo: { status: 'online' },
   });
   assert.equal(connected.find((contact) => contact.id === 'turbo').online, true);
-  assert.equal(new Set(connected.map((contact) => contact.id)).size, 7);
+  assert.equal(new Set(connected.map((contact) => contact.id)).size, 9);
+  for (const [id, nickname, personalMessage] of [
+    ['k7', 'K7', '♫ ON AIR !!!'],
+    ['m0rbid', 'x_M0RBID_x', ''],
+  ]) {
+    const contact = locked.find((entry) => entry.id === id);
+    assert.equal(contact.kind, 'decorative');
+    assert.equal(contact.nickname, nickname);
+    assert.equal(contact.personalMessage, personalMessage);
+    assert.equal(contact.status, 'Hors ligne');
+    assert.equal(contact.online, false);
+    assert.equal(contact.available, false);
+    assert.equal(contact.dialogue, undefined);
+    assert.equal(contact.connection, undefined);
+  }
   assert.ok(locked.every((contact) => !['Raph', 'SUPER_BUDDY'].includes(contact.nickname)));
   const future = { ...intro, id: 'future-contact', contact: { ...intro.contact, name: 'Future' } };
   const roster = [{ id: 'future', kind: 'narrative', dialogue: future.id }];
@@ -629,7 +643,7 @@ test('contact presence does not unlock stories or alter saved dialogue data and 
     undefined,
     restored.data.contactConnections,
   );
-  assert.equal(fresh.length, 7);
+  assert.equal(fresh.length, 9);
   assert.ok(fresh.every((contact) => !contact.online && !contact.available));
 });
 

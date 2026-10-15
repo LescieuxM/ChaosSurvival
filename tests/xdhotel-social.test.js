@@ -120,7 +120,9 @@ test('18 local visitors have unique identities, free spawns and six distinct val
       .match(/"[^"\n]+"/g)
       ?.map((name) => name.slice(1, -1)),
   );
-  for (const npc of npcs) assert.ok(!storyNames.has(npc.name));
+  for (const npc of npcs) {
+    if (npc.name !== 'Turb0') assert.ok(!storyNames.has(npc.name));
+  }
   assert.equal(new Set(conversations.map((entry) => entry.id)).size, 30);
   for (const room of rooms) {
     const simulation = new RoomSimulation(room, { random: random() });

@@ -23,9 +23,9 @@ function image(path, alt, className = '') {
   element.alt = alt;
   return element;
 }
-function date(value) {
+function date(value, time) {
   const [year, month, day] = value.split('-');
-  return `${day}/${month}/${year}`;
+  return `${day}/${month}/${year}${time ? ` à ${time}` : ''}`;
 }
 function shell(data, theme = 'home') {
   const root = node('section', `skypage sky-${theme}`);
@@ -132,7 +132,10 @@ export function renderSkyBlog({ url }, data, blog) {
     const post = node('article', 'sky-post');
     post.dataset.articleId = article.id;
     const header = node('header', 'sky-post-header');
-    header.append(node('h3', '', article.title), node('time', '', date(article.date)));
+    header.append(
+      node('h3', '', article.title),
+      node('time', '', date(article.date, article.time)),
+    );
     post.append(header);
     const body = node('div', 'sky-post-body');
     for (const paragraph of article.paragraphs) body.append(node('p', '', paragraph));
@@ -144,7 +147,7 @@ export function renderSkyBlog({ url }, data, blog) {
       const row = node('div', 'sky-comment');
       row.append(
         node('strong', '', comment.author),
-        node('small', '', date(comment.date)),
+        node('small', '', date(comment.date, comment.time)),
         node('p', '', comment.text),
       );
       comments.append(row);

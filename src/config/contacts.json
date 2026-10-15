@@ -34,7 +34,7 @@
     "kind": "decorative",
     "connection": true,
     "visibleInitially": true,
-    "nickname": "xX_TURBO_59_Xx",
+    "nickname": "Turb0",
     "status": "En ligne",
     "personalMessage": "♫ BASSHUNTER - DOTA ♫",
     "avatar": "./avatars/turbo.svg"
@@ -59,5 +59,23 @@
     "status": "Hors ligne",
     "personalMessage": "",
     "avatar": "./avatars/offline.svg"
+  },
+  {
+    "id": "k7",
+    "kind": "decorative",
+    "visibleInitially": true,
+    "nickname": "K7",
+    "status": "Hors ligne",
+    "personalMessage": "♫ ON AIR !!!",
+    "avatar": "./avatars/k7.svg"
+  },
+  {
+    "id": "m0rbid",
+    "kind": "decorative",
+    "visibleInitially": true,
+    "nickname": "x_M0RBID_x",
+    "status": "Hors ligne",
+    "personalMessage": "",
+    "avatar": "./avatars/m0rbid.svg"
   }
 ]

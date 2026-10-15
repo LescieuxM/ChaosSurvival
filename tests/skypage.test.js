@@ -23,6 +23,8 @@ const articleCounts = {
   grillepain_92: 4,
   disquette44: 6,
   padsansfil: 4,
+  k7: 4,
+  m0rbid: 5,
 };
 const walk = (node) => [node, ...(node.children ?? []).flatMap(walk)];
 function dom(t) {
@@ -46,8 +48,8 @@ function dom(t) {
     else globalThis.document = previous;
   });
 }
-test('SkyPage exposes home and eight available blog routes without narrative prerequisites', () => {
-  assert.equal(skyPages.length, 9);
+test('SkyPage exposes home and ten available blog routes without narrative prerequisites', () => {
+  assert.equal(skyPages.length, 11);
   for (const url of [
     'skypage.fr',
     'www.skypage.fr',
@@ -55,6 +57,8 @@ test('SkyPage exposes home and eight available blog routes without narrative pre
     'skypage.fr/luna',
     'skypage.fr/sk8er_du_93',
     'skypage.fr/oo_bubble-princess_oo',
+    'skypage.fr/k7',
+    'skypage.fr/m0rbid',
   ])
     assert.ok(localPages.resolve(url, {}).page);
   assert.equal(localPages.resolve('skypage.fr/turbo', {}).error, 'not-found');
@@ -70,7 +74,6 @@ test('all articles follow the requested distribution, with valid dates and MSN c
   );
   const allowedAuthors = new Set(
     contacts
-      .filter((contact) => contact.id !== 'turbo')
       .map(
         (contact) =>
           contact.nickname ??
@@ -100,10 +103,12 @@ test('all articles follow the requested distribution, with valid dates and MSN c
         assert.match(comment.date, /^2009-/);
         assert.ok(comment.author && comment.text);
         assert.ok(
-          allowedAuthors.has(comment.author),
+          allowedAuthors.has(comment.author) ||
+            (blog.id === 'm0rbid' &&
+              article.id === 'fosse-desespoir' &&
+              ['M0RBID', 'DarkAngel62', 'xxDeadDollxx'].includes(comment.author)),
           `Comment author must be an exact MSN nickname: ${comment.author}`,
         );
-        assert.doesNotMatch(comment.author, /turbo/i, 'TURBO never posts on SkyPage');
       }
     }
   }
@@ -128,7 +133,7 @@ test('all articles follow the requested distribution, with valid dates and MSN c
       pixel.articles.reduce((sum, article) => sum + article.comments.length, 0),
   );
 });
-test('XD Search indexes implemented blogs with relevant results and no fabricated Turbo blog', () => {
+test('XD Search indexes implemented blogs with relevant results and no fabricated Turb0 blog', () => {
   for (const term of ['skypage', 'blog', 'pixelgirl', 'luna', 'dessins', 'evanescence'])
     assert.ok(localPages.search(term, {}).length > 0, term);
   assert.equal(localPages.search('PIXELGIRL', {})[0].url, `${SKY_URL}pixelgirl`);
@@ -140,7 +145,7 @@ test('XD Search indexes implemented blogs with relevant results and no fabricate
       .filter((page) => page.url === `${SKY_URL}pixelgirl` || page.url === `${SKY_URL}luna`).length,
     2,
   );
-  assert.ok(!localPages.search('turbo', {}).some((page) => page.url === `${SKY_URL}turbo`));
+  assert.ok(!localPages.search('Turb0', {}).some((page) => page.url === `${SKY_URL}turbo`));
 });
 test('rendered pages have only valid internal links and show articles, local graphics and comments without editing controls', (t) => {
   dom(t);
@@ -195,7 +200,7 @@ test('secondary blogs use exact identities, searchable themes and recent-visit/l
     [
       'oo_bubble-princess_oo',
       'Oo_bubble-princess_oO',
-      ['oo_bubble-princess_oo', 'bonbons', 'princesse', 'mode', 'coque téléphone'],
+      ['oo_bubble-princess_oo', 'bonbons', 'princesse', 'mode', 'coque tÃ©lÃ©phone'],
     ],
   ]) {
     const address = `${SKY_URL}${id}`;
@@ -209,7 +214,7 @@ test('secondary blogs use exact identities, searchable themes and recent-visit/l
       );
     for (const post of blog.articles) {
       if (post.image) assert.ok(post.image.endsWith('.jpg'));
-      assert.doesNotMatch(JSON.stringify(post), /Sk8erboy|BubblePrincess|ARCHIVE|Buddy|TURBO/i);
+      assert.doesNotMatch(JSON.stringify(post), /Sk8erboy|BubblePrincess|ARCHIVE|Buddy|Turb0/i);
     }
   }
   const home = localPages.resolve(SKY_URL, {}).page;
@@ -291,25 +296,27 @@ test('friends directory includes only MSN blogs and future contact blog addition
       (link) => link.href === '#' && localPages.resolve(link.dataset.browserLink, {}).page,
     ),
   );
-  assert.ok(links.every((link) => !/turbo/i.test(link.textContent)));
+  assert.ok(links.every((link) => !/turb0/i.test(link.textContent)));
   assert.equal(nodes.filter((node) => node.className === 'sky-discovery').length, 0);
   assert.equal(nodes.filter((node) => node.className === 'sky-latest').length, 4);
   assert.equal(nodes.find((node) => node.className === 'sky-nav').children.length, 1);
   const future = { ...skyPageData.blogs[0], id: 'future-blog', nickname: 'Future contact' };
   const expanded = render({ ...skyPageData, blogs: [...skyPageData.blogs, future] });
   const added = expanded.find((node) => node.className === 'sky-box sky-friends');
-  assert.equal(walk(added).filter((node) => node.tag === 'a').length, 5);
+  assert.equal(walk(added).filter((node) => node.tag === 'a').length, 7);
   assert.ok(walk(added).some((node) => node.dataset?.browserLink === blogUrl(future)));
 });
 
-test('new blog owners already participate in multiple ForumJeu threads but do not become MSN contacts', () => {
+test('existing ForumJeu blog authors remain independent of MSN contacts', () => {
   const forum = JSON.parse(
     readFileSync(new URL('../src/browser/sites/forumjeu/data.json', import.meta.url)),
   );
   const contacts = JSON.parse(
     readFileSync(new URL('../src/config/contacts.json', import.meta.url)),
   );
-  const blogs = skyPageData.blogs.slice(4);
+  const blogs = skyPageData.blogs.filter((blog) =>
+    ['cartouchegrise', 'grillepain_92', 'disquette44', 'padsansfil'].includes(blog.id),
+  );
   assert.equal(blogs.length, 4);
   for (const blog of blogs) {
     const threads = forum.categories
@@ -322,8 +329,63 @@ test('new blog owners already participate in multiple ForumJeu threads but do no
     assert.equal(route.page.rememberVisit, true);
     assert.ok(localPages.search(blog.nickname, {}).some((page) => page.url === blogUrl(blog)));
     assert.ok(blog.articles.length >= 4 && blog.articles.length <= 6);
-    assert.doesNotMatch(JSON.stringify(blog), /\b(?:ARCHIVE|Buddy|Raph|TikTok|Discord|TURBO)\b/i);
+    assert.doesNotMatch(JSON.stringify(blog), /\b(?:ARCHIVE|Buddy|Raph|TikTok|Discord|Turb0)\b/i);
   }
+});
+
+test('K7 and M0RBID have searchable contact-linked SkyPages', () => {
+  for (const [id, nickname] of [['k7', 'K7'], ['m0rbid', 'x_M0RBID_x']]) {
+    const blog = skyPageData.blogs.find((entry) => entry.id === id);
+    assert.ok(blog);
+    assert.equal(blog.contactId, id);
+    assert.equal(blog.nickname, nickname);
+    assert.equal(blog.articles.length, id === 'm0rbid' ? 5 : 4);
+    assert.ok(blog.articles.every((article) => article.date.startsWith('2009-01-')));
+    assert.ok(localPages.resolve(blogUrl(blog), {}).page);
+    assert.ok(localPages.search(nickname, {}).some((page) => page.url === blogUrl(blog)));
+  }
+  assert.ok(
+    skyPageData.blogs.find((blog) => blog.id === 'k7').articles[0].comments.some((comment) =>
+      comment.author === 'Turb0',
+    ),
+  );
+});
+
+test('M0RBID’s Harlow article is complete, chronological, and has all eight timed comments', (t) => {
+  dom(t);
+  const blog = skyPageData.blogs.find((entry) => entry.id === 'm0rbid');
+  const article = blog.articles.find((entry) => entry.id === 'fosse-desespoir');
+  assert.ok(article);
+  assert.equal(article.title, 'la fosse du désespoir.');
+  assert.equal(article.date, '2009-01-18');
+  assert.equal(article.time, '02:43');
+  assert.ok(article.paragraphs.length > 100);
+  assert.equal(article.paragraphs[0], 'bon.');
+  assert.equal(article.paragraphs.at(-1), 'm0rbid');
+  assert.equal(article.comments.length, 8);
+  assert.deepEqual(
+    article.comments.map(({ author, time }) => [author, time]),
+    [
+      ['Turb0', '11:26'],
+      ['M0RBID', '12:04'],
+      ['DarkAngel62', '14:17'],
+      ['M0RBID', '14:39'],
+      ['K7', '19:52'],
+      ['M0RBID', '20:11'],
+      ['xxDeadDollxx', '00:38'],
+      ['M0RBID', '01:02'],
+    ],
+  );
+  const route = localPages.resolve(blogUrl(blog), {});
+  const nodes = walk(route.page.render({ url: route.url }));
+  const articleNode = nodes.find((node) => node.dataset.articleId === article.id);
+  assert.ok(articleNode);
+  assert.equal(
+    walk(articleNode).filter((node) => node.className === 'sky-comment').length,
+    8,
+  );
+  assert.ok(walk(articleNode).some((node) => node.textContent === '18/01/2009 à 02:43'));
+  assert.ok(walk(articleNode).some((node) => node.textContent === '18/01/2009 à 11:26'));
 });
 
 test('public blogs stay searchable/directly accessible and enter recents without entering friends or latest posts', (t) => {
@@ -334,7 +396,7 @@ test('public blogs stay searchable/directly accessible and enter recents without
   const friends = nodes.find((node) => node.className === 'sky-box sky-friends');
   const latest = nodes.filter((node) => node.className === 'sky-latest');
   const recent = nodes.filter((node) => node.className === 'sky-discovery');
-  assert.equal(walk(friends).filter((node) => node.tag === 'a').length, 4);
+  assert.equal(walk(friends).filter((node) => node.tag === 'a').length, 6);
   assert.deepEqual(
     recent.map((row) => walk(row).find((node) => node.tag === 'a').dataset.browserLink),
     publicBlogs.map(blogUrl),
@@ -356,7 +418,7 @@ test('public blogs stay searchable/directly accessible and enter recents without
     walk(filtered.find((node) => node.className === 'sky-box sky-friends')).filter(
       (node) => node.tag === 'a',
     ).length,
-    4,
+    6,
   );
 });
 

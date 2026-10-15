@@ -474,6 +474,69 @@
 .sky-pad .sky-post {
   border-top: 4px solid #5472a5;
 }
+.sky-k7 {
+  --sky-border: #49527f;
+  --sky-panel: #171d37;
+  --sky-comments: #252e50;
+  --sky-link: #79f4df;
+  color: #e9efff;
+  background: repeating-linear-gradient(135deg, #11162b 0 8px, #191f3a 8px 16px);
+}
+.sky-k7 .sky-header {
+  background: linear-gradient(110deg, #17233f, #55245f 55%, #174b56);
+  border-color: #465378;
+  border-bottom: 3px solid #72f7e5;
+}
+.sky-k7 .sky-nav {
+  background: #252d4b;
+}
+.sky-k7 .sky-blog-title {
+  border: 2px solid #72f7e5;
+  background: linear-gradient(120deg, #20294a, #39234e, #142d3b);
+  box-shadow: inset 0 0 0 3px #11162d, 0 0 10px #56e8d088;
+}
+.sky-k7 .sky-blog-title::after {
+  content: '▂ ▅ ▃ ▇ ▄ ▆';
+  display: block;
+  margin-top: 8px;
+  color: #ff58c7;
+  font: bold 15px/1 'Courier New', monospace;
+  letter-spacing: 3px;
+}
+.sky-k7 .sky-post-header {
+  color: #72f7e5;
+  background: linear-gradient(90deg, #20294a, #2c2347);
+}
+.sky-m0rbid {
+  --sky-border: #645276;
+  --sky-panel: #1d1925;
+  --sky-comments: #292333;
+  --sky-link: #d3b6ef;
+  color: #e4dce9;
+  background: radial-gradient(ellipse at 50% 0, #30243e, #111016 70%);
+  font-family: Tahoma, Arial, sans-serif;
+}
+.sky-m0rbid .sky-header {
+  background: linear-gradient(#392c49, #17131f);
+  border-color: #655276;
+  border-bottom: 3px double #a38ab4;
+}
+.sky-m0rbid .sky-nav {
+  background: #211b2b;
+}
+.sky-m0rbid .sky-blog-title {
+  text-align: left;
+  border: 2px ridge #766487;
+  background: repeating-linear-gradient(0deg, #211c2a 0 3px, #282232 3px 4px);
+}
+.sky-m0rbid .sky-blog-title h2 {
+  color: #d5b9ee;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+.sky-m0rbid .sky-post-header {
+  color: #d5b9ee;
+  background: #292333;
+}
 .sky-cartouche .sky-sidebar h3,
 .sky-grillepain .sky-sidebar h3,
 .sky-disquette .sky-sidebar h3,
