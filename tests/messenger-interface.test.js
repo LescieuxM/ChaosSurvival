@@ -7,7 +7,7 @@ import { Progression } from '../src/story/progression.js';
 import { VirtualTextFiles } from '../src/story/text-files.js';
 import { VirtualFilesystem } from '../src/story/virtual-filesystem.js';
 import { orderedContacts, visibleContacts } from '../src/ui/contacts.js';
-import { Messenger, identifyMessageSender } from '../src/ui/messenger.js';
+import { Messenger, identifyMessageSender, wizzNotificationContent } from '../src/ui/messenger.js';
 import { playerIdentity } from '../src/ui/player-identity.js';
 import {
   desktopApps,
@@ -87,8 +87,9 @@ test('Wizz send events persist one chronological system entry for each sender wi
   const narrative = JSON.stringify(progression.data.dialogues);
   const classes = new Set();
   let refreshes = 0,
-    notifications = 0,
-    sounds = 0;
+    notifications = 0;
+  const sounds = [];
+  const incomingWizzes = [];
   const view = {
     thread,
     refresh: () => refreshes++,
@@ -104,8 +105,11 @@ test('Wizz send events persist one chronological system entry for each sender wi
     progression,
     primary: () => view,
     definitions: () => ({ [intro.id]: intro }),
-    sounds: { unlock: () => Promise.resolve(), play: () => sounds++ },
-    onMessage: () => notifications++,
+    sounds: { unlock: () => Promise.resolve(), play: (kind) => sounds.push(kind) },
+    onMessage: (...args) => {
+      notifications++;
+      incomingWizzes.push(args);
+    },
   });
   const first = thread.state.history[0];
   assert.equal(messenger.sendWizz('pixelgirl', { eventId: 'player-1' }), true);
@@ -119,8 +123,11 @@ test('Wizz send events persist one chronological system entry for each sender wi
   await Promise.resolve();
   assert.ok(classes.has('messenger-wizz'));
   assert.equal(refreshes, 3);
-  assert.equal(sounds, 3);
+  assert.deepEqual(sounds, ['wizz', 'wizz', 'wizz']);
   assert.equal(notifications, 1);
+  assert.equal(incomingWizzes[0][2][0].type, 'wizz');
+  assert.equal(incomingWizzes[0][2][0].speaker, 'contact');
+  assert.equal(incomingWizzes[0][4].active, false);
   assert.equal(thread.state.history[0], first);
   assert.deepEqual(
     thread.state.history.slice(1).map((entry) => entry.text),
@@ -140,6 +147,54 @@ test('Wizz send events persist one chronological system entry for each sender wi
   restored.markRead();
   assert.equal(restored.state.unread.length, 0);
   assert.equal(restored.state.history.length, 4);
+});
+
+test('an incoming Wizz in the active conversation plays its effect without becoming unread', async () => {
+  const progression = new Progression(read('../src/config/story.json'));
+  progression.begin();
+  progression.complete('arcade-1');
+  const thread = new ConversationThread('pixelgirl', progression, () => [intro]);
+  const classes = new Set();
+  const events = [];
+  let sounds = 0;
+  const view = {
+    thread,
+    refresh() {},
+    element: {
+      isConnected: true,
+      hidden: false,
+      style: { zIndex: 1 },
+      classList: { add: (name) => classes.add(name), remove: (name) => classes.delete(name) },
+    },
+  };
+  const messenger = new Messenger({
+    manager: { windows: new Map() },
+    progression,
+    primary: () => view,
+    definitions: () => ({ [intro.id]: intro }),
+    sounds: { unlock: () => Promise.resolve(), play: (kind) => { if (kind === 'wizz') sounds++; } },
+    onMessage: (...args) => events.push(args),
+  });
+
+  assert.equal(messenger.receiveWizz('pixelgirl', 'active-wizz'), true);
+  await Promise.resolve();
+  assert.equal(sounds, 1);
+  assert.ok(classes.has('messenger-wizz'));
+  assert.deepEqual(thread.state.unread, []);
+  assert.equal(events.length, 1);
+  assert.equal(events[0][2][0].type, 'wizz');
+  assert.equal(events[0][4].active, true);
+});
+
+test('Wizz toast content uses the sender name and the Wizz wording', () => {
+  assert.deepEqual(wizzNotificationContent({ name: 'PixelGirl', nickname: 'xX_PixelGirl_Xx' }), {
+    sender: 'PixelGirl',
+    preview: 'vous a envoyé un wizz !',
+  });
+  assert.deepEqual(wizzNotificationContent({ name: 'Luna', nickname: 'Â°â€¢.LuNa.Â°â€¢' }), {
+    sender: 'Luna',
+    preview: 'vous a envoyé un wizz !',
+  });
 });
 
 test('a malformed thread row is isolated while valid messages and other contacts survive reload', () => {

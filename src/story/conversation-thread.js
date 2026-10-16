@@ -234,9 +234,7 @@ export class ConversationThread {
   receive(now = Date.now()) {
     const previousKeys = new Set(this.state.history.map((entry) => entry.key));
     const incoming = [];
-    const first = this.getEvents()[0];
-    if (first && this.receiveScheduled(first, now)) incoming.push(first);
-    for (const event of this.getEvents().slice(1)) {
+    for (const event of this.getEvents()) {
       if (this.progression.data.dialogues[event.id]?.finished && !this.hasPendingFile(event.id))
         continue;
       // Receive independently of other pending choices; only replies need the UI.
@@ -245,7 +243,7 @@ export class ConversationThread {
         if (this.receiveScheduled(event, now)) incoming.push(event);
         continue;
       }
-      if (!saved && !Number.isFinite(event.incomingAt)) {
+      if (!saved && event.incomingAt === undefined) {
         this.schedule(event, now);
         if (this.receiveScheduled(event, now)) incoming.push(event);
         continue;

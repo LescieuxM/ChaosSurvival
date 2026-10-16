@@ -15,10 +15,10 @@ export class DesktopSounds {
   play(kind) {
     const context = this.getContext() ?? this.context;
     if (!context || context.state !== 'running' || !this.getVolume()) return;
+    if (kind === 'wizz') return this.playWizz(context);
     const notes = {
       online: [659, 880, 1047],
       message: [880, 1175],
-      wizz: [220, 440, 220, 440],
       offline: [659, 523, 392],
       send: [523, 659],
       catch: [440, 1568, 880],
@@ -42,5 +42,33 @@ export class DesktopSounds {
         gain.disconnect();
       };
     });
+  }
+  playWizz(context) {
+    const start = context.currentTime;
+    const oscillator = context.createOscillator();
+    const filter = context.createBiquadFilter();
+    const gain = context.createGain();
+    oscillator.type = 'sawtooth';
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(1050, start);
+    filter.Q.setValueAtTime(1.4, start);
+    const steps = [360, 1180, 240, 1040, 310, 1320, 420, 260];
+    oscillator.frequency.setValueAtTime(steps[0], start);
+    steps.slice(1).forEach((frequency, index) => {
+      oscillator.frequency.linearRampToValueAtTime(frequency, start + (index + 1) * 0.045);
+    });
+    gain.gain.setValueAtTime(0.001, start);
+    gain.gain.linearRampToValueAtTime(this.getVolume() * 0.1, start + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.39);
+    oscillator.connect(filter);
+    filter.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(start);
+    oscillator.stop(start + 0.4);
+    oscillator.onended = () => {
+      oscillator.disconnect();
+      filter.disconnect();
+      gain.disconnect();
+    };
   }
 }

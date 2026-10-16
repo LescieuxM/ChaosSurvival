@@ -1,4 +1,4 @@
-import config from '../config/menu.json';
+import config from '../config/menu.json' with { type: 'json' };
 import { applications, applicationName, trackIdentity } from './identity.js';
 import { icon } from './icons.js';
 export function menuPresentation(data, definition = config) {
@@ -161,14 +161,6 @@ export class MainMenu {
     this.find('#menu-play').addEventListener('click', () =>
       this.run(() => this.actions.play(this.progression.hasSave)),
     );
-    this.find('#menu-new-game').addEventListener('click', () =>
-      this.confirm(
-        'Commencer une nouvelle partie ?',
-        'Commencer une nouvelle partie ? Toute votre progression et vos modifications seront perdues.',
-        () => this.actions.newGame(),
-        ['Oui', 'Non'],
-      ),
-    );
     this.find('#menu-options').addEventListener('click', () => this.options(true));
     this.find('#options-back').addEventListener('click', () => this.options(false));
     for (const [id, key, output] of [
@@ -220,13 +212,23 @@ export class MainMenu {
         }
       }
     });
-    this.find('#menu-confirm-no').addEventListener('click', () => this.cancelConfirm());
-    this.find('#menu-confirm-yes').addEventListener('click', () =>
-      this.run(async () => {
-        await this.confirmAction();
-        this.cancelConfirm();
-      }),
+    this.bindConfirmationEvents();
+  }
+  bindConfirmationEvents() {
+    this.find('#menu-new-game').addEventListener('click', () =>
+      this.confirm(
+        'Commencer une nouvelle partie ?',
+        'Commencer une nouvelle partie ? Toute votre progression et vos modifications seront perdues.',
+        () => this.actions.newGame(),
+        ['Oui', 'Non'],
+      ),
     );
+    this.find('#menu-confirm-no').addEventListener('click', () => this.cancelConfirm());
+    this.find('#menu-confirm-yes').addEventListener('click', () => {
+      const action = this.confirmAction;
+      this.cancelConfirm();
+      if (action) this.run(() => action());
+    });
   }
   async run(action) {
     if (this.busy) return;
@@ -302,9 +304,15 @@ export class MainMenu {
     this.find('#menu-confirm-no').focus();
   }
   cancelConfirm() {
-    this.find('.menu-confirm-layer').hidden = true;
+    const layer = this.find('.menu-confirm-layer');
+    if (layer.hidden) return false;
+    layer.hidden = true;
     this.find('.menu-shell').inert = false;
-    this.confirmFocus?.focus();
+    const focus = this.confirmFocus;
+    this.confirmFocus = null;
+    this.confirmAction = null;
+    if (!this.element.hidden && focus?.isConnected !== false) focus?.focus();
+    return true;
   }
   show() {
     this.syncDesktopIcons();

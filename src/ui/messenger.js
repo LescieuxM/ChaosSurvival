@@ -21,6 +21,13 @@ export function identifyMessageSender(contact, message) {
   return { id: contact?.id, name: contact?.nickname };
 }
 
+export function wizzNotificationContent(contact) {
+  return {
+    sender: contact?.name ?? contact?.nickname,
+    preview: 'vous a envoyé un wizz !',
+  };
+}
+
 export class Messenger {
   constructor({
     manager,
@@ -322,7 +329,9 @@ export class Messenger {
       this.conversations.set(contactId, view);
     }
     const sender = speaker === 'player' ? this.player : contact;
-    if (!view.thread.appendWizz(speaker, sender.nickname, eventId, now)) return false;
+    const message = view.thread.appendWizz(speaker, sender.nickname, eventId, now);
+    if (!message) return false;
+    if (speaker === 'contact') view = this.ensureBackground(contact) ?? view;
     view.refresh();
     const element = view.element;
     if (element?.isConnected) {
@@ -331,7 +340,7 @@ export class Messenger {
       element.classList.add('messenger-wizz');
     }
     this.sounds.unlock().then(() => this.sounds.play('wizz'));
-    if (speaker === 'contact' && !this.isVisible(view)) this.onMessage(contact);
+    if (speaker === 'contact') this.receiveIncoming(contact, [], [message], view);
     return true;
   }
   receiveWizz(contactId, eventId) {

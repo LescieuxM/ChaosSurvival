@@ -39,7 +39,7 @@ import { Progression } from './story/progression.js';
 import { VirtualTextFiles } from './story/text-files.js';
 import { VirtualFilesystem, virtualFileId } from './story/virtual-filesystem.js';
 import { ConversationWindow } from './ui/conversation.js';
-import { Messenger, identifyMessageSender } from './ui/messenger.js';
+import { Messenger, identifyMessageSender, wizzNotificationContent } from './ui/messenger.js';
 import { ConversationThread } from './story/conversation-thread.js';
 import { celebrateVictory } from './ui/victory.js';
 import { DesktopSounds } from './audio/sounds.js';
@@ -247,6 +247,22 @@ function handleMessengerMessage(contact, incoming = [], messages = [], view, sta
   if (!contact) return;
   narrativeOrchestrator?.onMessage(contact, incoming);
   if (state.active ?? (view && messenger.isConversationActive(view))) return;
+  const wizz = messages.find((message) => message.type === 'wizz' && message.speaker === 'contact');
+  if (wizz) {
+    const { sender, preview } = wizzNotificationContent(contact);
+    notifications.showMessage({
+      conversationId: contact.id,
+      senderId: contact.id,
+      sender,
+      preview,
+      durationMs: NOTIFICATION_DURATION_MS,
+      action: () => {
+        const target = messenger.contacts().find((item) => item.id === contact.id);
+        if (target) messenger.openContact(target);
+      },
+    });
+    return;
+  }
   if (!messages.length) {
     if (incoming.length) sounds.unlock().then(() => sounds.play('message'));
     showMessageNotification(contact, messageNotificationId(contact));
@@ -580,7 +596,6 @@ async function resetGameToInitialState() {
         duration = chart.durationSeconds;
         arcadeSequenceId = story.start;
         arcadeReplay = false;
-        notifiedMessages = '';
         ui.best.textContent = '000000';
         manager.sequence = 0;
         manager.z = 10;
@@ -1040,6 +1055,7 @@ function showStoryDesktop(announce) {
   }
   renderDesktopFiles();
   debug.render();
+  requestAnimationFrame(() => replayReactions.desktopShown(Date.now()));
 }
 async function openConversation(restore = false, contact = null) {
   if (['menu', 'loading', 'resuming'].includes(phase)) return;
@@ -1243,7 +1259,7 @@ function receiveReplayReactions() {
     return;
   }
   narrativeOrchestrator.prepareTurboSceneMessage();
-  const incoming = replayReactions.flush();
+  const incoming = replayReactions.flush(Date.now(), { canReceive: phase === 'desktop' });
   narrativeOrchestrator.update(Date.now(), phase !== 'menu');
   messenger.update();
   narrativeOrchestrator.afterMessengerUpdate(Date.now());

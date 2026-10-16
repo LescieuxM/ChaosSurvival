@@ -77,6 +77,35 @@ test('attempts are counted immediately, including abandonments, without reaction
   assert.equal(reactions.thread.availableResponses.length, 0);
   assert.equal(progression.current.id, 'pixelgirl-hello');
 });
+
+test('the unlocked first PixelGirl message is scheduled automatically on the desktop and resumes once', () => {
+  const { storage, progression, reactions } = setup();
+  assert.deepEqual(reactions.flush(1000), []);
+  assert.equal(progression.data.dialogues['pixelgirl-intro'], undefined);
+
+  progression.complete('arcade-1', { score: 100, closed: 4 });
+  assert.ok(progression.data.unlockedConversations.includes('pixelgirl-intro'));
+  assert.deepEqual(reactions.flush(5000, { canReceive: false }), []);
+  assert.equal(progression.data.dialogues['pixelgirl-intro'], undefined);
+  assert.equal(reactions.desktopShown(5000), true);
+  assert.equal(progression.data.dialogues['pixelgirl-intro'].receiveDueAt, 8000);
+  assert.equal(reactions.desktopShown(6000), false);
+
+  assert.deepEqual(reactions.flush(7999), []);
+  const [intro] = reactions.flush(8000);
+  assert.equal(intro.id, 'pixelgirl-intro');
+  assert.equal(progression.data.dialogues[intro.id].transcript[0].text, 'heyyyy :DDD');
+  assert.equal(progression.data.dialogues[intro.id].receiveDueAt, 8800);
+  assert.deepEqual(reactions.flush(8000), []);
+  assert.equal(progression.data.dialogues[intro.id].transcript.length, 1);
+
+  const restored = new ReplayReactions(new Progression(story, storage), definitions, config);
+  assert.equal(restored.desktopShown(9000), false);
+  assert.deepEqual(restored.flush(8799), []);
+  assert.equal(restored.flush(8800).length, 1);
+  assert.equal(restored.progression.data.dialogues[intro.id].transcript.length, 2);
+});
+
 test('closed Messenger and relaunch preserve message-only replays and narrative choices', () => {
   const { storage, progression, reactions } = setup();
   reactions.launch(0);
