@@ -37,6 +37,7 @@ import story from './config/story.json';
 import pixelgirlDialogue from './dialogues/pixelgirl-intro.json';
 import { Progression } from './story/progression.js';
 import { VirtualTextFiles } from './story/text-files.js';
+import { VirtualFilesystem, virtualFileId } from './story/virtual-filesystem.js';
 import { ConversationWindow } from './ui/conversation.js';
 import { Messenger } from './ui/messenger.js';
 import { ConversationThread } from './story/conversation-thread.js';
@@ -100,6 +101,7 @@ const notifications = new NotificationCenter({
   getTime: (clock) => (clock === 'game' ? audio.time * 1000 : Date.now()),
 });
 const progression = new Progression(story, storyStorage);
+const virtualFilesystem = new VirtualFilesystem(progression);
 const buddy = new Buddy(ui.desktop, progression);
 const replayReactions = new ReplayReactions(progression, dialogues, replayConfig);
 const settings = new UserSettings(storyStorage, chart.volume);
@@ -156,7 +158,10 @@ const desktopApplications = new DesktopApplications(
   ui.desktop.querySelector('.taskbar'),
   syncSystemWindows,
   replayLevelOne,
-  new VirtualTextFiles(progression),
+  new VirtualTextFiles(progression, virtualFilesystem),
+  virtualFilesystem,
+  renderDesktopFiles,
+  openDesktopFile,
 );
 let narrativeOrchestrator;
 const hoplaHotel = new HoplaHotelClient(manager, desktopApplications, () =>
@@ -485,6 +490,7 @@ const menu = new MainMenu(document.getElementById('app'), progression, settings,
 const desktopIcons = new DesktopIcons(ui.desktop, progression);
 const desktopFiles = new DesktopFiles(ui.desktop, progression, openDesktopFile, () =>
   desktopIcons.refresh(),
+  virtualFilesystem,
 );
 const returnMenu = ui.menuPlay;
 returnMenu.id = 'return-main-menu';
@@ -1043,6 +1049,7 @@ function renderDesktopFiles() {
 }
 function openDesktopFile(file) {
   if (phase !== 'desktop') return;
+  if (!virtualFilesystem.exists(virtualFileId('downloads', file.name))) return;
   try {
     miniGameLauncher.open(file);
   } catch (error) {

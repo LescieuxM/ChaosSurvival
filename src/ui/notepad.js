@@ -60,6 +60,12 @@ export function attachNotepad(instance, manager, files, path, item) {
     allowClose = true;
     manager.close(id);
   };
+  instance.onVirtualDelete = () => {
+    allowClose = true;
+    editor.value = saved;
+    setPrompt(false);
+    manager.close(id);
+  };
   const answers = prompt.querySelectorAll('[data-answer]');
   for (const button of answers)
     button.addEventListener('click', () => {

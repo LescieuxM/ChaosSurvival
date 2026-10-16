@@ -4,6 +4,7 @@ import { bindFileActivation } from '../utils/activation.js';
 import { icon } from './icons.js';
 import { isArcadeExecutable } from './arcade-launcher.js';
 import { VirtualTextFiles } from '../story/text-files.js';
+import { VirtualFilesystem, virtualFileId } from '../story/virtual-filesystem.js';
 import { attachNotepad } from './notepad.js';
 
 export const desktopApps = definitions;
@@ -52,9 +53,20 @@ export class DesktopApplications {
     onWindowState = () => {},
     onLaunchArcade = null,
     textFiles = new VirtualTextFiles({ data: {}, save: () => true }),
+    virtualFilesystem = null,
+    onFilesystemChange = () => {},
+    onOpenReceived = null,
   ) {
-    Object.assign(this, { manager, taskbar, onWindowState, onLaunchArcade });
+    Object.assign(this, {
+      manager,
+      taskbar,
+      onWindowState,
+      onLaunchArcade,
+      onFilesystemChange,
+      onOpenReceived,
+    });
     this.textFiles = textFiles;
+    this.virtualFilesystem = virtualFilesystem;
     this.instances = new Map();
   }
   open(kind) {
@@ -80,6 +92,7 @@ export class DesktopApplications {
         <div class="window-status explorer-status"></div>`,
       },
       onDismiss: () => {
+        this.teardownExplorer(instance);
         this.instances.delete(kind);
         instance.task.remove();
         this.onWindowState();
@@ -87,6 +100,7 @@ export class DesktopApplications {
     });
     const instance = this.attachWindow(kind, id, definition.title, definition.icon);
     const { element } = instance;
+    if (this.virtualFilesystem) this.setupExplorer(instance);
     element.querySelector('.explorer-home').addEventListener('click', () => this.home(instance));
     element.querySelector('.explorer-up').addEventListener('click', () => this.up(instance));
     element.querySelector('.explorer-back').addEventListener('click', () => this.back(instance));
@@ -134,6 +148,10 @@ export class DesktopApplications {
   openFile(location, item) {
     const viewer = fileViewer(item);
     if (!viewer) return;
+    const fileId = item.fileId ?? virtualFileId(location.id, item.name);
+    if (this.virtualFilesystem && !this.virtualFilesystem.exists(fileId)) return;
+    if (item.receivedFile && item.launch && this.onOpenReceived)
+      return this.onOpenReceived(item);
     if (isArcadeExecutable(item) && this.onLaunchArcade) return this.onLaunchArcade();
     const key = `file:${location.id}/${item.name}`;
     const existing = this.instances.get(key);
@@ -166,6 +184,7 @@ export class DesktopApplications {
       },
     });
     const instance = this.attachWindow(key, id, title, iconName);
+    instance.fileId = fileId;
     const { element } = instance;
     element.classList.add(`file-${viewer}`);
     element.querySelector('.window-title > span').textContent = title;
@@ -214,8 +233,12 @@ export class DesktopApplications {
     if (previous) this.render(instance, previous, false);
   }
   render(instance, definition, remember = true) {
+    this.closeExplorerOverlays(instance);
+    instance.selectedItem = null;
+    instance.selectedButton = null;
     if (remember && instance.current && instance.current.id !== definition.id)
       instance.history.push(instance.current);
+    if (this.virtualFilesystem) definition = this.virtualFilesystem.getLocation(definition.id);
     instance.current = definition;
     const { element } = instance;
     element.querySelector('.explorer-address strong').textContent = definition.address;
@@ -233,11 +256,37 @@ export class DesktopApplications {
       const detail = document.createElement('small');
       detail.textContent = item.detail;
       button.append(label, detail);
+      if (item.fileId) button.dataset.fileId = item.fileId;
+      button.setAttribute?.('aria-selected', 'false');
+      button.addEventListener('click', () => {
+        instance.selectedItem = item;
+        instance.selectedButton = button;
+        for (const row of content.children) {
+          row.classList?.remove('is-selected');
+          row.setAttribute?.('aria-selected', 'false');
+        }
+        button.classList?.add('is-selected');
+        button.setAttribute?.('aria-selected', 'true');
+      });
       const activate = () =>
         item.location
           ? this.render(instance, explorerItem(definition, item))
           : this.openFile(definition, item);
       bindFileActivation(button, activate);
+      if (this.virtualFilesystem) {
+        button.addEventListener('contextmenu', (event) => {
+          event.preventDefault();
+          instance.selectedItem = item;
+          instance.selectedButton = button;
+          for (const row of content.children) {
+            row.classList?.remove('is-selected');
+            row.setAttribute?.('aria-selected', 'false');
+          }
+          button.classList?.add('is-selected');
+          button.setAttribute?.('aria-selected', 'true');
+          this.showExplorerContext(instance, item, event);
+        });
+      }
       content.append(button);
     }
     if (!definition.items.length) {
@@ -261,5 +310,176 @@ export class DesktopApplications {
     }
     element.querySelector('.explorer-status').textContent =
       `${definition.items.length} objet(s) · Windows XD`;
+  }
+  setupExplorer(instance) {
+    const body = instance.element.querySelector('.window-body');
+    const menu = document.createElement('div');
+    menu.className = 'explorer-context-menu';
+    menu.setAttribute('role', 'menu');
+    menu.hidden = true;
+    const actions = [
+      ['open', 'Ouvrir'],
+      ['delete', 'Supprimer'],
+      ['properties', 'Propriétés'],
+    ];
+    for (const [action, label] of actions) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.explorerAction = action;
+      button.setAttribute('role', 'menuitem');
+      button.textContent = label;
+      menu.append(button);
+    }
+    const confirmation = document.createElement('section');
+    confirmation.className = 'explorer-dialog';
+    confirmation.setAttribute('role', 'dialog');
+    confirmation.setAttribute('aria-modal', 'true');
+    confirmation.setAttribute('aria-label', 'Confirmer la suppression');
+    confirmation.hidden = true;
+    const question = document.createElement('p');
+    const answers = document.createElement('div');
+    for (const [answer, label] of [['yes', 'Oui'], ['no', 'Non']]) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'xp-button';
+      button.dataset.deleteAnswer = answer;
+      button.textContent = label;
+      answers.append(button);
+    }
+    confirmation.append(question, answers);
+    const properties = document.createElement('section');
+    properties.className = 'explorer-dialog explorer-properties';
+    properties.setAttribute('role', 'dialog');
+    properties.setAttribute('aria-modal', 'true');
+    properties.setAttribute('aria-label', 'Propriétés du fichier');
+    properties.hidden = true;
+    const propertyTitle = document.createElement('strong');
+    const propertyList = document.createElement('dl');
+    const closeProperties = document.createElement('button');
+    closeProperties.type = 'button';
+    closeProperties.className = 'xp-button';
+    closeProperties.textContent = 'Fermer';
+    properties.append(propertyTitle, propertyList, closeProperties);
+    body.append(menu, confirmation, properties);
+    instance.explorerMenu = menu;
+    instance.explorerConfirmation = confirmation;
+    instance.explorerProperties = properties;
+    const closeOutside = (event) => {
+      if (!menu.contains?.(event.target)) menu.hidden = true;
+    };
+    document.addEventListener('click', closeOutside);
+    instance.disposeExplorer = () => document.removeEventListener('click', closeOutside);
+    menu.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const action = event.target.closest?.('[data-explorer-action]')?.dataset.explorerAction;
+      if (action === 'open' && instance.selectedItem) {
+        const item = instance.selectedItem;
+        menu.hidden = true;
+        if (item.location) this.render(instance, explorerItem(instance.current, item));
+        else this.openFile(instance.current, item);
+      } else if (action === 'delete' && instance.selectedItem) {
+        this.askDelete(instance, instance.selectedItem);
+      } else if (action === 'properties' && instance.selectedItem) {
+        this.showProperties(instance, instance.selectedItem);
+      }
+    });
+    confirmation.querySelector('[data-delete-answer="no"]').addEventListener('click', () => {
+      confirmation.hidden = true;
+    });
+    confirmation.querySelector('[data-delete-answer="yes"]').addEventListener('click', () => {
+      const fileId = instance.pendingDelete;
+      const result = this.virtualFilesystem.deleteFile(fileId);
+      confirmation.hidden = true;
+      instance.pendingDelete = null;
+      if (!result.ok) {
+        instance.element.querySelector('.explorer-status').textContent =
+          result.reason === 'protected'
+            ? 'Impossible de supprimer ce fichier. Accès refusé.'
+            : 'Windows XD : impossible d’enregistrer la suppression.';
+        return;
+      }
+      this.closeOpenFile(fileId);
+      this.refreshExplorers();
+      this.onFilesystemChange();
+    });
+    closeProperties.addEventListener('click', () => {
+      properties.hidden = true;
+    });
+  }
+  teardownExplorer(instance) {
+    instance.disposeExplorer?.();
+    this.closeExplorerOverlays(instance);
+  }
+  closeExplorerOverlays(instance) {
+    if (instance.explorerMenu) instance.explorerMenu.hidden = true;
+    if (instance.explorerConfirmation) instance.explorerConfirmation.hidden = true;
+    if (instance.explorerProperties) instance.explorerProperties.hidden = true;
+  }
+  showExplorerContext(instance, item, event) {
+    const menu = instance.explorerMenu;
+    if (!menu) return;
+    const deleteButton = menu.querySelector('[data-explorer-action="delete"]');
+    const canDelete = Boolean(item.fileId && this.virtualFilesystem.canDelete(item.fileId));
+    deleteButton.disabled = !canDelete;
+    deleteButton.title = canDelete ? '' : 'Impossible de supprimer ce fichier. Accès refusé.';
+    const body = instance.element.querySelector('.window-body').getBoundingClientRect();
+    menu.hidden = false;
+    menu.style.left = `${Math.max(0, Math.min(event.clientX - body.left, body.width - menu.offsetWidth))}px`;
+    menu.style.top = `${Math.max(0, Math.min(event.clientY - body.top, body.height - menu.offsetHeight))}px`;
+  }
+  askDelete(instance, item) {
+    const confirmation = instance.explorerConfirmation;
+    if (!item.fileId || !this.virtualFilesystem.canDelete(item.fileId)) return;
+    instance.pendingDelete = item.fileId;
+    confirmation.querySelector('p').textContent = `Voulez-vous vraiment supprimer « ${item.name} » ?`;
+    instance.explorerMenu.hidden = true;
+    confirmation.hidden = false;
+    confirmation.querySelector('[data-delete-answer="no"]').focus();
+  }
+  showProperties(instance, item) {
+    const properties = instance.explorerProperties;
+    const metadata = item.fileId ? this.virtualFilesystem.metadata(item.fileId) : null;
+    const values = metadata ?? {
+      name: item.name,
+      type: item.location ? 'Dossier' : item.detail ?? 'Type de fichier inconnu',
+      location: item.location
+        ? this.virtualFilesystem.getLocation(item.location).address
+        : instance.current.address,
+      size: null,
+    };
+    properties.querySelector('strong').textContent = values.name;
+    const rows = [
+      ['Type', values.type],
+      ['Emplacement', values.location],
+      ['Taille', values.size === null ? '—' : this.formatSize(values.size)],
+    ];
+    const list = properties.querySelector('dl');
+    list.replaceChildren();
+    for (const [label, value] of rows) {
+      const term = document.createElement('dt');
+      term.textContent = label;
+      const detail = document.createElement('dd');
+      detail.textContent = value;
+      list.append(term, detail);
+    }
+    instance.explorerMenu.hidden = true;
+    properties.hidden = false;
+    properties.querySelector('button').focus();
+  }
+  formatSize(bytes) {
+    if (bytes < 1024) return `${bytes} octets`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} Ko`;
+    return `${(bytes / (1024 * 1024)).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} Mo`;
+  }
+  closeOpenFile(fileId) {
+    for (const instance of this.instances.values()) {
+      if (instance.fileId !== fileId) continue;
+      if (instance.onVirtualDelete) instance.onVirtualDelete();
+      else this.manager.close(instance.id);
+    }
+  }
+  refreshExplorers() {
+    for (const instance of this.instances.values())
+      if (instance.current && this.virtualFilesystem) this.render(instance, instance.current, false);
   }
 }

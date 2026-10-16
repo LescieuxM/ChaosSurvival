@@ -209,6 +209,7 @@ button.messenger-contact-row:hover {
   max-height: 100%;
 }
 .popup-desktopapp .window-body {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -388,6 +389,88 @@ button.messenger-contact-row:hover {
 .explorer-item:focus-visible {
   background: #e4effd;
   border-color: #abc8ed;
+}
+.explorer-item.is-selected {
+  background: #cfe2fa;
+  border-color: #7ea9dc;
+}
+.explorer-context-menu {
+  position: absolute;
+  z-index: 8;
+  min-width: 150px;
+  padding: 3px;
+  border: 1px solid #7f7f7f;
+  background: #fff;
+  box-shadow: 2px 3px 7px #0005;
+}
+.explorer-context-menu[hidden],
+.explorer-dialog[hidden] {
+  display: none;
+}
+.explorer-context-menu button {
+  display: block;
+  width: 100%;
+  padding: 5px 18px;
+  border: 0;
+  background: transparent;
+  color: #111;
+  text-align: left;
+  font: 12px Tahoma, sans-serif;
+}
+.explorer-context-menu button:hover:not(:disabled),
+.explorer-context-menu button:focus-visible {
+  background: #316ac5;
+  color: white;
+}
+.explorer-context-menu button:disabled {
+  color: #888;
+}
+.explorer-dialog {
+  position: absolute;
+  z-index: 9;
+  top: 50%;
+  left: 50%;
+  width: min(360px, calc(100% - 24px));
+  padding: 14px;
+  transform: translate(-50%, -50%);
+  border: 2px solid #2258c4;
+  border-radius: 5px;
+  background: #ece9d8;
+  color: #111;
+  box-shadow: 3px 5px 12px #0005;
+  font: 12px Tahoma, sans-serif;
+}
+.explorer-dialog p {
+  margin: 6px 0 18px;
+  overflow-wrap: anywhere;
+}
+.explorer-dialog > div:last-child {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.explorer-properties strong {
+  display: block;
+  color: #164aa8;
+  font-size: 14px;
+}
+.explorer-properties dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 7px 14px;
+  margin: 14px 0;
+}
+.explorer-properties dt {
+  color: #52657d;
+}
+.explorer-properties dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.explorer-properties > button {
+  display: block;
+  margin-left: auto;
 }
 .explorer-image {
   width: 100%;
