@@ -1,7 +1,7 @@
 {
   "id": "pixelgirl-super-plombier-group",
   "version": 1,
-  "revision": 2,
+  "revision": 5,
   "contact": {
     "id": "plumber-group",
     "name": "PixelGirl, Turb0 et Luna",
@@ -178,6 +178,29 @@
       { "speaker": "contact", "author": "°•.LuNa.°•", "text": "justement", "delayMs": 800, "typingMs": 650 },
       { "speaker": "contact", "author": "Turb0", "text": "ptdrrrr", "delayMs": 400, "typingMs": 350 },
       { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "vous êtes méchants :'(", "delayMs": 350, "typingMs": 400 }
-    ], "end": true }
+    ], "next": "bomb-arena-intro" },
+    "bomb-arena-intro": { "messages": [
+
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "ça vous dit bomb arena ???", "delayMs": 400, "typingMs": 500 },
+      { "speaker": "contact", "author": "Turb0", "text": "AHHHH OUI", "delayMs": 450, "typingMs": 350 },
+      { "speaker": "contact", "author": "Turb0", "text": "JVAIS VOUS EXPLOSER", "delayMs": 300, "typingMs": 400 },
+      { "speaker": "contact", "author": "Â°â€¢.LuNa.Â°â€¢", "text": "quelle surprise", "delayMs": 700, "typingMs": 550 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "XDDDD", "delayMs": 350, "typingMs": 300 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "attendez je vous envoie le jeu", "delayMs": 450, "typingMs": 500 }
+    ], "next": "bomb-arena-transfer" },
+    "bomb-arena-transfer": { "messages": [
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "type": "file", "text": "BombArena.zip", "file": { "id": "bomb-arena", "name": "BombArena.zip", "sizeLabel": "18 Mo", "size": 18874368, "description": "Archive ZIP", "deletable": true, "extractable": "bomb-arena", "reusableAfterDelete": true }, "delayMs": 450, "typingMs": 400 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "voilààà cliquez pour télécharger :3", "delayMs": 300, "typingMs": 400 }
+    ], "transfer": { "fileId": "bomb-arena", "accept": "bomb-arena-after-transfer", "refuse": "bomb-arena-transfer-refused" } },
+    "bomb-arena-after-transfer": { "messages": [
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "extrais le avec clique droit depuis tes documents, ça devrait être dans mes fichiers reçus !!!", "delayMs": 650, "typingMs": 650 },
+      { "speaker": "contact", "author": "Turb0", "text": "ALLEZ ON SE BOUGE", "delayMs": 450, "typingMs": 400 },
+      { "speaker": "contact", "author": "Â°â€¢.LuNa.Â°â€¢", "text": "laisse-lui le temps", "delayMs": 700, "typingMs": 600 }
+    ], "end": true },
+    "bomb-arena-refused-reoffer": { "messages": [
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "text": "tiens tu peux le télécharger", "delayMs": 450, "typingMs": 400 },
+      { "speaker": "contact", "author": "xX_PixelGirl_Xx", "type": "file", "text": "BombArena.zip", "file": { "id": "bomb-arena", "name": "BombArena.zip", "sizeLabel": "18 Mo", "size": 18874368, "description": "Archive ZIP", "deletable": true, "extractable": "bomb-arena", "reusableAfterDelete": true }, "delayMs": 300, "typingMs": 350 }
+    ], "transfer": { "fileId": "bomb-arena", "accept": "bomb-arena-after-transfer", "refuse": "bomb-arena-transfer-refused" } },
+    "bomb-arena-transfer-refused": { "messages": [], "end": true }
   }
 }

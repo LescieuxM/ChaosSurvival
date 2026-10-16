@@ -145,7 +145,8 @@ export class ConversationThread {
       session.persist();
     }
   }
-  typingContact(now = Date.now()) {
+  typingContacts(now = Date.now()) {
+    const active = new Map();
     for (const event of this.getEvents()) {
       const state = this.progression.data.dialogues[event.id];
       const message = state && !state.finished && event.nodes[state.node]?.messages[state.cursor];
@@ -162,10 +163,28 @@ export class ConversationThread {
         now < typingEndsAt &&
         event.contact.status !== 'Hors ligne' &&
         event.contact.online !== false
-      )
-        return event.contact;
+      ) {
+        const author = message.author;
+        if (this.contactId === 'plumber-group' && author) {
+          const nickname = {
+            xX_PixelGirl_Xx: 'PixelGirl',
+            Turb0: 'Turb0',
+            '°•.LuNa.°•': 'Luna',
+          }[author];
+          if (nickname) active.set(author, { id: author, nickname });
+        } else {
+          active.set(event.contact.id ?? event.id, event.contact);
+        }
+      }
     }
-    return null;
+    if (this.contactId === 'plumber-group') {
+      const order = ['xX_PixelGirl_Xx', 'Turb0', '°•.LuNa.°•'];
+      return order.map((author) => active.get(author)).filter(Boolean);
+    }
+    return [...active.values()];
+  }
+  typingContact(now = Date.now()) {
+    return this.typingContacts(now)[0] ?? null;
   }
   receiveScheduled(definition, now) {
     const state = this.progression.data.dialogues[definition.id];

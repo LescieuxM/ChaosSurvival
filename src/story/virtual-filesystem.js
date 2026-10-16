@@ -15,7 +15,9 @@ const protectedImageNames = new Set(['fond-bureau.jpg', 'fond_bureau.jpg', 'fond
 const isDeletableFile = (file) => {
   const name = String(file?.name ?? '').toLowerCase();
   if (protectedImageNames.has(name)) return false;
-  return file?.deletable === true || /\.(txt|jpg)$/.test(name) ||
+  return file?.directory === true
+    ? file.deletable === true
+    : file?.deletable === true || /\.(txt|jpg)$/.test(name) ||
     name === 'pixelsans.ttf' || name === 'smiley_pack_2009.zip';
 };
 
@@ -32,14 +34,18 @@ function staticFiles() {
   return files;
 }
 
-function receivedFiles(files = {}) {
+function receivedDeletionId(fileId, transferKey) {
+  return `received:${fileId}:${encodeURIComponent(transferKey)}`;
+}
+
+function receivedFiles(files = {}, deleted = []) {
   const received = new Map();
   for (const file of Object.values(files)) {
     if (
       file?.status !== 'complete' || file.direction !== 'receive' || !safeName(file.name)
     ) continue;
     const fileId = virtualFileId('downloads', file.name);
-    if (received.has(fileId)) continue;
+    if (deleted.includes(fileId) || deleted.includes(receivedDeletionId(fileId, file.key))) continue;
     received.set(fileId, {
       ...file,
       fileId,
@@ -49,6 +55,7 @@ function receivedFiles(files = {}) {
       text: file.description ?? '',
       deletable: true,
       receivedFile: true,
+      transferKey: file.key,
     });
   }
   return received;
@@ -70,12 +77,22 @@ function normalizeAdded(added) {
       typeof file.name !== 'string' || file.name.toLowerCase() !== match[2].toLowerCase() ||
       typeof file.detail !== 'string' || typeof file.icon !== 'string'
     ) continue;
+    if (file.directory === true &&
+      (typeof file.location !== 'string' || !Object.hasOwn(locations, file.location) ||
+        locations[file.location].parent !== match[1] || !Array.isArray(locations[file.location].items)))
+      continue;
     const normalized = {
       name: file.name,
       detail: file.detail.slice(0, 200),
       icon: /^[a-z0-9-]{1,40}$/i.test(file.icon) ? file.icon : 'document',
       deletable: file.deletable === true,
     };
+    if (file.directory === true) {
+      normalized.directory = true;
+      normalized.location = file.location;
+    }
+    if (file.extractable === 'bomb-arena') normalized.extractable = file.extractable;
+    if (file.virtualApp === 'bomb-arena') normalized.virtualApp = file.virtualApp;
     if (Number.isFinite(file.size) && file.size >= 0 && file.size <= 2 ** 31)
       normalized.size = Math.floor(file.size);
     if (typeof file.text === 'string' && file.text.length <= 102400) normalized.text = file.text;
@@ -88,20 +105,34 @@ function normalizeAdded(added) {
 
 export function normalizeVirtualFilesystemState(state, files = {}) {
   const added = normalizeAdded(state?.added);
-  const received = receivedFiles(files);
+  const completedReceives = Object.values(files).filter(
+    (file) => file?.status === 'complete' && file.direction === 'receive' && safeName(file.name),
+  );
+  const receivedPaths = new Set(completedReceives.map((file) => virtualFileId('downloads', file.name)));
+  const reusableReceivedPaths = new Set(completedReceives
+    .filter((file) => file.reusableAfterDelete === true)
+    .map((file) => virtualFileId('downloads', file.name)));
+  const receivedTokens = new Set(completedReceives.map((file) =>
+    receivedDeletionId(virtualFileId('downloads', file.name), file.key),
+  ));
   const knownDeletable = new Set([
     ...[...staticFiles()].filter(([, file]) => isDeletableFile(file)).map(([key]) => key),
     ...Object.entries(added).filter(([, file]) => isDeletableFile(file)).map(([key]) => key),
-    ...received.keys(),
+    ...receivedPaths,
+    ...receivedTokens,
   ]);
   const aliases = new Map([['user-desktop/a_faire.txt', 'folder/a_faire.txt']]);
-  const deleted = Array.isArray(state?.deleted)
-    ? [...new Set(state.deleted
-        .filter((key) => typeof key === 'string')
-        .map((key) => aliases.get(key.toLowerCase()) ?? key.toLowerCase())
-        .filter((key) => knownDeletable.has(key)))]
-    : [];
-  return { deleted, added };
+  const deleted = [];
+  for (const value of Array.isArray(state?.deleted) ? state.deleted : []) {
+    if (typeof value !== 'string') continue;
+    const key = aliases.get(value.toLowerCase()) ?? value.toLowerCase();
+    if (reusableReceivedPaths.has(key) && !staticFiles().has(key)) {
+      for (const file of completedReceives)
+        if (virtualFileId('downloads', file.name) === key)
+          deleted.push(receivedDeletionId(key, file.key));
+    } else if (knownDeletable.has(key)) deleted.push(key);
+  }
+  return { deleted: [...new Set(deleted.filter((key) => knownDeletable.has(key)))], added };
 }
 
 function defaultSize(item) {
@@ -138,7 +169,7 @@ export class VirtualFilesystem {
         present.add(fileId);
       }
     if (id === 'downloads')
-      for (const [fileId, file] of receivedFiles(this.progression.data.files))
+      for (const [fileId, file] of receivedFiles(this.progression.data.files, this.state.deleted))
         if (!deleted.has(fileId) && !present.has(fileId)) items.push(file);
     return { ...base, id, items };
   }
@@ -147,7 +178,7 @@ export class VirtualFilesystem {
     const key = fileId.toLowerCase();
     if (this.state.deleted.includes(key)) return null;
     const added = this.state.added[key];
-    const file = added ?? staticFiles().get(key) ?? receivedFiles(this.progression.data.files).get(key);
+    const file = added ?? staticFiles().get(key) ?? receivedFiles(this.progression.data.files, this.state.deleted).get(key);
     return file ? { ...file, fileId: key, deletable: isDeletableFile(file) } : null;
   }
   exists(fileId) {
@@ -164,7 +195,7 @@ export class VirtualFilesystem {
       name: file.name,
       type: file.detail,
       location: location?.address ?? '',
-      size: defaultSize(file),
+      size: file.directory ? null : defaultSize(file),
       path: `${location?.address?.replace(/\\$/, '') ?? ''}\\${file.name}`,
     };
   }
@@ -194,23 +225,90 @@ export class VirtualFilesystem {
     }
     return { ok: true, fileId: key };
   }
-  deleteFile(fileId) {
+  addDirectory(parentId, name, locationId) {
+    const key = virtualFileId(parentId, name);
+    const existing = this.getFile(key);
+    if (existing?.directory === true && existing.location === locationId)
+      return { ok: true, existing: true, fileId: key };
+    const location = locations[locationId];
+    if (
+      !location || location.parent !== parentId || !Array.isArray(location.items) ||
+      !safeName(name) || existing || this.state.added[key]
+    ) return { ok: false, reason: 'invalid' };
+    const normalized = normalizeAdded({ [key]: {
+      name,
+      icon: 'folder',
+      detail: 'Dossier',
+      deletable: true,
+      directory: true,
+      location: locationId,
+    } })[key];
+    if (!normalized) return { ok: false, reason: 'invalid' };
+    const previous = this.state;
+    this.progression.data.virtualFilesystem = {
+      deleted: previous.deleted.filter((id) => id !== key),
+      added: { ...previous.added, [key]: normalized },
+    };
+    if (!this.progression.save()) {
+      this.progression.data.virtualFilesystem = previous;
+      return { ok: false, reason: 'save' };
+    }
+    return { ok: true, fileId: key };
+  }
+  extractBombArena(archiveFileId) {
+    const archive = this.getFile(archiveFileId);
+    if (archive?.extractable !== 'bomb-arena') return { ok: false, reason: 'invalid-archive' };
+    const executableId = virtualFileId('bomb-arena-folder', 'BombArena.exe');
+    if (this.exists(executableId)) return { ok: true, existing: true, fileId: executableId };
+    const folderId = virtualFileId('downloads', 'BombArena');
+    const existingFolder = this.getFile(folderId);
+    const folder = existingFolder?.directory === true && existingFolder.location === 'bomb-arena-folder'
+      ? { ok: true, fileId: folderId }
+      : this.addDirectory('downloads', 'BombArena', 'bomb-arena-folder');
+    if (!folder.ok) return folder;
+    const executable = this.addFile('bomb-arena-folder', {
+      name: 'BombArena.exe',
+      icon: 'arcade-game',
+      detail: 'Application',
+      size: 31 * 1024 * 1024,
+      deletable: true,
+      virtualApp: 'bomb-arena',
+    });
+    if (!executable.ok && !this.exists(executableId)) return executable;
+    return { ok: true, fileId: executableId, folderId: folder.fileId };
+  }
+  deleteFile(fileId, { origin = 'manual' } = {}) {
     const key = typeof fileId === 'string' ? fileId.toLowerCase() : fileId;
     const file = this.getFile(key);
     if (!file) return { ok: false, reason: 'missing' };
+    if (!['manual', 'system'].includes(origin)) return { ok: false, reason: 'invalid-origin' };
     if (!this.canDelete(key)) return { ok: false, reason: 'protected' };
     const previousState = this.state;
     const previousTextFiles = this.progression.data.textFiles;
     const added = { ...previousState.added };
-    delete added[key];
+    const removedFileIds = [key];
+    if (file.directory === true) {
+      const childPrefix = `${file.location.toLowerCase()}/`;
+      for (const childId of Object.keys(added))
+        if (childId.startsWith(childPrefix)) {
+          removedFileIds.push(childId);
+          delete added[childId];
+        }
+    }
+    for (const removedId of removedFileIds) delete added[removedId];
+    const deletedIds = removedFileIds.map((removedId) =>
+      removedId === key && file.receivedFile && file.reusableAfterDelete === true
+        ? receivedDeletionId(removedId, file.transferKey)
+        : removedId,
+    );
     this.progression.data.virtualFilesystem = {
-      deleted: [...new Set([...previousState.deleted, key])],
+      deleted: [...new Set([...previousState.deleted, ...deletedIds])],
       added,
     };
     if (previousTextFiles && typeof previousTextFiles === 'object') {
       const textFiles = { ...previousTextFiles };
       for (const key of Object.keys(textFiles))
-        if (key.replaceAll('\\', '/').toLowerCase() === file.fileId) delete textFiles[key];
+        if (removedFileIds.includes(key.replaceAll('\\', '/').toLowerCase())) delete textFiles[key];
       this.progression.data.textFiles = textFiles;
     }
     if (!this.progression.save()) {
@@ -218,6 +316,8 @@ export class VirtualFilesystem {
       this.progression.data.textFiles = previousTextFiles;
       return { ok: false, reason: 'save' };
     }
-    return { ok: true };
+    const result = { ok: true, fileId: key, removedFileIds, origin };
+    this.onDelete?.(result);
+    return result;
   }
 }

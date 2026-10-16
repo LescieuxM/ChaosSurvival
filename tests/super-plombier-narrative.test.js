@@ -7,6 +7,7 @@ import { ConversationThread } from '../src/story/conversation-thread.js';
 import { NarrativeOrchestrator } from '../src/story/narrative-orchestrator.js';
 import { ConversationWindow } from '../src/ui/conversation.js';
 import { createContactAvatar } from '../src/ui/contact-avatar.js';
+import { VirtualFilesystem, virtualFileId } from '../src/story/virtual-filesystem.js';
 
 const read = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8'));
 const story = read('../src/config/story.json');
@@ -21,10 +22,12 @@ const definitions = Object.fromEntries(
 
 function fixture() {
   const storage = new Map();
-  const progression = new Progression(story, {
+  const store = {
     getItem: (key) => storage.get(key) ?? null,
     setItem: (key, value) => storage.set(key, value),
-  });
+  };
+  const progression = new Progression(story, store);
+  const virtualFilesystem = new VirtualFilesystem(progression);
   let now = 1_000;
   const sentWizzes = [];
   const notifications = [];
@@ -55,15 +58,19 @@ function fixture() {
     },
     onGroupMessage: (contact, incoming) =>
       groupMessages.push([contact?.id, ...incoming.map((event) => event.id)]),
+    virtualFilesystem,
     now: () => now,
   });
+  virtualFilesystem.onDelete = (change) => orchestrator.onVirtualFilesDeleted(change);
   return {
     progression,
+    virtualFilesystem,
     orchestrator,
     sentWizzes,
     notifications,
     groupMessages,
     storage,
+    store,
     setGroupThread: (thread) => (groupThread = thread),
     get now() {
       return now;
@@ -663,6 +670,10 @@ test('group dialogue keeps its original opening, persists each choice path, and 
         session.choose(selected.id);
         continue;
       }
+      if (session.node.transfer && session.activeTransfer?.status === 'pending') {
+        progression.finishTransfer(session.activeTransfer.key);
+        continue;
+      }
       if (!session.advance()) break;
     }
     thread.sync();
@@ -674,7 +685,13 @@ test('group dialogue keeps its original opening, persists each choice path, and 
     assert.ok(session.state.transcript.some(({ text }) => text === [
       'on fait de notre mieux :D', 'TRAHISON', 'PTDRRRRRRRRRRR',
     ][path]));
-    assert.equal(session.state.transcript.at(-1).text, "vous êtes méchants :'(");
+    assert.equal(session.state.transcript.at(-1).text, 'laisse-lui le temps');
+    assert.equal(session.state.transcript.find((entry) => entry.type === 'file').text, 'BombArena.zip');
+    assert.equal(
+      session.state.transcript.some((entry) => entry.text === "extrais le avec clique droit depuis tes documents, ça devrait être dans mes fichiers reçus !!!"),
+      true,
+    );
+    assert.equal(session.state.transcript.some((entry) => entry.text === "ehhhh j'ai une idée :3"), false);
     assert.deepEqual(
       session.state.transcript.filter(({ speaker }) => speaker === 'player').map(({ text }) => text),
       choices,
@@ -685,6 +702,144 @@ test('group dialogue keeps its original opening, persists each choice path, and 
     restored.sync();
     assert.equal(restored.state.history.length, session.state.transcript.length);
   }
+});
+
+test('each explicit Bomb Arena refusal schedules exactly one persisted reoffer without a retry limit', () => {
+  const { progression, orchestrator, store, setGroupThread } = fixture();
+  const definition = definitions['pixelgirl-super-plombier-group'];
+  const thread = new ConversationThread('plumber-group', progression, () => [
+    definition,
+    ...orchestrator.bombArenaRedownloadEvents(),
+  ]);
+  setGroupThread(thread);
+  const session = new DialogueSession(definition, progression);
+  session.state.node = 'bomb-arena-transfer';
+  session.persist();
+  session.deliver();
+  session.deliver();
+  const firstTransfer = session.activeTransfer;
+  assert.equal(firstTransfer.transferState, 'proposed');
+  assert.equal(session.declineTransfer(firstTransfer.key), true);
+  assert.equal(firstTransfer.transferState, 'declined');
+  assert.equal(orchestrator.onBombArenaTransferDeclined(firstTransfer, definition.id), true);
+  assert.equal(orchestrator.onBombArenaTransferDeclined(firstTransfer, definition.id), false);
+  assert.equal(session.advance(), true);
+  assert.equal(session.advance(), false);
+  assert.equal(session.state.finished, true);
+  assert.equal(session.state.node, 'bomb-arena-transfer-refused');
+
+  let now = 20_000;
+  for (let refusal = 1; refusal <= 10; refusal++) {
+    const event = orchestrator.bombArenaRedownloadEvents()[refusal - 1];
+    assert.equal(event.id, `bomb-arena-redownload-${refusal}`);
+    thread.receive(now + 5_000);
+    const offer = new DialogueSession(event, progression);
+    assert.equal(offer.state.transcript.filter((entry) => entry.text === 'tiens tu peux le télécharger').length, 1);
+    const transfer = offer.activeTransfer;
+    assert.ok(transfer, `offer ${refusal} is awaiting a player action`);
+    assert.notEqual(transfer.key, firstTransfer.key);
+    assert.equal(offer.declineTransfer(transfer.key), true);
+    assert.equal(orchestrator.onBombArenaTransferDeclined(transfer, event.id), true);
+    assert.equal(orchestrator.onBombArenaTransferDeclined(transfer, event.id), false);
+    now += 10_000;
+  }
+  assert.equal(orchestrator.bombArenaRedownloadEvents().length, 11);
+  assert.deepEqual(
+    orchestrator.bombArenaRedownloadEvents().map((event) => event.id),
+    Array.from({ length: 11 }, (_, index) => `bomb-arena-redownload-${index + 1}`),
+  );
+  assert.equal(
+    Object.values(progression.data.dialogues).filter((state) =>
+      state.transcript?.some((entry) => entry.text === 'tiens tu peux le télécharger'),
+    ).length,
+    10,
+  );
+  const saved = new Progression(story, store);
+  assert.equal(saved.data.flags[`bombArenaRefusalReoffer:${firstTransfer.key}`], true);
+  assert.equal(Object.keys(saved.data.flags).filter((key) => key.startsWith('bombArenaRefusalReoffer:')).length, 11);
+});
+
+test('Bomb Arena re-download waits for the last manual deletion, uses new saved transfers, and ignores system cleanup', () => {
+  const { progression, orchestrator, virtualFilesystem, setGroupThread, store } = fixture();
+  const group = definitions['pixelgirl-super-plombier-group'];
+  const thread = new ConversationThread('plumber-group', progression, () => [
+    group,
+    ...orchestrator.bombArenaRedownloadEvents(),
+  ]);
+  setGroupThread(thread);
+  const zipId = virtualFileId('downloads', 'BombArena.zip');
+  const folderId = virtualFileId('downloads', 'BombArena');
+  const exeId = virtualFileId('bomb-arena-folder', 'BombArena.exe');
+  const original = progression.receiveFile({
+    id: 'bomb-arena', name: 'BombArena.zip', sizeLabel: '18 Mo', size: 18 * 1024 * 1024,
+    description: 'Archive ZIP', deletable: true, extractable: 'bomb-arena', reusableAfterDelete: true,
+  }, group.id, 'bomb-arena-transfer');
+  progression.finishTransfer(original.key);
+  assert.equal(virtualFilesystem.extractBombArena(zipId).ok, true);
+
+  assert.equal(virtualFilesystem.deleteFile(zipId).ok, true);
+  assert.deepEqual(orchestrator.bombArenaRedownloadEvents(), [], 'the EXE remains usable');
+  assert.equal(orchestrator.onVirtualFilesDeleted({ origin: 'system', removedFileIds: [exeId] }), false);
+  assert.deepEqual(orchestrator.bombArenaRedownloadEvents(), []);
+
+  const removedFolder = virtualFilesystem.deleteFile(folderId);
+  assert.deepEqual(removedFolder.removedFileIds, [folderId, exeId]);
+  const [firstOffer] = orchestrator.bombArenaRedownloadEvents();
+  assert.equal(firstOffer.id, 'bomb-arena-redownload-1');
+  assert.equal(progression.data.dialogues[firstOffer.id].transcript.length, 0);
+  assert.equal(Number.isFinite(progression.data.dialogues[firstOffer.id].receiveDueAt), true);
+  assert.equal(orchestrator.onVirtualFilesDeleted(removedFolder), false, 'one folder deletion creates one proposal');
+
+  thread.receive(1_850);
+  assert.equal(progression.data.dialogues[firstOffer.id].transcript[0].text, 'tiens tu peux le télécharger');
+  thread.receive(2_500);
+  const offerState = progression.data.dialogues[firstOffer.id];
+  const offerSession = new DialogueSession(firstOffer, progression);
+  assert.equal(offerState.transcript[1].text, 'BombArena.zip');
+  assert.equal(offerSession.activeTransfer.status, 'pending', 'the message does not accept its own transfer');
+  const offerHistoryLength = thread.state.history.length;
+
+  const reloaded = new Progression(story, store);
+  const reloadedFilesystem = new VirtualFilesystem(reloaded);
+  let reloadedThread;
+  const reloadedOrchestrator = new NarrativeOrchestrator({
+    progression: reloaded,
+    definitions,
+    dialogueEvents: { update() {}, triggerConnection() {} },
+    getContact: () => null,
+    prepareContact: () => null,
+    showConnectionNotification() {},
+    virtualFilesystem: reloadedFilesystem,
+    getGroupThread: () => reloadedThread,
+  });
+  reloadedThread = new ConversationThread('plumber-group', reloaded, () => [
+    group,
+    ...reloadedOrchestrator.bombArenaRedownloadEvents(),
+  ]);
+  const reloadedOffer = reloadedOrchestrator.bombArenaRedownloadEvents()[0];
+  reloadedThread.sync();
+  assert.equal(reloaded.data.dialogues[reloadedOffer.id].transcript[0].text, 'tiens tu peux le télécharger');
+  assert.equal(reloaded.data.dialogues[reloadedOffer.id].transcript.filter((entry) => entry.text === 'tiens tu peux le télécharger').length, 1);
+  assert.equal(new DialogueSession(reloadedOffer, reloaded).activeTransfer.status, 'pending');
+
+  progression.finishTransfer(offerSession.activeTransfer.key);
+  offerSession.advance();
+  offerSession.advance();
+  thread.sync();
+  assert.equal(offerSession.state.finished, true);
+  assert.equal(thread.state.history.length, offerHistoryLength, 'finishing the transfer adds no duplicate chat rows');
+  assert.equal(virtualFilesystem.exists(zipId), true);
+  assert.equal(virtualFilesystem.extractBombArena(zipId).ok, true);
+  assert.equal(virtualFilesystem.extractBombArena(zipId).existing, true, 'duplicate extraction does not add another EXE');
+
+  virtualFilesystem.deleteFile(folderId);
+  assert.deepEqual(orchestrator.bombArenaRedownloadEvents().map((event) => event.id), ['bomb-arena-redownload-1']);
+  virtualFilesystem.deleteFile(zipId);
+  assert.deepEqual(
+    orchestrator.bombArenaRedownloadEvents().map((event) => event.id),
+    ['bomb-arena-redownload-1', 'bomb-arena-redownload-2'],
+  );
+  assert.equal(virtualFilesystem.exists(zipId), false);
 });
 
 test('a saved group opening resumes at the new dialogue without replaying its original messages', () => {
@@ -721,16 +876,51 @@ test('a saved group opening resumes at the new dialogue without replaying its or
   });
 
   const saved = progression.data.dialogues[definition.id];
-  assert.equal(saved.revision, 2);
+  assert.equal(saved.revision, 5);
   assert.equal(saved.node, 'a');
   assert.equal(saved.cursor, 0);
   assert.equal(saved.finished, false);
   assert.equal(saved.transcript.length, 8);
   assert.deepEqual(
     progression.data.conversations['plumber-group'].history.map(({ key }) => key),
-    transcript.map((_, index) => `${definition.id}:2:${index}`),
+    transcript.map((_, index) => `${definition.id}:5:${index}`),
   );
   assert.ok(progression.data.dialogueArchives[`${definition.id}:1`]);
+});
+
+test('a previously completed group save resumes at the appended Bomb Arena introduction', () => {
+  const { progression } = fixture();
+  const definition = definitions['pixelgirl-super-plombier-group'];
+  const transcript = definition.nodes.h.messages.map((message, index) => ({
+    speaker: message.speaker,
+    author: message.author,
+    text: message.text,
+    receivedAt: 5_000 + index,
+  }));
+  progression.data.dialogues[definition.id] = {
+    node: 'h', cursor: definition.nodes.h.messages.length, transcript, finished: true, revision: 2,
+  };
+  progression.data.conversations['plumber-group'] = {
+    version: 1,
+    history: transcript.map((message, index) => ({
+      ...message, key: `${definition.id}:2:${index}`, eventId: definition.id,
+    })),
+    unread: [], activeEvent: definition.id, pendingEvents: [],
+  };
+  new NarrativeOrchestrator({
+    progression,
+    definitions,
+    dialogueEvents: { update() {}, triggerConnection() {} },
+    getContact: () => null,
+    prepareContact: () => null,
+    showConnectionNotification() {},
+  });
+  const saved = progression.data.dialogues[definition.id];
+  assert.equal(saved.node, 'bomb-arena-intro');
+  assert.equal(saved.cursor, 0);
+  assert.equal(saved.finished, false);
+  assert.equal(saved.transcript.length, transcript.length);
+  assert.equal(progression.data.conversations['plumber-group'].history.length, transcript.length);
 });
 
 test('group conversation status keeps the participant list alongside its normal contact profile', () => {

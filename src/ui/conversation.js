@@ -29,6 +29,7 @@ export class ConversationWindow {
       thread,
       onContactsRequested,
       onChoiceValidated = () => {},
+      onTransferDeclined = () => {},
       onLink = () => {},
       manageWindow,
       onDispose,
@@ -37,6 +38,7 @@ export class ConversationWindow {
   ) {
     this.onContactsRequested = onContactsRequested;
     this.onChoiceValidated = onChoiceValidated;
+    this.onTransferDeclined = onTransferDeclined;
     this.onLink = onLink;
     this.manageWindow = manageWindow;
     this.onDispose = onDispose;
@@ -355,37 +357,55 @@ export class ConversationWindow {
         ? 'Transfert terminé'
         : file.status === 'declined'
           ? 'Transfert refusé'
-          : file.direction === 'send'
-            ? 'Fichier prêt à envoyer'
-            : 'Un fichier vous est proposé';
+          : file.transferState === 'accepted'
+            ? 'Transfert accepté'
+            : file.transferState === 'in-progress'
+              ? 'Transfert en cours…'
+              : file.direction === 'send'
+                ? 'Fichier prêt à envoyer'
+                : 'Un fichier vous est proposé';
     const meter = document.createElement('progress');
     meter.max = 1;
     meter.value = file.status === 'complete' ? 1 : 0;
     const button = document.createElement('button');
     button.className = 'xp-button transfer-accept';
     button.textContent = file.direction === 'send' ? 'Envoyer' : 'Accepter';
-    button.hidden = file.status !== 'pending';
+    button.hidden = file.status !== 'pending' || file.transferState === 'accepted' || file.transferState === 'in-progress';
     const refuse = document.createElement('button');
     refuse.className = 'xp-button transfer-refuse';
     refuse.textContent = 'Refuser';
-    refuse.hidden = file.status !== 'pending' || file.direction === 'send';
+    refuse.hidden = file.status !== 'pending' || file.direction === 'send' || file.transferState === 'accepted' || file.transferState === 'in-progress';
     refuse.addEventListener('click', () => {
       if (this.transfer?.key === key || !session.declineTransfer(key)) return;
       status.textContent = 'Transfert refusé';
       button.hidden = true;
       refuse.hidden = true;
+      if (file.extractable === 'bomb-arena')
+        this.onTransferDeclined({ file, dialogueId: owner?.id ?? this.dialogue.id });
       if (!this.pending) this.pump();
     });
     button.addEventListener('click', () => {
       if (this.transfer) return;
+      if (!this.progression.acceptTransfer(key)) return;
       button.disabled = true;
-      status.textContent = 'Transfert en cours…';
+      status.textContent = file.transferState === 'accepted' ? 'Transfert accepté' : 'Transfert en cours…';
       refuse.hidden = true;
-      this.transfer = { key, elapsed: 0, meter, status, button };
+      this.transfer = { key, elapsed: Math.max(0, Date.now() - (file.transferStartedAt ?? Date.now())), meter, status, button, started: file.transferState === 'in-progress' };
       this.sounds.play('send');
     });
     card.append(title, status, meter, button, refuse);
     row.append(card);
+    if (file.status === 'pending' && ['accepted', 'in-progress'].includes(file.transferState)) {
+      this.transfer ??= {
+        key,
+        elapsed: Math.max(0, Date.now() - (file.transferStartedAt ?? Date.now())),
+        meter,
+        status,
+        button,
+        started: file.transferState === 'in-progress',
+      };
+      meter.value = Math.min(1, this.transfer.elapsed / 1800);
+    }
   }
   pump() {
     if (this.offlineContact) {
@@ -456,12 +476,21 @@ export class ConversationWindow {
   }
   renderTyping(now = Date.now()) {
     if (!this.typingIndicator) return;
-    const contact = this.offlineContact ? null : this.thread.typingContact(now);
-    const text = contact ? `${contact.nickname ?? contact.name} est en train d'écrire...` : '';
+    const contacts = this.offlineContact
+      ? []
+      : (this.thread.typingContacts?.(now) ?? [this.thread.typingContact(now)].filter(Boolean));
+    const names = contacts.map((contact) => contact.nickname ?? contact.name).filter(Boolean);
+    const participants =
+      names.length < 2
+        ? names[0] ?? ''
+        : `${names.slice(0, -1).join(', ')} et ${names.at(-1)}`;
+    const text = participants
+      ? `${participants} ${names.length > 1 ? 'sont' : 'est'} en train d'écrire...`
+      : '';
     const changed = this.typingIndicator.textContent !== text;
     if (changed) this.typingIndicator.textContent = text;
-    this.typingIndicator.classList.toggle('is-typing', Boolean(contact));
-    this.typingIndicator.hidden = !contact;
+    this.typingIndicator.classList.toggle('is-typing', names.length > 0);
+    this.typingIndicator.hidden = names.length === 0;
   }
   renderResponses() {
     if (this.offlineContact) return;
@@ -682,6 +711,12 @@ export class ConversationWindow {
         this.onFilesChanged();
         this.sounds.play('message');
         if (!this.pending) this.pump();
+      }
+      else if (!transfer.started) {
+        this.progression.startTransfer(transfer.key, Date.now());
+        transfer.started = true;
+        transfer.elapsed = 0;
+        transfer.status.textContent = 'Transfert en cours…';
       }
     }
     this.renderTyping();

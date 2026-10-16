@@ -340,6 +340,7 @@ export class DialogueSession {
   declineTransfer(key) {
     if (this.activeTransfer?.key !== key || this.activeTransfer.status !== 'pending') return false;
     this.activeTransfer.status = 'declined';
+    if (this.activeTransfer.extractable === 'bomb-arena') this.activeTransfer.transferState = 'declined';
     this.persist();
     return true;
   }

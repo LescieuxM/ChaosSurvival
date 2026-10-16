@@ -1,5 +1,6 @@
 const ENTER_ANIMATION_MS = 300;
 const EXIT_ANIMATION_MS = 180;
+export const STANDARD_MESSAGE_NOTIFICATION_DURATION_MS = 6000;
 
 export class NotificationCenter {
   constructor({ root, contact, message, dismissButton, getTime = () => Date.now() }) {
@@ -37,7 +38,7 @@ export class NotificationCenter {
     const item = {
       type: 'story',
       clock: 'real',
-      durationMs: 6000,
+      durationMs: STANDARD_MESSAGE_NOTIFICATION_DURATION_MS,
       policy: 'queue',
       priority: 'important',
       ...notification,

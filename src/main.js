@@ -62,7 +62,11 @@ import {
 } from './story/narrative-orchestrator.js';
 import { resetGameToInitialState as resetSession, recoverGameReset } from './story/reset-game.js';
 import { applicationName, trackIdentity } from './ui/identity.js';
-import { NotificationCenter, ENTER_ANIMATION_MS } from './ui/notifications.js';
+import {
+  NotificationCenter,
+  ENTER_ANIMATION_MS,
+  STANDARD_MESSAGE_NOTIFICATION_DURATION_MS,
+} from './ui/notifications.js';
 
 const BEST_SCORE_KEY = 'chaos-survival-best';
 const DEFAULT_VOLUME = 0.55;
@@ -164,6 +168,21 @@ const desktopApplications = new DesktopApplications(
   openDesktopFile,
 );
 let narrativeOrchestrator;
+let turboConversationThread;
+const turboEvents = () =>
+  Object.values(dialogues)
+    .filter(
+      (event) =>
+        event.contact.name === dialogues['turbo-smiley-catcher'].contact.name &&
+        narrativeOrchestrator?.isEventAvailable(event),
+    )
+    .sort((a, b) => narrativeOrchestrator?.compareEvents(a, b) ?? 0);
+const getTurboThread = () =>
+  (turboConversationThread ??= new ConversationThread('turbo', progression, turboEvents));
+const plumberGroupEvents = () => [
+  dialogues['pixelgirl-super-plombier-group'],
+  ...(narrativeOrchestrator?.bombArenaRedownloadEvents() ?? []),
+];
 const hoplaHotel = new HoplaHotelClient(manager, desktopApplications, () =>
   openBrowser('http://www.hoplahotel.fr/'),
   () => settings.data.musicVolume,
@@ -192,17 +211,7 @@ const messenger = new Messenger({
   primary: () => conversation,
   settings,
   onWindowState: syncSystemWindows,
-  onMessage: (contact, incoming) => {
-    const invitationMessage = narrativeOrchestrator?.onMessage(contact, incoming);
-    if (invitationMessage === 'turbo-smiley-scene3')
-      showMessageNotification(contact, 'turbo-smiley-scene3-message', undefined, 2000);
-    if (invitationMessage === 'notify')
-      showMessageNotification(contact, 'turbo-flashzone-invitation-message');
-    if (invitationMessage === 'super-plombier')
-      showMessageNotification(contact, 'turbo-super-plombier-message');
-    if (invitationMessage) return;
-    showMessageNotification(contact, messageNotificationId(contact));
-  },
+  onMessage: (contact, incoming) => handleMessengerMessage(contact, incoming),
   onContactOpened: (contact) => {
     notifications.cancelContact(contact.id, 'message');
     notifications.cancel(`connection:${contact.id}`);
@@ -213,22 +222,35 @@ const messenger = new Messenger({
     const thread =
       contact.id === 'plumber-group'
         ? (plumberGroupThread ??= new ConversationThread('plumber-group', progression, () => [
-            dialogues['pixelgirl-super-plombier-group'],
+            ...plumberGroupEvents(),
           ]))
-        : contact.kind === 'decorative' || !dialogues[contact.dialogue]
-        ? replayReactions.thread
-        : new ConversationThread(contact.id, progression, () =>
-            Object.values(dialogues)
-              .filter(
-                (event) =>
-                  event.contact.name === definition.contact.name &&
-                  narrativeOrchestrator?.isEventAvailable(event),
-              )
-              .sort((a, b) => narrativeOrchestrator?.compareEvents(a, b) ?? 0),
-          );
+        : contact.id === 'turbo'
+          ? getTurboThread()
+          : contact.kind === 'decorative' || !dialogues[contact.dialogue]
+          ? replayReactions.thread
+          : new ConversationThread(contact.id, progression, () =>
+              Object.values(dialogues)
+                .filter(
+                  (event) =>
+                    event.contact.name === definition.contact.name &&
+                    narrativeOrchestrator?.isEventAvailable(event),
+                )
+                .sort((a, b) => narrativeOrchestrator?.compareEvents(a, b) ?? 0),
+            );
     return createConversation(definition, contact.id, thread);
   },
 });
+function handleMessengerMessage(contact, incoming = []) {
+    const invitationMessage = narrativeOrchestrator?.onMessage(contact, incoming);
+    if (invitationMessage === 'turbo-smiley-scene3')
+      showMessageNotification(contact, 'turbo-smiley-scene3-message');
+    if (invitationMessage === 'notify')
+      showMessageNotification(contact, 'turbo-flashzone-invitation-message');
+    if (invitationMessage === 'super-plombier')
+      showMessageNotification(contact, 'turbo-super-plombier-message');
+    if (invitationMessage) return;
+    showMessageNotification(contact, messageNotificationId(contact));
+}
 const rules = new GameRules(ui.desktop, progression);
 const miniGameLauncher = new MiniGameLauncher(
   miniGames,
@@ -270,10 +292,16 @@ narrativeOrchestrator = new NarrativeOrchestrator({
   sendWizz: (contactId, eventId, speaker, now) =>
     messenger.sendWizz(contactId, { eventId, speaker, now }),
   getGroupThread: () => {
-    plumberGroupThread ??= new ConversationThread('plumber-group', progression, () => [
-      dialogues['pixelgirl-super-plombier-group'],
-    ]);
+    plumberGroupThread ??= new ConversationThread('plumber-group', progression, plumberGroupEvents);
     return plumberGroupThread;
+  },
+  getTurboThread,
+  onTurboMessage: (contact, incoming) => {
+    if (!contact) return;
+    const view = messenger.ensureBackground(contact);
+    view?.thread?.sync();
+    sounds.unlock().then(() => sounds.play('message'));
+    handleMessengerMessage(contact, incoming);
   },
   onGroupMessage: (contact) => {
     if (!contact) return;
@@ -286,6 +314,7 @@ narrativeOrchestrator = new NarrativeOrchestrator({
     )
       showMessageNotification(contact, messageNotificationId(contact));
   },
+  virtualFilesystem,
   showGroupNotification: (contact) => {
     if (!contact) return false;
     messenger.ensureBackground(contact);
@@ -308,6 +337,7 @@ narrativeOrchestrator = new NarrativeOrchestrator({
     return shown || notifications.has(id);
   },
 });
+virtualFilesystem.onDelete = (change) => narrativeOrchestrator?.onVirtualFilesDeleted(change);
 browser.onSuperPlombierStart = () => narrativeOrchestrator.onSuperPlombierStart();
 browser.onSuperPlombierVictory = () => narrativeOrchestrator.onSuperPlombierVictory();
 let restoringStory = false;
@@ -336,6 +366,8 @@ function createConversation(dialogue, contactId = 'pixelgirl', thread = replayRe
       onContactsRequested: () => messenger.open(),
       onChoiceValidated: (definition, details) =>
         narrativeOrchestrator.onChoiceValidated(definition, details),
+      onTransferDeclined: ({ file, dialogueId }) =>
+        narrativeOrchestrator.onBombArenaTransferDeclined(file, dialogueId),
       onLink: (url) => {
         narrativeOrchestrator.onLink(url);
         openBrowser(url);
@@ -353,14 +385,15 @@ function messageNotificationId(contact) {
 
 function showMessageNotification(contact, id = messageNotificationId(contact), onShow, delayMs = 0) {
   if (!messenger.contacts().some((item) => item.id === contact.id)) return;
+  const turboSceneMessage = id === 'turbo-smiley-scene3-message';
   notifications.show({
     id,
     type: 'message',
     contactId: contact.id,
     contact: contact.nickname,
     message: contact.id === 'turbo' ? ' vous a envoy\u00e9 un message' : 't\u2019a envoy\u00e9 un nouveau message.',
-    durationMs: 6000,
-    clock: 'game',
+    durationMs: STANDARD_MESSAGE_NOTIFICATION_DURATION_MS,
+    clock: turboSceneMessage ? 'real' : 'game',
     policy: 'queue',
     priority: 'important',
     delayMs,
@@ -1051,6 +1084,10 @@ function renderDesktopFiles() {
 }
 function openDesktopFile(file) {
   if (phase !== 'desktop') return;
+  if (file.virtualApp === 'bomb-arena') {
+    if (virtualFilesystem.exists(file.fileId)) desktopApplications.openBombArena(file, file.fileId);
+    return;
+  }
   if (!virtualFilesystem.exists(virtualFileId('downloads', file.name))) return;
   try {
     miniGameLauncher.open(file);

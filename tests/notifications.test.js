@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { NotificationCenter } from '../src/ui/notifications.js';
+import {
+  NotificationCenter,
+  STANDARD_MESSAGE_NOTIFICATION_DURATION_MS,
+} from '../src/ui/notifications.js';
 
 class Element {
   constructor() {
@@ -93,6 +96,28 @@ test('queues important notifications until the exit animation finishes', () => {
   view.root.dispatch('click', { target: { closest: () => null } });
   assert.equal(secondAction, 1);
   assert.equal(view.root.classList.contains('is-dismissing'), true);
+});
+
+test('the first Turb0 message notification expires on real time after the standard six-second duration', () => {
+  const view = setup();
+  view.center.show({
+    id: 'turbo-smiley-scene3-message',
+    type: 'message',
+    contactId: 'turbo',
+    contact: 'Turb0',
+    message: ' vous a envoyé un message',
+    durationMs: STANDARD_MESSAGE_NOTIFICATION_DURATION_MS,
+    clock: 'real',
+  });
+  view.setTime(STANDARD_MESSAGE_NOTIFICATION_DURATION_MS - 1);
+  view.center.update();
+  assert.equal(view.center.current.id, 'turbo-smiley-scene3-message');
+  view.setTime(STANDARD_MESSAGE_NOTIFICATION_DURATION_MS);
+  view.center.update();
+  assert.equal(view.root.classList.contains('is-dismissing'), true);
+  view.setTime(STANDARD_MESSAGE_NOTIFICATION_DURATION_MS + 180);
+  view.center.update();
+  assert.equal(view.center.current, null);
 });
 
 test('opening and cancelling notifications handles their IDs while preserving other contacts', () => {

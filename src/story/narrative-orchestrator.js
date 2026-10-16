@@ -1,4 +1,5 @@
-import { pendingChoices } from './dialogue.js';
+import { DialogueSession, pendingChoices } from './dialogue.js';
+import { bombArenaRedownloadDialogue } from './bomb-arena.js';
 
 const SUPER_PLOMBIER_INVITATION_DELAY_MS = 3000;
 const SUPER_PLOMBIER_GROUP_REST_MS = 20_000;
@@ -18,8 +19,11 @@ export class NarrativeOrchestrator {
     showConnectionNotification,
     sendWizz = () => false,
     getGroupThread = () => null,
+    getTurboThread = () => null,
+    onTurboMessage = () => {},
     showGroupNotification = () => false,
     onGroupMessage = () => {},
+    virtualFilesystem = null,
     now = () => Date.now(),
   }) {
     Object.assign(this, {
@@ -31,8 +35,11 @@ export class NarrativeOrchestrator {
       showConnectionNotification,
       sendWizz,
       getGroupThread,
+      getTurboThread,
+      onTurboMessage,
       showGroupNotification,
       onGroupMessage,
+      virtualFilesystem,
       now,
     });
     if (Number.isFinite(this.flags.turboSmileyScene3MessageNotificationDueAt)) {
@@ -57,6 +64,74 @@ export class NarrativeOrchestrator {
 
   get flags() {
     return this.progression.data.flags;
+  }
+
+  bombArenaRedownloadEvents() {
+    const group = this.definitions['pixelgirl-super-plombier-group'];
+    if (!group) return [];
+    return Object.keys(this.progression.data.dialogues)
+      .map((id) => /^bomb-arena-redownload-(\d+)$/.exec(id))
+      .filter(Boolean)
+      .sort((a, b) => Number(a[1]) - Number(b[1]))
+      .map(([id]) => bombArenaRedownloadDialogue(id, group));
+  }
+
+  scheduleBombArenaRedownload() {
+    const group = this.definitions['pixelgirl-super-plombier-group'];
+    const thread = group && this.getGroupThread();
+    if (!thread) return null;
+    const events = this.bombArenaRedownloadEvents();
+    const nextIndex = events.reduce((max, event) => {
+      const value = Number(event.id.slice('bomb-arena-redownload-'.length));
+      return Math.max(max, value);
+    }, 0) + 1;
+    const definition = bombArenaRedownloadDialogue(`bomb-arena-redownload-${nextIndex}`, group);
+    thread.sync();
+    thread.schedule(definition, this.now());
+    new DialogueSession(definition, this.progression).persist();
+    return definition;
+  }
+
+  onBombArenaTransferDeclined(file, dialogueId) {
+    const recognizedDialogue =
+      dialogueId === 'pixelgirl-super-plombier-group' ||
+      /^bomb-arena-redownload-\d+$/.test(dialogueId ?? '');
+    if (
+      file?.extractable !== 'bomb-arena' ||
+      file.status !== 'declined' ||
+      !recognizedDialogue
+    ) return false;
+    const scheduledKey = `bombArenaRefusalReoffer:${file.key}`;
+    if (this.flags[scheduledKey]) return false;
+    const definition = this.scheduleBombArenaRedownload();
+    if (!definition) return false;
+    this.flags[scheduledKey] = true;
+    this.progression.save();
+    return true;
+  }
+
+  onVirtualFilesDeleted(change) {
+    if (change?.origin !== 'manual' || !Array.isArray(change.removedFileIds)) return false;
+    const bombArenaIds = new Set([
+      'downloads/bombarena.zip',
+      'downloads/bombarena',
+      'bomb-arena-folder/bombarena.exe',
+    ]);
+    if (!change.removedFileIds.some((id) => bombArenaIds.has(id))) return false;
+    if (
+      this.virtualFilesystem?.exists('downloads/bombarena.zip') ||
+      this.virtualFilesystem?.exists('bomb-arena-folder/bombarena.exe')
+    ) return false;
+
+    const group = this.definitions['pixelgirl-super-plombier-group'];
+    const thread = group && this.getGroupThread();
+    if (!thread) return false;
+    const events = this.bombArenaRedownloadEvents();
+    if (events.some((event) => {
+      const state = this.progression.data.dialogues[event.id];
+      return state && !state.finished;
+    })) return false;
+    return Boolean(this.scheduleBombArenaRedownload());
   }
 
   sendNarrativeWizz(contactId, eventId, speaker, now) {
@@ -173,6 +248,12 @@ export class NarrativeOrchestrator {
       structuredClone(saved);
     if (saved.node === 'opening' && saved.finished && definition.nodes.a) {
       saved.node = 'a';
+      saved.cursor = 0;
+      saved.finished = false;
+      delete saved.receiveDueAt;
+    }
+    if (saved.node === 'h' && saved.finished && definition.nodes['bomb-arena-intro']) {
+      saved.node = 'bomb-arena-intro';
       saved.cursor = 0;
       saved.finished = false;
       delete saved.receiveDueAt;
@@ -533,8 +614,12 @@ export class NarrativeOrchestrator {
     const thread = definition && this.getGroupThread();
     if (!thread) return;
     const state = this.progression.data.dialogues[definition.id];
-    if (!state?.transcript?.length && !Number.isFinite(state?.receiveDueAt))
+    if (!state?.transcript?.length && !Number.isFinite(state?.receiveDueAt) && typeof thread.schedule === 'function')
       thread.schedule(definition, this.flags.superPlombierGroupCreatedAt ?? now);
+    else if (typeof thread.schedule === 'function' && state && !state.finished && !Number.isFinite(state.receiveDueAt)) {
+      const session = new DialogueSession(definition, this.progression);
+      if (!session.node.transfer && session.nextMessage()) thread.schedule(definition, now);
+    }
     const incoming = thread.receive(now) ?? [];
     if (incoming.length) this.onGroupMessage(this.getContact('plumber-group'), incoming);
     if (!this.flags.superPlombierGroupNotified) {
@@ -566,14 +651,9 @@ export class NarrativeOrchestrator {
     if (saved?.finished || saved?.transcript?.length) return;
     const contact = this.getContact('turbo');
     if (!contact?.available) return;
-    const view = this.prepareContact(contact);
-    if (!view) return;
-    view.thread.schedule(definition);
-    const pending = this.progression.data.dialogues[definition.id];
-    if (pending && Number.isFinite(pending.receiveDueAt)) {
-      pending.receiveDueAt = this.now();
-      this.progression.save();
-    }
+    const thread = this.getTurboThread();
+    if (!thread) return;
+    thread.schedule(definition, this.now());
   }
 
   scheduleSuperPlombierInvitation() {
@@ -729,6 +809,16 @@ export class NarrativeOrchestrator {
   update(now = this.now(), notify = true) {
     this.prepareTurboSceneMessage();
     this.dialogueEvents.update(now, notify);
+    const turboDefinition = this.definitions['turbo-smiley-catcher'];
+    const turboState = turboDefinition && this.progression.data.dialogues[turboDefinition.id];
+    const turboThread = turboState && this.getTurboThread();
+    if (turboThread && Number.isFinite(turboState.receiveDueAt) && !turboState.finished) {
+      const received = turboThread.receiveScheduled(turboDefinition, now);
+      if (received) {
+        turboThread.sync();
+        this.onTurboMessage(this.getContact('turbo'), [turboDefinition]);
+      }
+    }
     this.prepareSuperPlombierInvitation();
     this.prepareSuperPlombierTurbo();
     this.updateSuperPlombierWizzes(now);

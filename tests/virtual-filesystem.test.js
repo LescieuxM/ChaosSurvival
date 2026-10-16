@@ -2,11 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Progression } from '../src/story/progression.js';
+import { DialogueSession } from '../src/story/dialogue.js';
 import { VirtualTextFiles } from '../src/story/text-files.js';
 import { VirtualFilesystem, virtualFileId } from '../src/story/virtual-filesystem.js';
 import { DesktopApplications } from '../src/ui/desktop-apps.js';
 import { DesktopFiles } from '../src/ui/desktop-files.js';
 const story = JSON.parse(readFileSync(new URL('../src/config/story.json', import.meta.url)));
+const groupDialogue = JSON.parse(readFileSync(new URL('../src/dialogues/pixelgirl-super-plombier-group.json', import.meta.url)));
 
 function memory() {
   const values = new Map();
@@ -202,6 +204,96 @@ test('the arcade image uses its renamed virtual filename without changing its vi
   const files = new VirtualFilesystem(new Progression(story, memory()));
   assert.equal(files.canDelete(virtualFileId('images', 'arcade.jpg')), true);
   assert.equal(files.canDelete(virtualFileId('images', 'fond_bureau.jpg')), false);
+});
+
+test('WinRoar adds a persistent virtual folder and executable once, and folder deletion removes its contents', () => {
+  const disk = memory();
+  const progression = new Progression(story, disk);
+  const filesystem = new VirtualFilesystem(progression);
+  const transfer = progression.receiveFile({
+    id: 'bomb-arena',
+    name: 'BombArena.zip',
+    sizeLabel: '18 Mo',
+    size: 18 * 1024 * 1024,
+    description: 'Archive ZIP',
+    deletable: true,
+    extractable: 'bomb-arena',
+    reusableAfterDelete: true,
+  }, 'pixelgirl-super-plombier-group', 'transfer');
+  progression.finishTransfer(transfer.key);
+  const archiveId = virtualFileId('downloads', 'BombArena.zip');
+  assert.equal(filesystem.canDelete(archiveId), true);
+  assert.equal(filesystem.metadata(archiveId).size, 18 * 1024 * 1024);
+  assert.equal(filesystem.getFile(archiveId).extractable, 'bomb-arena');
+  assert.equal(filesystem.exists(virtualFileId('bomb-arena-folder', 'BombArena.exe')), false);
+
+  const extracted = filesystem.extractBombArena(archiveId);
+  const folderId = virtualFileId('downloads', 'BombArena');
+  const executableId = virtualFileId('bomb-arena-folder', 'BombArena.exe');
+  assert.equal(extracted.ok, true);
+  assert.equal(filesystem.getFile(folderId).directory, true);
+  assert.deepEqual(filesystem.getLocation('bomb-arena-folder').items.map((file) => file.name), ['BombArena.exe']);
+  assert.equal(filesystem.getFile(executableId).virtualApp, 'bomb-arena');
+  assert.equal(filesystem.metadata(executableId).size, 31 * 1024 * 1024);
+  assert.equal(filesystem.canDelete(executableId), true);
+  assert.equal(filesystem.extractBombArena(archiveId).existing, true);
+  assert.equal(filesystem.deleteFile(executableId).ok, true);
+  assert.equal(filesystem.exists(folderId), true);
+  assert.equal(filesystem.extractBombArena(archiveId).ok, true, 're-extraction reuses the remaining folder');
+  assert.equal(filesystem.exists(executableId), true);
+  const app = Object.create(DesktopApplications.prototype);
+  app.virtualFilesystem = filesystem;
+  app.openBombArena = (item, fileId) => ({ item, fileId });
+  assert.deepEqual(
+    app.openFile(filesystem.getLocation('bomb-arena-folder'), filesystem.getFile(executableId)),
+    { item: filesystem.getFile(executableId), fileId: executableId },
+    'the virtual executable routes to the internal Bomb Arena application',
+  );
+  assert.equal(filesystem.getLocation('my-games').items.length, 0);
+
+  const restored = new VirtualFilesystem(new Progression(story, disk));
+  assert.equal(restored.exists(executableId), true);
+  const deleted = restored.deleteFile(folderId);
+  assert.deepEqual(deleted.removedFileIds, [folderId, executableId]);
+  assert.equal(new VirtualFilesystem(new Progression(story, disk)).exists(executableId), false);
+  assert.equal(new VirtualFilesystem(new Progression(story, disk)).exists(archiveId), true);
+  assert.equal(restored.deleteFile(archiveId).ok, true);
+  assert.equal(restored.exists(archiveId), false);
+  const replacement = restored.progression.receiveFile({
+    ...progression.data.files[transfer.key],
+  }, 'bomb-arena-redownload-1', 'offer');
+  restored.progression.finishTransfer(replacement.key);
+  assert.equal(new VirtualFilesystem(new Progression(story, disk)).exists(archiveId), true,
+    'a distinct Bomb Arena offer can restore the archive after the old receipt was deleted');
+});
+
+test('Bomb Arena transfer records proposed, accepted, in-progress, refused and completed states across saves', () => {
+  const disk = memory();
+  let progression = new Progression(story, disk);
+  const accepted = progression.receiveFile({
+    id: 'bomb-arena', name: 'BombArena.zip', sizeLabel: '18 Mo', extractable: 'bomb-arena',
+  }, 'pixelgirl-super-plombier-group', 'transfer-a');
+  assert.equal(accepted.transferState, 'proposed');
+  assert.equal(progression.acceptTransfer(accepted.key), true);
+  assert.equal(progression.data.files[accepted.key].transferState, 'accepted');
+  assert.equal(progression.startTransfer(accepted.key, 1000), true);
+  assert.equal(progression.data.files[accepted.key].transferState, 'in-progress');
+  progression = new Progression(story, disk);
+  assert.equal(progression.data.files[accepted.key].transferState, 'in-progress');
+  assert.equal(progression.data.files[accepted.key].transferStartedAt, 1000);
+  progression.finishTransfer(accepted.key);
+  assert.equal(progression.data.files[accepted.key].transferState, 'complete');
+
+  const session = new DialogueSession(groupDialogue, progression);
+  session.state.node = 'bomb-arena-transfer';
+  session.persist();
+  session.deliver();
+  session.deliver();
+  assert.equal(session.activeTransfer.status, 'pending');
+  assert.equal(session.declineTransfer(session.activeTransfer.key), true);
+  const declinedKey = session.activeTransfer.key;
+  assert.equal(session.activeTransfer.transferState, 'declined');
+  assert.equal(new Progression(story, disk).data.files[declinedKey].transferState, 'declined');
 });
 
 test('legacy and malformed filesystem save data normalize without hiding unrelated files', () => {
@@ -430,6 +522,44 @@ test('explorer selects files, provides XP properties and confirmation, and refre
   assert.equal(desktopItems.children.length, 0, 'Explorer deletion refreshes the desktop from the same transfer state');
   desktopButton.handlers.dblclick();
   assert.equal(openedDesktopFiles.length, 1, 'a stale desktop icon cannot reopen a deleted transfer');
+  const archiveTransfer = progression.receiveFile({
+    id: 'bomb-arena', name: 'BombArena.zip', sizeLabel: '18 Mo', size: 18 * 1024 * 1024,
+    description: 'Archive ZIP', deletable: true, extractable: 'bomb-arena', reusableAfterDelete: true,
+  }, 'pixelgirl-super-plombier-group', 'transfer');
+  progression.finishTransfer(archiveTransfer.key);
+  app.render(first, filesystem.getLocation('downloads'));
+  const archiveId = virtualFileId('downloads', 'BombArena.zip');
+  const archiveRow = first.element.querySelector('.explorer-items').children.find(
+    (item) => item.dataset.fileId === archiveId,
+  );
+  archiveRow.handlers.contextmenu({ clientX: 45, clientY: 60, preventDefault() {} });
+  const extractAction = first.explorerMenu.children.find(
+    (item) => item.dataset.explorerAction === 'extract',
+  );
+  assert.equal(extractAction.textContent, 'Extraire avec WinRoar');
+  assert.equal(extractAction.hidden, false);
+  assert.equal(filesystem.extractBombArena(archiveId).ok, true);
+  desktopFiles.render();
+  const bombArenaShortcut = () => desktopItems.children.filter((item) => item.className.includes('desktop-virtual-shortcut'));
+  assert.equal(bombArenaShortcut().length, 1);
+  assert.equal(bombArenaShortcut()[0].children.at(-1).textContent, 'BombArena');
+  bombArenaShortcut()[0].handlers.dblclick();
+  assert.equal(openedDesktopFiles.at(-1).virtualApp, 'bomb-arena');
+  assert.equal(filesystem.deleteFile(virtualFileId('bomb-arena-folder', 'BombArena.exe')).ok, true);
+  desktopFiles.render();
+  assert.equal(bombArenaShortcut().length, 0);
+  assert.equal(filesystem.extractBombArena(archiveId).ok, true);
+  desktopFiles.render();
+  assert.equal(bombArenaShortcut().length, 1, 're-extraction after deleting only the EXE restores the shortcut');
+  assert.equal(filesystem.deleteFile(virtualFileId('downloads', 'BombArena')).ok, true);
+  desktopFiles.render();
+  assert.equal(bombArenaShortcut().length, 0, 'removing the EXE removes the derived desktop shortcut');
+  assert.equal(filesystem.extractBombArena(archiveId).ok, true);
+  desktopFiles.render();
+  assert.equal(bombArenaShortcut().length, 1, 'extracting again restores only one shortcut');
+  assert.equal(filesystem.deleteFile(archiveId).ok, true);
+  desktopFiles.render();
+  assert.equal(bombArenaShortcut().length, 1, 'the shortcut remains when only the archive is deleted');
   const protectedFile = filesystem.getLocation('windows').items.find((item) => item.name === 'win.ini');
   const systemExplorer = makeExplorer();
   app.render(systemExplorer, filesystem.getLocation('windows'));
