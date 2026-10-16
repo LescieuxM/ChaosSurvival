@@ -7,7 +7,7 @@ import { Progression } from '../src/story/progression.js';
 import { VirtualTextFiles } from '../src/story/text-files.js';
 import { VirtualFilesystem } from '../src/story/virtual-filesystem.js';
 import { orderedContacts, visibleContacts } from '../src/ui/contacts.js';
-import { Messenger } from '../src/ui/messenger.js';
+import { Messenger, identifyMessageSender } from '../src/ui/messenger.js';
 import { playerIdentity } from '../src/ui/player-identity.js';
 import {
   desktopApps,
@@ -60,6 +60,15 @@ test('display order is explicit, independent of creation order, and stable withi
     order,
   );
   assert.ok(disconnected.every((contact) => !contact.online));
+});
+
+test('incoming group messages resolve stable participant IDs independently of displayed names', () => {
+  const group = { id: 'plumber-group' };
+  assert.deepEqual(identifyMessageSender(group, { author: 'xX_PixelGirl_Xx' }), { id: 'pixelgirl', name: 'PixelGirl' });
+  assert.deepEqual(identifyMessageSender(group, { author: 'Turb0' }), { id: 'turbo', name: 'Turb0' });
+  assert.deepEqual(identifyMessageSender(group, { author: '°•.LuNa.°•' }), { id: 'luna', name: 'Luna' });
+  assert.deepEqual(identifyMessageSender(group, { author: 'Â°â€¢.LuNa.Â°â€¢' }), { id: 'luna', name: 'Luna' });
+  assert.deepEqual(identifyMessageSender({ id: 'turbo', nickname: 'Turb0' }, {}), { id: 'turbo', name: 'Turb0' });
 });
 
 test('Wizz send events persist one chronological system entry for each sender without changing dialogues', async () => {
@@ -827,6 +836,208 @@ test('incoming conversations reuse one minimized window and respect saved explic
   assert.equal(progression.data.conversations.future.windowClosed, false);
   assert.equal(progression.data.conversations.closed.windowClosed, true);
   assert.equal(progression.saves, 1);
+});
+
+test('central incoming-message intake creates one background window and forwards the delivered messages', () => {
+  const contact = { id: 'future', nickname: 'Future', available: true, dialogue: intro.id };
+  const state = { unread: ['message-1'], windowClosed: true };
+  let opens = 0;
+  let focusChanges = 0;
+  let callbackArgs = null;
+  const taskClasses = new Set();
+  const view = {
+    element: { isConnected: false, hidden: true },
+    thread: { state },
+    messengerInstance: {
+      task: {
+        title: '',
+        classList: {
+          toggle(name, enabled) { if (enabled) taskClasses.add(name); else taskClasses.delete(name); },
+        },
+      },
+    },
+    openMinimized() {
+      opens++;
+      this.element.isConnected = true;
+    },
+    focus() { focusChanges++; },
+  };
+  const messenger = new Messenger({
+    progression: { data: { conversations: { future: state } }, save() {} },
+    primary: () => null,
+    createConversation: () => view,
+    onMessage: (...args) => callbackArgs = args,
+  });
+  messenger.contacts = () => [contact];
+  const events = [{ id: 'event-1' }];
+  const messages = [{ key: 'message-1', speaker: 'contact', author: 'future', text: 'bonjour' }];
+
+  const result = messenger.receiveIncoming(contact, events, messages, view);
+  assert.equal(result, view);
+  assert.equal(opens, 1);
+  assert.equal(focusChanges, 0);
+  assert.equal(state.windowClosed, false);
+  assert.equal(taskClasses.has('messenger-unread'), true);
+  assert.deepEqual(callbackArgs, [contact, events, messages, view, { active: false, read: false }]);
+  messenger.receiveIncoming(contact, events, messages, view);
+  assert.equal(opens, 1, 'one conversation keeps one minimized window');
+});
+
+test('central incoming-message intake decides activity from the window manager and marks active delivery read', () => {
+  const contact = { id: 'future', nickname: 'Future', available: true, dialogue: intro.id };
+  const state = { unread: ['incoming:1'], windowClosed: false };
+  const element = { isConnected: true, hidden: false, style: { zIndex: 2 } };
+  let callbackState;
+  let opened = 0;
+  const view = {
+    element,
+    dialogue: { contact },
+    thread: { state, markRead() { state.unread = []; } },
+  };
+  const manager = { isActive: (candidate) => candidate === element };
+  const messenger = new Messenger({
+    manager,
+    progression: { data: { conversations: { future: state } }, save() {} },
+    primary: () => null,
+    onMessage: (...args) => callbackState = args[4],
+    onContactOpened: () => opened++,
+  });
+  messenger.contacts = () => [contact];
+
+  messenger.receiveIncoming(contact, [], [{ key: 'incoming:2' }], view);
+  assert.deepEqual(callbackState, { active: true, read: true });
+  assert.deepEqual(state.unread, []);
+  assert.equal(opened, 1);
+
+  manager.isActive = (candidate) => candidate !== element;
+  state.unread = ['incoming:3'];
+  messenger.receiveIncoming(contact, [], [{ key: 'incoming:4' }], view);
+  assert.deepEqual(callbackState, { active: false, read: false });
+  assert.deepEqual(state.unread, ['incoming:3']);
+});
+
+test('the first message discovers an unopened available contact and creates its background task button immediately', () => {
+  const contact = { id: 'future', nickname: 'Future', available: true, kind: 'narrative', dialogue: intro.id };
+  const state = { unread: [], windowClosed: false };
+  const taskClasses = new Set();
+  let delivered = false;
+  let incomingCalls = 0;
+  let opens = 0;
+  const message = { key: 'future:1', speaker: 'contact', author: 'future', text: 'premier message' };
+  const view = {
+    dialogue: { contact },
+    element: { isConnected: false, hidden: false, style: { zIndex: 1 } },
+    thread: {
+      state,
+      receive() {
+        if (delivered) return [];
+        delivered = true;
+        state.unread.push(message.key);
+        this.lastIncomingMessages = [message];
+        return [{ id: 'future-event' }];
+      },
+      markRead() { state.unread = []; },
+    },
+    messengerInstance: {
+      task: {
+        title: '',
+        classList: { toggle(name, enabled) { if (enabled) taskClasses.add(name); else taskClasses.delete(name); } },
+      },
+    },
+    openMinimized() {
+      opens++;
+      this.element.isConnected = true;
+      this.element.hidden = true;
+    },
+    refresh() {},
+  };
+  const messenger = new Messenger({
+    manager: { windows: new Map() },
+    progression: {
+      data: { conversations: { future: state }, unlockedConversations: [], contactConnections: {}, contactProfiles: {}, flags: {} },
+      save() {},
+    },
+    primary: () => ({ offlineContact: true, refresh() {} }),
+    definitions: () => ({}),
+    createConversation: () => view,
+    onMessage: (_contact, _events, messages) => {
+      assert.deepEqual(messages, [message]);
+      incomingCalls++;
+    },
+  });
+  messenger.contacts = () => [contact];
+
+  messenger.update();
+  assert.equal(opens, 1);
+  assert.equal(incomingCalls, 1);
+  assert.equal(view.element.hidden, true);
+  assert.equal(taskClasses.has('messenger-unread'), true);
+  messenger.update();
+  assert.equal(incomingCalls, 1);
+});
+
+test('active conversations clear unread state after delivery; background conversations keep their orange task signal', () => {
+  const contact = { id: 'future', nickname: 'Future', available: true, dialogue: intro.id };
+  const create = (visible) => {
+    const state = { unread: [], windowClosed: false };
+    const taskClasses = new Set();
+    let delivered = false;
+    let incomingCalls = 0;
+    const event = { id: 'incoming' };
+    const message = { key: 'incoming:1', speaker: 'contact', author: 'future', text: 'bonjour' };
+    const view = {
+      dialogue: { contact },
+      thread: {
+        state,
+        receive() {
+          if (delivered) return [];
+          delivered = true;
+          state.unread.push(message.key);
+          this.lastIncomingMessages = [message];
+          return [event];
+        },
+        markRead() { state.unread = []; },
+      },
+      element: { isConnected: true, hidden: !visible, style: { zIndex: visible ? 10 : 1 } },
+      followLatest: false,
+      messengerInstance: {
+        task: {
+          classList: {
+            toggle(name, value) { if (value) taskClasses.add(name); else taskClasses.delete(name); },
+          },
+          title: '',
+        },
+      },
+      refresh() {},
+    };
+    const progression = {
+      data: { conversations: { future: state }, unlockedConversations: [], contactConnections: {}, contactProfiles: {}, flags: {} },
+      save() {},
+    };
+    const primary = { offlineContact: true, refresh() {} };
+    const messenger = new Messenger({
+      progression,
+      manager: { windows: new Map() },
+      primary: () => primary,
+      definitions: () => ({}),
+      onMessage: () => incomingCalls++,
+    });
+    messenger.contacts = () => [contact];
+    messenger.conversations.set(contact.id, view);
+    return { messenger, view, state, taskClasses, get incomingCalls() { return incomingCalls; } };
+  };
+
+  const active = create(true);
+  active.messenger.update();
+  assert.equal(active.incomingCalls, 1);
+  assert.deepEqual(active.state.unread, []);
+  assert.equal(active.taskClasses.has('messenger-unread'), false);
+
+  const background = create(false);
+  background.messenger.update();
+  assert.equal(background.incomingCalls, 1);
+  assert.deepEqual(background.state.unread, ['incoming:1']);
+  assert.equal(background.taskClasses.has('messenger-unread'), true);
 });
 
 test('queued choices survive a multi-node message sequence and only return after its last message', () => {

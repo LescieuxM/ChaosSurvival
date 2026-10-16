@@ -232,6 +232,7 @@ export class ConversationThread {
     );
   }
   receive(now = Date.now()) {
+    const previousKeys = new Set(this.state.history.map((entry) => entry.key));
     const incoming = [];
     const first = this.getEvents()[0];
     if (first && this.receiveScheduled(first, now)) incoming.push(first);
@@ -289,6 +290,7 @@ export class ConversationThread {
       if (delivered) incoming.push(event);
     }
     this.sync();
+    this.lastIncomingMessages = this.state.history.filter((entry) => !previousKeys.has(entry.key));
     return incoming;
   }
   markRead() {

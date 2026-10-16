@@ -126,6 +126,7 @@ export function mountDesktop(root, best) {
           aria-label="Volume de la musique"
       /></label>
     </section>
+    <div class="notification-area" id="notification-area">
     <div class="toast" id="toast" role="button" tabindex="0" hidden>
       <header>
         ${icon('msn')} ${applicationName('messenger')}
@@ -136,6 +137,20 @@ export function mountDesktop(root, best) {
         <p><strong id="toast-contact"></strong><span id="toast-message"></span></p>
       </div>
     </div>
+    <div class="toast-stack" id="message-toast-stack" aria-live="polite" hidden></div>
+    </div>
+    <template id="message-toast-template">
+      <div class="toast message-toast" role="button" tabindex="0">
+        <header>
+          ${icon('msn')} ${applicationName('messenger')}
+          <button class="toast-dismiss" aria-label="Fermer la notification">×</button>
+        </header>
+        <div>
+          <span class="toast-avatar">${icon('msn')}</span>
+          <p><strong class="toast-contact"></strong><span class="toast-message"></span></p>
+        </div>
+      </div>
+    </template>
     <div class="wizz-label" id="wizz-label" hidden>
       WIZZ !!!<small>quelqu’un veut ton attention.</small>
     </div>
@@ -218,6 +233,8 @@ export function mountDesktop(root, best) {
     dialogSecondary: select('#dialog-secondary'),
     feedbackLayer: select('#feedback-layer'),
     toast: select('#toast'),
+    messageToastStack: select('#message-toast-stack'),
+    messageToastTemplate: select('#message-toast-template'),
     toastContact: select('#toast-contact'),
     toastMessage: select('#toast-message'),
     dismissToast: select('#dismiss-toast'),

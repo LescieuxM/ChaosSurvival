@@ -51,7 +51,7 @@ function fixture(values = new Map()) {
       return { thread: turboThread };
     },
     getTurboThread: () => turboThread,
-    onTurboMessage: (contact, incoming) => turboMessages.push({ contact, incoming }),
+    onTurboMessage: (contact, incoming, messages) => turboMessages.push({ contact, incoming, messages }),
     showConnectionNotification: (id, options) => connectionNotifications.push({ id, options }),
     now: () => now,
   });
@@ -102,6 +102,8 @@ test('validating PixelGirl first reply saves Turb0 connection for exactly two se
   restored.orchestrator.update(restored.now);
   assert.equal(restored.turboThread.state.history.at(-1).text, 'mdrrrr noob');
   assert.equal(restored.turboMessages.length, 1);
+  assert.equal(restored.turboMessages[0].messages.length, 1);
+  assert.equal(restored.turboMessages[0].messages[0].text, 'mdrrrr noob');
   restored.orchestrator.update(20_000);
   assert.equal(restored.turboMessages.length, 1);
   assert.equal(restored.connectionNotifications.length, 1);

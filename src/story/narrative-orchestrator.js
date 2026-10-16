@@ -621,7 +621,8 @@ export class NarrativeOrchestrator {
       if (!session.node.transfer && session.nextMessage()) thread.schedule(definition, now);
     }
     const incoming = thread.receive(now) ?? [];
-    if (incoming.length) this.onGroupMessage(this.getContact('plumber-group'), incoming);
+    if (incoming.length)
+      this.onGroupMessage(this.getContact('plumber-group'), incoming, thread.lastIncomingMessages ?? []);
     if (!this.flags.superPlombierGroupNotified) {
       const accepted = this.showGroupNotification(this.getContact('plumber-group'));
       if (accepted) {
@@ -813,10 +814,12 @@ export class NarrativeOrchestrator {
     const turboState = turboDefinition && this.progression.data.dialogues[turboDefinition.id];
     const turboThread = turboState && this.getTurboThread();
     if (turboThread && Number.isFinite(turboState.receiveDueAt) && !turboState.finished) {
+      const previousKeys = new Set(turboThread.state.history.map((message) => message.key));
       const received = turboThread.receiveScheduled(turboDefinition, now);
       if (received) {
-        turboThread.sync();
-        this.onTurboMessage(this.getContact('turbo'), [turboDefinition]);
+        const history = turboThread.sync();
+        const messages = history.filter((message) => !previousKeys.has(message.key));
+        this.onTurboMessage(this.getContact('turbo'), [turboDefinition], messages);
       }
     }
     this.prepareSuperPlombierInvitation();

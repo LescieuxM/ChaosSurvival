@@ -39,7 +39,7 @@ import { Progression } from './story/progression.js';
 import { VirtualTextFiles } from './story/text-files.js';
 import { VirtualFilesystem, virtualFileId } from './story/virtual-filesystem.js';
 import { ConversationWindow } from './ui/conversation.js';
-import { Messenger } from './ui/messenger.js';
+import { Messenger, identifyMessageSender } from './ui/messenger.js';
 import { ConversationThread } from './story/conversation-thread.js';
 import { celebrateVictory } from './ui/victory.js';
 import { DesktopSounds } from './audio/sounds.js';
@@ -65,7 +65,7 @@ import { applicationName, trackIdentity } from './ui/identity.js';
 import {
   NotificationCenter,
   ENTER_ANIMATION_MS,
-  STANDARD_MESSAGE_NOTIFICATION_DURATION_MS,
+  NOTIFICATION_DURATION_MS,
 } from './ui/notifications.js';
 
 const BEST_SCORE_KEY = 'chaos-survival-best';
@@ -102,6 +102,8 @@ const notifications = new NotificationCenter({
   contact: ui.toastContact,
   message: ui.toastMessage,
   dismissButton: ui.dismissToast,
+  messageRoot: ui.messageToastStack,
+  messageTemplate: ui.messageToastTemplate,
   getTime: (clock) => (clock === 'game' ? audio.time * 1000 : Date.now()),
 });
 const progression = new Progression(story, storyStorage);
@@ -211,7 +213,8 @@ const messenger = new Messenger({
   primary: () => conversation,
   settings,
   onWindowState: syncSystemWindows,
-  onMessage: (contact, incoming) => handleMessengerMessage(contact, incoming),
+  onMessage: (contact, incoming, messages, view, state) =>
+    handleMessengerMessage(contact, incoming, messages, view, state),
   onContactOpened: (contact) => {
     notifications.cancelContact(contact.id, 'message');
     notifications.cancel(`connection:${contact.id}`);
@@ -240,16 +243,32 @@ const messenger = new Messenger({
     return createConversation(definition, contact.id, thread);
   },
 });
-function handleMessengerMessage(contact, incoming = []) {
-    const invitationMessage = narrativeOrchestrator?.onMessage(contact, incoming);
-    if (invitationMessage === 'turbo-smiley-scene3')
-      showMessageNotification(contact, 'turbo-smiley-scene3-message');
-    if (invitationMessage === 'notify')
-      showMessageNotification(contact, 'turbo-flashzone-invitation-message');
-    if (invitationMessage === 'super-plombier')
-      showMessageNotification(contact, 'turbo-super-plombier-message');
-    if (invitationMessage) return;
+function handleMessengerMessage(contact, incoming = [], messages = [], view, state = {}) {
+  if (!contact) return;
+  narrativeOrchestrator?.onMessage(contact, incoming);
+  if (state.active ?? (view && messenger.isConversationActive(view))) return;
+  if (!messages.length) {
+    if (incoming.length) sounds.unlock().then(() => sounds.play('message'));
     showMessageNotification(contact, messageNotificationId(contact));
+    return;
+  }
+  for (const message of messages) {
+    if (message.speaker !== 'contact') continue;
+    const { id: senderId, name: sender } = identifyMessageSender(contact, message);
+    if (!senderId || !sender) continue;
+    notifications.showMessage({
+      conversationId: contact.id,
+      senderId,
+      sender,
+      preview: message.text,
+      durationMs: NOTIFICATION_DURATION_MS,
+      action: () => {
+        const target = messenger.contacts().find((entry) => entry.id === contact.id);
+        if (target) messenger.openContact(target);
+      },
+      playSound: () => sounds.unlock().then(() => sounds.play('message')),
+    });
+  }
 }
 const rules = new GameRules(ui.desktop, progression);
 const miniGameLauncher = new MiniGameLauncher(
@@ -296,23 +315,13 @@ narrativeOrchestrator = new NarrativeOrchestrator({
     return plumberGroupThread;
   },
   getTurboThread,
-  onTurboMessage: (contact, incoming) => {
+  onTurboMessage: (contact, incoming, messages) => {
     if (!contact) return;
-    const view = messenger.ensureBackground(contact);
-    view?.thread?.sync();
-    sounds.unlock().then(() => sounds.play('message'));
-    handleMessengerMessage(contact, incoming);
+    messenger.receiveIncoming(contact, incoming, messages ?? []);
   },
-  onGroupMessage: (contact) => {
+  onGroupMessage: (contact, incoming, messages) => {
     if (!contact) return;
-    const view = messenger.ensureBackground(contact);
-    if (!view) return;
-    view.thread.sync();
-    if (
-      narrativeOrchestrator?.flags.superPlombierGroupNotified &&
-      !messenger.isVisible(view)
-    )
-      showMessageNotification(contact, messageNotificationId(contact));
+    messenger.receiveIncoming(contact, incoming, messages ?? []);
   },
   virtualFilesystem,
   showGroupNotification: (contact) => {
@@ -325,7 +334,7 @@ narrativeOrchestrator = new NarrativeOrchestrator({
       contactId: 'plumber-group',
       contact: 'Windows Love Messenger',
       message: 'PixelGirl vous a ajouté à une conversation de groupe',
-      durationMs: 6000,
+      durationMs: NOTIFICATION_DURATION_MS,
       clock: 'game',
       policy: 'queue',
       priority: 'important',
@@ -385,15 +394,14 @@ function messageNotificationId(contact) {
 
 function showMessageNotification(contact, id = messageNotificationId(contact), onShow, delayMs = 0) {
   if (!messenger.contacts().some((item) => item.id === contact.id)) return;
-  const turboSceneMessage = id === 'turbo-smiley-scene3-message';
   notifications.show({
     id,
     type: 'message',
     contactId: contact.id,
     contact: contact.nickname,
     message: contact.id === 'turbo' ? ' vous a envoy\u00e9 un message' : 't\u2019a envoy\u00e9 un nouveau message.',
-    durationMs: STANDARD_MESSAGE_NOTIFICATION_DURATION_MS,
-    clock: turboSceneMessage ? 'real' : 'game',
+    durationMs: NOTIFICATION_DURATION_MS,
+    clock: 'real',
     policy: 'queue',
     priority: 'important',
     delayMs,
@@ -1027,18 +1035,6 @@ function showStoryDesktop(announce) {
     if (contact)
       showContactConnectionNotification(contact, {
         durationMs: ENTER_ANIMATION_MS + MIN_CONNECTION_TOAST_VISIBLE_MS,
-        onDismiss: (_reason, timing) => {
-          if (phase !== 'desktop' || conversation.element?.isConnected) return;
-          const pixelGirl = messenger.contacts().find((entry) => entry.id === 'pixelgirl');
-          if (!pixelGirl) return;
-          const delayMs = Math.max(0, timing.expiresAt - timing.dismissedAt);
-          showMessageNotification(
-            pixelGirl,
-            'pixelgirl-first-message',
-            () => sounds.play('message'),
-            delayMs,
-          );
-        },
       });
     sounds.play('online');
   }
@@ -1241,7 +1237,6 @@ function updateClock() {
   menu.clock.textContent = ui.clock.textContent;
 }
 updateClock();
-let notifiedMessages = '';
 function receiveReplayReactions() {
   if (resettingGame) {
     requestAnimationFrame(receiveReplayReactions);
@@ -1253,22 +1248,20 @@ function receiveReplayReactions() {
   messenger.update();
   narrativeOrchestrator.afterMessengerUpdate(Date.now());
   buddy.update();
+  if (incoming.length) {
+    const pixelGirl = messenger.contacts().find((entry) => entry.id === 'pixelgirl');
+    if (pixelGirl)
+      messenger.receiveIncoming(
+        pixelGirl,
+        incoming,
+        replayReactions.thread.lastIncomingMessages ?? [],
+        conversation,
+      );
+  }
   const visible = !conversation.offlineContact && messenger.isVisible(conversation);
   const unread = replayReactions.thread.state.unread;
-  if (visible && !unread.length) notifications.cancelContact('pixelgirl', 'message');
-  const notificationKey = `${progression.data.runId}:${unread.join(',')}`;
-  if (incoming.length) sounds.unlock().then(() => sounds.play('message'));
-  if (
-    incoming.length &&
-    !visible &&
-    unread.length &&
-    ['playing', 'desktop', 'paused'].includes(phase) &&
-    notificationKey !== notifiedMessages
-  ) {
-    notifiedMessages = notificationKey;
-    const contact = messenger.contacts().find((entry) => entry.id === 'pixelgirl');
-    if (contact) showMessageNotification(contact, `replay:${notificationKey}`);
-  }
+  if (!incoming.length && visible && !unread.length)
+    notifications.cancelContact('pixelgirl', 'message');
   notifications.update();
   requestAnimationFrame(receiveReplayReactions);
 }

@@ -65,6 +65,22 @@ test('typing uses existing waits, disappears between messages and exposes choice
   assert.equal(thread.typingContact(5000), null);
 });
 
+test('incoming message batches contain only newly delivered history rows, including after reload', () => {
+  const { thread, progression, storage } = setup();
+  assert.deepEqual(thread.receive(1800), [definition]);
+  assert.deepEqual(thread.lastIncomingMessages.map((message) => message.text), ['hello']);
+  assert.deepEqual(thread.receive(3200), [definition]);
+  assert.deepEqual(thread.lastIncomingMessages.map((message) => message.text), ['another message']);
+  assert.deepEqual(thread.receive(3200), []);
+  assert.deepEqual(thread.lastIncomingMessages, []);
+
+  const restored = new ConversationThread('friend', new Progression(story, storage), () => [definition]);
+  assert.deepEqual(restored.receive(3200), []);
+  assert.deepEqual(restored.lastIncomingMessages, []);
+  assert.equal(restored.state.history.length, 2);
+  assert.equal(progression.data.conversations.friend.history.length, 2);
+});
+
 test('scheduled messages and typing deadlines survive closed/reduced windows and restart without an indicator in history', () => {
   const { progression, thread, storage } = setup();
   assert.equal(thread.typingContact(1700).nickname, 'xX_Friend_Xx');
