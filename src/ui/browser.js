@@ -8,8 +8,24 @@ export function openLocalUrl(url) {
   document.dispatchEvent(new CustomEvent('windows-xd:open-url', { detail: { url } }));
 }
 export class InternetAdventurer {
-  constructor(manager, applications, progression, registry = localPages, openHotel = () => {}) {
-    Object.assign(this, { manager, applications, progression, registry, openHotel });
+  constructor(
+    manager,
+    applications,
+    progression,
+    registry = localPages,
+    openHotel = () => {},
+    onSessionEnd = () => {},
+    onAddressChange = () => {},
+  ) {
+    Object.assign(this, {
+      manager,
+      applications,
+      progression,
+      registry,
+      openHotel,
+      onSessionEnd,
+      onAddressChange,
+    });
     this.session = new BrowserSession(progression);
     this.generation = 0;
     this.retainedPages = new Map();
@@ -42,6 +58,7 @@ export class InternetAdventurer {
       onDismiss: () => {
         this.disposePage();
         this.clearRetainedPages();
+        this.onSessionEnd();
         clearTimeout(this.timer);
         this.generation++;
         this.observer?.disconnect();
@@ -113,6 +130,7 @@ export class InternetAdventurer {
     renderBrowserTabs(this.instance.element.querySelector('.browser-tabs'), this.session);
   }
   load(reason = 'navigate') {
+    this.onAddressChange(this.session.address);
     this.disposePage(reason);
     clearTimeout(this.timer);
     const generation = ++this.generation;
@@ -159,6 +177,8 @@ export class InternetAdventurer {
                 },
                 navigate: (url) => this.navigate(url),
                 openHotel: this.openHotel,
+                onSuperPlombierStart: () => this.onSuperPlombierStart?.(),
+                onSuperPlombierVictory: () => this.onSuperPlombierVictory?.(),
               })
             : renderError(current.error),
       );
@@ -183,6 +203,7 @@ export class InternetAdventurer {
   reset() {
     this.disposePage();
     this.clearRetainedPages();
+    this.onSessionEnd();
     clearTimeout(this.timer);
     this.generation++;
     this.instance = null;

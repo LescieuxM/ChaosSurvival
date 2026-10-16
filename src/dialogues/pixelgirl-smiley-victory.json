@@ -19,7 +19,7 @@
     "stayOnline": true,
     "connection": {
       "contactId": "turbo",
-      "delayMs": 2200
+      "delayMs": 2000
     }
   },
   "nodes": {
@@ -843,13 +843,7 @@
         },
         {
           "speaker": "contact",
-          "text": "si tu devais être un smiley MSN",
-          "delayMs": 250,
-          "typingMs": 434
-        },
-        {
-          "speaker": "contact",
-          "text": "tu serais lequel",
+          "text": "t'es quel smiley ?",
           "delayMs": 250,
           "typingMs": 250
         }
@@ -857,10 +851,10 @@
       "choices": [
         {
           "id": "smiley-s6-q1-a",
-          "text": ":D",
+          "text": ":)",
           "next": "s6-q1-a",
           "set": {
-            "pixelgirlSmiley": ":D"
+            "pixelgirlSmiley": ":)"
           }
         },
         {

@@ -1,4 +1,5 @@
 import { replaceGameStorage } from './reset-game.js';
+import { normalizeVirtualFilesystemState } from './virtual-filesystem.js';
 const TYPES = ['arcade', 'conversation', 'minigame'];
 const STORAGE_KEY = 'chaos-survival-story-v1';
 export const HISTORY_KEY = 'chaos-survival-history-v1';
@@ -18,6 +19,7 @@ function freshData(story) {
     results: {},
     choiceOffers: {},
     files: {},
+    virtualFilesystem: { deleted: [], added: {} },
     anomalies: {},
     dialogueArchives: {},
     unlockedConversations: [],
@@ -90,6 +92,31 @@ function normalizeSaved(saved, story) {
       !['pending', 'declined', 'complete'].includes(file.status) ||
       (file.launch != null && (!record(file.launch) || typeof file.launch.game !== 'string'))
     ) delete saved.files[key];
+  if (record(saved.desktopIcons))
+    for (const file of Object.values(saved.files)) {
+      if (
+        file.status !== 'complete' || file.direction !== 'receive' ||
+        typeof file.name !== 'string' || /[\\/\u0000-\u001f]/.test(file.name)
+      )
+        continue;
+      const oldKey = `file:${file.id}`;
+      const newKey = `file:downloads/${file.name.toLowerCase()}`;
+      if (Object.hasOwn(saved.desktopIcons, oldKey)) {
+        if (!Object.hasOwn(saved.desktopIcons, newKey)) saved.desktopIcons[newKey] = saved.desktopIcons[oldKey];
+        delete saved.desktopIcons[oldKey];
+      }
+    }
+  saved.virtualFilesystem = normalizeVirtualFilesystemState(saved.virtualFilesystem, saved.files);
+  if (record(saved.textFiles)) {
+    for (const [oldPath, newPath] of [['user-desktop/a_faire.txt', 'folder/a_faire.txt']]) {
+      const previousKey = Object.keys(saved.textFiles).find(
+        (key) => key.replaceAll('\\', '/').toLowerCase() === oldPath,
+      );
+      if (!previousKey) continue;
+      if (!Object.hasOwn(saved.textFiles, newPath)) saved.textFiles[newPath] = saved.textFiles[previousKey];
+      delete saved.textFiles[previousKey];
+    }
+  }
   for (const [id, state] of Object.entries(saved.dialogues)) {
     if (
       !record(state) || typeof state.node !== 'string' || !Number.isInteger(state.cursor) ||
@@ -101,6 +128,8 @@ function normalizeSaved(saved, story) {
     state.transcript = state.transcript.filter(
       (message) => record(message) && ['contact', 'player'].includes(message.speaker) &&
         typeof message.text === 'string' &&
+        (message.author === undefined ||
+          (message.speaker === 'contact' && typeof message.author === 'string')) &&
         (message.type !== 'file' || typeof message.fileKey === 'string'),
     );
     if (state.receiveDueAt !== undefined && !Number.isFinite(state.receiveDueAt))

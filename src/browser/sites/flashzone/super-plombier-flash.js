@@ -1,4 +1,10 @@
 import { textElement as node } from '../../dom.js';
+import { createGameMusic } from '../../../audio/game-music.js';
+
+const plumberMusicUrl = new URL(
+  '../../../../assets/moodmode-retro-game-arcade-236133.mp3',
+  import.meta.url,
+).href;
 import {
   PLUMBER_GROUND,
   PLUMBER_GOAL_X,
@@ -13,12 +19,13 @@ import {
 } from './super-plombier-round.js';
 
 function markFirst(progression, flag) {
-  if (progression.data.flags[flag]) return;
+  if (progression.data.flags[flag]) return false;
   progression.data.flags[flag] = true;
   progression.save();
+  return true;
 }
 
-export function renderSuperPlombierFlash({ progression, onDispose, onResume }, game) {
+export function renderSuperPlombierFlash({ progression, onDispose, onResume, onStart, onVictory }, game) {
   const root = node('section', undefined, 'super-plombier'),
     intro = node('div', undefined, 'plumber-intro'),
     play = node('button', 'JOUER', 'plumber-play');
@@ -54,11 +61,18 @@ export function renderSuperPlombierFlash({ progression, onDispose, onResume }, g
 
   const context = canvas.getContext('2d');
   const round = new SuperPlombierRound();
+  const music = createGameMusic(plumberMusicUrl);
   const pressed = new Set();
   let frame = null,
     disposed = false,
     paused = false,
-    deathCount = 0;
+    deathCount = 0,
+    finished = false,
+    developerVictory = false;
+  root.finished = false;
+  Object.defineProperty(root, 'running', {
+    get: () => round.active && !paused && !disposed && !finished,
+  });
 
   function rect(x, y, width, height, color) {
     context.fillStyle = color;
@@ -150,10 +164,15 @@ export function renderSuperPlombierFlash({ progression, onDispose, onResume }, g
 
   function start() {
     if (disposed) return;
+    finished = false;
+    developerVictory = false;
+    root.finished = false;
     markFirst(progression, 'superPlombierFirstAttempt');
+    onStart?.();
     paused = false;
     pressed.clear();
     round.begin(performance.now());
+    music.start();
     deathCount = round.deaths;
     intro.hidden = true;
     result.hidden = true;
@@ -166,13 +185,27 @@ export function renderSuperPlombierFlash({ progression, onDispose, onResume }, g
     frame = requestAnimationFrame(loop);
   }
   function finish() {
-    if (!round.won) return;
+    if (!round.won || finished) return false;
+    finished = true;
+    root.finished = true;
+    music.stop();
     cancelAnimationFrame(frame);
     frame = null;
     result.hidden = false;
-    final.textContent = `Ton temps : ${formatPlumberTime(round.elapsed)}`;
+    final.textContent = developerVictory
+      ? 'Victoire développeur — temps non enregistré'
+      : `Ton temps : ${formatPlumberTime(round.elapsed)}`;
     markFirst(progression, 'superPlombierFirstCompletion');
+    onVictory?.();
     result.scrollIntoView?.({ block: 'nearest' });
+    return true;
+  }
+  function finishImmediately() {
+    if (disposed || paused || finished || !round.active || round.won) return false;
+    developerVictory = true;
+    round.won = true;
+    round.active = false;
+    return finish();
   }
   function loop(now) {
     if (disposed || paused) return;
@@ -198,6 +231,7 @@ export function renderSuperPlombierFlash({ progression, onDispose, onResume }, g
   function pause() {
     if (paused || disposed) return;
     paused = true;
+    music.pause();
     pressed.clear();
     round.pause(performance.now());
     if (frame !== null) cancelAnimationFrame(frame);
@@ -207,6 +241,7 @@ export function renderSuperPlombierFlash({ progression, onDispose, onResume }, g
     if (!paused || disposed || document.hidden) return;
     round.resume(performance.now());
     paused = false;
+    music.resume();
     if (round.active) frame = requestAnimationFrame(loop);
   }
   const keydown = (event) => {
@@ -230,6 +265,7 @@ export function renderSuperPlombierFlash({ progression, onDispose, onResume }, g
     if (disposed) return;
     pause();
     disposed = true;
+    music.dispose();
     round.stop();
     canvas.removeEventListener('keydown', keydown);
     canvas.removeEventListener('keyup', keyup);
@@ -246,6 +282,7 @@ export function renderSuperPlombierFlash({ progression, onDispose, onResume }, g
   replay.addEventListener('click', start);
   onDispose(dispose);
   onResume?.(resume);
+  root.finish = finishImmediately;
   return root;
 }
 

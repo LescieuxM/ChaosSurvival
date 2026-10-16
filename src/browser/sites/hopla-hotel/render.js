@@ -32,7 +32,11 @@ export function renderHoplaHotelHome({ openHotel }, data) {
   root.append(banner, node('small', 'Hopla Hotel · 2009', 'hotel-footer'));
   return root;
 }
-export function renderHoplaHotelRoom({ onDispose, onResume, navigate }, data, room = data.room) {
+export function renderHoplaHotelRoom(
+  { onDispose, onResume, navigate },
+  data,
+  room = data.room,
+) {
   const root = node('section', undefined, 'hopla-hotel hotel-room');
   root.setAttribute('aria-label', room.name);
   const navigation = node('nav', undefined, 'hotel-room-nav');

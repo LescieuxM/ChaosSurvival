@@ -119,6 +119,46 @@ button.messenger-contact-row:hover {
   background: white;
   border-radius: 4px;
 }
+.contact-avatar-composition {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.messenger-contact-row .contact-avatar-composition {
+  width: 42px;
+  height: 42px;
+  flex: none;
+  border: 1px solid #9bacbd;
+  padding: 2px;
+  background: #fff;
+  border-radius: 4px;
+}
+.contact-avatar-composition img {
+  position: absolute;
+  width: 62%;
+  height: 62%;
+  object-fit: cover;
+  border: 1px solid #fff;
+  padding: 0;
+  background: #fff;
+}
+.contact-avatar-composition [data-avatar='pixelgirl'] {
+  top: 0;
+  left: 19%;
+  z-index: 2;
+}
+.contact-avatar-composition [data-avatar='turbo'] {
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+}
+.contact-avatar-composition [data-avatar='luna'] {
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+}
 .messenger-contact-row.offline img {
   filter: saturate(0.5);
 }
@@ -169,6 +209,7 @@ button.messenger-contact-row:hover {
   max-height: 100%;
 }
 .popup-desktopapp .window-body {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -348,6 +389,88 @@ button.messenger-contact-row:hover {
 .explorer-item:focus-visible {
   background: #e4effd;
   border-color: #abc8ed;
+}
+.explorer-item.is-selected {
+  background: #cfe2fa;
+  border-color: #7ea9dc;
+}
+.explorer-context-menu {
+  position: absolute;
+  z-index: 8;
+  min-width: 150px;
+  padding: 3px;
+  border: 1px solid #7f7f7f;
+  background: #fff;
+  box-shadow: 2px 3px 7px #0005;
+}
+.explorer-context-menu[hidden],
+.explorer-dialog[hidden] {
+  display: none;
+}
+.explorer-context-menu button {
+  display: block;
+  width: 100%;
+  padding: 5px 18px;
+  border: 0;
+  background: transparent;
+  color: #111;
+  text-align: left;
+  font: 12px Tahoma, sans-serif;
+}
+.explorer-context-menu button:hover:not(:disabled),
+.explorer-context-menu button:focus-visible {
+  background: #316ac5;
+  color: white;
+}
+.explorer-context-menu button:disabled {
+  color: #888;
+}
+.explorer-dialog {
+  position: absolute;
+  z-index: 9;
+  top: 50%;
+  left: 50%;
+  width: min(360px, calc(100% - 24px));
+  padding: 14px;
+  transform: translate(-50%, -50%);
+  border: 2px solid #2258c4;
+  border-radius: 5px;
+  background: #ece9d8;
+  color: #111;
+  box-shadow: 3px 5px 12px #0005;
+  font: 12px Tahoma, sans-serif;
+}
+.explorer-dialog p {
+  margin: 6px 0 18px;
+  overflow-wrap: anywhere;
+}
+.explorer-dialog > div:last-child {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.explorer-properties strong {
+  display: block;
+  color: #164aa8;
+  font-size: 14px;
+}
+.explorer-properties dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 7px 14px;
+  margin: 14px 0;
+}
+.explorer-properties dt {
+  color: #52657d;
+}
+.explorer-properties dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.explorer-properties > button {
+  display: block;
+  margin-left: auto;
 }
 .explorer-image {
   width: 100%;
@@ -680,6 +803,28 @@ button.messenger-contact-row:hover {
 .conversation-message.from-player p {
   color: #24415d;
 }
+.group-conversation {
+  --group-pixelgirl-color: #d21883;
+  --group-turbo-color: #2057c8;
+  --group-luna-color: #7950a0;
+  --group-player-color: #252525;
+}
+.group-conversation .conversation-message[data-author-id='pixelgirl'] {
+  --group-message-color: var(--group-pixelgirl-color);
+}
+.group-conversation .conversation-message[data-author-id='turbo'] {
+  --group-message-color: var(--group-turbo-color);
+}
+.group-conversation .conversation-message[data-author-id='luna'] {
+  --group-message-color: var(--group-luna-color);
+}
+.group-conversation .conversation-message[data-author-id='player'] {
+  --group-message-color: var(--group-player-color);
+}
+.group-conversation .conversation-message[data-author-id] > p,
+.group-conversation .conversation-message[data-author-id] > a {
+  color: var(--group-message-color);
+}
 .conversation-system {
   text-align: center;
   color: #756498;
@@ -992,6 +1137,13 @@ button.messenger-contact-row:hover {
   flex: none;
   box-shadow: 0 1px #fff;
   border-color: #8fb3cf;
+}
+.messenger-roster .messenger-contact-row .contact-avatar-composition img {
+  position: absolute;
+  width: 62%;
+  height: 62%;
+  padding: 0;
+  border: 1px solid #fff;
 }
 .messenger-roster .messenger-contact-row small {
   color: #5c748a;
@@ -1340,6 +1492,13 @@ button.messenger-contact-row:hover {
   color: #e8518a;
   background: transparent;
   box-shadow: none;
+}
+.msn-emoticon[src] {
+  display: inline-block;
+  object-fit: contain;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
 }
 
 /* A celebratory interlude, separate from arcade difficulty and music. */

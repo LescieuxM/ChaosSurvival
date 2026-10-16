@@ -241,6 +241,11 @@
 .sky-comment strong {
   font-size: 11px;
 }
+.sky-comment-author {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: bold;
+}
 .sky-comment small {
   font-size: 10px;
   margin-left: 8px;

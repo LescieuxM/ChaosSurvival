@@ -4,6 +4,8 @@ import { readFileSync } from 'node:fs';
 import { DialogueSession } from '../src/story/dialogue.js';
 import { ConversationThread } from '../src/story/conversation-thread.js';
 import { Progression } from '../src/story/progression.js';
+import { VirtualTextFiles } from '../src/story/text-files.js';
+import { VirtualFilesystem } from '../src/story/virtual-filesystem.js';
 import { orderedContacts, visibleContacts } from '../src/ui/contacts.js';
 import { Messenger } from '../src/ui/messenger.js';
 import { playerIdentity } from '../src/ui/player-identity.js';
@@ -458,6 +460,22 @@ test('text and picture viewers have independent windows and task controls withou
   app.openFile(location, { name: 'DJARTMUSIC__Best_Game_Console.mp3' });
   app.openFile(location, { name: 'another.exe', text: 'message conservé' });
   assert.equal(launches, 2);
+
+  const progression = new Progression(read('../src/config/story.json'));
+  const virtualFilesystem = new VirtualFilesystem(progression);
+  app.virtualFilesystem = virtualFilesystem;
+  app.textFiles = new VirtualTextFiles(progression, virtualFilesystem);
+  const downloads = virtualFilesystem.getLocation('downloads');
+  const deletableText = downloads.items.find((item) => item.name === 'installation_a_lire.txt');
+  const openNote = app.openFile(downloads, deletableText);
+  const editor = openNote.element.querySelector('.notepad-content');
+  editor.value = 'unsaved edit';
+  editor.handlers.input();
+  assert.equal(virtualFilesystem.deleteFile(deletableText.fileId).ok, true);
+  assert.equal(app.openFile(downloads, deletableText), undefined);
+  app.closeOpenFile(deletableText.fileId);
+  assert.equal(openNote.element.isConnected, false, 'deleting an open note closes it without saving');
+  assert.equal(app.textFiles.read(deletableText.fileId, deletableText.text).text, deletableText.text);
 });
 
 test('every JPG has a bundled illustration and viewers reject host paths and remote images', () => {
@@ -516,7 +534,7 @@ test('explorer double-click, back, up and home preserve path and content', (t) =
   app.home(instance);
   fields.get('.explorer-items').children[0].handlers.dblclick();
   assert.equal(instance.current.address, 'C:\\');
-  assert.equal(fields.get('.explorer-items').children.length, 5);
+  assert.equal(fields.get('.explorer-items').children.length, 3);
   fields.get('.explorer-items').children[0].handlers.dblclick();
   assert.equal(instance.current.address, 'C:\\Program Files');
   app.back(instance);
@@ -538,7 +556,7 @@ test('disks contain navigable folders, valid parents, safe previews and an empty
   assert.equal(disk.address, 'C:\\');
   assert.deepEqual(
     disk.items.map((item) => item.name),
-    ['Program Files', 'WINDOWS', 'Documents and Settings', 'Games', 'Downloads'],
+    ['Program Files', 'WINDOWS', 'Documents and Settings'],
   );
   const seen = new Set();
   function explore(location) {
@@ -768,6 +786,47 @@ test('Messenger keeps one independent window per contact including future contac
     'offline:skater',
     'open:future',
   ]);
+});
+
+test('incoming conversations reuse one minimized window and respect saved explicit closes', () => {
+  const contact = { id: 'future', available: true, dialogue: intro.id };
+  const closedContact = { id: 'closed', available: true, dialogue: intro.id };
+  const progression = {
+    data: {
+      conversations: {
+        future: { unread: ['incoming-message'], windowClosed: true },
+        closed: { unread: ['older-message'], windowClosed: true },
+      },
+    },
+    saves: 0,
+    save() {
+      this.saves++;
+    },
+  };
+  let opens = 0;
+  const view = {
+    element: { isConnected: false },
+    thread: { state: progression.data.conversations.future },
+    openMinimized() {
+      opens++;
+      this.element.isConnected = true;
+    },
+  };
+  const messenger = new Messenger({
+    progression,
+    primary: () => null,
+    createConversation: () => view,
+  });
+  messenger.contacts = () => [contact, closedContact];
+
+  messenger.ensureBackground(contact);
+  messenger.ensureBackground(contact);
+  messenger.restoreUnreadConversations();
+
+  assert.equal(opens, 1, 'the received conversation gets one taskbar window');
+  assert.equal(progression.data.conversations.future.windowClosed, false);
+  assert.equal(progression.data.conversations.closed.windowClosed, true);
+  assert.equal(progression.saves, 1);
 });
 
 test('queued choices survive a multi-node message sequence and only return after its last message', () => {

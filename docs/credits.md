@@ -57,3 +57,29 @@ garantit ni les droits ni l’absence de réclamation.
 La mention graphique parle de **certaines ressources** seulement ; la provenance
 des six photos générées via Codex/OpenAI est documentée dans
 [IMAGE_AUDIT.md](IMAGE_AUDIT.md).
+
+## Musiques des mini-jeux
+
+- **I Love My 8-bit Game Console** — DJARTMUSIC, utilisée pour SmileyCatcher.exe
+  depuis `assets/djartmusic-i-love-my-8-bit-game-console-301272.mp3`.
+- **Retro Game Arcade** — moodmode, utilisée pour Super Plombier Flash depuis
+  `assets/moodmode-retro-game-arcade-236133.mp3`.
+
+Ces deux morceaux sont utilisés sous la Pixabay Content License ; l’attribution
+est conservée ici même si elle n’est pas obligatoire. Aucun droit de propriété
+sur les morceaux n’est revendiqué.
+
+- **ROBLOX - Time To Win - Skyline Run #1** — jakob_welik, utilisée pour
+  BubblePop depuis `assets/jakob_welik-roblox-time-to-win-skyline-run-1-442119.mp3`.
+- **Retro Runner** — Bransboynd, utilisée pour PixelRunner depuis
+  `assets/bransboynd-retro-runner-548536.mp3`.
+- **Neon Amnesia (Club House 2010)** — 9JackJack8, utilisée pour Avoid the
+  Squares depuis `assets/9jackjack8-neon-amnesia-club-house-2010-375600.mp3`.
+
+Ces trois morceaux sont utilisés sous la Pixabay Content License. Aucun droit
+de propriété sur ces morceaux n’est revendiqué.
+
+- **BubblePop — effet sonore « bubble popping 3 »** — Cherskis, utilisé depuis
+  `assets/cherskis-bubble-popping-3-587265.mp3`, sous la Pixabay Content License.
+- **Disco** — ProducesPlatinum, utilisé pour la discothèque de Hopla Hotel depuis
+  `assets/producesplatinum-disco-483559.mp3`, sous la Pixabay Content License.

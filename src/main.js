@@ -37,6 +37,7 @@ import story from './config/story.json';
 import pixelgirlDialogue from './dialogues/pixelgirl-intro.json';
 import { Progression } from './story/progression.js';
 import { VirtualTextFiles } from './story/text-files.js';
+import { VirtualFilesystem, virtualFileId } from './story/virtual-filesystem.js';
 import { ConversationWindow } from './ui/conversation.js';
 import { Messenger } from './ui/messenger.js';
 import { ConversationThread } from './story/conversation-thread.js';
@@ -61,7 +62,7 @@ import {
 } from './story/narrative-orchestrator.js';
 import { resetGameToInitialState as resetSession, recoverGameReset } from './story/reset-game.js';
 import { applicationName, trackIdentity } from './ui/identity.js';
-import { NotificationCenter, ENTER_ANIMATION_MS, EXIT_ANIMATION_MS } from './ui/notifications.js';
+import { NotificationCenter, ENTER_ANIMATION_MS } from './ui/notifications.js';
 
 const BEST_SCORE_KEY = 'chaos-survival-best';
 const DEFAULT_VOLUME = 0.55;
@@ -100,6 +101,7 @@ const notifications = new NotificationCenter({
   getTime: (clock) => (clock === 'game' ? audio.time * 1000 : Date.now()),
 });
 const progression = new Progression(story, storyStorage);
+const virtualFilesystem = new VirtualFilesystem(progression);
 const buddy = new Buddy(ui.desktop, progression);
 const replayReactions = new ReplayReactions(progression, dialogues, replayConfig);
 const settings = new UserSettings(storyStorage, chart.volume);
@@ -150,19 +152,36 @@ const manager = new WindowManager(ui.playfield, ({ preview, x, y, openedAt }) =>
 });
 let activeDialogue = pixelgirlDialogue;
 let conversation = createConversation(activeDialogue);
+let plumberGroupThread;
 const desktopApplications = new DesktopApplications(
   manager,
   ui.desktop.querySelector('.taskbar'),
   syncSystemWindows,
   replayLevelOne,
-  new VirtualTextFiles(progression),
+  new VirtualTextFiles(progression, virtualFilesystem),
+  virtualFilesystem,
+  renderDesktopFiles,
+  openDesktopFile,
 );
 let narrativeOrchestrator;
 const hoplaHotel = new HoplaHotelClient(manager, desktopApplications, () =>
   openBrowser('http://www.hoplahotel.fr/'),
+  () => settings.data.musicVolume,
 );
-const browser = new InternetAdventurer(manager, desktopApplications, progression, undefined, () =>
-  hoplaHotel.open(),
+const browser = new InternetAdventurer(
+  manager,
+  desktopApplications,
+  progression,
+  undefined,
+  () => hoplaHotel.open(),
+  () => hoplaHotel.stopMusic(),
+  (address) => {
+    try {
+      if (new URL(address).hostname !== 'www.hoplahotel.fr') hoplaHotel.stopMusic();
+    } catch {
+      hoplaHotel.stopMusic();
+    }
+  },
 );
 const messenger = new Messenger({
   manager,
@@ -173,10 +192,14 @@ const messenger = new Messenger({
   primary: () => conversation,
   settings,
   onWindowState: syncSystemWindows,
-  onMessage: (contact) => {
-    const invitationMessage = narrativeOrchestrator?.onMessage(contact);
+  onMessage: (contact, incoming) => {
+    const invitationMessage = narrativeOrchestrator?.onMessage(contact, incoming);
+    if (invitationMessage === 'turbo-smiley-scene3')
+      showMessageNotification(contact, 'turbo-smiley-scene3-message', undefined, 2000);
     if (invitationMessage === 'notify')
       showMessageNotification(contact, 'turbo-flashzone-invitation-message');
+    if (invitationMessage === 'super-plombier')
+      showMessageNotification(contact, 'turbo-super-plombier-message');
     if (invitationMessage) return;
     showMessageNotification(contact, messageNotificationId(contact));
   },
@@ -188,7 +211,11 @@ const messenger = new Messenger({
   createConversation: (contact) => {
     const definition = dialogues[contact.dialogue] ?? pixelgirlDialogue;
     const thread =
-      contact.kind === 'decorative' || !dialogues[contact.dialogue]
+      contact.id === 'plumber-group'
+        ? (plumberGroupThread ??= new ConversationThread('plumber-group', progression, () => [
+            dialogues['pixelgirl-super-plombier-group'],
+          ]))
+        : contact.kind === 'decorative' || !dialogues[contact.dialogue]
         ? replayReactions.thread
         : new ConversationThread(contact.id, progression, () =>
             Object.values(dialogues)
@@ -219,6 +246,8 @@ const miniGameLauncher = new MiniGameLauncher(
     if (progression.current?.type === 'conversation')
       activeDialogue = dialogues[progression.current.dialogue];
   },
+  undefined,
+  (file) => virtualFilesystem.exists(virtualFileId('downloads', file.name)),
 );
 const dialogueEvents = new DialogueEvents(
   progression,
@@ -232,15 +261,55 @@ narrativeOrchestrator = new NarrativeOrchestrator({
   dialogueEvents,
   getContact: (contactId) => messenger.contacts().find((entry) => entry.id === contactId),
   prepareContact: (contact) => messenger.prepareContact(contact),
-  showConnectionNotification: (contactId, { onDismiss }) => {
+  showConnectionNotification: (contactId) => {
     const contact = messenger.contacts().find((entry) => entry.id === contactId);
     if (!contact) return;
-    showContactConnectionNotification(contact, { onDismiss });
+    showContactConnectionNotification(contact);
     sounds.unlock().then(() => sounds.play('online'));
   },
-  showTurboMessageNotification: (contact, onShow) =>
-    showMessageNotification(contact, 'turbo-smiley-scene3-message', onShow),
+  sendWizz: (contactId, eventId, speaker, now) =>
+    messenger.sendWizz(contactId, { eventId, speaker, now }),
+  getGroupThread: () => {
+    plumberGroupThread ??= new ConversationThread('plumber-group', progression, () => [
+      dialogues['pixelgirl-super-plombier-group'],
+    ]);
+    return plumberGroupThread;
+  },
+  onGroupMessage: (contact) => {
+    if (!contact) return;
+    const view = messenger.ensureBackground(contact);
+    if (!view) return;
+    view.thread.sync();
+    if (
+      narrativeOrchestrator?.flags.superPlombierGroupNotified &&
+      !messenger.isVisible(view)
+    )
+      showMessageNotification(contact, messageNotificationId(contact));
+  },
+  showGroupNotification: (contact) => {
+    if (!contact) return false;
+    messenger.ensureBackground(contact);
+    const id = 'group:super-plombier';
+    const shown = notifications.show({
+      id,
+      type: 'message',
+      contactId: 'plumber-group',
+      contact: 'Windows Love Messenger',
+      message: 'PixelGirl vous a ajouté à une conversation de groupe',
+      durationMs: 6000,
+      clock: 'game',
+      policy: 'queue',
+      priority: 'important',
+      action: () => {
+        const group = messenger.contacts().find((entry) => entry.id === 'plumber-group');
+        if (group) openConversation(false, group);
+      },
+    });
+    return shown || notifications.has(id);
+  },
 });
+browser.onSuperPlombierStart = () => narrativeOrchestrator.onSuperPlombierStart();
+browser.onSuperPlombierVictory = () => narrativeOrchestrator.onSuperPlombierVictory();
 let restoringStory = false;
 function createConversation(dialogue, contactId = 'pixelgirl', thread = replayReactions.thread) {
   return new ConversationWindow(
@@ -263,7 +332,7 @@ function createConversation(dialogue, contactId = 'pixelgirl', thread = replayRe
     {
       thread,
       manageWindow: (view) => messenger.attachConversation(view, contactId),
-      onDispose: (view) => messenger.disposeConversation(view),
+      onDispose: (view, dismissal) => messenger.disposeConversation(view, dismissal),
       onContactsRequested: () => messenger.open(),
       onChoiceValidated: (definition, details) =>
         narrativeOrchestrator.onChoiceValidated(definition, details),
@@ -310,10 +379,6 @@ function showContactConnectionNotification(contact, options = {}) {
     options.durationMs ?? (contactId === 'turbo' ? 700 : 6000),
     ENTER_ANIMATION_MS + MIN_CONNECTION_TOAST_VISIBLE_MS,
   );
-  narrativeOrchestrator?.onConnectionNotificationQueued(
-    contactId,
-    displayDurationMs + EXIT_ANIMATION_MS,
-  );
   notifications.show({
     id: `connection:${contactId}`,
     type: 'connection',
@@ -329,7 +394,6 @@ function showContactConnectionNotification(contact, options = {}) {
       if (target) openConversation(false, target);
     },
     onDismiss: (reason, timing) => {
-      narrativeOrchestrator?.onConnectionNotificationDismissed(contactId);
       options.onDismiss?.(reason, timing);
     },
   });
@@ -428,6 +492,7 @@ const menu = new MainMenu(document.getElementById('app'), progression, settings,
 const desktopIcons = new DesktopIcons(ui.desktop, progression);
 const desktopFiles = new DesktopFiles(ui.desktop, progression, openDesktopFile, () =>
   desktopIcons.refresh(),
+  virtualFilesystem,
 );
 const returnMenu = ui.menuPlay;
 returnMenu.id = 'return-main-menu';
@@ -453,8 +518,7 @@ async function resetGameToInitialState() {
         taskbarOrder.cancel();
         manager.clear();
         miniGameLauncher.reset();
-        notifications.clear();
-        narrativeOrchestrator.resetTransientState();
+        notifications.clear({ resetHandled: true });
         action = secondaryAction = () => {};
         clearEffects();
       },
@@ -895,7 +959,6 @@ function wizz() {
 }
 function clearEffects() {
   notifications.clear();
-  narrativeOrchestrator.resetTransientState();
   wizzUntil = 0;
   sparkleUntil = -Infinity;
   ui.wizzLabel.hidden = true;
@@ -988,6 +1051,7 @@ function renderDesktopFiles() {
 }
 function openDesktopFile(file) {
   if (phase !== 'desktop') return;
+  if (!virtualFilesystem.exists(virtualFileId('downloads', file.name))) return;
   try {
     miniGameLauncher.open(file);
   } catch (error) {
@@ -1008,6 +1072,7 @@ function setVolume(value) {
   audio.setVolume(value);
   settings.update({ musicVolume: value });
   menuMusic.setVolume(value);
+  hoplaHotel.setMusicVolume(value);
   ui.volume.value = value * 100;
   ui.muteButton.textContent = value === 0 ? '♪̸' : '♫';
   ui.muteButton.setAttribute('aria-label', value === 0 ? 'Réactiver le son' : 'Couper le son');
@@ -1102,6 +1167,8 @@ if (import.meta.env.DEV) {
       if (['playing', 'paused'].includes(phase)) return { finish: () => finishGame(true) };
       const game = miniGameLauncher.active;
       if (phase === 'desktop' && game?.element?.isConnected && !game.finished) return game;
+      const flashGame = browser.currentPage?.node;
+      if (phase === 'desktop' && flashGame?.running && !flashGame.finished) return flashGame;
       return null;
     });
     installDevelopmentConversationShortcut(document, () => {
@@ -1155,6 +1222,7 @@ function receiveReplayReactions() {
   const notificationKey = `${progression.data.runId}:${unread.join(',')}`;
   if (incoming.length) sounds.unlock().then(() => sounds.play('message'));
   if (
+    incoming.length &&
     !visible &&
     unread.length &&
     ['playing', 'desktop', 'paused'].includes(phase) &&

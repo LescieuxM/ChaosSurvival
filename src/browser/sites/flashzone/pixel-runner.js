@@ -9,6 +9,8 @@ import {
   bestDistance,
   saveBestDistance,
 } from './runner-round.js';
+import { createGameMusic } from '../../../audio/game-music.js';
+const musicUrl = new URL('../../../../assets/bransboynd-retro-runner-548536.mp3', import.meta.url).href;
 export function renderPixelRunner({ progression, onDispose, onResume }, game) {
   const root = node('section', undefined, 'pixel-runner'),
     intro = node('div', undefined, 'runner-intro'),
@@ -39,7 +41,8 @@ export function renderPixelRunner({ progression, onDispose, onResume }, game) {
   canvas.hidden = true;
   result.hidden = true;
   record.textContent = `Meilleure distance : ${Math.floor(bestDistance(progression, game.id))} m`;
-  const ctx = canvas.getContext('2d'),
+  const music = createGameMusic(musicUrl),
+    ctx = canvas.getContext('2d'),
     round = new RunnerRound();
   let frame = null,
     paused = false,
@@ -98,6 +101,7 @@ export function renderPixelRunner({ progression, onDispose, onResume }, game) {
     ctx.fillRect(PLAYER_X + 8 - stride * 3, y + 16, 4, 4);
   }
   function finish() {
+    music.stop();
     cancelAnimationFrame(frame);
     frame = null;
     result.hidden = false;
@@ -127,12 +131,14 @@ export function renderPixelRunner({ progression, onDispose, onResume }, game) {
     distance.hidden = false;
     canvas.hidden = false;
     round.start(performance.now());
+    music.start();
     draw();
     canvas.scrollIntoView?.({ block: 'nearest' });
     canvas.focus();
     frame = requestAnimationFrame(loop);
   }
   function pause() {
+    music.pause();
     paused = true;
     cancelAnimationFrame(frame);
     frame = null;
@@ -141,7 +147,10 @@ export function renderPixelRunner({ progression, onDispose, onResume }, game) {
     if (disposed || !paused || document.hidden) return;
     paused = false;
     round.resume(performance.now());
-    if (round.active) frame = requestAnimationFrame(loop);
+    if (round.active) {
+      music.resume();
+      frame = requestAnimationFrame(loop);
+    }
   }
   const key = (event) => {
     if (!round.active || paused || disposed || !['Space', 'ArrowUp'].includes(event.code)) return;
@@ -160,6 +169,7 @@ export function renderPixelRunner({ progression, onDispose, onResume }, game) {
     if (disposed) return;
     disposed = true;
     pause();
+    music.dispose();
     round.stop();
     canvas.removeEventListener('keydown', key);
     document.removeEventListener('visibilitychange', visibility);

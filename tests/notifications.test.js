@@ -95,6 +95,23 @@ test('queues important notifications until the exit animation finishes', () => {
   assert.equal(view.root.classList.contains('is-dismissing'), true);
 });
 
+test('opening and cancelling notifications handles their IDs while preserving other contacts', () => {
+  const view = setup();
+  view.center.show({ id: 'message:luna:old', type: 'message', contactId: 'luna' });
+  view.center.show({ id: 'message:luna:queued', type: 'message', contactId: 'luna' });
+  view.center.show({ id: 'message:turbo:new', type: 'message', contactId: 'turbo' });
+
+  view.center.cancelContact('luna', 'message');
+  view.setTime(180);
+  view.center.update();
+
+  assert.equal(view.center.current.id, 'message:turbo:new');
+  assert.equal(view.center.show({ id: 'message:luna:old', type: 'message', contactId: 'luna' }), false);
+  assert.equal(view.center.show({ id: 'message:luna:queued', type: 'message', contactId: 'luna' }), false);
+  assert.equal(view.center.show({ id: 'message:luna:new', type: 'message', contactId: 'luna' }), true);
+  assert.equal(view.center.queue.at(-1).id, 'message:luna:new');
+});
+
 test('cancels queued messages for a contact after the conversation is read', () => {
   const view = setup();
   view.center.show({ id: 'connection:luna', type: 'connection', contactId: 'luna' });
@@ -107,6 +124,28 @@ test('cancels queued messages for a contact after the conversation is read', () 
   assert.equal(view.center.current.id, 'connection:luna');
   assert.equal(view.center.has('luna:message:1'), false);
   assert.equal(view.center.has('luna:message:2'), false);
+  assert.equal(view.center.show({ id: 'luna:message:1', type: 'message', contactId: 'luna' }), false);
+});
+
+test('a dismissed notification id is treated as handled while a new message id remains available', () => {
+  const view = setup();
+  let activated = 0;
+  assert.equal(
+    view.center.show({ id: 'connection:turbo', type: 'connection', action: () => activated++ }),
+    true,
+  );
+
+  view.center.dismissButton.dispatch('click', {
+    stopPropagation() {},
+  });
+  view.setTime(180);
+  view.center.update();
+  assert.equal(view.root.hidden, true);
+  assert.equal(view.center.show({ id: 'connection:turbo', type: 'connection' }), false);
+  assert.equal(activated, 0);
+
+  assert.equal(view.center.show({ id: 'message:turbo:mdrrrr', type: 'message' }), true);
+  assert.equal(view.center.current.id, 'message:turbo:mdrrrr');
 });
 
 test('delayed notifications wait for their real-time deadline before taking the queue', () => {

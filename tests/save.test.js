@@ -79,7 +79,7 @@ test('NEW GAME deletes all game customizations, records and archives while prese
   assert.deepEqual(progression.data.choices, []);
   assert.equal(progression.hasSave, false);
   assert.equal(progression.data.desktopIcons, undefined);
-  assert.equal(progression.data.virtualFilesystem, undefined);
+  assert.deepEqual(progression.data.virtualFilesystem, { deleted: [], added: {} });
   assert.equal(progression.data.installedApps, undefined);
   assert.equal(progression.data.contactConnections, undefined);
   assert.equal(storage.getItem(HISTORY_KEY), null);

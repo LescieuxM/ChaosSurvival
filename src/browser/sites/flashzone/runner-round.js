@@ -5,7 +5,34 @@ export const RUNNER_WIDTH = 480,
   PLAYER_W = 12,
   PLAYER_H = 20;
 const GRAVITY = 900,
-  JUMP_SPEED = 340;
+  JUMP_SPEED = 340,
+  STEP_MS = 2,
+  OBSTACLE_GAP_MIN = 150,
+  OBSTACLE_GAP_VARIATION = 50;
+const SPEED_PROGRESS = Object.freeze([
+  [0, 1],
+  [15_000, 1.5],
+  [30_000, 2],
+  [45_000, 3],
+  [60_000, 4],
+  [75_000, 5.5],
+  [90_000, 7],
+  [105_000, 9],
+  [120_000, 12],
+  [135_000, 16],
+]);
+
+export function runnerSpeedAt(elapsedMs) {
+  const elapsed = Math.max(0, Number.isFinite(elapsedMs) ? elapsedMs : 0);
+  for (let index = 1; index < SPEED_PROGRESS.length; index++) {
+    const [endTime, endMultiplier] = SPEED_PROGRESS[index];
+    if (elapsed > endTime) continue;
+    const [startTime, startMultiplier] = SPEED_PROGRESS[index - 1];
+    const progress = (elapsed - startTime) / (endTime - startTime);
+    return 100 * (startMultiplier + (endMultiplier - startMultiplier) * progress);
+  }
+  return 1600;
+}
 export class RunnerRound {
   constructor(random = Math.random) {
     this.random = random;
@@ -24,7 +51,7 @@ export class RunnerRound {
     this.serial = 0;
   }
   get speed() {
-    return Math.min(180, 100 + this.distance * 0.012);
+    return runnerSpeedAt(this.elapsed);
   }
   jump() {
     if (!this.active || !this.grounded) return false;
@@ -39,7 +66,7 @@ export class RunnerRound {
     if (delta > 250) return;
     let remaining = delta;
     while (remaining > 0 && this.active) {
-      const dt = Math.min(5, remaining) / 1000;
+      const dt = Math.min(STEP_MS, remaining) / 1000;
       remaining -= dt * 1000;
       this.elapsed += dt * 1000;
       const travel = this.speed * dt;
@@ -54,8 +81,8 @@ export class RunnerRound {
           width,
           height: kind === 'crate' ? 28 : 18,
         });
-        // At least a full jump duration plus reaction time between hazards, even at max speed.
-        this.nextAt = this.distance + this.speed * (1.45 + this.random() * 0.55);
+        // Keep world-space gaps fixed so the requested speed increase also tightens timing.
+        this.nextAt = this.distance + OBSTACLE_GAP_MIN + this.random() * OBSTACLE_GAP_VARIATION;
       }
       for (const obstacle of this.obstacles) obstacle.x -= travel;
       this.obstacles = this.obstacles.filter((obstacle) => obstacle.x + obstacle.width > 0);

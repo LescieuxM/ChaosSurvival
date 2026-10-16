@@ -13,5 +13,7 @@ assert.deepEqual(
   await readFile(executable),
   'Copie du portable altérée',
 );
-console.log(`OK : ${result.files.length} ressources vérifiées, musique originale intégrée.`);
+console.log(
+  `OK : ${result.files.length} ressources vérifiées, ${result.audio.length} fichiers audio requis intégrés.`,
+);
 console.log(`Portable prêt à partager : ${destination}`);

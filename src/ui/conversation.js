@@ -3,9 +3,16 @@ import { ConversationThread } from '../story/conversation-thread.js';
 import { applicationName } from './identity.js';
 import { playerIdentity } from './player-identity.js';
 import { webcamPlaceholder } from './webcam-placeholder.js';
+import { createContactAvatar } from './contact-avatar.js';
 
 import { appendMessageText } from './message-text.js';
 export { appendMessageText } from './message-text.js';
+
+const GROUP_AUTHOR_IDS = Object.freeze({
+  xX_PixelGirl_Xx: 'pixelgirl',
+  Turb0: 'turbo',
+  '°•.LuNa.°•': 'luna',
+});
 
 export class ConversationWindow {
   constructor(
@@ -56,6 +63,14 @@ export class ConversationWindow {
     this.sessions.set(definition.id, session);
     return session;
   }
+  contactStatus(definition) {
+    const profile = `${definition.contact.status} · ${definition.contact.personalMessage ?? ''}`;
+    if (!Array.isArray(definition.participants)) return profile;
+    const participants = definition.participants.map((name) =>
+      name === definition.player.nickname ? this.player.nickname : name,
+    );
+    return `Participants : ${participants.join(', ')} · ${profile}`;
+  }
   chooseResponse(definition, session, choiceId) {
     const nodeId = session.state.node;
     const choice = session.choose(choiceId);
@@ -97,7 +112,7 @@ export class ConversationWindow {
         body: /* HTML */ `
           <div class="msn-menu"></div>
           <div class="msn-contact">
-            <img class="story-avatar contact-avatar" alt="Avatar de PixelGirl" />
+            <img class="story-avatar contact-avatar" alt="Avatar du contact" />
             <div>
               <strong class="contact-name"></strong
               ><small><i class="online-dot"></i><span class="contact-status"></span></small>
@@ -137,7 +152,7 @@ export class ConversationWindow {
           !this.switchingView &&
           !this.offlineContact &&
           this.session?.state.finished;
-        this.dispose();
+        this.dispose({ reason });
         if (complete) this.onComplete(this.dialogue.id);
       },
     });
@@ -146,6 +161,7 @@ export class ConversationWindow {
       'contact-offline',
       Boolean(this.offlineContact && !this.offlineContact.online),
     );
+    this.element.classList.toggle('group-conversation', this.dialogue.contact.id === 'plumber-group');
     if (this.manageWindow) this.manageWindow(this);
     else {
       const minimize = document.createElement('button');
@@ -172,19 +188,29 @@ export class ConversationWindow {
       .querySelector('.close-button')
       .setAttribute('aria-label', `Fermer ${applicationName('messenger')}`);
     this.element.querySelector('.contact-name').textContent = this.dialogue.contact.nickname;
-    this.element.querySelector('.contact-avatar').alt =
-      `Avatar de ${this.dialogue.contact.name ?? this.dialogue.contact.nickname}`;
-    this.element.querySelector('.contact-status').textContent =
-      `${this.dialogue.contact.status} · ${this.dialogue.contact.personalMessage ?? ''}`;
-    for (const [selector, path] of [
-      ['.contact-avatar', this.dialogue.contact.avatar],
-      ['.player-avatar', this.player.avatar],
-    ]) {
-      if (!/^\.\/avatars\/[a-z0-9-]+\.svg$/i.test(path)) throw new Error('Avatar local invalide.');
-      this.element.querySelectorAll(selector).forEach((image) => {
+    this.element.querySelector('.contact-status').textContent = this.contactStatus(this.dialogue);
+    this.element.querySelectorAll('.contact-avatar').forEach((container) => {
+      if (this.dialogue.contact.id !== 'plumber-group') {
+        if (!/^\.\/avatars\/[a-z0-9-]+\.svg$/i.test(this.dialogue.contact.avatar))
+          throw new Error('Avatar local invalide.');
+        container.alt = `Avatar de ${this.dialogue.contact.name ?? this.dialogue.contact.nickname}`;
+        container.src = new URL(this.dialogue.contact.avatar, document.baseURI).href;
+        return;
+      }
+      const avatar = createContactAvatar(this.dialogue.contact, 'story-avatar contact-avatar');
+      container.replaceWith(avatar);
+      const images = avatar.querySelectorAll('img');
+      images.forEach((image) => {
+        const path = image.getAttribute('src');
+        if (!/^\.\/avatars\/[a-z0-9-]+\.svg$/i.test(path))
+          throw new Error('Avatar local invalide.');
         image.src = new URL(path, document.baseURI).href;
       });
-    }
+    });
+    const playerAvatar = this.element.querySelector('.player-avatar');
+    if (!/^\.\/avatars\/[a-z0-9-]+\.svg$/i.test(this.player.avatar))
+      throw new Error('Avatar local invalide.');
+    playerAvatar.src = new URL(this.player.avatar, document.baseURI).href;
     this.log = this.element.querySelector('.conversation-log');
     this.history = this.element.querySelector('.conversation-history');
     this.flow = this.element.querySelector('.conversation-flow');
@@ -218,6 +244,16 @@ export class ConversationWindow {
     this.lastFrame = null;
     this.refresh();
     this.onWindowState({ open: true, minimized: false });
+  }
+  openMinimized() {
+    if (this.element?.isConnected) return this.element;
+    this.open();
+    if (!this.element?.isConnected) return this.element;
+    this.element.hidden = true;
+    this.lastFrame = null;
+    this.messengerInstance?.task.setAttribute('aria-pressed', 'false');
+    this.onWindowState({ open: true, minimized: true });
+    return this.element;
   }
   renderTranscript() {
     (this.flow ?? this.log).replaceChildren();
@@ -254,8 +290,7 @@ export class ConversationWindow {
       return;
     this.dialogue = definition;
     this.element.classList.remove('contact-away');
-    this.element.querySelector('.contact-status').textContent =
-      `${definition.contact.status} · ${definition.contact.personalMessage ?? ''}`;
+    this.element.querySelector('.contact-status').textContent = this.contactStatus(definition);
     this.session = this.sessionFor(definition);
     this.pending = null;
     this.ghost?.remove();
@@ -279,8 +314,12 @@ export class ConversationWindow {
       this.scrollLatest();
       return row;
     }
+    if (this.dialogue.contact.id === 'plumber-group') {
+      const authorId = message.speaker === 'player' ? 'player' : GROUP_AUTHOR_IDS[message.author];
+      if (authorId) row.dataset.authorId = authorId;
+    }
     const author = document.createElement('small');
-    author.textContent = `${message.speaker === 'player' ? (this.player ?? playerIdentity).nickname : this.dialogue.contact.nickname} dit :`;
+    author.textContent = `${message.speaker === 'player' ? (this.player ?? playerIdentity).nickname : message.author ?? this.dialogue.contact.nickname} dit :`;
     const copy = document.createElement(message.type === 'link' ? 'a' : 'p');
     if (message.type === 'link') {
       copy.href = '#';
@@ -385,7 +424,7 @@ export class ConversationWindow {
           ? ''
           : `${this.dialogue.contact.name} est absente · à tout à l’heure !`;
         this.element.querySelector('.contact-status').textContent = stayOnline
-          ? `${this.dialogue.contact.status} · ${this.dialogue.contact.personalMessage ?? ''}`
+          ? this.contactStatus(this.dialogue)
           : 'Partie choisir une image perso';
         const pendingFile = this.session.state.transcript.some(
           (entry) =>
@@ -648,8 +687,8 @@ export class ConversationWindow {
     this.renderTyping();
     this.frame = requestAnimationFrame((next) => this.tick(next));
   }
-  dispose() {
-    this.onDispose?.(this);
+  dispose(dismissal) {
+    this.onDispose?.(this, dismissal);
     this.logObserver?.disconnect();
     cancelAnimationFrame(this.frame);
     document.removeEventListener('visibilitychange', this.onVisibility);

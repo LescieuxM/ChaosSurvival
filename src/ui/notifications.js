@@ -6,6 +6,7 @@ export class NotificationCenter {
     Object.assign(this, { root, contact, message, dismissButton, getTime });
     this.current = null;
     this.queue = [];
+    this.handled = new Set();
     this.root.addEventListener('click', (event) => {
       if (event.target.closest('button')) return;
       this.activate();
@@ -26,7 +27,12 @@ export class NotificationCenter {
   }
 
   show(notification) {
-    if (!notification || typeof notification.id !== 'string' || this.has(notification.id))
+    if (
+      !notification ||
+      typeof notification.id !== 'string' ||
+      this.handled.has(notification.id) ||
+      this.has(notification.id)
+    )
       return false;
     const item = {
       type: 'story',
@@ -113,6 +119,7 @@ export class NotificationCenter {
     this.current = null;
     this.root.hidden = true;
     this.root.classList.remove('is-dismissing');
+    if (item.dismissReason !== 'replaced') this.handled.add(item.id);
     item.onDismiss?.(item.dismissReason, {
       shownAt: item.shownAt,
       expiresAt: item.expiresAt,
@@ -125,6 +132,7 @@ export class NotificationCenter {
     const queuedIndex = this.queue.findIndex((item) => item.id === id);
     if (queuedIndex >= 0) {
       this.queue.splice(queuedIndex, 1);
+      this.handled.add(id);
       return true;
     }
     if (this.current?.id === id) return this.dismiss('cancelled');
@@ -132,9 +140,12 @@ export class NotificationCenter {
   }
 
   cancelContact(contactId, type = null) {
-    this.queue = this.queue.filter(
-      (item) => item.contactId !== contactId || (type && item.type !== type),
-    );
+    const kept = [];
+    for (const item of this.queue) {
+      if (item.contactId === contactId && (!type || item.type === type)) this.handled.add(item.id);
+      else kept.push(item);
+    }
+    this.queue = kept;
     if (
       this.current?.contactId === contactId &&
       (!type || this.current.type === type)
@@ -142,12 +153,13 @@ export class NotificationCenter {
       this.dismiss('cancelled');
   }
 
-  clear() {
+  clear({ resetHandled = false } = {}) {
     this.queue.length = 0;
     this.current = null;
     this.root.hidden = true;
     this.root.classList.remove('is-dismissing');
     delete this.root.dataset.notificationType;
+    if (resetHandled) this.handled.clear();
   }
 }
 

@@ -42,6 +42,16 @@
     "avatar": "./avatars/turbo.svg"
   },
   {
+    "id": "plumber-group",
+    "kind": "narrative",
+    "dialogue": "pixelgirl-super-plombier-group",
+    "unlockFlag": "superPlombierGroupCreated",
+    "nickname": "PixelGirl, Turb0 et Luna",
+    "status": "En ligne",
+    "personalMessage": "Conversation de groupe",
+    "avatar": "./avatars/pixelgirl.svg"
+  },
+  {
     "id": "luna",
     "kind": "narrative",
     "dialogue": "luna-intro",

@@ -21,18 +21,6 @@
         "icon": "folder",
         "detail": "Dossier",
         "location": "profiles"
-      },
-      {
-        "name": "Games",
-        "icon": "folder",
-        "detail": "Dossier",
-        "location": "games"
-      },
-      {
-        "name": "Downloads",
-        "icon": "folder",
-        "detail": "Dossier",
-        "location": "downloads"
       }
     ]
   },
@@ -249,14 +237,7 @@
     "address": "C:\\Documents and Settings\\Joueur\\Bureau",
     "parent": "user-profile",
     "description": "C:\\Documents and Settings\\Joueur\\Bureau",
-    "items": [
-      {
-        "name": "a_faire.txt",
-        "icon": "document",
-        "detail": "Document texte",
-        "text": "Ranger les dossiers.\nChanger de pseudo.\nFinir une partie avant de dîner."
-      }
-    ]
+    "items": []
   },
   "images": {
     "address": "C:\\Documents and Settings\\Joueur\\Mes documents\\Mes images",
@@ -264,7 +245,7 @@
     "description": "C:\\Documents and Settings\\Joueur\\Mes documents\\Mes images",
     "items": [
       {
-        "name": "fond_arcade.jpg",
+        "name": "arcade.jpg",
         "icon": "document",
         "detail": "Image · arcade 8-bit",
         "image": "./covers/best-game-console.svg"
@@ -278,86 +259,70 @@
     ]
   },
   "music": {
-    "address": "C:\\Documents and Settings\\Joueur\\Mes documents\\Mes musiques",
+    "address": "C:\\Documents and Settings\\Joueur\\Mes documents\\Ma musique",
     "parent": "folder",
-    "description": "C:\\Documents and Settings\\Joueur\\Mes documents\\Mes musiques",
+    "description": "C:\\Documents and Settings\\Joueur\\Mes documents\\Ma musique",
     "items": [
       {
         "name": "playlist_ete_2009.txt",
         "icon": "document",
         "detail": "Document texte",
+        "deletable": true,
+        "size": 853,
         "text": "Chiptune, bandes originales de jeux et tubes improbables.\nNe pas mélanger avec la playlist de Noël."
       }
     ]
   },
-  "games": {
-    "address": "C:\\Games",
-    "parent": "c-root",
-    "description": "C:\\Games",
-    "items": [
-      {
-        "name": "Bubble Party 2009",
-        "icon": "folder",
-        "detail": "Dossier",
-        "location": "bubble-game"
-      },
-      {
-        "name": "Minefield.exe",
-        "icon": "document",
-        "detail": "Jeu",
-        "text": "Minefield ne peut pas démarrer.\nLe disque original est introuvable."
-      }
-    ]
-  },
-  "bubble-game": {
-    "address": "C:\\Games\\Bubble Party 2009",
-    "parent": "games",
-    "description": "C:\\Games\\Bubble Party 2009",
-    "items": [
-      {
-        "name": "bubble.exe",
-        "icon": "document",
-        "detail": "Jeu",
-        "text": "Veuillez insérer le CD-ROM original pour continuer."
-      },
-      {
-        "name": "scores.txt",
-        "icon": "document",
-        "detail": "Document texte",
-        "text": "1. AAA : 9000\n2. BOB : 4200\n3. MOI : 15\n\nOn progresse."
-      }
-    ]
-  },
   "downloads": {
-    "address": "C:\\Downloads",
-    "parent": "c-root",
-    "description": "C:\\Downloads",
+    "address": "C:\\Documents and Settings\\Joueur\\Mes documents\\Mes fichiers reçus",
+    "parent": "folder",
+    "description": "C:\\Documents and Settings\\Joueur\\Mes documents\\Mes fichiers reçus",
     "items": [
       {
         "name": "smileys_pack_2009.zip",
         "icon": "document",
         "detail": "Archive ZIP",
+        "deletable": true,
+        "size": 243712,
         "text": "Archive de smileys :\ncontent.gif\nencore_plus_content.gif\nbeaucoup_trop_content.gif"
       },
       {
         "name": "wallpaper_arcade.jpg",
         "icon": "document",
         "detail": "Image",
+        "deletable": true,
+        "size": 384512,
         "image": "./covers/best-game-console.svg"
       },
       {
         "name": "installation_a_lire.txt",
         "icon": "document",
         "detail": "Document texte",
+        "deletable": true,
+        "size": 1820,
         "text": "Lire les instructions.\nNe pas cliquer sur toutes les barres d'outils proposées."
       },
       {
         "name": "toolbar_setup.exe",
         "icon": "document",
         "detail": "Programme",
+        "deletable": true,
+        "size": 524288,
         "text": "Installation impossible.\nVotre navigateur possède déjà suffisamment de barres d'outils."
       }
     ]
+  },
+  "videos": {
+    "address": "C:\\Documents and Settings\\Joueur\\Mes documents\\Mes vidéos",
+    "parent": "folder",
+    "description": "C:\\Documents and Settings\\Joueur\\Mes documents\\Mes vidéos",
+    "items": []
+  },
+  "my-games": {
+    "address": "C:\\Documents and Settings\\Joueur\\Mes documents\\My Games",
+    "parent": "folder",
+    "description": "C:\\Documents and Settings\\Joueur\\Mes documents\\My Games",
+    "items": []
   },
   "empty-cd": {
     "address": "D:\\",

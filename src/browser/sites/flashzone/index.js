@@ -6,6 +6,8 @@ import { renderPixelRunner } from './pixel-runner.js';
 import { renderSuperPlombierFlash } from './super-plombier-flash.js';
 export const FLASH_URL = 'http://www.flashzone.fr/';
 export const flashCatalog = catalog;
+export const isSuperPlombierFlashUnlocked = (data) =>
+  data?.flags?.superPlombierFlashUnlocked === true;
 const components = {
   'bubble-pop': renderBubblePop,
   'avoid-the-squares': renderAvoidSquares,
@@ -34,11 +36,14 @@ function gameCard(game) {
   card.append(thumbnail, link(game.title, game.route));
   return card;
 }
-export function renderFlashHome() {
+export function renderFlashHome({ data } = {}) {
   const root = shell();
   root.append(node('p', catalog.description));
   const grid = node('div', undefined, 'flashzone-grid');
-  for (const game of catalog.games) grid.append(gameCard(game));
+  for (const game of catalog.games) {
+    if (game.id === 'super-plombier-flash' && !isSuperPlombierFlashUnlocked(data)) continue;
+    grid.append(gameCard(game));
+  }
   root.append(grid);
   return root;
 }
@@ -57,13 +62,26 @@ export const flashPages = [
       title: `${game.title} — ${catalog.name}`,
       description: game.description,
       keywords: ['flashzone', 'jeux flash', 'jeux gratuits', ...game.keywords],
+      ...(game.id === 'super-plombier-flash'
+        ? { available: isSuperPlombierFlashUnlocked }
+        : {}),
       preserveOnTabSwitch: ['pixel-runner', 'super-plombier-flash'].includes(game.component),
       render(context) {
         const root = shell();
-        root.append(
-          link('Accueil FlashZone', FLASH_URL),
-          components[game.component](context, game),
-        );
+        const gameContext = game.component === 'super-plombier-flash'
+          ? {
+              ...context,
+              onStart: () => context.onSuperPlombierStart?.(),
+              onVictory: () => context.onSuperPlombierVictory?.(),
+            }
+          : context;
+        const gameView = components[game.component](gameContext, game);
+        root.append(link('Accueil FlashZone', FLASH_URL), gameView);
+        if (game.component === 'super-plombier-flash') {
+          root.finish = gameView.finish;
+          Object.defineProperty(root, 'finished', { get: () => gameView.finished });
+          Object.defineProperty(root, 'running', { get: () => gameView.running });
+        }
         return root;
       },
     };

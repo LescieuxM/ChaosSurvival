@@ -12,6 +12,23 @@ const story = JSON.parse(read('../src/config/story.json'));
 const definition = JSON.parse(read('../src/minigames/smiley-catcher.json'));
 
 function setup(progression, t, tutorials = false, onVictory) {
+  const previousAudio = globalThis.Audio;
+  const audioInstances = [];
+  globalThis.Audio = class {
+    constructor(url) {
+      this.src = url;
+      this.currentTime = 6;
+      this.loop = false;
+      this.volume = 1;
+      this.playCount = 0;
+      this.pauseCount = 0;
+      audioInstances.push(this);
+    }
+    play() { this.playCount++; return Promise.resolve(); }
+    pause() { this.pauseCount++; }
+    removeAttribute(name) { this.removedAttribute = name; }
+    load() { this.loaded = true; }
+  };
   const element = () => ({
     style: {},
     dataset: {},
@@ -102,6 +119,8 @@ function setup(progression, t, tutorials = false, onVictory) {
       if (value === undefined) delete globalThis[key];
       else globalThis[key] = value;
     }
+    if (previousAudio === undefined) delete globalThis.Audio;
+    else globalThis.Audio = previousAudio;
   });
   const rules = tutorials ? new GameRules(context.ui.desktop, progression) : undefined;
   const launcher = new MiniGameLauncher(
@@ -123,7 +142,7 @@ function setup(progression, t, tutorials = false, onVictory) {
   context.game = () => launcher.active;
   context.openDesktopFile = (file) => launcher.open(file);
   context.renderDesktopFiles = () => files.render();
-  return { context, manager, visibility };
+  return { context, manager, visibility, audioInstances };
 }
 
 function savedRun() {
@@ -181,6 +200,40 @@ test('received mini-game launches only after transfer, closes and restarts from 
   assert.equal(second.score, 0);
   assert.equal(second.finished, false);
   assert.equal(manager.windows.size, 1);
+});
+
+test('SmileyCatcher music follows the round, pause, replay, victory and application cleanup', (t) => {
+  const { progression, file } = savedRun();
+  const { context, manager, audioInstances } = setup(progression, t);
+  assert.equal(audioInstances.length, 0, 'Windows XD does not create the game music');
+  context.openDesktopFile(file);
+  assert.equal(audioInstances.length, 0, 'the locked file cannot start its music');
+  progression.finishTransfer(file.key);
+  context.openDesktopFile(file);
+  assert.equal(audioInstances.length, 1);
+  const audio = audioInstances[0];
+  assert.match(audio.src, /djartmusic-i-love-my-8-bit-game-console-301272\.mp3$/);
+  assert.equal(audio.loop, true);
+  assert.equal(audio.volume, 0.35);
+  assert.equal(audio.playCount, 1);
+
+  const game = context.game();
+  const pause = game.element.querySelector('.flash-pause');
+  pause.handlers.click({ target: pause });
+  assert.equal(audio.pauseCount, 1);
+  pause.handlers.click({ target: pause });
+  assert.equal(audio.playCount, 2);
+
+  finish(game);
+  assert.equal(audio.currentTime, 0);
+  assert.equal(audio.pauseCount, 2);
+  game.element.querySelector('.flash-replay').handlers.click();
+  assert.equal(audioInstances.length, 1);
+  assert.equal(audio.currentTime, 0);
+  assert.equal(audio.playCount, 3);
+  manager.close([...manager.windows.keys()][0]);
+  assert.equal(audio.removedAttribute, 'src');
+  assert.equal(audio.loaded, true);
 });
 
 test('finished mini-game stays single, can replay internally and from desktop after restart without repeating progression', (t) => {

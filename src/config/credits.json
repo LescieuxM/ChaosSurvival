@@ -17,7 +17,12 @@
     {
       "id": "music",
       "title": "MUSIQUE",
-      "lines": ["Best Game Console — DJARTMUSIC", "Source : Pixabay"],
+      "lines": [
+        "Best Game Console — DJARTMUSIC",
+        "Source : Pixabay",
+        "Disco — ProducesPlatinum",
+        "Source : Pixabay · Licence : Pixabay Content License"
+      ],
       "sourceLink": {
         "label": "Page officielle de la musique sur Pixabay",
         "url": "https://pixabay.com/music/video-games-best-game-console-301284/"

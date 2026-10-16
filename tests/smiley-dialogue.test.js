@@ -5,11 +5,13 @@ import { Progression } from '../src/story/progression.js';
 import { DialogueSession, validateDialogue } from '../src/story/dialogue.js';
 import { ReplayReactions } from '../src/story/replays.js';
 import { DialogueEvents } from '../src/story/dialogue-events.js';
+import { NarrativeOrchestrator } from '../src/story/narrative-orchestrator.js';
 import { ConversationThread } from '../src/story/conversation-thread.js';
 import { ConversationWindow } from '../src/ui/conversation.js';
 import { visibleContacts } from '../src/ui/contacts.js';
 import { MiniGameLauncher } from '../src/ui/minigame-launcher.js';
 import { registerMiniGame } from '../src/ui/minigame-registry.js';
+import { VirtualFilesystem, virtualFileId } from '../src/story/virtual-filesystem.js';
 
 const read = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8'));
 const story = read('../src/config/story.json');
@@ -109,19 +111,56 @@ test('Smiley completion unlocks the next event once; defeats and abandoned games
   assert.equal(reactions.thread.availableResponses[0].choices.length, 3);
 });
 
-test('Turb0 scene 3 uses three private reply branches and preserves its history after reload', () => {
+test('deleting the received game blocks new launches but an already open run can still win', () => {
+  const { progression } = setup();
+  const filesystem = new VirtualFilesystem(progression);
+  const file = Object.values(progression.data.files).find(
+    (item) => item.launch?.game === 'smiley-catcher',
+  );
+  let completeRun;
+  registerMiniGame('story-file-guard-test', (definition, manager, sounds, onComplete) => {
+    completeRun = onComplete;
+    return { definition, element: { isConnected: true }, open() {} };
+  });
+  let victories = 0;
+  const launcher = new MiniGameLauncher(
+    { 'smiley-catcher': { id: 'smiley-catcher', engine: 'story-file-guard-test' } },
+    progression,
+    {},
+    { unlock() {} },
+    undefined,
+    undefined,
+    () => victories++,
+    undefined,
+    (candidate) => filesystem.exists(virtualFileId('downloads', candidate.name)),
+  );
+
+  const activeGame = launcher.open(file);
+  assert.ok(activeGame);
+  assert.equal(filesystem.deleteFile(virtualFileId('downloads', file.name)).ok, true);
+  assert.equal(launcher.open(file), null, 'deleted file cannot start or reopen a game');
+  assert.equal(activeGame.element.isConnected, true, 'deleting its file does not close a running game');
+  completeRun({ score: 42 });
+  assert.equal(progression.data.completed.includes('super-mega-game'), true);
+  assert.equal(progression.data.results['super-mega-game'].score, 42);
+  assert.equal(progression.current.id, 'pixelgirl-smiley-win');
+  assert.equal(victories, 1);
+  assert.equal(filesystem.exists(virtualFileId('downloads', file.name)), false);
+});
+
+test('Turb0 scene 3 keeps its three opening branches and resumes its shared dialogue after reload', () => {
   validateDialogue(turboScene);
   assert.equal(turboScene.contact.id, 'turbo');
   assert.equal(turboScene.contact.nickname, 'Turb0');
   const expected = [
-    ["c'est toi le noob mdr", ["MDRRR t'as eu de la chance c'est tout"]],
+    ["c'est toi le noob mdr", ["eh oh !!"]],
     [
       'attends mais toi aussi tu vois mon écran ?',
       ['bah ouais je voyais ton jeu mdr', 'pourquoi tu demandes ça ???'],
     ],
     ['ahah laisse moi tranquille', ['MDRRRR même pas en rêve']],
   ];
-  for (const [answer, replies] of expected) {
+  for (const [branchIndex, [answer, replies]] of expected.entries()) {
     const { progression, storage } = setup();
     const thread = new ConversationThread('turbo', progression, () => [turboScene]);
     const session = new DialogueSession(turboScene, progression);
@@ -131,7 +170,13 @@ test('Turb0 scene 3 uses three private reply branches and preserves its history 
     const choice = offered.find((item) => item.text === answer);
     assert.ok(choice);
     session.choose(choice.id);
-    for (let step = 0; step < 10 && !session.state.finished; step++) {
+    for (
+      let step = 0;
+      step < 10 &&
+      (session.state.node !== 'hobbies' ||
+        session.state.cursor < turboScene.nodes.hobbies.messages.length);
+      step++
+    ) {
       const message = session.nextMessage();
       if (message) session.deliver();
       else if (!session.advance()) break;
@@ -141,14 +186,58 @@ test('Turb0 scene 3 uses three private reply branches and preserves its history 
       selected.state.transcript
         .filter((message) => message.speaker === 'contact')
         .map((m) => m.text),
-      ['mdrrrr noob', ...replies],
+      ['mdrrrr noob', ...replies, 'sinon tu joues a quoi en ce moment ?'],
     );
+    assert.deepEqual(selected.choices.map((item) => item.text), [
+      'un peu a tout mdr',
+      'surtout aux jeux sur internet',
+      'pas grand chose en vrai',
+    ]);
+    const firstChoice = selected.choices[branchIndex];
+    selected.choose(firstChoice.id);
+    while (
+      selected.state.node !== 'computer-life' ||
+      selected.state.cursor < turboScene.nodes['computer-life'].messages.length
+    ) {
+      const message = selected.nextMessage();
+      if (message) selected.deliver();
+      else assert.equal(selected.advance(), true);
+    }
+    assert.deepEqual(selected.choices.map((item) => item.text), [
+      'mdrrr pareil',
+      'tu fais que jouer ?',
+      'ils ont ptet raison xD',
+    ]);
+    selected.choose(selected.choices[branchIndex].id);
+    while (
+      selected.state.node !== 'pixelgirl-links' ||
+      selected.state.cursor < turboScene.nodes['pixelgirl-links'].messages.length
+    ) {
+      const message = selected.nextMessage();
+      if (message) selected.deliver();
+      else assert.equal(selected.advance(), true);
+    }
+    assert.deepEqual(selected.choices.map((item) => item.text), [
+      'ptdrrr envoie',
+      "elle a l'air grave marrante",
+      'vous vous connaissez depuis longtemps ?',
+    ]);
+    selected.choose(selected.choices[branchIndex].id);
+    while (!selected.state.finished) {
+      const message = selected.nextMessage();
+      if (message) selected.deliver();
+      else selected.advance();
+    }
     thread.sync();
     const history = structuredClone(thread.state.history);
     const restored = new Progression(story, storage);
     const restoredThread = new ConversationThread('turbo', restored, () => [turboScene]);
     assert.deepEqual(restoredThread.sync(), history);
     assert.equal(new DialogueSession(turboScene, restored).state.finished, true);
+    assert.deepEqual(
+      new DialogueSession(turboScene, restored).state.transcript.map((message) => message.text),
+      selected.state.transcript.map((message) => message.text),
+    );
   }
 });
 
@@ -161,6 +250,57 @@ test('Turb0 first message is delivered after the saved two-second delay exactly 
   assert.equal(thread.state.history.at(-1).text, 'mdrrrr noob');
   assert.deepEqual(thread.receive(4000), []);
   assert.equal(thread.state.history.filter((message) => message.text === 'mdrrrr noob').length, 1);
+});
+
+test('an in-progress old Turb0 conversation migrates without losing its checkpoint or history', () => {
+  const { progression } = setup();
+  const oldReply = turboScene.nodes['noob-reply'].messages[0].text;
+  progression.data.dialogues[turboScene.id] = {
+    revision: 1,
+    node: 'noob-reply',
+    cursor: 1,
+    transcript: [
+      { speaker: 'contact', text: 'mdrrrr noob', receivedAt: 1 },
+      { speaker: 'player', text: "c'est toi le noob mdr", receivedAt: 2 },
+      { speaker: 'contact', text: oldReply, receivedAt: 3 },
+    ],
+    finished: false,
+  };
+  progression.data.conversations.turbo = {
+    version: 1,
+    history: progression.data.dialogues[turboScene.id].transcript.map((message, index) => ({
+      ...message,
+      key: `${turboScene.id}:1:${index}`,
+    })),
+    unread: [`${turboScene.id}:1:2`],
+    activeEvent: turboScene.id,
+    pendingEvents: [],
+  };
+  new NarrativeOrchestrator({
+    progression,
+    definitions,
+    dialogueEvents: { update() {} },
+    getContact: () => null,
+    prepareContact: () => null,
+    showConnectionNotification() {},
+    showTurboMessageNotification() {},
+  });
+  const saved = progression.data.dialogues[turboScene.id];
+  assert.equal(saved.revision, turboScene.revision);
+  assert.equal(saved.node, 'noob-reply');
+  assert.equal(saved.cursor, 1);
+  assert.equal(saved.transcript.length, 3);
+  assert.equal(progression.data.dialogueArchives[`${turboScene.id}:1`].transcript.length, 3);
+  assert.deepEqual(
+    progression.data.conversations.turbo.history.map((entry) => entry.key),
+    saved.transcript.map((_, index) => `${turboScene.id}:${turboScene.revision}:${index}`),
+  );
+  assert.deepEqual(progression.data.conversations.turbo.unread, [`${turboScene.id}:${turboScene.revision}:2`]);
+  const restoredSession = new DialogueSession(turboScene, progression);
+  assert.deepEqual(restoredSession.choices.map((choice) => choice.text), []);
+  assert.equal(restoredSession.nextMessage(), null);
+  assert.equal(restoredSession.advance(), true);
+  assert.equal(restoredSession.state.node, 'hobbies');
 });
 
 test('all eight sequences, all 31 branches, joins and ten choices survive restarted receivers', () => {
@@ -210,7 +350,7 @@ test('all eight sequences, all 31 branches, joins and ten choices survive restar
       10,
     );
     assert.ok(
-      [':D', ':|', '>:)', 'pourquoi tu me poses cette question MDR'].includes(
+      [':)', ':|', '>:)', 'pourquoi tu me poses cette question MDR'].includes(
         progression.data.flags.pixelgirlSmiley,
       ),
     );
@@ -223,17 +363,17 @@ test('all eight sequences, all 31 branches, joins and ten choices survive restar
     assert.deepEqual(connected, []);
     assert.equal(reactions.thread.activeDefinition.contact.status, 'En ligne');
     assert.equal(reactions.thread.activeDefinition.completion.stayOnline, true);
-    effects.update(now + 2199);
+    effects.update(now + 1999);
     assert.deepEqual(connected, []);
-    effects.update(now + 2200);
+    effects.update(now + 2000);
     assert.deepEqual(connected, ['turbo']);
     const resumed = new Progression(story, storage);
     const effectsAfterRestart = new DialogueEvents(resumed, definitions, (id) =>
       connected.push(id),
     );
-    effectsAfterRestart.update(now + 2200, false);
+    effectsAfterRestart.update(now + 2000, false);
     assert.deepEqual(connected, ['turbo']);
-    effectsAfterRestart.update(now + 2200);
+    effectsAfterRestart.update(now + 2000);
     effectsAfterRestart.update(now + 5000);
     assert.deepEqual(connected, ['turbo']);
     assert.ok(
@@ -286,14 +426,20 @@ test('only PixelGirl first validated response connects Turb0, and it persists wi
     },
   };
   ConversationWindow.prototype.chooseResponse.call(view, dialogue, session, choice.id);
-  assert.deepEqual(connected, ['turbo']);
-  assert.equal(progression.data.contactConnections.turbo.status, 'online');
+  assert.deepEqual(connected, []);
+  assert.deepEqual(progression.data.contactConnections.turbo, {
+    status: 'pending',
+    dueAt: now + 12_001,
+  });
   assert.equal(
     progression.data.dialogues[dialogue.id].transcript.length,
     openingMessages.length + 1,
   );
   assert.equal(progression.data.choices.length, previousChoices + 1);
-  effects.update(now + 20_000);
+  effects.update(now + 12_000);
+  assert.deepEqual(connected, []);
+  effects.update(now + 12_001);
+  assert.deepEqual(connected, ['turbo']);
   assert.equal(effects.triggerConnection('turbo', now + 20_001), false);
   const restored = new Progression(story, storage);
   new DialogueEvents(restored, definitions, (id) => connected.push(id), {

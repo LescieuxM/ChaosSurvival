@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import {
   RunnerRound,
   GROUND,
+  runnerSpeedAt,
   bestDistance,
   saveBestDistance,
 } from '../src/browser/sites/flashzone/runner-round.js';
@@ -66,17 +67,56 @@ test('boxes collide, holes cause falling, and early jumps can clear both hazards
     assert.ok(success.active, kind);
   }
 });
-test('spawns allow reaction time, hazard spacing stays jumpable and speed is capped', () => {
+test('maximum speed keeps collision checks reliable without slowing obstacle travel', () => {
+  const round = new RunnerRound(() => 0);
+  round.start(0);
+  round.elapsed = 135_000;
+  round.obstacles = [{ id: 1, kind: 'crate', x: 78, width: 22, height: 28 }];
+  round.tick(2);
+  assert.equal(round.speed, 1600);
+  assert.equal(round.active, false);
+});
+test('spawns have a safe initial approach and keep fixed world-space gaps at high speed', () => {
   for (const value of [0, 0.4, 0.9]) {
     const r = new RunnerRound(() => value);
     r.start(0);
     for (let t = 10; t <= 4500 && !r.obstacles.length; t += 10) r.tick(t);
     assert.equal(r.obstacles.length, 1);
     assert.ok((r.obstacles[0].x - 76) / r.speed > 2);
-    assert.ok(r.nextAt - r.distance >= r.speed * 1.4);
-    r.distance = 100000;
-    assert.equal(r.speed, 180);
+    assert.ok(r.nextAt - r.distance >= 145);
+    r.elapsed = 135000;
+    assert.equal(r.speed, 1600);
+    assert.ok(r.nextAt - r.distance < r.speed * 0.13);
   }
+});
+test('scroll speed follows a continuous active-time curve and resets for each run', () => {
+  const near = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-9);
+  assert.equal(runnerSpeedAt(0), 100);
+  near(runnerSpeedAt(15000), 150);
+  near(runnerSpeedAt(30000), 200);
+  near(runnerSpeedAt(45000), 300);
+  near(runnerSpeedAt(60000), 400);
+  near(runnerSpeedAt(75000), 550);
+  near(runnerSpeedAt(90000), 700);
+  near(runnerSpeedAt(105000), 900);
+  near(runnerSpeedAt(120000), 1200);
+  near(runnerSpeedAt(135000), 1600);
+  assert.equal(runnerSpeedAt(500000), 1600);
+  assert.ok(runnerSpeedAt(14999) < runnerSpeedAt(15000));
+  assert.ok(runnerSpeedAt(15001) > runnerSpeedAt(15000));
+
+  const round = new RunnerRound(() => 0);
+  round.start(0);
+  round.nextAt = Infinity;
+  for (let now = 10; now <= 15_000; now += 10) round.tick(now);
+  assert.equal(round.elapsed, 15_000);
+  near(round.speed, 150);
+  round.stop();
+  round.tick(30_000);
+  assert.equal(round.elapsed, 15_000, 'a finished run does not advance its speed clock');
+  round.start(40_000);
+  assert.equal(round.elapsed, 0);
+  assert.equal(round.speed, 100);
 });
 test('distance records persist/reset independently of other games and narrative', () => {
   const { p, storage } = fixture();
@@ -97,6 +137,21 @@ function dom(t) {
     doc: globalThis.document,
     raf: globalThis.requestAnimationFrame,
     caf: globalThis.cancelAnimationFrame,
+    Audio: globalThis.Audio,
+  };
+  const audios = [];
+  globalThis.Audio = class {
+    constructor(src) {
+      this.src = src;
+      this.currentTime = 0;
+      this.playCount = 0;
+      this.pauseCount = 0;
+      audios.push(this);
+    }
+    play() { this.playCount++; return Promise.resolve(); }
+    pause() { this.pauseCount++; }
+    removeAttribute(name) { if (name === 'src') this.src = ''; }
+    load() {}
   };
   const frames = new Map(),
     listeners = new Map();
@@ -151,10 +206,12 @@ function dom(t) {
     globalThis.document = previous.doc;
     globalThis.requestAnimationFrame = previous.raf;
     globalThis.cancelAnimationFrame = previous.caf;
+    globalThis.Audio = previous.Audio;
   });
   return {
     frames,
     listeners,
+    audios,
     step(now) {
       const tasks = [...frames.values()];
       frames.clear();
@@ -163,7 +220,7 @@ function dom(t) {
   };
 }
 const walk = (n) => [n, ...n.children.flatMap(walk)];
-test('view owns its keyboard events, pauses/resumes without losing state, replays and cleans up', (t) => {
+test('view owns keyboard events and music, pauses/resumes, replays and cleans up', (t) => {
   const clock = dom(t),
     { p } = fixture();
   let cleanup, resume;
@@ -173,7 +230,14 @@ test('view owns its keyboard events, pauses/resumes without losing state, replay
     onResume: (fn) => (resume = fn),
   });
   const find = (cls) => walk(root).find((n) => n.className === cls);
+  assert.equal(clock.audios.length, 0);
   find('runner-play').handlers.click();
+  assert.equal(clock.audios.length, 1);
+  const music = clock.audios[0];
+  assert.match(music.src, /bransboynd-retro-runner-548536\.mp3$/);
+  assert.equal(music.loop, true);
+  assert.equal(music.volume, 0.35);
+  assert.equal(music.playCount, 1);
   assert.equal(framesCount(), 1);
   function framesCount() {
     return clock.frames.size;
@@ -193,17 +257,23 @@ test('view owns its keyboard events, pauses/resumes without losing state, replay
   clock.step(now + 100);
   const before = find('runner-distance').textContent;
   cleanup('pause');
+  assert.equal(music.pauseCount, 1);
   assert.equal(framesCount(), 0);
   resume();
+  assert.equal(music.playCount, 2);
   assert.equal(framesCount(), 1);
   assert.equal(find('runner-distance').textContent, before);
   let time = performance.now();
   for (let i = 1; i <= 130 && find('runner-result').hidden; i++) clock.step(time + i * 100);
   assert.equal(find('runner-result').hidden, false);
+  assert.equal(music.currentTime, 0);
   assert.ok(bestDistance(p, 'pixel-runner') > 0);
   find('runner-replay').handlers.click();
+  assert.equal(clock.audios.length, 1);
+  assert.equal(music.playCount, 3);
   assert.equal(find('runner-distance').textContent, 'Distance : 0 m');
   cleanup();
+  assert.equal(music.src, '');
   assert.equal(framesCount(), 0);
   assert.equal(clock.listeners.size, 0);
   assert.equal(canvas.handlers.keydown, undefined);

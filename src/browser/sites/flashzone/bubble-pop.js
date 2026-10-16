@@ -1,5 +1,9 @@
 import { textElement as node } from '../../dom.js';
 import { BubbleRound, bestScore, saveBestScore } from './bubble-round.js';
+import { createGameMusic } from '../../../audio/game-music.js';
+import { createSoundEffectPool } from '../../../audio/sound-effect-pool.js';
+const musicUrl = new URL('../../../../assets/jakob_welik-roblox-time-to-win-skyline-run-1-442119.mp3', import.meta.url).href;
+const popSoundUrl = new URL('../../../../assets/cherskis-bubble-popping-3-587265.mp3', import.meta.url).href;
 export function renderBubblePop({ progression, onDispose }, game) {
   const root = node('section', undefined, 'bubble-pop');
   const intro = node('div', undefined, 'bubble-intro');
@@ -24,12 +28,17 @@ export function renderBubblePop({ progression, onDispose }, game) {
     replay = node('button', 'REJOUER', 'bubble-replay');
   result.append(node('h3', 'TEMPS ÉCOULÉ !'), final, best, replay);
   root.append(intro, stats, arena, result);
-  const round = new BubbleRound(),
+  const music = createGameMusic(musicUrl),
+    popSound = createSoundEffectPool(popSoundUrl),
+    round = new BubbleRound(),
     elements = new Map();
   let frame = null,
     disposed = false;
   function dispose() {
+    if (disposed) return;
     disposed = true;
+    music.dispose();
+    popSound.dispose();
     cancelAnimationFrame(frame);
     frame = null;
     round.stop();
@@ -55,6 +64,7 @@ export function renderBubblePop({ progression, onDispose }, game) {
       button.addEventListener('click', () => {
         if (disposed) return;
         if (round.pop(bubble.id, performance.now())) {
+          popSound.play();
           const effect = node('span', '✦', 'bubble-burst');
           effect.style.left = button.style.left;
           effect.style.top = button.style.top;
@@ -76,6 +86,8 @@ export function renderBubblePop({ progression, onDispose }, game) {
     round.tick(now);
     render(now);
     if (!round.active) {
+      music.stop();
+      popSound.stopAll();
       frame = null;
       stats.hidden = true;
       arena.hidden = true;
@@ -98,6 +110,7 @@ export function renderBubblePop({ progression, onDispose }, game) {
     stats.hidden = false;
     arena.hidden = false;
     round.start(performance.now());
+    music.start();
     round.tick(performance.now());
     render(performance.now());
     frame = requestAnimationFrame(loop);

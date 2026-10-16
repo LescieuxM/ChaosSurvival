@@ -1,5 +1,6 @@
 import { orderedContacts, visibleContacts } from './contacts.js';
 import { bindFileActivation } from '../utils/activation.js';
+import { createContactAvatar } from './contact-avatar.js';
 
 export class MessengerContacts {
   constructor(options) {
@@ -52,9 +53,7 @@ export class MessengerContacts {
         const row = document.createElement('button');
         row.className = `messenger-contact-row ${online ? 'online' : 'offline'}`;
         row.dataset.contactId = contact.id;
-        const image = document.createElement('img');
-        image.src = contact.avatar;
-        image.alt = `Avatar de ${contact.nickname}`;
+        const image = createContactAvatar(contact);
         const copy = document.createElement('span');
         const nickname = document.createElement('strong');
         nickname.textContent = contact.nickname;

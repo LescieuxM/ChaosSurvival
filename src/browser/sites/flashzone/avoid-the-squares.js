@@ -8,6 +8,11 @@ import {
   bestTime,
   saveBestTime,
 } from './squares-round.js';
+import { createGameMusic } from '../../../audio/game-music.js';
+const musicUrl = new URL(
+  '../../../../assets/9jackjack8-neon-amnesia-club-house-2010-375600.mp3',
+  import.meta.url,
+).href;
 export function renderAvoidSquares({ progression, onDispose }, game) {
   const root = node('section', undefined, 'avoid-squares'),
     intro = node('div', undefined, 'squares-intro');
@@ -32,7 +37,8 @@ export function renderAvoidSquares({ progression, onDispose }, game) {
     replay = node('button', 'REJOUER', 'squares-replay');
   result.append(node('h3', 'GAME OVER !'), final, record, replay);
   root.append(intro, timer, arena, result);
-  const round = new SquaresRound(),
+  const music = createGameMusic(musicUrl),
+    round = new SquaresRound(),
     enemies = new Map();
   let frame = null,
     disposed = false;
@@ -64,6 +70,7 @@ export function renderAvoidSquares({ progression, onDispose }, game) {
   }
   function finish() {
     if (disposed || result.hidden === false) return;
+    music.stop();
     cancelAnimationFrame(frame);
     frame = null;
     render();
@@ -74,6 +81,7 @@ export function renderAvoidSquares({ progression, onDispose }, game) {
     result.scrollIntoView?.({ block: 'nearest' });
   }
   function abandon() {
+    music.stop();
     cancelAnimationFrame(frame);
     frame = null;
     round.stop();
@@ -106,6 +114,7 @@ export function renderAvoidSquares({ progression, onDispose }, game) {
     timer.hidden = false;
     arena.hidden = false;
     round.start(performance.now());
+    music.start();
     render();
     arena.scrollIntoView?.({ block: 'nearest' });
     frame = requestAnimationFrame(loop);
@@ -130,6 +139,7 @@ export function renderAvoidSquares({ progression, onDispose }, game) {
   function dispose() {
     if (disposed) return;
     disposed = true;
+    music.dispose();
     cancelAnimationFrame(frame);
     frame = null;
     round.stop();

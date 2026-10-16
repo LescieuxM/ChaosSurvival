@@ -8,10 +8,12 @@ import {
   SKY_URL,
   blogUrl,
   articleUrl,
+  commentProfileUrl,
 } from '../src/browser/sites/skypage/index.js';
 import { BrowserSession } from '../src/browser/session.js';
 import { Progression } from '../src/story/progression.js';
 import { InternetAdventurer } from '../src/ui/browser.js';
+import { renderError } from '../src/browser/pages/error.js';
 import { renderSkyHome } from '../src/browser/sites/skypage/render.js';
 const story = JSON.parse(readFileSync(new URL('../src/config/story.json', import.meta.url)));
 const articleCounts = {
@@ -170,7 +172,8 @@ test('rendered pages have only valid internal links and show articles, local gra
     );
     for (const link of nodes.filter((node) => node.tag === 'a')) {
       assert.equal(link.href, '#');
-      assert.ok(localPages.resolve(link.dataset.browserLink, {}).page);
+      const resolved = localPages.resolve(link.dataset.browserLink, {});
+      assert.ok(resolved.page || resolved.error);
     }
     if (definition.url !== SKY_URL) {
       const blog = skyPageData.blogs.find((blog) => blogUrl(blog) === definition.url);
@@ -331,6 +334,64 @@ test('existing ForumJeu blog authors remain independent of MSN contacts', () => 
     assert.ok(blog.articles.length >= 4 && blog.articles.length <= 6);
     assert.doesNotMatch(JSON.stringify(blog), /\b(?:ARCHIVE|Buddy|Raph|TikTok|Discord|Turb0)\b/i);
   }
+});
+
+test('all SkyPage comment authors are links: published pages stay mapped and others resolve to local timeout pages', (t) => {
+  dom(t);
+  const links = new Map();
+  for (const blog of skyPageData.blogs) {
+    for (const article of blog.articles) {
+      const route = new URL(articleUrl(blog, article));
+      const root = skyPages.find((page) => page.url === blogUrl(blog)).render({ url: route });
+      for (const comment of walk(root).filter((node) => node.className === 'sky-comment')) {
+        const author = comment.children[0];
+        assert.equal(author.tag, 'a');
+        links.set(author.textContent, author.dataset.browserLink);
+      }
+    }
+  }
+  for (const [author, page] of [
+    ['xX_PixelGirl_Xx', 'pixelgirl'],
+    ['°•.LuNa.°•', 'luna'],
+    ['Sk8er_du_93', 'sk8er_du_93'],
+    ['Oo_bubble-princess_oO', 'oo_bubble-princess_oo'],
+    ['K7', 'k7'],
+    ['x_M0RBID_x', 'm0rbid'],
+  ])
+    assert.equal(links.get(author), `${SKY_URL}${page}`);
+  for (const author of ['Turb0', 'LeModemEnPLS', 'M0RBID', 'DarkAngel62', 'xxDeadDollxx']) {
+    const url = commentProfileUrl(author);
+    assert.equal(links.get(author), url);
+    assert.equal(localPages.resolve(url, {}).error, 'skypage-timeout');
+    assert.equal(localPages.resolve(url, {}).page, undefined);
+  }
+});
+
+test('unknown commenter URLs remain local and survive browser history and reload resolution', () => {
+  const url = commentProfileUrl('xxDeadDollxx');
+  const session = new BrowserSession(new Progression(story, { getItem: () => null, setItem() {} }));
+  session.navigate(SKY_URL);
+  session.navigate(url);
+  assert.equal(localPages.resolve(session.address, {}).error, 'skypage-timeout');
+  session.move(-1);
+  assert.equal(session.address, SKY_URL);
+  session.move(1);
+  assert.equal(session.address, url);
+  assert.equal(localPages.resolve(session.address, {}).error, 'skypage-timeout');
+  assert.equal(localPages.resolve(session.address, {}).error, 'skypage-timeout');
+  assert.ok(url.startsWith(SKY_URL));
+});
+
+test('unknown commenter error uses the requested local Internet Adventurer timeout copy', (t) => {
+  dom(t);
+  const root = renderError('skypage-timeout');
+  const nodes = walk(root);
+  assert.equal(root.className, 'browser-error browser-error-ie');
+  assert.ok(nodes.some((node) => node.textContent === 'Internet Adventurer ne peut pas afficher cette page Web'));
+  assert.ok(nodes.some((node) => node.textContent === 'La connexion au serveur a expiré.'));
+  assert.ok(nodes.some((node) => node.textContent === 'Vérifier votre connexion Internet.'));
+  assert.ok(nodes.some((node) => node.textContent === 'Actualiser cette page.'));
+  assert.ok(nodes.some((node) => node.textContent === 'Réessayer ultérieurement.'));
 });
 
 test('K7 and M0RBID have searchable contact-linked SkyPages', () => {

@@ -38,21 +38,49 @@
         "location": "images"
       },
       {
-        "name": "Mes musiques",
+        "name": "Ma musique",
         "icon": "folder",
         "detail": "La playlist attend le prochain tube",
         "location": "music"
       },
       {
+        "name": "Mes vidéos",
+        "icon": "folder",
+        "detail": "Vidéos personnelles",
+        "location": "videos"
+      },
+      {
+        "name": "Mes fichiers reçus",
+        "icon": "folder",
+        "detail": "Fichiers reçus avec Windows Love Messenger",
+        "location": "downloads"
+      },
+      {
+        "name": "My Games",
+        "icon": "folder",
+        "detail": "Jeux enregistrés dans vos documents",
+        "location": "my-games"
+      },
+      {
+        "name": "a_faire.txt",
+        "icon": "document",
+        "detail": "Document texte",
+        "text": "Ranger les dossiers.\nChanger de pseudo.\nFinir une partie avant de dîner."
+      },
+      {
         "name": "devoir_final_v7_VRAIMENT_FINAL.txt",
         "icon": "document",
         "detail": "Penser à sauvegarder avant de tout fermer :)",
+        "deletable": true,
+        "size": 2100,
         "text": "Devoir pour lundi\n\n1. Faire le devoir.\n2. Ne pas passer la soirée sur MSN.\n3. Bon, juste cinq minutes alors."
       },
       {
         "name": "liens_trop_biens.txt",
         "icon": "document",
         "detail": "Les découvertes du mercredi après-midi",
+        "deletable": true,
+        "size": 1830,
         "text": "Des smileys, des jeux Flash et des fonds d'écran à paillettes.\n\nLa connexion 56k a demandé une pause café."
       }
     ],

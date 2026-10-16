@@ -21,6 +21,7 @@ import { ConversationThread } from '../src/story/conversation-thread.js';
 import { ConversationWindow } from '../src/ui/conversation.js';
 import { visibleContacts } from '../src/ui/contacts.js';
 import { renderSuperPlombierFlash } from '../src/browser/sites/flashzone/super-plombier-flash.js';
+import { installDevelopmentVictoryShortcut } from '../src/dev/finish-shortcut.js';
 
 const read = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8'));
 const story = read('../src/config/story.json');
@@ -56,6 +57,7 @@ function finishScene3(progression, choiceId) {
   session.choose(choice.id);
   while (!session.state.finished) {
     if (session.nextMessage()) session.deliver();
+    else if (session.choices.length) session.choose(session.choices[0].id);
     else if (!session.advance()) assert.equal(session.state.finished, true);
   }
   return session;
@@ -125,7 +127,11 @@ test('invitation is a saved Turbo conversation event with a clickable local Flas
   const link = invitation.nodes.invitation.messages.at(-1);
   assert.equal(link.type, 'link');
   assert.equal(link.url, GAME_URL);
-  assert.equal(localPages.resolve(link.url, {}).page.title, 'Super Plombier Flash — FlashZone');
+  assert.equal(localPages.resolve(link.url, {}).error, 'not-found');
+  assert.equal(
+    localPages.resolve(link.url, { flags: { superPlombierFlashUnlocked: true } }).page.title,
+    'Super Plombier Flash — FlashZone',
+  );
 
   const { progression } = fixture();
   const events = [scene3, invitation];
@@ -143,6 +149,54 @@ test('invitation is a saved Turbo conversation event with a clickable local Flas
   assert.equal(savedLink.type, 'link');
   assert.equal(savedLink.url, GAME_URL);
   assert.equal(thread.state.history.at(-1).url, GAME_URL);
+});
+
+test('Turb0 third friends response asks about PixelGirl without changing the other branches', () => {
+  const turbo = definitions['turbo-super-plombier'];
+  const friends = turbo.nodes.friends;
+  assert.deepEqual(friends.choices.map(({ text }) => text), [
+    'vous vous connaissez depuis longtemps ?',
+    'elle est marrante en vrai',
+    'pixelgirl elle est toujours comme ça ?',
+  ]);
+  assert.deepEqual(
+    turbo.nodes['luna-reply'].messages.map(({ text }) => text),
+    ['TOUJOURS ptdrrr', 'même quand elle dort jcrois xD'],
+  );
+  assert.equal(turbo.nodes['friends-forum-reply'].messages[0].text, 'ouais on s\'est connus sur un forum');
+  assert.equal(turbo.nodes['pixelgirl-funny-reply'].messages[0].text, 'ouais grave');
+});
+
+test('French dialogue characters survive JSON save and reload', () => {
+  const { progression, storage } = fixture();
+  const turbo = definitions['turbo-super-plombier'];
+  progression.data.dialogues[turbo.id] = {
+    revision: turbo.revision,
+    node: 'friends',
+    cursor: turbo.nodes.friends.messages.length,
+    transcript: [],
+    finished: false,
+  };
+  const session = new DialogueSession(turbo, progression);
+  session.choose('luna-personality');
+  while (session.nextMessage()) session.deliver();
+  assert.deepEqual(
+    session.state.transcript.map((message) => message.text),
+    [
+      'pixelgirl elle est toujours comme ça ?',
+      'TOUJOURS ptdrrr',
+      'même quand elle dort jcrois xD',
+    ],
+  );
+  const restored = new Progression(story, storage);
+  assert.deepEqual(
+    restored.data.dialogues[turbo.id].transcript.map((message) => message.text),
+    [
+      'pixelgirl elle est toujours comme ça ?',
+      'TOUJOURS ptdrrr',
+      'même quand elle dort jcrois xD',
+    ],
+  );
 });
 
 test('Messenger renders the invitation URL as an action routed to the browser', (t) => {
@@ -183,12 +237,15 @@ test('Messenger renders the invitation URL as an action routed to the browser', 
   assert.equal(opened, GAME_URL);
 });
 
-test('FlashZone lists the new game and the fixed route resolves after narrative completion', () => {
+test('Super Plombier Flash remains hidden and inaccessible until Turb0 sends its link', () => {
   assert.ok(game);
   assert.equal(game.title, 'Super Plombier Flash');
   assert.equal(game.category, 'Plateforme');
-  assert.equal(localPages.resolve(GAME_URL, {}).page.preserveOnTabSwitch, true);
-  assert.ok(localPages.search('super plombier flash', {}).some((page) => page.url === GAME_URL));
+  assert.equal(localPages.resolve(GAME_URL, {}).error, 'not-found');
+  assert.ok(!localPages.search('super plombier flash', {}).some((page) => page.url === GAME_URL));
+  const unlocked = { flags: { superPlombierFlashUnlocked: true } };
+  assert.equal(localPages.resolve(GAME_URL, unlocked).page.preserveOnTabSwitch, true);
+  assert.ok(localPages.search('super plombier flash', unlocked).some((page) => page.url === GAME_URL));
 });
 
 test('fixed level geometry makes Turb0’s 12.43-second record physically unreachable', () => {
@@ -292,6 +349,23 @@ test('FlashZone game starts from its button, captures movement keys and removes 
     document: globalThis.document,
     requestAnimationFrame: globalThis.requestAnimationFrame,
     cancelAnimationFrame: globalThis.cancelAnimationFrame,
+    Audio: globalThis.Audio,
+  };
+  const audioInstances = [];
+  globalThis.Audio = class {
+    constructor(url) {
+      this.src = url;
+      this.currentTime = 5;
+      this.loop = false;
+      this.volume = 1;
+      this.playCount = 0;
+      this.pauseCount = 0;
+      audioInstances.push(this);
+    }
+    play() { this.playCount++; return Promise.resolve(); }
+    pause() { this.pauseCount++; }
+    removeAttribute(name) { this.removedAttribute = name; }
+    load() { this.loaded = true; }
   };
   const frames = new Map();
   const documentListeners = new Map();
@@ -341,10 +415,19 @@ test('FlashZone game starts from its button, captures movement keys and removes 
     globalThis.document = previous.document;
     globalThis.requestAnimationFrame = previous.requestAnimationFrame;
     globalThis.cancelAnimationFrame = previous.cancelAnimationFrame;
+    if (previous.Audio === undefined) delete globalThis.Audio;
+    else globalThis.Audio = previous.Audio;
   });
   const { progression } = fixture();
+  let narrativeVictories = 0;
+  let resume;
   const root = renderSuperPlombierFlash(
-    { progression, onDispose: (fn) => (cleanup = fn) },
+    {
+      progression,
+      onDispose: (fn) => (cleanup = fn),
+      onResume: (callback) => (resume = callback),
+      onVictory: () => narrativeVictories++,
+    },
     game,
   );
   const walk = (entry) => [entry, ...entry.children.flatMap(walk)];
@@ -354,9 +437,20 @@ test('FlashZone game starts from its button, captures movement keys and removes 
   const play = nodes.find((entry) => entry.className === 'plumber-play');
   const canvas = nodes.find((entry) => entry.className === 'plumber-canvas');
   play.handlers.click();
+  assert.equal(audioInstances.length, 1);
+  const music = audioInstances[0];
+  assert.match(music.src, /moodmode-retro-game-arcade-236133\.mp3$/);
+  assert.equal(music.loop, true);
+  assert.equal(music.volume, 0.35);
+  assert.equal(music.playCount, 1);
   assert.equal(progression.data.flags.superPlombierFirstAttempt, true);
+  assert.equal(root.running, true);
   assert.equal(activeElement, canvas);
   assert.equal(frames.size, 1);
+  cleanup('pause');
+  assert.equal(music.pauseCount, 1);
+  resume();
+  assert.equal(music.playCount, 2);
   assert.ok(fillColors.includes('#c72c2c'), 'player outfit is red');
   assert.ok(fillColors.includes('#2766c5'), 'player outfit keeps a blue detail');
   let prevented = false;
@@ -369,7 +463,40 @@ test('FlashZone game starts from its button, captures movement keys and removes 
   });
   assert.equal(prevented, true);
   assert.equal(canvas.handlers.keydown !== undefined, true);
+  let keydown;
+  const removeShortcut = installDevelopmentVictoryShortcut(
+    { addEventListener: (_type, callback) => (keydown = callback), removeEventListener() {} },
+    () => (root.running ? root : null),
+  );
+  let preventedShortcut = 0;
+  const developerFinish = {
+    key: 'D',
+    ctrlKey: true,
+    shiftKey: true,
+    preventDefault() { preventedShortcut++; },
+  };
+  keydown(developerFinish);
+  assert.equal(root.finished, true);
+  assert.equal(root.running, false);
+  assert.equal(music.currentTime, 0);
+  assert.equal(music.pauseCount, 2);
+  assert.equal(nodes.find((entry) => entry.className === 'plumber-result').hidden, false);
+  assert.equal(nodes.find((entry) => entry.tag === 'strong' && entry.textContent.includes('Victoire développeur')).textContent,
+    'Victoire développeur — temps non enregistré');
+  assert.equal(progression.data.flags.superPlombierFirstCompletion, true);
+  assert.deepEqual(progression.data.results, {});
+  assert.equal(narrativeVictories, 1);
+  keydown(developerFinish);
+  assert.equal(narrativeVictories, 1);
+  assert.equal(preventedShortcut, 1);
+  removeShortcut();
+  play.handlers.click();
+  assert.equal(audioInstances.length, 1);
+  assert.equal(music.currentTime, 0);
+  assert.equal(music.playCount, 3);
   cleanup();
+  assert.equal(music.removedAttribute, 'src');
+  assert.equal(music.loaded, true);
   assert.equal(frames.size, 0);
   assert.equal(documentListeners.size, 0);
   assert.equal(canvas.handlers.keydown, undefined);
