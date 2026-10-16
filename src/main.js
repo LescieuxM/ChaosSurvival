@@ -246,6 +246,8 @@ const miniGameLauncher = new MiniGameLauncher(
     if (progression.current?.type === 'conversation')
       activeDialogue = dialogues[progression.current.dialogue];
   },
+  undefined,
+  (file) => virtualFilesystem.exists(virtualFileId('downloads', file.name)),
 );
 const dialogueEvents = new DialogueEvents(
   progression,

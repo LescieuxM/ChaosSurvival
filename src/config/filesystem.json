@@ -245,7 +245,7 @@
     "description": "C:\\Documents and Settings\\Joueur\\Mes documents\\Mes images",
     "items": [
       {
-        "name": "fond_arcade.jpg",
+        "name": "arcade.jpg",
         "icon": "document",
         "detail": "Image · arcade 8-bit",
         "image": "./covers/best-game-console.svg"

@@ -156,6 +156,54 @@ test('all text and JPG files plus named exceptions are deletable except fond-ecr
   assert.equal(files.canDelete(unauthorized.fileId), false);
 });
 
+test('the received game exists only after transfer, deletes permanently, and a new game resets it', () => {
+  const disk = memory();
+  const progression = new Progression(story, disk);
+  const filesystem = new VirtualFilesystem(progression);
+  const game = {
+    id: 'super-mega-game',
+    name: 'SUPER_MEGA_GAME.exe',
+    description: 'SMILEY CATCHER 2009',
+    launch: { game: 'smiley-catcher' },
+  };
+  const fileId = virtualFileId('downloads', game.name);
+
+  const pending = progression.receiveFile(game, 'pixelgirl-intro', 'offer');
+  assert.equal(filesystem.exists(fileId), false, 'an unfinished transfer is not a file');
+  progression.finishTransfer(pending.key);
+  assert.equal(filesystem.getFile(fileId).receivedFile, true);
+  assert.equal(filesystem.getLocation('my-games').items.some((item) => item.name === game.name), false);
+  assert.equal(filesystem.deleteFile(fileId).ok, true);
+  assert.equal(filesystem.exists(fileId), false);
+
+  const restored = new VirtualFilesystem(new Progression(story, disk));
+  assert.equal(restored.exists(fileId), false, 'deletion survives a reload');
+  assert.deepEqual(restored.getLocation('bin').items, []);
+  const repeated = restored.progression.receiveFile(game, 'pixelgirl-intro', 'offer-replayed', 'receive', 1);
+  restored.progression.finishTransfer(repeated.key);
+  assert.equal(new VirtualFilesystem(restored.progression).exists(fileId), false,
+    'a later completed transfer cannot restore the deleted path in this run');
+
+  restored.progression.newGame();
+  const fresh = new VirtualFilesystem(restored.progression);
+  assert.equal(fresh.exists(fileId), false, 'a new run waits for its narrative transfer');
+  const nextTransfer = restored.progression.receiveFile(game, 'pixelgirl-intro', 'offer');
+  restored.progression.finishTransfer(nextTransfer.key);
+  assert.equal(new VirtualFilesystem(restored.progression).exists(fileId), true);
+});
+
+test('the arcade image uses its renamed virtual filename without changing its visual asset', () => {
+  const config = JSON.parse(readFileSync(new URL('../src/config/filesystem.json', import.meta.url)));
+  const images = config.images.items;
+  assert.equal(images.some((item) => item.name === 'fond_arcade.jpg'), false);
+  const arcade = images.find((item) => item.name === 'arcade.jpg');
+  assert.ok(arcade);
+  assert.equal(arcade.image, './covers/best-game-console.svg');
+  const files = new VirtualFilesystem(new Progression(story, memory()));
+  assert.equal(files.canDelete(virtualFileId('images', 'arcade.jpg')), true);
+  assert.equal(files.canDelete(virtualFileId('images', 'fond_bureau.jpg')), false);
+});
+
 test('legacy and malformed filesystem save data normalize without hiding unrelated files', () => {
   const disk = memory();
   const original = new Progression(story).data;

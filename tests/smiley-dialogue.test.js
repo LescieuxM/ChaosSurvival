@@ -11,6 +11,7 @@ import { ConversationWindow } from '../src/ui/conversation.js';
 import { visibleContacts } from '../src/ui/contacts.js';
 import { MiniGameLauncher } from '../src/ui/minigame-launcher.js';
 import { registerMiniGame } from '../src/ui/minigame-registry.js';
+import { VirtualFilesystem, virtualFileId } from '../src/story/virtual-filesystem.js';
 
 const read = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8'));
 const story = read('../src/config/story.json');
@@ -108,6 +109,43 @@ test('Smiley completion unlocks the next event once; defeats and abandoned games
     ['AAAAAA', 'ALOOOOORS ???', "t'as survécu à l'attaque des smileys ????"],
   );
   assert.equal(reactions.thread.availableResponses[0].choices.length, 3);
+});
+
+test('deleting the received game blocks new launches but an already open run can still win', () => {
+  const { progression } = setup();
+  const filesystem = new VirtualFilesystem(progression);
+  const file = Object.values(progression.data.files).find(
+    (item) => item.launch?.game === 'smiley-catcher',
+  );
+  let completeRun;
+  registerMiniGame('story-file-guard-test', (definition, manager, sounds, onComplete) => {
+    completeRun = onComplete;
+    return { definition, element: { isConnected: true }, open() {} };
+  });
+  let victories = 0;
+  const launcher = new MiniGameLauncher(
+    { 'smiley-catcher': { id: 'smiley-catcher', engine: 'story-file-guard-test' } },
+    progression,
+    {},
+    { unlock() {} },
+    undefined,
+    undefined,
+    () => victories++,
+    undefined,
+    (candidate) => filesystem.exists(virtualFileId('downloads', candidate.name)),
+  );
+
+  const activeGame = launcher.open(file);
+  assert.ok(activeGame);
+  assert.equal(filesystem.deleteFile(virtualFileId('downloads', file.name)).ok, true);
+  assert.equal(launcher.open(file), null, 'deleted file cannot start or reopen a game');
+  assert.equal(activeGame.element.isConnected, true, 'deleting its file does not close a running game');
+  completeRun({ score: 42 });
+  assert.equal(progression.data.completed.includes('super-mega-game'), true);
+  assert.equal(progression.data.results['super-mega-game'].score, 42);
+  assert.equal(progression.current.id, 'pixelgirl-smiley-win');
+  assert.equal(victories, 1);
+  assert.equal(filesystem.exists(virtualFileId('downloads', file.name)), false);
 });
 
 test('Turb0 scene 3 keeps its three opening branches and resumes its shared dialogue after reload', () => {

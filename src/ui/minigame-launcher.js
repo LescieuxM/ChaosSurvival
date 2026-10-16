@@ -11,6 +11,7 @@ export class MiniGameLauncher {
     rules,
     onVictory = () => {},
     onFinish = () => {},
+    canOpenFile = () => true,
   ) {
     Object.assign(this, {
       definitions,
@@ -21,11 +22,12 @@ export class MiniGameLauncher {
       rules,
       onVictory,
       onFinish,
+      canOpenFile,
     });
     this.active = null;
   }
   open(file) {
-    if (!file.launch) return null;
+    if (!file.launch || !this.canOpenFile(file)) return null;
     const unlocked = Object.values(this.progression.data.files).some(
       (saved) =>
         saved.id === file.id &&
