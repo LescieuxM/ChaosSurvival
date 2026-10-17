@@ -197,12 +197,15 @@ test('the received game exists only after transfer, deletes permanently, and a n
 test('BombArena.exe is the executable shortcut, window title and taskbar label without changing its app ID', () => {
   let spawnOptions;
   let attached;
+  let spawnCount = 0;
   const manager = {
     windows: new Map(),
     spawn(type, options) {
+      spawnCount++;
+      assert.equal(type, 'desktopapp');
       spawnOptions = { type, ...options };
-      this.windows.set(1, { element: { isConnected: true } });
-      return 1;
+      this.windows.set(spawnCount, { element: { isConnected: true } });
+      return spawnCount;
     },
   };
   const app = Object.create(DesktopApplications.prototype);
@@ -216,11 +219,18 @@ test('BombArena.exe is the executable shortcut, window title and taskbar label w
       return instance;
     },
     restore() {},
+    onWindowState() {},
   });
 
   const instance = app.openBombArena({}, 'bomb-arena-folder/bombarena.exe');
 
   assert.equal(spawnOptions.content.title, 'BombArena.exe');
+  assert.equal(spawnOptions.resizable, true);
+  assert.equal(spawnOptions.maximizable, true);
+  assert.equal(spawnOptions.minWidth, 320);
+  assert.equal(spawnOptions.minHeight, 240);
+  assert.equal(spawnOptions.x, 0.3);
+  assert.equal(spawnOptions.y, 0.2);
   assert.match(spawnOptions.content.body, /<strong>BombArena\.exe<\/strong>/);
   assert.deepEqual(attached, {
     key: 'virtual-app:bomb-arena',
@@ -230,6 +240,22 @@ test('BombArena.exe is the executable shortcut, window title and taskbar label w
   });
   assert.equal(instance.fileId, 'bomb-arena-folder/bombarena.exe');
   assert.equal(app.instances.size, 1);
+  assert.equal(app.openBombArena({}, 'bomb-arena-folder/bombarena.exe'), instance);
+  assert.equal(spawnCount, 1, 'reopening a live window does not create a duplicate');
+  instance.element.isConnected = false;
+  spawnOptions.onDismiss();
+  const reopened = app.openBombArena({}, 'bomb-arena-folder/bombarena.exe');
+  assert.notEqual(reopened, instance);
+  assert.equal(spawnCount, 2, 'a closed window can be opened again');
+});
+
+test('BombArena placeholder scrolls inside its managed minimum window', () => {
+  const css = readFileSync(new URL('../src/styles-story.css', import.meta.url), 'utf8');
+  const placeholder =
+    [...css.matchAll(/\.bomb-arena-placeholder\s*\{([^}]+)\}/g)].at(-1)?.[1] ?? '';
+  assert.match(placeholder, /min-width:\s*0/);
+  assert.match(placeholder, /min-height:\s*0/);
+  assert.match(placeholder, /overflow:\s*auto/);
 });
 
 test('the arcade image uses its renamed virtual filename without changing its visual asset', () => {

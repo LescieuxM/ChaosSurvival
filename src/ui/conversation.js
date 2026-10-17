@@ -106,6 +106,10 @@ export class ConversationWindow {
     this.session = this.offlineContact ? null : this.sessionFor(this.dialogue);
     const id = this.manager.spawn('narrative', {
       preview: true,
+      resizable: true,
+      maximizable: true,
+      minWidth: 480,
+      minHeight: 400,
       x: 0.35,
       y: 0.15,
       content: {
@@ -182,7 +186,10 @@ export class ConversationWindow {
       });
       this.element
         .querySelector('.titlebar')
-        .insertBefore(minimize, this.element.querySelector('.close-button'));
+        .insertBefore(
+          minimize,
+          this.element.querySelector('.maximize-button') ?? this.element.querySelector('.close-button'),
+        );
     }
     this.element.querySelector('.window-title > span').textContent =
       `${this.dialogue.contact.nickname} — Conversation`;

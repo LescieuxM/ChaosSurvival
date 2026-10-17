@@ -79,6 +79,10 @@ export class DesktopApplications {
     }
     const id = this.manager.spawn('desktopapp', {
       preview: true,
+      resizable: true,
+      maximizable: true,
+      minWidth: 520,
+      minHeight: 330,
       x: 0.25,
       y: 0.12,
       content: {
@@ -141,7 +145,10 @@ export class DesktopApplications {
     });
     element
       .querySelector('.titlebar')
-      .insertBefore(minimize, element.querySelector('.close-button'));
+      .insertBefore(
+        minimize,
+        element.querySelector('.maximize-button') ?? element.querySelector('.close-button'),
+      );
     task.addEventListener('click', () => this.restore(instance));
     return instance;
   }
@@ -165,8 +172,15 @@ export class DesktopApplications {
         ? item.name
         : `${item.name} — ${viewer === 'notepad' ? 'Bloc-notes' : 'Visionneuse d’images'}`;
     const iconName = viewer === 'image' ? 'picture' : 'document';
+    const windowOptions =
+      viewer === 'notepad'
+        ? { resizable: true, maximizable: true, minWidth: 360, minHeight: 260 }
+        : viewer === 'image'
+          ? { resizable: true, maximizable: true, minWidth: 320, minHeight: 240 }
+          : {};
     const id = this.manager.spawn('desktopapp', {
       preview: true,
+      ...windowOptions,
       content: {
         title: 'Document',
         iconName,
@@ -175,7 +189,7 @@ export class DesktopApplications {
             ? '<div class="generic-file-content"><pre></pre><p class="generic-file-unavailable" hidden>Windows ne peut pas ouvrir ce fichier. Aucun contenu ni visualiseur spécifique n’est défini pour ce fichier fictif.</p></div><div class="window-status">Windows XD · Lecture seule</div>'
             : viewer === 'notepad'
               ? '<div class="msn-menu notepad-menu"></div><textarea class="notepad-content" aria-label="Contenu du fichier texte" spellcheck="false"></textarea><div class="window-status" role="status"></div><section class="notepad-confirm" role="dialog" aria-label="Bloc-notes : enregistrer les modifications" aria-modal="true" hidden><strong>Bloc-notes Windows XD</strong><p></p><div><button class="xp-button" data-answer="yes">Oui</button><button class="xp-button" data-answer="no">Non</button><button class="xp-button" data-answer="cancel">Annuler</button></div></section>'
-              : '<div class="explorer-menu file-menu">Fichier <span>Affichage</span><span>Image</span><span>Aide</span></div><div class="picture-stage"><img class="picture-content" alt="" /><p class="picture-error" hidden>Aperçu non disponible pour cette image.</p></div><div class="picture-toolbar">▧ Ajuster à la fenêtre</div><div class="window-status">Visionneuse d’images Windows XD</div>',
+              : '<div class="explorer-menu file-menu">Fichier <span>Affichage</span><span>Image</span><span>Aide</span></div><div class="picture-stage"><img class="picture-content" alt="" /><p class="picture-error" hidden>Aperçu non disponible pour cette image.</p></div><div class="window-status">Visionneuse d’images Windows XD</div>',
       },
       onDismiss: () => {
         instance.disposeEditor?.();
@@ -495,6 +509,10 @@ export class DesktopApplications {
     }
     const id = this.manager.spawn('desktopapp', {
       preview: true,
+      resizable: true,
+      maximizable: true,
+      minWidth: 320,
+      minHeight: 240,
       x: 0.3,
       y: 0.2,
       content: {

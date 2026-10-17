@@ -421,9 +421,17 @@ test('text and picture viewers have independent windows and task controls withou
   };
   const app = new DesktopApplications(manager, create());
   const explorer = app.open('folder');
+  assert.equal(manager.calls[0].resizable, true);
+  assert.equal(manager.calls[0].maximizable, true);
+  assert.equal(manager.calls[0].minWidth, 520);
+  assert.equal(manager.calls[0].minHeight, 330);
   const location = explorer.current;
   const txt = location.items.find((item) => item.name.endsWith('.txt'));
   const notepad = app.openFile(location, txt);
+  assert.equal(manager.calls[1].resizable, true);
+  assert.equal(manager.calls[1].maximizable, true);
+  assert.equal(manager.calls[1].minWidth, 360);
+  assert.equal(manager.calls[1].minHeight, 260);
   assert.equal(explorer.current, location);
   assert.equal(explorer.element.isConnected, true);
   assert.equal(notepad.element.querySelector('.notepad-content').value, txt.text);
@@ -438,8 +446,16 @@ test('text and picture viewers have independent windows and task controls withou
   assert.equal(app.openFile(location, txt), notepad);
   const images = explorerLocation('images');
   const picture = app.openFile(images, images.items[0]);
+  assert.equal(manager.calls[3].resizable, true);
+  assert.equal(manager.calls[3].maximizable, true);
+  assert.equal(manager.calls[3].minWidth, 320);
+  assert.equal(manager.calls[3].minHeight, 240);
   assert.equal(picture.element.querySelector('.picture-content').src, images.items[0].image);
+  assert.doesNotMatch(manager.calls[3].content.body, /Ajuster à la fenêtre|picture-toolbar/);
   assert.equal(manager.windows.size, 3);
+  app.openFile(location, { name: 'readme.bin', text: 'Fichier texte générique' });
+  assert.equal(manager.calls[4].resizable, undefined, 'generic files keep their existing behavior');
+  assert.equal(manager.calls[4].maximizable, undefined);
   notepad.element.querySelector('.titlebar').children[0].handlers.click();
   assert.equal(notepad.element.hidden, true);
   const previousZ = manager.z;
@@ -540,6 +556,25 @@ test('text and picture viewers have independent windows and task controls withou
   app.closeOpenFile(deletableText.fileId);
   assert.equal(openNote.element.isConnected, false, 'deleting an open note closes it without saving');
   assert.equal(app.textFiles.read(deletableText.fileId, deletableText.text).text, deletableText.text);
+});
+
+test('resizable document CSS keeps text scrollable and images naturally sized and contained', () => {
+  const css = readFileSync(new URL('../src/styles-story.css', import.meta.url), 'utf8');
+  const list = css.match(/\.messenger-contact-list\s*\{([^}]+)\}/)?.[1] ?? '';
+  const editor = css.match(/\.notepad-content\s*\{([^}]+)\}/)?.[1] ?? '';
+  const image = css.match(/\.picture-content\s*\{([^}]+)\}/)?.[1] ?? '';
+
+  assert.match(list, /flex:\s*1/);
+  assert.match(list, /min-height:\s*0/);
+  assert.match(list, /overflow:\s*auto/);
+  assert.match(editor, /flex:\s*1/);
+  assert.match(editor, /overflow:\s*auto/);
+  assert.match(editor, /font:\s*13px/);
+  assert.match(image, /width:\s*auto/);
+  assert.match(image, /height:\s*auto/);
+  assert.match(image, /max-width:\s*100%/);
+  assert.match(image, /max-height:\s*100%/);
+  assert.match(image, /object-fit:\s*contain/);
 });
 
 test('every JPG has a bundled illustration and viewers reject host paths and remote images', () => {
@@ -850,6 +885,37 @@ test('Messenger keeps one independent window per contact including future contac
     'offline:skater',
     'open:future',
   ]);
+});
+
+test('only the main Messenger contacts panel opts into resize and maximize', () => {
+  const calls = [];
+  const manager = {
+    spawn(type, options) {
+      calls.push({ type, options });
+      return calls.length;
+    },
+  };
+  const applications = {
+    instances: new Map(),
+    attachWindow(kind, id) {
+      return {
+        id,
+        kind,
+        element: { classList: { add() {} }, dataset: {} },
+        task: { remove() {} },
+      };
+    },
+  };
+  const messenger = new Messenger({ manager, applications, onWindowState() {} });
+  messenger.panel('contacts', 'Windows Love Messenger', '<div></div>');
+  messenger.panel('options', 'Options', '<div></div>');
+
+  assert.equal(calls[0].options.resizable, true);
+  assert.equal(calls[0].options.maximizable, true);
+  assert.equal(calls[0].options.minWidth, 300);
+  assert.equal(calls[0].options.minHeight, 320);
+  assert.equal(calls[1].options.resizable, undefined);
+  assert.equal(calls[1].options.maximizable, undefined);
 });
 
 test('incoming conversations reuse one minimized window and respect saved explicit closes', () => {
@@ -1343,6 +1409,11 @@ test('offline contacts reuse the conversation window, remain empty and preserve 
   const original = JSON.stringify(progression.data);
   const contact = read('../src/config/contacts.json')[0];
   view.openOffline(contact);
+  const conversationOptions = manager.windows.get(Number(view.element.dataset.windowId)).options;
+  assert.equal(conversationOptions.resizable, true);
+  assert.equal(conversationOptions.maximizable, true);
+  assert.equal(conversationOptions.minWidth, 480);
+  assert.equal(conversationOptions.minHeight, 400);
   assert.equal(view.element.querySelector('.contact-name').textContent, contact.nickname);
   assert.ok(view.element.querySelector('.contact-status').textContent.startsWith('Hors ligne'));
   assert.equal(view.log.children.length, 0);

@@ -232,6 +232,9 @@ export class Messenger {
     let instance;
     const id = this.manager.spawn('narrative', {
       preview: true,
+      ...(key === 'contacts'
+        ? { resizable: true, maximizable: true, minWidth: 300, minHeight: 320 }
+        : {}),
       content: { title, iconName: 'msn', body },
       onDismiss: () => {
         instance.element.disposeMenu?.();

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { hoplaHotelData, hoplaHotelRooms } from '../src/browser/sites/hopla-hotel/index.js';
 import conversations from '../src/browser/sites/hopla-hotel/conversations.json' with { type: 'json' };
 import {
@@ -330,6 +331,26 @@ function dom(t) {
 }
 const walkTree = (node) => [node, ...node.children.flatMap(walkTree)];
 
+test('Hopla Hotel welcome panel fills the host window and keeps compact content centered', () => {
+  const css = readFileSync(
+    new URL('../src/browser/sites/hopla-hotel/styles.css', import.meta.url),
+    'utf8',
+  );
+  const home = css.match(/\.hopla-hotel:not\(\.hotel-room\)\s*\{([^}]+)\}/)?.[1] ?? '';
+  const banner =
+    css.match(/\.hopla-hotel:not\(\.hotel-room\)\s*>\s*\.hotel-banner\s*\{([^}]+)\}/)?.[1] ?? '';
+  const content =
+    css.match(/\.hopla-hotel:not\(\.hotel-room\)\s*>\s*\.hotel-banner\s*>\s*\*\s*\{([^}]+)\}/)?.[1] ?? '';
+  assert.match(home, /display:\s*flex/);
+  assert.match(home, /height:\s*100%/);
+  assert.match(banner, /flex:\s*1 1 auto/);
+  assert.match(banner, /justify-content:\s*center/);
+  assert.match(banner, /align-items:\s*center/);
+  assert.match(banner, /overflow:\s*auto/);
+  assert.match(content, /flex-shrink:\s*0/);
+  assert.match(content, /max-width:\s*100%/);
+});
+
 test('site and room routes only request the desktop client and never mount it in the browser', (t) => {
   dom(t);
   let launches = 0;
@@ -414,9 +435,19 @@ test('Hopla Hotel is a singleton with the canonical app ID and cleans up on clos
   const first = client.open();
   assert.ok(applications.instances.has('hopla-hotel'));
   assert.equal(applications.instances.size, 1);
+  const windowOptions = manager.windows.get(first.id).options;
+  assert.equal(windowOptions.resizable, true);
+  assert.equal(windowOptions.maximizable, true);
+  assert.equal(windowOptions.minWidth, 320);
+  assert.equal(windowOptions.minHeight, 220);
   assert.equal(first.element.style.width, '940px');
   assert.equal(first.element.style.height, '658px');
   assert.equal(first.element.style.top, '-99px');
+  const windowCss = readFileSync(
+    new URL('../src/browser/sites/hopla-hotel/styles.css', import.meta.url),
+    'utf8',
+  );
+  assert.doesNotMatch(windowCss.match(/\.desktop \.popup\.hopla-hotel-client\s*\{([^}]+)\}/)?.[1] ?? '', /resize\s*:/);
   assert.equal(audioInstances.length, 0, 'ordinary Hopla Hotel rooms stay silent');
   client.showRoom(hoplaHotelRooms.find((entry) => entry.id === 'cafe'));
   assert.equal(audioInstances.length, 0);
