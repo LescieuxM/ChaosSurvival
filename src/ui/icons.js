@@ -16,6 +16,8 @@ const paths = {
   disc: '<circle cx="24" cy="24" r="20" fill="#d0def4" stroke="#7189a3" stroke-width="2"/><path d="m24 5 6 14 12-5M7 31l12-4 5 16" fill="#b3efd5"/><circle cx="24" cy="24" r="6" fill="#fff" stroke="#7189a3"/><path d="M11 14a17 17 0 0 1 9-6" fill="none" stroke="#fff" stroke-width="3"/>',
   document:
     '<path d="M10 4h22l8 8v32H10z" fill="#fbfeff" stroke="#69849a" stroke-width="2"/><path d="M32 4v10h8M16 21h18M16 27h18M16 33h12" fill="none" stroke="#82a3c1" stroke-width="2"/>',
+  archive:
+    '<path d="M6 10h36v8H6z" fill="#d7b94d" stroke="#826b24" stroke-width="2"/><path d="M9 18h30v26H9z" fill="#e9e5cf" stroke="#77715f" stroke-width="2"/><path d="M20 18h8v5h-8zm0 8h8v5h-8zm0 8h8v5h-8z" fill="#c8b45f" stroke="#82753c"/>',
   computer:
     '<rect x="5" y="3" width="36" height="27" rx="3" fill="#dce5eb" stroke="#536774" stroke-width="2"/><path d="M10 8h26v16H10z" fill="#0e7bcc"/><path d="m13 21 7-9 7 6 6-7v10" fill="#6ce5fc"/><path d="M20 31h8v5h-8z" fill="#919ca7"/><path d="M10 37h28l5 7H5z" fill="#e7e6dc" stroke="#69757c"/>',
   folder:

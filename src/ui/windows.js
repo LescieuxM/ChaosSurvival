@@ -68,6 +68,18 @@ export class WindowManager {
     item.onDismiss?.({ reason: 'close' });
     this.onClose({ preview: item.preview, openedAt: item.openedAt, x, y });
   }
+  activeWindow() {
+    let active = null;
+    for (const item of this.windows.values()) {
+      if (!item.element.isConnected || item.element.hidden) continue;
+      if (!active || Number(item.element.style.zIndex) > Number(active.style.zIndex))
+        active = item.element;
+    }
+    return active;
+  }
+  isActive(element) {
+    return Boolean(element?.isConnected && !element.hidden && this.activeWindow() === element);
+  }
   clear() {
     for (const { element, onDismiss } of this.windows.values()) {
       element.remove();

@@ -92,6 +92,12 @@ function normalizeSaved(saved, story) {
       !['pending', 'declined', 'complete'].includes(file.status) ||
       (file.launch != null && (!record(file.launch) || typeof file.launch.game !== 'string'))
     ) delete saved.files[key];
+    else if (file.extractable === 'bomb-arena') {
+      file.transferState ??= ({ pending: 'proposed', declined: 'declined', complete: 'complete' })[file.status];
+      if (!['proposed', 'accepted', 'declined', 'in-progress', 'complete'].includes(file.transferState))
+        file.transferState = ({ pending: 'proposed', declined: 'declined', complete: 'complete' })[file.status];
+      if (!Number.isFinite(file.transferStartedAt)) delete file.transferStartedAt;
+    }
   if (record(saved.desktopIcons))
     for (const file of Object.values(saved.files)) {
       if (
@@ -313,7 +319,15 @@ export class Progression {
   receiveFile(file, dialogue, node, direction = 'receive', offer = 0) {
     const key = `${dialogue}:${node}:${direction}:${file.id}:${offer}`;
     if (Object.hasOwn(this.data.files, key)) return this.data.files[key];
-    const item = { ...structuredClone(file), key, dialogue, node, direction, status: 'pending' };
+    const item = {
+      ...structuredClone(file),
+      key,
+      dialogue,
+      node,
+      direction,
+      status: 'pending',
+      ...(file.extractable === 'bomb-arena' ? { transferState: 'proposed' } : {}),
+    };
     this.data.files[key] = item;
     this.save();
     return item;
@@ -322,7 +336,26 @@ export class Progression {
     const file = this.data.files[key];
     if (!file) throw new Error('Transfert inconnu.');
     file.status = 'complete';
+    if (file.extractable === 'bomb-arena') file.transferState = 'complete';
     this.save();
     return file;
+  }
+  acceptTransfer(key) {
+    const file = this.data.files[key];
+    if (!file || file.status !== 'pending' || (file.extractable === 'bomb-arena' && file.transferState !== 'proposed')) return false;
+    if (file.extractable !== 'bomb-arena') return true;
+    file.transferState = 'accepted';
+    this.save();
+    return true;
+  }
+  startTransfer(key, now = Date.now()) {
+    const file = this.data.files[key];
+    if (!file || file.status !== 'pending') return false;
+    if (file.extractable !== 'bomb-arena') return true;
+    if (!['accepted', 'in-progress'].includes(file.transferState)) return false;
+    file.transferState = 'in-progress';
+    file.transferStartedAt ??= now;
+    this.save();
+    return true;
   }
 }

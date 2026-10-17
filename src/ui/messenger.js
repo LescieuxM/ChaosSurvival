@@ -5,6 +5,29 @@ import { applicationName } from './identity.js';
 import { playerIdentity } from './player-identity.js';
 import { createContactAvatar } from './contact-avatar.js';
 
+const GROUP_MESSAGE_AUTHORS = Object.freeze({
+  xX_PixelGirl_Xx: { id: 'pixelgirl', name: 'PixelGirl' },
+  Turb0: { id: 'turbo', name: 'Turb0' },
+  '°•.LuNa.°•': { id: 'luna', name: 'Luna' },
+  'Â°â€¢.LuNa.Â°â€¢': { id: 'luna', name: 'Luna' },
+});
+
+export function identifyMessageSender(contact, message) {
+  if (contact?.id === 'plumber-group') {
+    const author = message?.author;
+    const known = GROUP_MESSAGE_AUTHORS[author];
+    return { id: known?.id ?? author, name: known?.name ?? author };
+  }
+  return { id: contact?.id, name: contact?.nickname };
+}
+
+export function wizzNotificationContent(contact) {
+  return {
+    sender: contact?.name ?? contact?.nickname,
+    preview: 'vous a envoyé un wizz !',
+  };
+}
+
 export class Messenger {
   constructor({
     manager,
@@ -121,6 +144,19 @@ export class Messenger {
     if (!view.element?.isConnected) view.openMinimized?.();
     return view;
   }
+  receiveIncoming(contact, events = [], messages = [], view = null) {
+    if (!contact || (!events.length && !messages.length)) return null;
+    const target = view?.element?.isConnected ? view : this.ensureBackground(contact);
+    if (!target) return null;
+    const active = this.isConversationActive(target);
+    if (active) {
+      target.thread?.markRead?.();
+      this.onContactOpened(contact, target);
+    }
+    this.updateUnreadIndicator(target);
+    this.onMessage(contact, events, messages, target, { active, read: active });
+    return target;
+  }
   restoreUnreadConversations() {
     if (!this.progression?.data) return;
     for (const contact of this.contacts()) {
@@ -158,6 +194,11 @@ export class Messenger {
       instance.task.title = view.dialogue.contact.nickname;
       this.onContactOpened(contact ?? view.dialogue.contact, view);
     };
+    view.element.addEventListener('pointerdown', () => {
+      if (!this.isConversationActive(view)) return;
+      view.thread?.markRead?.();
+      this.onContactOpened(contact ?? view.dialogue.contact, view);
+    });
     this.installMenus(
       view.element,
       () => view.dialogue.contact,
@@ -288,7 +329,9 @@ export class Messenger {
       this.conversations.set(contactId, view);
     }
     const sender = speaker === 'player' ? this.player : contact;
-    if (!view.thread.appendWizz(speaker, sender.nickname, eventId, now)) return false;
+    const message = view.thread.appendWizz(speaker, sender.nickname, eventId, now);
+    if (!message) return false;
+    if (speaker === 'contact') view = this.ensureBackground(contact) ?? view;
     view.refresh();
     const element = view.element;
     if (element?.isConnected) {
@@ -297,7 +340,7 @@ export class Messenger {
       element.classList.add('messenger-wizz');
     }
     this.sounds.unlock().then(() => this.sounds.play('wizz'));
-    if (speaker === 'contact' && !this.isVisible(view)) this.onMessage(contact);
+    if (speaker === 'contact') this.receiveIncoming(contact, [], [message], view);
     return true;
   }
   receiveWizz(contactId, eventId) {
@@ -363,14 +406,26 @@ export class Messenger {
       ],
     ]);
   }
-  isVisible(view) {
+  isConversationActive(view) {
     if (!view.element?.isConnected || view.element.hidden) return false;
-    return ![...this.manager.windows.values()].some(
+    if (typeof this.manager?.isActive === 'function') return this.manager.isActive(view.element);
+    return ![...(this.manager?.windows?.values?.() ?? [])].some(
       ({ element }) =>
         element.isConnected &&
         !element.hidden &&
         Number(element.style.zIndex) > Number(view.element.style.zIndex),
     );
+  }
+  isVisible(view) {
+    return this.isConversationActive(view);
+  }
+  updateUnreadIndicator(view) {
+    const unread = view.thread?.state?.unread?.length ?? 0;
+    const task = view.messengerInstance?.task;
+    const active = this.isConversationActive(view);
+    task?.classList.toggle('messenger-unread', unread > 0 && !active);
+    if (task)
+      task.title = unread ? `${unread} message(s) non lu(s)` : view.dialogue.contact.nickname;
   }
   update() {
     this.restoreUnreadConversations();
@@ -381,25 +436,25 @@ export class Messenger {
       const contact = contacts.find((entry) => entry.id === instance.profileContactId);
       if (contact) this.renderProfile(instance, contact);
     }
+    for (const contact of contacts) {
+      if (contact.available && contact.kind !== 'decorative' && contact.id !== 'pixelgirl')
+        this.prepareContact(contact);
+    }
     for (const view of [this.primary(), ...this.conversations.values()]) {
       if (view !== this.primary() && !view.offlineContact) {
         const incoming = view.thread.receive();
-        if (incoming.length) {
-          this.sounds.unlock().then(() => this.sounds.play('message'));
-          if (!this.isVisible(view)) {
-            this.ensureBackground(view.dialogue.contact);
-            this.onMessage(view.dialogue.contact, incoming);
-          }
-        }
+        if (incoming.length)
+          this.receiveIncoming(
+            view.dialogue.contact,
+            incoming,
+            view.thread.lastIncomingMessages ?? [],
+            view,
+          );
       }
       view.refresh();
       if (view.offlineContact) continue;
-      if (this.isVisible(view) && view.followLatest) view.thread.markRead();
-      const task = view.messengerInstance?.task;
-      const unread = view.thread.state.unread.length;
-      task?.classList.toggle('messenger-unread', unread > 0 && !this.isVisible(view));
-      if (task)
-        task.title = unread ? `${unread} message(s) non lu(s)` : view.dialogue.contact.nickname;
+      if (this.isConversationActive(view)) view.thread.markRead();
+      this.updateUnreadIndicator(view);
     }
   }
 }

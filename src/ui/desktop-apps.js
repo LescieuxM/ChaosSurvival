@@ -150,6 +150,7 @@ export class DesktopApplications {
     if (!viewer) return;
     const fileId = item.fileId ?? virtualFileId(location.id, item.name);
     if (this.virtualFilesystem && !this.virtualFilesystem.exists(fileId)) return;
+    if (item.virtualApp === 'bomb-arena') return this.openBombArena(item, fileId);
     if (item.receivedFile && item.launch && this.onOpenReceived)
       return this.onOpenReceived(item);
     if (isArcadeExecutable(item) && this.onLaunchArcade) return this.onLaunchArcade();
@@ -319,6 +320,7 @@ export class DesktopApplications {
     menu.hidden = true;
     const actions = [
       ['open', 'Ouvrir'],
+      ['extract', 'Extraire avec WinRoar'],
       ['delete', 'Supprimer'],
       ['properties', 'Propriétés'],
     ];
@@ -377,6 +379,10 @@ export class DesktopApplications {
         menu.hidden = true;
         if (item.location) this.render(instance, explorerItem(instance.current, item));
         else this.openFile(instance.current, item);
+      } else if (action === 'extract' && instance.selectedItem) {
+        const item = instance.selectedItem;
+        menu.hidden = true;
+        this.extractWithWinRoar(item);
       } else if (action === 'delete' && instance.selectedItem) {
         this.askDelete(instance, instance.selectedItem);
       } else if (action === 'properties' && instance.selectedItem) {
@@ -398,9 +404,9 @@ export class DesktopApplications {
             : 'Windows XD : impossible d’enregistrer la suppression.';
         return;
       }
-      this.closeOpenFile(fileId);
+      for (const removedId of result.removedFileIds ?? [fileId]) this.closeOpenFile(removedId);
       this.refreshExplorers();
-      this.onFilesystemChange();
+      this.onFilesystemChange(result);
     });
     closeProperties.addEventListener('click', () => {
       properties.hidden = true;
@@ -421,6 +427,8 @@ export class DesktopApplications {
     const deleteButton = menu.querySelector('[data-explorer-action="delete"]');
     const canDelete = Boolean(item.fileId && this.virtualFilesystem.canDelete(item.fileId));
     deleteButton.disabled = !canDelete;
+    menu.querySelector('[data-explorer-action="extract"]').hidden =
+      item.extractable !== 'bomb-arena' || !this.virtualFilesystem.exists(item.fileId);
     deleteButton.title = canDelete ? '' : 'Impossible de supprimer ce fichier. Accès refusé.';
     const body = instance.element.querySelector('.window-body').getBoundingClientRect();
     menu.hidden = false;
@@ -477,6 +485,87 @@ export class DesktopApplications {
       if (instance.onVirtualDelete) instance.onVirtualDelete();
       else this.manager.close(instance.id);
     }
+  }
+  openBombArena(_item, fileId) {
+    const key = 'virtual-app:bomb-arena';
+    const existing = this.instances.get(key);
+    if (existing?.element.isConnected) {
+      this.restore(existing);
+      return existing;
+    }
+    const id = this.manager.spawn('desktopapp', {
+      preview: true,
+      x: 0.3,
+      y: 0.2,
+      content: {
+        title: 'BombArena.exe',
+        iconName: 'arcade-game',
+        body: '<section class="bomb-arena-placeholder"><strong>BombArena.exe</strong><p>Chargement du salon...</p><p>[Interface multijoueur en préparation]</p></section>',
+      },
+      onDismiss: () => {
+        this.instances.delete(key);
+        instance.task.remove();
+        this.onWindowState();
+      },
+    });
+    const instance = this.attachWindow(key, id, 'BombArena.exe', 'arcade-game');
+    instance.fileId = fileId;
+    this.restore(instance);
+    return instance;
+  }
+  extractWithWinRoar(item) {
+    if (
+      item?.extractable !== 'bomb-arena' || !item.fileId ||
+      !this.virtualFilesystem?.exists(item.fileId)
+    ) return null;
+    const key = 'winroar:bomb-arena';
+    const existing = this.instances.get(key);
+    if (existing?.element.isConnected) {
+      this.restore(existing);
+      return existing;
+    }
+    const id = this.manager.spawn('desktopapp', {
+      preview: true,
+      x: 0.34,
+      y: 0.25,
+      content: {
+        title: 'WinRoar',
+        iconName: 'archive',
+        body: '<section class="winroar-extraction"><strong>Extraction de BombArena.zip</strong><progress max="1" value="0" aria-label="Progression de l’extraction"></progress><p role="status">Extraction en cours...</p></section>',
+      },
+      onDismiss: () => {
+        clearInterval(instance.extractionTimer);
+        this.instances.delete(key);
+        instance.task.remove();
+        this.onWindowState();
+      },
+    });
+    const instance = this.attachWindow(key, id, 'WinRoar', 'archive');
+    const progress = instance.element.querySelector('.winroar-extraction progress');
+    const status = instance.element.querySelector('.winroar-extraction [role="status"]');
+    let elapsed = 0;
+    instance.extractionTimer = setInterval(() => {
+      if (!instance.element.isConnected) {
+        clearInterval(instance.extractionTimer);
+        return;
+      }
+      elapsed += 50;
+      progress.value = Math.min(1, elapsed / 3000);
+      if (elapsed < 3000) return;
+      clearInterval(instance.extractionTimer);
+      instance.extractionTimer = null;
+      const result = this.virtualFilesystem.extractBombArena(item.fileId);
+      status.textContent = result.ok
+        ? result.existing ? 'BombArena.exe existe déjà.' : 'Extraction terminée.'
+        : 'Impossible de terminer l’extraction.';
+      if (result.ok) {
+        this.refreshExplorers();
+        this.onFilesystemChange({ origin: 'system', extracted: result.fileId });
+      }
+    }, 50);
+    instance.fileId = null;
+    this.restore(instance);
+    return instance;
   }
   refreshExplorers() {
     for (const instance of this.instances.values())

@@ -194,6 +194,12 @@ button svg {
 .hud-control + .hud-control {
   margin-left: -15px;
 }
+.hud-control.music-toggle {
+  width: 86px;
+  margin-left: 0;
+  font-size: 10px;
+  white-space: nowrap;
+}
 .desktop-icons {
   position: absolute;
   top: 124px;
@@ -357,69 +363,6 @@ button svg {
 .is-playing .equalizer i {
   animation: none;
   transform: scaleY(calc(0.2 + var(--music-intensity, 0) * 0.8));
-}
-.music-debug {
-  position: absolute;
-  top: 110px;
-  right: 12px;
-  z-index: 850;
-  width: 300px;
-  max-height: calc(100% - 160px);
-  overflow: auto;
-  padding: 12px;
-  border: 2px solid #377ad9;
-  border-radius: 5px;
-  background: #eff6fff5;
-  box-shadow: 0 4px 20px #17345c40;
-  color: #17345c;
-}
-.music-debug header {
-  display: flex;
-  justify-content: space-between;
-  font-weight: bold;
-}
-.music-debug pre {
-  white-space: pre-wrap;
-  font-size: 10px;
-  margin: 8px 0;
-  line-height: 1.5;
-}
-.music-debug p {
-  margin: 10px 0 4px;
-  font-size: 11px;
-  font-weight: bold;
-}
-.music-debug label {
-  display: block;
-  margin-top: 10px;
-}
-.music-debug input {
-  width: 100%;
-}
-.music-debug small {
-  display: block;
-  font-size: 10px;
-  margin: 6px 0;
-}
-.music-debug output {
-  float: right;
-}
-.debug-intensity {
-  height: 6px;
-  background: #c4d8f0;
-}
-.debug-intensity i {
-  display: block;
-  height: 100%;
-  background: #62b55b;
-}
-.debug-beat-lamp {
-  float: right;
-  color: #bec9dc;
-}
-.debug-beat-lamp.lit {
-  color: #e941a0;
-  text-shadow: 0 0 6px #ff79c1;
 }
 @media (prefers-reduced-motion: reduce) {
   .music-accent .desktop-wash {
@@ -1161,6 +1104,47 @@ h1 .title-star {
   cursor: pointer;
 }
 /* Notifications and feedback */
+.notification-area {
+  position: absolute;
+  bottom: 55px;
+  right: 22px;
+  z-index: 450;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: stretch;
+  gap: 8px;
+  width: 285px;
+  max-width: calc(100% - 30px);
+  max-height: calc(100% - 80px);
+  pointer-events: none;
+}
+.notification-area > .toast {
+  position: relative;
+  right: auto;
+  bottom: auto;
+  flex: 0 0 auto;
+  pointer-events: auto;
+}
+.toast-stack {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: stretch;
+  gap: 8px;
+  max-height: calc(100vh - 150px);
+  overflow-y: auto;
+  pointer-events: none;
+  scrollbar-width: thin;
+}
+.toast-stack[hidden] {
+  display: none;
+}
+.toast-stack > .toast {
+  position: relative;
+  right: auto;
+  bottom: auto;
+  flex: 0 0 auto;
+  pointer-events: auto;
+}
 .toast {
   position: absolute;
   bottom: 55px;
@@ -1182,6 +1166,9 @@ h1 .title-star {
 .toast.is-dismissing {
   animation: toast-out 0.18s ease-in forwards;
   pointer-events: none;
+}
+.toast.toast-refresh {
+  animation: toast-refresh 0.24s ease-out;
 }
 .toast > header {
   display: flex;
@@ -1569,6 +1556,20 @@ h1 .title-star {
   to {
     opacity: 0;
     transform: translateY(8px);
+  }
+}
+@keyframes toast-refresh {
+  0% {
+    opacity: 0.65;
+    transform: scale(0.97) translateY(8px);
+  }
+  55% {
+    opacity: 0.8;
+    transform: scale(0.99) translateY(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
   }
 }
 @keyframes points {

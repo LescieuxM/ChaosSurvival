@@ -65,6 +65,22 @@ test('typing uses existing waits, disappears between messages and exposes choice
   assert.equal(thread.typingContact(5000), null);
 });
 
+test('incoming message batches contain only newly delivered history rows, including after reload', () => {
+  const { thread, progression, storage } = setup();
+  assert.deepEqual(thread.receive(1800), [definition]);
+  assert.deepEqual(thread.lastIncomingMessages.map((message) => message.text), ['hello']);
+  assert.deepEqual(thread.receive(3200), [definition]);
+  assert.deepEqual(thread.lastIncomingMessages.map((message) => message.text), ['another message']);
+  assert.deepEqual(thread.receive(3200), []);
+  assert.deepEqual(thread.lastIncomingMessages, []);
+
+  const restored = new ConversationThread('friend', new Progression(story, storage), () => [definition]);
+  assert.deepEqual(restored.receive(3200), []);
+  assert.deepEqual(restored.lastIncomingMessages, []);
+  assert.equal(restored.state.history.length, 2);
+  assert.equal(progression.data.conversations.friend.history.length, 2);
+});
+
 test('scheduled messages and typing deadlines survive closed/reduced windows and restart without an indicator in history', () => {
   const { progression, thread, storage } = setup();
   assert.equal(thread.typingContact(1700).nickname, 'xX_Friend_Xx');
@@ -136,6 +152,73 @@ test('the view uses the real nickname, does not announce unchanged text repeated
   ConversationWindow.prototype.renderTyping.call(view, 1800);
   assert.equal(text, '');
   assert.equal(active, false);
+});
+
+test('group typing lists only currently active authors, concurrently and in presentation order', () => {
+  const authors = [
+    ['xX_PixelGirl_Xx', 'PixelGirl'],
+    ['Turb0', 'Turb0'],
+    ['°•.LuNa.°•', 'Luna'],
+  ];
+  const make = (selected) => {
+    const entries = new Map();
+    const storage = { getItem: (key) => entries.get(key) ?? null, setItem: (key, value) => entries.set(key, value) };
+    const progression = new Progression(story, storage);
+    progression.begin();
+    const events = selected.map(([author], index) => ({
+      id: `group-${index}`,
+      version: 1,
+      contact: { id: 'plumber-group', name: 'Groupe', nickname: 'PixelGirl, Turb0 et Luna', status: 'En ligne' },
+      player: { nickname: 'Me' },
+      start: 'typing',
+      nodes: { typing: { messages: [{ speaker: 'contact', author, text: 'message', delayMs: 1000, typingMs: 500 }], end: true } },
+    }));
+    const thread = new ConversationThread('plumber-group', progression, () => events);
+    for (const event of events) {
+      progression.data.dialogues[event.id] = {
+        node: 'typing', cursor: 0, transcript: [], finished: false, revision: 1, receiveDueAt: 1500,
+      };
+    }
+    return { thread, events, progression };
+  };
+  const cases = [
+    [[authors[0]], "PixelGirl est en train d'écrire..."],
+    [[authors[1]], "Turb0 est en train d'écrire..."],
+    [[authors[2]], "Luna est en train d'écrire..."],
+    [[authors[0], authors[1]], "PixelGirl et Turb0 sont en train d'écrire..."],
+    [[authors[1], authors[2]], "Turb0 et Luna sont en train d'écrire..."],
+    [[authors[0], authors[2]], "PixelGirl et Luna sont en train d'écrire..."],
+    [authors, "PixelGirl, Turb0 et Luna sont en train d'écrire..."],
+  ];
+  for (const [selected, expected] of cases) {
+    const { thread } = make(selected);
+    const names = thread.typingContacts(1200).map((contact) => contact.nickname);
+    assert.deepEqual(names, selected.map(([, name]) => name));
+    let text = '';
+    const view = {
+      thread,
+      typingIndicator: { textContent: '', classList: { toggle() {} } },
+      scrollLatest() {},
+    };
+    Object.defineProperty(view.typingIndicator, 'textContent', {
+      get: () => text,
+      set: (value) => { text = value; },
+    });
+    ConversationWindow.prototype.renderTyping.call(view, 1200);
+    assert.equal(text, expected);
+  }
+
+  const { thread, events, progression } = make(authors);
+  thread.receive(1500);
+  assert.deepEqual(thread.typingContacts(1500), []);
+  assert.equal(events.every((event) => !Number.isFinite(progression.data.dialogues[event.id].receiveDueAt)), true);
+
+  const partial = make([authors[0], authors[1]]);
+  partial.progression.data.dialogues[partial.events[0].id].receiveDueAt = 1500;
+  partial.progression.data.dialogues[partial.events[1].id].receiveDueAt = 1700;
+  assert.deepEqual(partial.thread.typingContacts(1300).map(({ nickname }) => nickname), ['PixelGirl', 'Turb0']);
+  partial.thread.receive(1500);
+  assert.deepEqual(partial.thread.typingContacts(1600).map(({ nickname }) => nickname), ['Turb0']);
 });
 
 test('typing stays outside the scrolling messages through messages, Wizz spam, hiding and transcript rebuilds', (t) => {

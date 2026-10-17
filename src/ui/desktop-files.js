@@ -42,6 +42,24 @@ export class DesktopFiles {
       });
       files.append(button);
     }
+    const bombArenaId = virtualFileId('bomb-arena-folder', 'BombArena.exe');
+    const executable = this.virtualFilesystem?.getFile(bombArenaId);
+    if (executable?.virtualApp === 'bomb-arena') {
+      const shortcut = document.createElement('button');
+      shortcut.className = 'desktop-file desktop-virtual-shortcut';
+      shortcut.dataset.fileId = bombArenaId;
+      shortcut.setAttribute('aria-pressed', 'false');
+      shortcut.title = 'Raccourci vers BombArena.exe';
+      shortcut.innerHTML = icon('arcade-game');
+      const name = document.createElement('span');
+      name.textContent = executable.name;
+      shortcut.append(name);
+      bindFileActivation(shortcut, () => {
+        if (this.virtualFilesystem?.exists(bombArenaId))
+          this.onOpen({ ...executable, name: 'BombArena.exe', fileId: bombArenaId, virtualApp: 'bomb-arena' });
+      });
+      files.append(shortcut);
+    }
     this.onLayout();
   }
 }

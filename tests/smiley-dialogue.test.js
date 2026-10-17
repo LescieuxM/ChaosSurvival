@@ -219,8 +219,13 @@ test('Turb0 scene 3 keeps its three opening branches and resumes its shared dial
     }
     assert.deepEqual(selected.choices.map((item) => item.text), [
       'ptdrrr envoie',
-      "elle a l'air grave marrante",
+      "elle a l'air grave marrante la vidéo",
       'vous vous connaissez depuis longtemps ?',
+    ]);
+    assert.deepEqual(selected.choices.map((item) => item.id), [
+      'cat-video-send',
+      'video-funny',
+      'friends-long',
     ]);
     selected.choose(selected.choices[branchIndex].id);
     while (!selected.state.finished) {

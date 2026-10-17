@@ -1803,3 +1803,39 @@ button.messenger-contact-row:hover {
   pointer-events: none;
   margin: 0;
 }
+.winroar-extraction,
+.bomb-arena-placeholder {
+  box-sizing: border-box;
+  height: 100%;
+  padding: 22px;
+  color: #263747;
+  background: #f2f5f8;
+  font: 13px Tahoma, sans-serif;
+}
+.winroar-extraction {
+  display: grid;
+  align-content: center;
+  gap: 14px;
+  min-width: 300px;
+  min-height: 125px;
+}
+.winroar-extraction progress {
+  width: 100%;
+  accent-color: #427bc1;
+}
+.bomb-arena-placeholder {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 9px;
+  min-width: 380px;
+  min-height: 230px;
+  text-align: center;
+}
+.bomb-arena-placeholder strong {
+  color: #164aa8;
+  font-size: 18px;
+}
+.bomb-arena-placeholder p {
+  margin: 0;
+}

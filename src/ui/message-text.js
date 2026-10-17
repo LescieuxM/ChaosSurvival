@@ -7,11 +7,10 @@ const emoticons = {
   ':P': '😛',
   ':$': '😊',
   '<3': '♥',
-  xD: '☻',
   ":')": '😂',
 };
 export function appendMessageText(element, text) {
-  for (const part of text.split(/(>:\)|:'\)|:\)|:D|:\||;\)|:P|:\$|<3|xD)/g)) {
+  for (const part of text.split(/(>:\)|:'\)|:\)|:D|:\||;\)|:P|:\$|<3)/g)) {
     if (!emoticons[part]) {
       element.append(document.createTextNode(part));
       continue;

@@ -32,14 +32,14 @@ import { StartMenuOrder } from './ui/start-menu-order.js';
 import { TaskbarOrder } from './ui/taskbar-order.js';
 import { DesktopApplications } from './ui/desktop-apps.js';
 import { arcadeLauncher } from './ui/arcade-launcher.js';
-import { createMusicDebug } from './ui/music-debug.js';
+import { createMusicToggle } from './ui/music-toggle.js';
 import story from './config/story.json';
 import pixelgirlDialogue from './dialogues/pixelgirl-intro.json';
 import { Progression } from './story/progression.js';
 import { VirtualTextFiles } from './story/text-files.js';
 import { VirtualFilesystem, virtualFileId } from './story/virtual-filesystem.js';
 import { ConversationWindow } from './ui/conversation.js';
-import { Messenger } from './ui/messenger.js';
+import { Messenger, identifyMessageSender, wizzNotificationContent } from './ui/messenger.js';
 import { ConversationThread } from './story/conversation-thread.js';
 import { celebrateVictory } from './ui/victory.js';
 import { DesktopSounds } from './audio/sounds.js';
@@ -62,7 +62,11 @@ import {
 } from './story/narrative-orchestrator.js';
 import { resetGameToInitialState as resetSession, recoverGameReset } from './story/reset-game.js';
 import { applicationName, trackIdentity } from './ui/identity.js';
-import { NotificationCenter, ENTER_ANIMATION_MS } from './ui/notifications.js';
+import {
+  NotificationCenter,
+  ENTER_ANIMATION_MS,
+  NOTIFICATION_DURATION_MS,
+} from './ui/notifications.js';
 
 const BEST_SCORE_KEY = 'chaos-survival-best';
 const DEFAULT_VOLUME = 0.55;
@@ -98,6 +102,8 @@ const notifications = new NotificationCenter({
   contact: ui.toastContact,
   message: ui.toastMessage,
   dismissButton: ui.dismissToast,
+  messageRoot: ui.messageToastStack,
+  messageTemplate: ui.messageToastTemplate,
   getTime: (clock) => (clock === 'game' ? audio.time * 1000 : Date.now()),
 });
 const progression = new Progression(story, storyStorage);
@@ -164,6 +170,21 @@ const desktopApplications = new DesktopApplications(
   openDesktopFile,
 );
 let narrativeOrchestrator;
+let turboConversationThread;
+const turboEvents = () =>
+  Object.values(dialogues)
+    .filter(
+      (event) =>
+        event.contact.name === dialogues['turbo-smiley-catcher'].contact.name &&
+        narrativeOrchestrator?.isEventAvailable(event),
+    )
+    .sort((a, b) => narrativeOrchestrator?.compareEvents(a, b) ?? 0);
+const getTurboThread = () =>
+  (turboConversationThread ??= new ConversationThread('turbo', progression, turboEvents));
+const plumberGroupEvents = () => [
+  dialogues['pixelgirl-super-plombier-group'],
+  ...(narrativeOrchestrator?.bombArenaRedownloadEvents() ?? []),
+];
 const hoplaHotel = new HoplaHotelClient(manager, desktopApplications, () =>
   openBrowser('http://www.hoplahotel.fr/'),
   () => settings.data.musicVolume,
@@ -192,17 +213,8 @@ const messenger = new Messenger({
   primary: () => conversation,
   settings,
   onWindowState: syncSystemWindows,
-  onMessage: (contact, incoming) => {
-    const invitationMessage = narrativeOrchestrator?.onMessage(contact, incoming);
-    if (invitationMessage === 'turbo-smiley-scene3')
-      showMessageNotification(contact, 'turbo-smiley-scene3-message', undefined, 2000);
-    if (invitationMessage === 'notify')
-      showMessageNotification(contact, 'turbo-flashzone-invitation-message');
-    if (invitationMessage === 'super-plombier')
-      showMessageNotification(contact, 'turbo-super-plombier-message');
-    if (invitationMessage) return;
-    showMessageNotification(contact, messageNotificationId(contact));
-  },
+  onMessage: (contact, incoming, messages, view, state) =>
+    handleMessengerMessage(contact, incoming, messages, view, state),
   onContactOpened: (contact) => {
     notifications.cancelContact(contact.id, 'message');
     notifications.cancel(`connection:${contact.id}`);
@@ -213,34 +225,80 @@ const messenger = new Messenger({
     const thread =
       contact.id === 'plumber-group'
         ? (plumberGroupThread ??= new ConversationThread('plumber-group', progression, () => [
-            dialogues['pixelgirl-super-plombier-group'],
+            ...plumberGroupEvents(),
           ]))
-        : contact.kind === 'decorative' || !dialogues[contact.dialogue]
-        ? replayReactions.thread
-        : new ConversationThread(contact.id, progression, () =>
-            Object.values(dialogues)
-              .filter(
-                (event) =>
-                  event.contact.name === definition.contact.name &&
-                  narrativeOrchestrator?.isEventAvailable(event),
-              )
-              .sort((a, b) => narrativeOrchestrator?.compareEvents(a, b) ?? 0),
-          );
+        : contact.id === 'turbo'
+          ? getTurboThread()
+          : contact.kind === 'decorative' || !dialogues[contact.dialogue]
+          ? replayReactions.thread
+          : new ConversationThread(contact.id, progression, () =>
+              Object.values(dialogues)
+                .filter(
+                  (event) =>
+                    event.contact.name === definition.contact.name &&
+                    narrativeOrchestrator?.isEventAvailable(event),
+                )
+                .sort((a, b) => narrativeOrchestrator?.compareEvents(a, b) ?? 0),
+            );
     return createConversation(definition, contact.id, thread);
   },
 });
+function handleMessengerMessage(contact, incoming = [], messages = [], view, state = {}) {
+  if (!contact) return;
+  narrativeOrchestrator?.onMessage(contact, incoming);
+  if (state.active ?? (view && messenger.isConversationActive(view))) return;
+  const wizz = messages.find((message) => message.type === 'wizz' && message.speaker === 'contact');
+  if (wizz) {
+    const { sender, preview } = wizzNotificationContent(contact);
+    notifications.showMessage({
+      conversationId: contact.id,
+      senderId: contact.id,
+      sender,
+      preview,
+      durationMs: NOTIFICATION_DURATION_MS,
+      action: () => {
+        const target = messenger.contacts().find((item) => item.id === contact.id);
+        if (target) messenger.openContact(target);
+      },
+    });
+    return;
+  }
+  if (!messages.length) {
+    if (incoming.length) sounds.unlock().then(() => sounds.play('message'));
+    showMessageNotification(contact, messageNotificationId(contact));
+    return;
+  }
+  for (const message of messages) {
+    if (message.speaker !== 'contact') continue;
+    const { id: senderId, name: sender } = identifyMessageSender(contact, message);
+    if (!senderId || !sender) continue;
+    notifications.showMessage({
+      conversationId: contact.id,
+      senderId,
+      sender,
+      preview: message.text,
+      durationMs: NOTIFICATION_DURATION_MS,
+      action: () => {
+        const target = messenger.contacts().find((entry) => entry.id === contact.id);
+        if (target) messenger.openContact(target);
+      },
+      playSound: () => sounds.unlock().then(() => sounds.play('message')),
+    });
+  }
+}
 const rules = new GameRules(ui.desktop, progression);
+function prepareMiniGameLaunch() {
+  if (progression.current?.dialogue !== pixelgirlDialogue.id) return;
+  progression.complete(progression.current.id, { dialogue: activeDialogue.id });
+  if (conversation.element?.isConnected)
+    manager.close(Number(conversation.element.dataset.windowId));
+}
 const miniGameLauncher = new MiniGameLauncher(
   miniGames,
   progression,
   manager,
   sounds,
-  () => {
-    if (progression.current?.dialogue === pixelgirlDialogue.id)
-      progression.complete(progression.current.id, { dialogue: activeDialogue.id });
-    if (conversation.element?.isConnected)
-      manager.close(Number(conversation.element.dataset.windowId));
-  },
+  prepareMiniGameLaunch,
   rules,
   () => {
     if (progression.current?.type === 'conversation')
@@ -270,22 +328,19 @@ narrativeOrchestrator = new NarrativeOrchestrator({
   sendWizz: (contactId, eventId, speaker, now) =>
     messenger.sendWizz(contactId, { eventId, speaker, now }),
   getGroupThread: () => {
-    plumberGroupThread ??= new ConversationThread('plumber-group', progression, () => [
-      dialogues['pixelgirl-super-plombier-group'],
-    ]);
+    plumberGroupThread ??= new ConversationThread('plumber-group', progression, plumberGroupEvents);
     return plumberGroupThread;
   },
-  onGroupMessage: (contact) => {
+  getTurboThread,
+  onTurboMessage: (contact, incoming, messages) => {
     if (!contact) return;
-    const view = messenger.ensureBackground(contact);
-    if (!view) return;
-    view.thread.sync();
-    if (
-      narrativeOrchestrator?.flags.superPlombierGroupNotified &&
-      !messenger.isVisible(view)
-    )
-      showMessageNotification(contact, messageNotificationId(contact));
+    messenger.receiveIncoming(contact, incoming, messages ?? []);
   },
+  onGroupMessage: (contact, incoming, messages) => {
+    if (!contact) return;
+    messenger.receiveIncoming(contact, incoming, messages ?? []);
+  },
+  virtualFilesystem,
   showGroupNotification: (contact) => {
     if (!contact) return false;
     messenger.ensureBackground(contact);
@@ -296,7 +351,7 @@ narrativeOrchestrator = new NarrativeOrchestrator({
       contactId: 'plumber-group',
       contact: 'Windows Love Messenger',
       message: 'PixelGirl vous a ajouté à une conversation de groupe',
-      durationMs: 6000,
+      durationMs: NOTIFICATION_DURATION_MS,
       clock: 'game',
       policy: 'queue',
       priority: 'important',
@@ -308,6 +363,7 @@ narrativeOrchestrator = new NarrativeOrchestrator({
     return shown || notifications.has(id);
   },
 });
+virtualFilesystem.onDelete = (change) => narrativeOrchestrator?.onVirtualFilesDeleted(change);
 browser.onSuperPlombierStart = () => narrativeOrchestrator.onSuperPlombierStart();
 browser.onSuperPlombierVictory = () => narrativeOrchestrator.onSuperPlombierVictory();
 let restoringStory = false;
@@ -336,6 +392,8 @@ function createConversation(dialogue, contactId = 'pixelgirl', thread = replayRe
       onContactsRequested: () => messenger.open(),
       onChoiceValidated: (definition, details) =>
         narrativeOrchestrator.onChoiceValidated(definition, details),
+      onTransferDeclined: ({ file, dialogueId }) =>
+        narrativeOrchestrator.onBombArenaTransferDeclined(file, dialogueId),
       onLink: (url) => {
         narrativeOrchestrator.onLink(url);
         openBrowser(url);
@@ -359,8 +417,8 @@ function showMessageNotification(contact, id = messageNotificationId(contact), o
     contactId: contact.id,
     contact: contact.nickname,
     message: contact.id === 'turbo' ? ' vous a envoy\u00e9 un message' : 't\u2019a envoy\u00e9 un nouveau message.',
-    durationMs: 6000,
-    clock: 'game',
+    durationMs: NOTIFICATION_DURATION_MS,
+    clock: 'real',
     policy: 'queue',
     priority: 'important',
     delayMs,
@@ -458,18 +516,7 @@ function debugSnapshot() {
         .slice(0, 4) ?? [],
   };
 }
-function setSyncOffset(value) {
-  if (!Number.isFinite(value)) return;
-  syncOffset = Math.max(-0.5, Math.min(0.5, value));
-  try {
-    storyStorage?.setItem(SYNC_OFFSET_KEY, String(syncOffset));
-  } catch {
-    /* Optional. */
-  }
-  if (phase === 'playing' || phase === 'paused') timeline.seek(musicalTime());
-  debug.render();
-}
-const debug = createMusicDebug(ui.desktop, music, debugSnapshot, setSyncOffset);
+const musicToggle = createMusicToggle(ui.desktop, audio);
 let deletingUserData = false;
 let resettingGame = false;
 const menu = new MainMenu(document.getElementById('app'), progression, settings, sounds, {
@@ -539,7 +586,6 @@ async function resetGameToInitialState() {
         duration = chart.durationSeconds;
         arcadeSequenceId = story.start;
         arcadeReplay = false;
-        notifiedMessages = '';
         ui.best.textContent = '000000';
         manager.sequence = 0;
         manager.z = 10;
@@ -552,9 +598,10 @@ async function resetGameToInitialState() {
         ui.desktop.classList.remove('story-desktop', 'is-playing', 'on-beat');
         previousVolume = settings.defaults.musicVolume;
         setVolume(settings.defaults.musicVolume);
+        audio.setMuted(false);
+        musicToggle.render();
         menu.syncSettings();
         renderStats();
-        debug.render();
         await setFullscreen(false);
       },
       restart: continueFromMenu,
@@ -654,14 +701,12 @@ function returnToMenu() {
   returnMenu.hidden = true;
   menu.show();
   menuMusic.start();
-  debug.render();
 }
 document.addEventListener('pointerdown', () => {
   if (phase === 'menu' && !menuMusic.active) menuMusic.start();
 });
-// Diagnostic data remains available in the standalone game (F3).
+// Diagnostic data remains available for development inspection.
 Object.defineProperty(window, 'chaosDebug', { value: Object.freeze({ snapshot: debugSnapshot }) });
-debug.render();
 
 async function startGame() {
   if (!['idle', 'ended', 'desktop'].includes(phase)) return;
@@ -713,7 +758,6 @@ async function startGame() {
     ui.desktop.classList.add('is-playing');
     renderStats();
     frame = requestAnimationFrame(tick);
-    debug.render();
     if (document.hidden) await pauseGame();
   } catch (error) {
     audio.stop();
@@ -755,7 +799,6 @@ function tick() {
     ui.wizzLabel.hidden = true;
   }
   renderStats();
-  debug.render();
   ui.trackFill.style.width = `${(now / duration) * 100}%`;
   ui.trackTime.textContent = `${formatTime(now)} / ${formatTime(duration)}`;
   if (lost || state.chaos >= 100) return finishGame(false);
@@ -805,7 +848,6 @@ async function pauseGame() {
   const generation = ++pauseGeneration;
   await audio.pause();
   if (phase !== 'paused' || generation !== pauseGeneration) return;
-  debug.render();
   showDialog(
     'Une petite pause ?',
     '<p>Ton bureau et la musique t’attendent.</p><p class="dialog-hint">Respire. Détends ta souris. Tu gères.</p>',
@@ -827,7 +869,6 @@ async function resumeGame() {
     ui.playfield.inert = false;
     setPhase('playing');
     ui.desktop.classList.add('is-playing');
-    debug.render();
     manager.reposition();
     frame = requestAnimationFrame(tick);
     if (document.hidden) await pauseGame();
@@ -849,7 +890,6 @@ function finishGame(won) {
   ui.pauseButton.disabled = true;
   ui.playfield.inert = true;
   ui.desktop.classList.remove('is-playing', 'on-beat');
-  debug.render();
   const newRecord = state.score > best;
   best = Math.max(best, state.score);
   try {
@@ -994,23 +1034,11 @@ function showStoryDesktop(announce) {
     if (contact)
       showContactConnectionNotification(contact, {
         durationMs: ENTER_ANIMATION_MS + MIN_CONNECTION_TOAST_VISIBLE_MS,
-        onDismiss: (_reason, timing) => {
-          if (phase !== 'desktop' || conversation.element?.isConnected) return;
-          const pixelGirl = messenger.contacts().find((entry) => entry.id === 'pixelgirl');
-          if (!pixelGirl) return;
-          const delayMs = Math.max(0, timing.expiresAt - timing.dismissedAt);
-          showMessageNotification(
-            pixelGirl,
-            'pixelgirl-first-message',
-            () => sounds.play('message'),
-            delayMs,
-          );
-        },
       });
     sounds.play('online');
   }
   renderDesktopFiles();
-  debug.render();
+  requestAnimationFrame(() => replayReactions.desktopShown(Date.now()));
 }
 async function openConversation(restore = false, contact = null) {
   if (['menu', 'loading', 'resuming'].includes(phase)) return;
@@ -1051,6 +1079,10 @@ function renderDesktopFiles() {
 }
 function openDesktopFile(file) {
   if (phase !== 'desktop') return;
+  if (file.virtualApp === 'bomb-arena') {
+    if (virtualFilesystem.exists(file.fileId)) desktopApplications.openBombArena(file, file.fileId);
+    return;
+  }
   if (!virtualFilesystem.exists(virtualFileId('downloads', file.name))) return;
   try {
     miniGameLauncher.open(file);
@@ -1204,34 +1236,31 @@ function updateClock() {
   menu.clock.textContent = ui.clock.textContent;
 }
 updateClock();
-let notifiedMessages = '';
 function receiveReplayReactions() {
   if (resettingGame) {
     requestAnimationFrame(receiveReplayReactions);
     return;
   }
   narrativeOrchestrator.prepareTurboSceneMessage();
-  const incoming = replayReactions.flush();
+  const incoming = replayReactions.flush(Date.now(), { canReceive: phase === 'desktop' });
   narrativeOrchestrator.update(Date.now(), phase !== 'menu');
   messenger.update();
   narrativeOrchestrator.afterMessengerUpdate(Date.now());
   buddy.update();
+  if (incoming.length) {
+    const pixelGirl = messenger.contacts().find((entry) => entry.id === 'pixelgirl');
+    if (pixelGirl)
+      messenger.receiveIncoming(
+        pixelGirl,
+        incoming,
+        replayReactions.thread.lastIncomingMessages ?? [],
+        conversation,
+      );
+  }
   const visible = !conversation.offlineContact && messenger.isVisible(conversation);
   const unread = replayReactions.thread.state.unread;
-  if (visible && !unread.length) notifications.cancelContact('pixelgirl', 'message');
-  const notificationKey = `${progression.data.runId}:${unread.join(',')}`;
-  if (incoming.length) sounds.unlock().then(() => sounds.play('message'));
-  if (
-    incoming.length &&
-    !visible &&
-    unread.length &&
-    ['playing', 'desktop', 'paused'].includes(phase) &&
-    notificationKey !== notifiedMessages
-  ) {
-    notifiedMessages = notificationKey;
-    const contact = messenger.contacts().find((entry) => entry.id === 'pixelgirl');
-    if (contact) showMessageNotification(contact, `replay:${notificationKey}`);
-  }
+  if (!incoming.length && visible && !unread.length)
+    notifications.cancelContact('pixelgirl', 'message');
   notifications.update();
   requestAnimationFrame(receiveReplayReactions);
 }

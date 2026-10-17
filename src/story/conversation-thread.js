@@ -145,7 +145,8 @@ export class ConversationThread {
       session.persist();
     }
   }
-  typingContact(now = Date.now()) {
+  typingContacts(now = Date.now()) {
+    const active = new Map();
     for (const event of this.getEvents()) {
       const state = this.progression.data.dialogues[event.id];
       const message = state && !state.finished && event.nodes[state.node]?.messages[state.cursor];
@@ -162,10 +163,28 @@ export class ConversationThread {
         now < typingEndsAt &&
         event.contact.status !== 'Hors ligne' &&
         event.contact.online !== false
-      )
-        return event.contact;
+      ) {
+        const author = message.author;
+        if (this.contactId === 'plumber-group' && author) {
+          const nickname = {
+            xX_PixelGirl_Xx: 'PixelGirl',
+            Turb0: 'Turb0',
+            '°•.LuNa.°•': 'Luna',
+          }[author];
+          if (nickname) active.set(author, { id: author, nickname });
+        } else {
+          active.set(event.contact.id ?? event.id, event.contact);
+        }
+      }
     }
-    return null;
+    if (this.contactId === 'plumber-group') {
+      const order = ['xX_PixelGirl_Xx', 'Turb0', '°•.LuNa.°•'];
+      return order.map((author) => active.get(author)).filter(Boolean);
+    }
+    return [...active.values()];
+  }
+  typingContact(now = Date.now()) {
+    return this.typingContacts(now)[0] ?? null;
   }
   receiveScheduled(definition, now) {
     const state = this.progression.data.dialogues[definition.id];
@@ -213,10 +232,9 @@ export class ConversationThread {
     );
   }
   receive(now = Date.now()) {
+    const previousKeys = new Set(this.state.history.map((entry) => entry.key));
     const incoming = [];
-    const first = this.getEvents()[0];
-    if (first && this.receiveScheduled(first, now)) incoming.push(first);
-    for (const event of this.getEvents().slice(1)) {
+    for (const event of this.getEvents()) {
       if (this.progression.data.dialogues[event.id]?.finished && !this.hasPendingFile(event.id))
         continue;
       // Receive independently of other pending choices; only replies need the UI.
@@ -225,7 +243,7 @@ export class ConversationThread {
         if (this.receiveScheduled(event, now)) incoming.push(event);
         continue;
       }
-      if (!saved && !Number.isFinite(event.incomingAt)) {
+      if (!saved && event.incomingAt === undefined) {
         this.schedule(event, now);
         if (this.receiveScheduled(event, now)) incoming.push(event);
         continue;
@@ -270,6 +288,7 @@ export class ConversationThread {
       if (delivered) incoming.push(event);
     }
     this.sync();
+    this.lastIncomingMessages = this.state.history.filter((entry) => !previousKeys.has(entry.key));
     return incoming;
   }
   markRead() {

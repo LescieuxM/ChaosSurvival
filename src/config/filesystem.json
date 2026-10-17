@@ -312,6 +312,12 @@
       }
     ]
   },
+  "bomb-arena-folder": {
+    "address": "C:\\Documents and Settings\\Joueur\\Mes documents\\Mes fichiers reçus\\BombArena",
+    "parent": "downloads",
+    "description": "Fichiers extraits de BombArena.zip",
+    "items": []
+  },
   "videos": {
     "address": "C:\\Documents and Settings\\Joueur\\Mes documents\\Mes vidéos",
     "parent": "folder",

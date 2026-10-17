@@ -1,8 +1,7 @@
-import musicUrl from '../../assets/musiclvl1.mp3?url';
-
 export class AudioEngine {
-  constructor(volume, url = musicUrl) {
+  constructor(volume, url = new URL('../../assets/musiclvl1.mp3', import.meta.url).href) {
     this.volume = volume;
+    this.muted = false;
     this.buffer = null;
     this.startTime = 0;
     this.stoppedTime = 0;
@@ -26,7 +25,7 @@ export class AudioEngine {
       this.gain = this.context.createGain();
       this.gain.connect(this.context.destination);
     }
-    this.gain.gain.value = this.volume;
+    this.gain.gain.value = this.muted ? 0 : this.volume;
     this.source = this.context.createBufferSource();
     this.source.buffer = this.buffer;
     this.source.connect(this.gain);
@@ -47,7 +46,14 @@ export class AudioEngine {
   }
   setVolume(value) {
     this.volume = value;
-    if (this.gain) this.gain.gain.setTargetAtTime(value, this.context.currentTime, 0.025);
+    if (this.gain)
+      this.gain.gain.setTargetAtTime(this.muted ? 0 : value, this.context.currentTime, 0.025);
+  }
+  setMuted(muted) {
+    this.muted = Boolean(muted);
+    if (this.gain)
+      this.gain.gain.setTargetAtTime(this.muted ? 0 : this.volume, this.context.currentTime, 0.025);
+    return this.muted;
   }
   stop(reset = false) {
     if (!this.source) {

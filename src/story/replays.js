@@ -1,4 +1,5 @@
 import { ConversationThread } from './conversation-thread.js';
+export const PIXELGIRL_INTRO_RECEIVE_DELAY_MS = 3000;
 export class ReplayReactions {
   constructor(progression, definitions, config) {
     Object.assign(this, { progression, definitions, config });
@@ -38,7 +39,17 @@ export class ReplayReactions {
     }
     if (migrated) progression.save();
     this.thread = new ConversationThread('pixelgirl', progression, () => [
-      definitions['pixelgirl-intro'],
+      ...(progression.data.unlockedConversations.includes('pixelgirl-intro') ||
+      progression.data.dialogues['pixelgirl-intro']?.transcript?.length
+        ? [{
+            ...definitions['pixelgirl-intro'],
+            incomingAt: Number.isFinite(
+              progression.data.dialogues['pixelgirl-intro']?.receiveDueAt,
+            )
+              ? progression.data.dialogues['pixelgirl-intro'].receiveDueAt
+              : Infinity,
+          }]
+        : []),
       ...progression.data.unlockedConversations
         .filter((id) => id !== 'pixelgirl-intro' && definitions[id]?.contact.name === 'PixelGirl')
         .map((id) => definitions[id]),
@@ -55,6 +66,21 @@ export class ReplayReactions {
         (entry) => entry.speaker === 'contact',
       ) ?? false
     );
+  }
+  desktopShown(now = Date.now()) {
+    const definition = this.thread.getEvents().find((event) => event.id === 'pixelgirl-intro');
+    if (!definition) return false;
+    const saved = this.progression.data.dialogues[definition.id];
+    if (saved?.transcript?.length || Number.isFinite(saved?.receiveDueAt)) return false;
+    const first = definition.nodes[definition.start]?.messages[0];
+    if (!first) return false;
+    const firstMessageDelay =
+      first.delayMs + first.typingMs + (first.typingPauseMs ?? 0);
+    this.thread.schedule(
+      definition,
+      now + PIXELGIRL_INTRO_RECEIVE_DELAY_MS - firstMessageDelay,
+    );
+    return Number.isFinite(this.progression.data.dialogues[definition.id]?.receiveDueAt);
   }
   launch(now = Date.now()) {
     const data = this.progression.data;
@@ -82,14 +108,14 @@ export class ReplayReactions {
     if (!template) throw new Error('Réaction de replay inconnue.');
     return { ...template, id: event.id, incomingAt: event.dueAt };
   }
-  flush(now = Date.now()) {
+  flush(now = Date.now(), { canReceive = true } = {}) {
     for (const event of this.progression.data.replayReactions) {
       if (event.ready || event.dueAt > now) continue;
       if (!this.definitions[event.template]) continue;
       event.ready = true;
       this.progression.save();
     }
-    return this.thread.receive(now);
+    return canReceive ? this.thread.receive(now) : [];
   }
   get dialogues() {
     const registered = this.progression.data.replayReactions

@@ -28,6 +28,8 @@ function fixture(values = new Map()) {
     luna: { id: 'luna', available: true, online: true },
   };
   const connectionNotifications = [];
+  const turboMessages = [];
+  const preparedContacts = [];
   const turboThread = new ConversationThread('turbo', progression, () => [
     definitions['turbo-smiley-catcher'],
     definitions['turbo-flashzone-invitation'],
@@ -44,7 +46,12 @@ function fixture(values = new Map()) {
     definitions,
     dialogueEvents: events,
     getContact: (id) => contacts[id],
-    prepareContact: () => ({ thread: turboThread }),
+    prepareContact: (contact) => {
+      preparedContacts.push(contact?.id);
+      return { thread: turboThread };
+    },
+    getTurboThread: () => turboThread,
+    onTurboMessage: (contact, incoming, messages) => turboMessages.push({ contact, incoming, messages }),
     showConnectionNotification: (id, options) => connectionNotifications.push({ id, options }),
     now: () => now,
   });
@@ -54,6 +61,8 @@ function fixture(values = new Map()) {
     turboThread,
     values,
     connectionNotifications,
+    turboMessages,
+    preparedContacts,
     get now() {
       return now;
     },
@@ -82,8 +91,21 @@ test('validating PixelGirl first reply saves Turb0 connection for exactly two se
   restored.orchestrator.update(restored.now);
   assert.equal(restored.progression.data.contactConnections.turbo.status, 'online');
   assert.equal(restored.connectionNotifications.length, 1);
-  assert.equal(restored.progression.data.dialogues['turbo-smiley-catcher'].receiveDueAt, 12_000);
+  assert.equal(restored.progression.data.dialogues['turbo-smiley-catcher'].receiveDueAt, 14_000);
+  assert.deepEqual(restored.preparedContacts, [], 'connection alone does not create a conversation window');
+  assert.equal(restored.turboThread.state.history.length, 0);
+  restored.now = 13_999;
+  restored.orchestrator.update(restored.now);
+  assert.equal(restored.turboThread.state.history.length, 0);
+  assert.equal(restored.turboMessages.length, 0);
+  restored.now = 14_000;
+  restored.orchestrator.update(restored.now);
+  assert.equal(restored.turboThread.state.history.at(-1).text, 'mdrrrr noob');
+  assert.equal(restored.turboMessages.length, 1);
+  assert.equal(restored.turboMessages[0].messages.length, 1);
+  assert.equal(restored.turboMessages[0].messages[0].text, 'mdrrrr noob');
   restored.orchestrator.update(20_000);
+  assert.equal(restored.turboMessages.length, 1);
   assert.equal(restored.connectionNotifications.length, 1);
 });
 
