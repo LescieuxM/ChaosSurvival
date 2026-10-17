@@ -171,9 +171,9 @@ export function compileMusicalEvents(chart, music) {
   for (const section of music.sections) {
     if (!section.time || section.kind === 'outro') continue;
     const messages = {
-      break: 'Petite respiration : prends ton temps pour fermer les fenêtres.',
+      break: 'Petite respiration : calme-toi et ferme les fenêtres.',
       drop: 'Monte le son ! Le bureau danse avec toi.',
-      build: 'Les amis arrivent… ferme les fenêtres à ton rythme.',
+      build: 'Les amis arrivent… ferme rapidement les fenêtres.',
       calm: 'Tout va bien. Profite de la musique ♫',
     };
     events.push({

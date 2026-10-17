@@ -32,6 +32,14 @@ test('the complete New Game reset rebuilds systems and launches level 1 without 
   const manager = { clear: () => calls.push('windows.clear'), sequence: 8, z: 90 };
   const miniGameLauncher = { reset: () => calls.push('minigames.reset') };
   const notifications = { clear: () => calls.push('notifications.clear') };
+  const audio = {
+    muted: true,
+    stop: () => calls.push('audio.stop'),
+    setMuted(value) {
+      this.muted = value;
+      calls.push(`audio.muted:${value}`);
+    },
+  };
   const context = {
     resettingGame: false,
     resetSession,
@@ -41,7 +49,8 @@ test('the complete New Game reset rebuilds systems and launches level 1 without 
     pauseGeneration: 0,
     frame: 1,
     cancelAnimationFrame() {},
-    audio: { stop: () => calls.push('audio.stop') },
+    audio,
+    musicToggle: { render: () => calls.push('music-toggle.render') },
     menuMusic: { stop: () => calls.push('music.stop'), start: () => calls.push('music.start') },
     cancelVictory() {},
     rules: { hide() {} },
@@ -92,7 +101,6 @@ test('the complete New Game reset rebuilds systems and launches level 1 without 
     setVolume: (volume) => calls.push(`volume:${volume}`),
     menu: { syncSettings: () => calls.push('menu.sync') },
     renderStats: () => calls.push('stats.render'),
-    debug: { render: () => calls.push('debug.render') },
     setFullscreen: async () => calls.push('fullscreen.reset'),
     continueFromMenu: () => {
       progression.begin();
@@ -120,5 +128,7 @@ test('the complete New Game reset rebuilds systems and launches level 1 without 
   assert.ok(calls.includes('virtual-files.reset'));
   assert.ok(calls.includes('minigames.reset'));
   assert.ok(calls.includes('level-1.start'));
+  assert.equal(audio.muted, false);
+  assert.ok(calls.includes('music-toggle.render'));
   assert.equal('notifiedMessages' in context, false);
 });

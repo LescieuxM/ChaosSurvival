@@ -81,6 +81,30 @@ test('extracted Messenger formatting preserves emoticons and renders HTML-lookin
   assert.ok(children.some((node) => !node.className && node.textContent.includes(':3')));
 });
 
+test('xD variants remain literal in private, group, player and restored Messenger messages', (t) => {
+  const previous = globalThis.document;
+  globalThis.document = {
+    createTextNode(text) { return { textContent: text }; },
+    createElement(tagName) { return { tagName: tagName.toUpperCase(), setAttribute() {} }; },
+  };
+  t.after(() => {
+    if (previous === undefined) delete globalThis.document;
+    else globalThis.document = previous;
+  });
+  const source = [
+    { speaker: 'contact', conversation: 'pixelgirl', text: 'xD XD xd Xd' },
+    { speaker: 'player', conversation: 'pixelgirl', text: 'xDD XDDDD xDDD' },
+    { speaker: 'contact', conversation: 'plumber-group', text: 'Turb0: xD; PixelGirl: XDDDD' },
+  ];
+  const restored = JSON.parse(JSON.stringify(source));
+  for (const message of restored) {
+    const nodes = [];
+    appendMessageText({ append: (node) => nodes.push(node) }, message.text);
+    assert.equal(nodes.map((node) => node.textContent).join(''), message.text);
+    assert.equal(nodes.some((node) => node.className?.includes('msn-emoticon')), false);
+  }
+});
+
 test('additional engines reuse file gating and completion without duplicating progression or instances', () => {
   let factories = 0,
     opens = 0,

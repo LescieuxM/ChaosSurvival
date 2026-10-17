@@ -70,7 +70,7 @@ test('development conversation shortcut runs one random branch through the saved
   assert.equal(saved.transcript.at(-1).text, 'jvais chercher un truc');
   assert.equal(saved.transcript.filter((message) => message.speaker === 'player').length, 4);
   assert.equal(view.progression.data.choices[0].choice, 'screen');
-  assert.equal(view.progression.data.choices.at(-1).choice, 'pixelgirl-funny');
+  assert.equal(view.progression.data.choices.at(-1).choice, 'video-funny');
   assert.equal(view.thread.state.history.length, saved.transcript.length);
   assert.equal(logs.filter((line) => line.startsWith('[DEV] Choix')).length, 4);
   assert.equal(logs.at(-1), '[DEV] Conversation terminée');

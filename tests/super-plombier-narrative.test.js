@@ -686,10 +686,15 @@ test('group dialogue keeps its original opening, persists each choice path, and 
       'on fait de notre mieux :D', 'TRAHISON', 'PTDRRRRRRRRRRR',
     ][path]));
     assert.equal(session.state.transcript.at(-1).text, 'laisse-lui le temps');
-    assert.equal(session.state.transcript.find((entry) => entry.type === 'file').text, 'BombArena.zip');
+    const downloadInstructions = 'voilààà cliquez pour télécharger :3 il faut aller dans "mes documents", click droit, "extraire" !!! ça devrait être dans le dossier "mes fichiers reçus" !!';
+    const fileIndex = session.state.transcript.findIndex((entry) => entry.type === 'file');
+    const instructionsIndex = session.state.transcript.findIndex((entry) => entry.text === downloadInstructions);
+    assert.equal(session.state.transcript[fileIndex].text, 'BombArena.zip');
+    assert.equal(session.state.transcript.filter((entry) => entry.text === downloadInstructions).length, 1);
+    assert.ok(fileIndex < instructionsIndex, 'the instructions follow the first archive offer');
     assert.equal(
       session.state.transcript.some((entry) => entry.text === "extrais le avec clique droit depuis tes documents, ça devrait être dans mes fichiers reçus !!!"),
-      true,
+      false,
     );
     assert.equal(session.state.transcript.some((entry) => entry.text === "ehhhh j'ai une idée :3"), false);
     assert.deepEqual(

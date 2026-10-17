@@ -32,7 +32,7 @@ import { StartMenuOrder } from './ui/start-menu-order.js';
 import { TaskbarOrder } from './ui/taskbar-order.js';
 import { DesktopApplications } from './ui/desktop-apps.js';
 import { arcadeLauncher } from './ui/arcade-launcher.js';
-import { createMusicDebug } from './ui/music-debug.js';
+import { createMusicToggle } from './ui/music-toggle.js';
 import story from './config/story.json';
 import pixelgirlDialogue from './dialogues/pixelgirl-intro.json';
 import { Progression } from './story/progression.js';
@@ -287,17 +287,18 @@ function handleMessengerMessage(contact, incoming = [], messages = [], view, sta
   }
 }
 const rules = new GameRules(ui.desktop, progression);
+function prepareMiniGameLaunch() {
+  if (progression.current?.dialogue !== pixelgirlDialogue.id) return;
+  progression.complete(progression.current.id, { dialogue: activeDialogue.id });
+  if (conversation.element?.isConnected)
+    manager.close(Number(conversation.element.dataset.windowId));
+}
 const miniGameLauncher = new MiniGameLauncher(
   miniGames,
   progression,
   manager,
   sounds,
-  () => {
-    if (progression.current?.dialogue === pixelgirlDialogue.id)
-      progression.complete(progression.current.id, { dialogue: activeDialogue.id });
-    if (conversation.element?.isConnected)
-      manager.close(Number(conversation.element.dataset.windowId));
-  },
+  prepareMiniGameLaunch,
   rules,
   () => {
     if (progression.current?.type === 'conversation')
@@ -515,18 +516,7 @@ function debugSnapshot() {
         .slice(0, 4) ?? [],
   };
 }
-function setSyncOffset(value) {
-  if (!Number.isFinite(value)) return;
-  syncOffset = Math.max(-0.5, Math.min(0.5, value));
-  try {
-    storyStorage?.setItem(SYNC_OFFSET_KEY, String(syncOffset));
-  } catch {
-    /* Optional. */
-  }
-  if (phase === 'playing' || phase === 'paused') timeline.seek(musicalTime());
-  debug.render();
-}
-const debug = createMusicDebug(ui.desktop, music, debugSnapshot, setSyncOffset);
+const musicToggle = createMusicToggle(ui.desktop, audio);
 let deletingUserData = false;
 let resettingGame = false;
 const menu = new MainMenu(document.getElementById('app'), progression, settings, sounds, {
@@ -608,9 +598,10 @@ async function resetGameToInitialState() {
         ui.desktop.classList.remove('story-desktop', 'is-playing', 'on-beat');
         previousVolume = settings.defaults.musicVolume;
         setVolume(settings.defaults.musicVolume);
+        audio.setMuted(false);
+        musicToggle.render();
         menu.syncSettings();
         renderStats();
-        debug.render();
         await setFullscreen(false);
       },
       restart: continueFromMenu,
@@ -710,14 +701,12 @@ function returnToMenu() {
   returnMenu.hidden = true;
   menu.show();
   menuMusic.start();
-  debug.render();
 }
 document.addEventListener('pointerdown', () => {
   if (phase === 'menu' && !menuMusic.active) menuMusic.start();
 });
-// Diagnostic data remains available in the standalone game (F3).
+// Diagnostic data remains available for development inspection.
 Object.defineProperty(window, 'chaosDebug', { value: Object.freeze({ snapshot: debugSnapshot }) });
-debug.render();
 
 async function startGame() {
   if (!['idle', 'ended', 'desktop'].includes(phase)) return;
@@ -769,7 +758,6 @@ async function startGame() {
     ui.desktop.classList.add('is-playing');
     renderStats();
     frame = requestAnimationFrame(tick);
-    debug.render();
     if (document.hidden) await pauseGame();
   } catch (error) {
     audio.stop();
@@ -811,7 +799,6 @@ function tick() {
     ui.wizzLabel.hidden = true;
   }
   renderStats();
-  debug.render();
   ui.trackFill.style.width = `${(now / duration) * 100}%`;
   ui.trackTime.textContent = `${formatTime(now)} / ${formatTime(duration)}`;
   if (lost || state.chaos >= 100) return finishGame(false);
@@ -861,7 +848,6 @@ async function pauseGame() {
   const generation = ++pauseGeneration;
   await audio.pause();
   if (phase !== 'paused' || generation !== pauseGeneration) return;
-  debug.render();
   showDialog(
     'Une petite pause ?',
     '<p>Ton bureau et la musique t’attendent.</p><p class="dialog-hint">Respire. Détends ta souris. Tu gères.</p>',
@@ -883,7 +869,6 @@ async function resumeGame() {
     ui.playfield.inert = false;
     setPhase('playing');
     ui.desktop.classList.add('is-playing');
-    debug.render();
     manager.reposition();
     frame = requestAnimationFrame(tick);
     if (document.hidden) await pauseGame();
@@ -905,7 +890,6 @@ function finishGame(won) {
   ui.pauseButton.disabled = true;
   ui.playfield.inert = true;
   ui.desktop.classList.remove('is-playing', 'on-beat');
-  debug.render();
   const newRecord = state.score > best;
   best = Math.max(best, state.score);
   try {
@@ -1054,7 +1038,6 @@ function showStoryDesktop(announce) {
     sounds.play('online');
   }
   renderDesktopFiles();
-  debug.render();
   requestAnimationFrame(() => replayReactions.desktopShown(Date.now()));
 }
 async function openConversation(restore = false, contact = null) {

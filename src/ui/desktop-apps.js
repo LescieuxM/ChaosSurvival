@@ -498,9 +498,9 @@ export class DesktopApplications {
       x: 0.3,
       y: 0.2,
       content: {
-        title: 'Bomb Arena',
+        title: 'BombArena.exe',
         iconName: 'arcade-game',
-        body: '<section class="bomb-arena-placeholder"><strong>BOMB ARENA v1.2</strong><p>Chargement du salon...</p><p>[Interface multijoueur en préparation]</p></section>',
+        body: '<section class="bomb-arena-placeholder"><strong>BombArena.exe</strong><p>Chargement du salon...</p><p>[Interface multijoueur en préparation]</p></section>',
       },
       onDismiss: () => {
         this.instances.delete(key);
@@ -508,7 +508,7 @@ export class DesktopApplications {
         this.onWindowState();
       },
     });
-    const instance = this.attachWindow(key, id, 'Bomb Arena', 'arcade-game');
+    const instance = this.attachWindow(key, id, 'BombArena.exe', 'arcade-game');
     instance.fileId = fileId;
     this.restore(instance);
     return instance;

@@ -52,7 +52,7 @@ export class DesktopFiles {
       shortcut.title = 'Raccourci vers BombArena.exe';
       shortcut.innerHTML = icon('arcade-game');
       const name = document.createElement('span');
-      name.textContent = 'BombArena';
+      name.textContent = executable.name;
       shortcut.append(name);
       bindFileActivation(shortcut, () => {
         if (this.virtualFilesystem?.exists(bombArenaId))

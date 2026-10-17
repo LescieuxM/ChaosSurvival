@@ -194,6 +194,44 @@ test('the received game exists only after transfer, deletes permanently, and a n
   assert.equal(new VirtualFilesystem(restored.progression).exists(fileId), true);
 });
 
+test('BombArena.exe is the executable shortcut, window title and taskbar label without changing its app ID', () => {
+  let spawnOptions;
+  let attached;
+  const manager = {
+    windows: new Map(),
+    spawn(type, options) {
+      spawnOptions = { type, ...options };
+      this.windows.set(1, { element: { isConnected: true } });
+      return 1;
+    },
+  };
+  const app = Object.create(DesktopApplications.prototype);
+  Object.assign(app, {
+    manager,
+    instances: new Map(),
+    attachWindow(key, id, title, iconName) {
+      attached = { key, id, title, iconName };
+      const instance = { id, element: manager.windows.get(id).element, task: { remove() {} } };
+      this.instances.set(key, instance);
+      return instance;
+    },
+    restore() {},
+  });
+
+  const instance = app.openBombArena({}, 'bomb-arena-folder/bombarena.exe');
+
+  assert.equal(spawnOptions.content.title, 'BombArena.exe');
+  assert.match(spawnOptions.content.body, /<strong>BombArena\.exe<\/strong>/);
+  assert.deepEqual(attached, {
+    key: 'virtual-app:bomb-arena',
+    id: 1,
+    title: 'BombArena.exe',
+    iconName: 'arcade-game',
+  });
+  assert.equal(instance.fileId, 'bomb-arena-folder/bombarena.exe');
+  assert.equal(app.instances.size, 1);
+});
+
 test('the arcade image uses its renamed virtual filename without changing its visual asset', () => {
   const config = JSON.parse(readFileSync(new URL('../src/config/filesystem.json', import.meta.url)));
   const images = config.images.items;
@@ -542,7 +580,7 @@ test('explorer selects files, provides XP properties and confirmation, and refre
   desktopFiles.render();
   const bombArenaShortcut = () => desktopItems.children.filter((item) => item.className.includes('desktop-virtual-shortcut'));
   assert.equal(bombArenaShortcut().length, 1);
-  assert.equal(bombArenaShortcut()[0].children.at(-1).textContent, 'BombArena');
+  assert.equal(bombArenaShortcut()[0].children.at(-1).textContent, 'BombArena.exe');
   bombArenaShortcut()[0].handlers.dblclick();
   assert.equal(openedDesktopFiles.at(-1).virtualApp, 'bomb-arena');
   assert.equal(filesystem.deleteFile(virtualFileId('bomb-arena-folder', 'BombArena.exe')).ok, true);
