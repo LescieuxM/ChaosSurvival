@@ -6,13 +6,18 @@ import { DialogueSession } from '../src/story/dialogue.js';
 import { Progression } from '../src/story/progression.js';
 import { DialogueEvents } from '../src/story/dialogue-events.js';
 import { ConversationWindow } from '../src/ui/conversation.js';
-import { installDevelopmentConversationShortcut } from '../src/dev/finish-shortcut.js';
+import {
+  installDevelopmentConversationShortcut,
+  prepareBombArenaForDevelopment,
+} from '../src/dev/finish-shortcut.js';
+import { VirtualFilesystem, virtualFileId } from '../src/story/virtual-filesystem.js';
 
 const read = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8'));
 const story = read('../src/config/story.json');
 const turbo = read('../src/dialogues/turbo-smiley-catcher.json');
 const pixelgirlIntro = read('../src/dialogues/pixelgirl-intro.json');
 const pixelgirlAfterSmiley = read('../src/dialogues/pixelgirl-smiley-victory.json');
+const plumberGroup = read('../src/dialogues/pixelgirl-super-plombier-group.json');
 
 function createView(dialogue = turbo) {
   const values = new Map();
@@ -201,4 +206,51 @@ test('development fast-forward finishes Turb0 scene and queues Luna connection o
   events.update(finishedAt + 3000);
   events.update(finishedAt + 9000);
   assert.deepEqual(connected, ['luna']);
+});
+
+test('Ctrl+Shift+D prepares one usable BombArena install after the group dialogue finishes', () => {
+  const values = new Map();
+  const progression = new Progression(story, {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, value),
+  });
+  const filesystem = new VirtualFilesystem(progression);
+  let listener;
+  let finished = false;
+  const conversation = {
+    finishImmediately() {
+      finished = true;
+      progression.data.dialogues[plumberGroup.id] = {
+        node: 'bomb-arena-after-transfer', cursor: 0, finished: true, transcript: [],
+      };
+    },
+  };
+  const remove = installDevelopmentConversationShortcut(
+    { addEventListener: (_type, callback) => (listener = callback), removeEventListener() {} },
+    () => conversation,
+    () => prepareBombArenaForDevelopment(progression, filesystem, plumberGroup),
+    'd',
+  );
+  const event = {
+    key: 'D', ctrlKey: true, shiftKey: true, altKey: false, metaKey: false, repeat: false,
+    preventDefault() {},
+  };
+  listener(event);
+  assert.equal(finished, true);
+  const archiveId = virtualFileId('downloads', 'BombArena.zip');
+  const executableId = virtualFileId('bomb-arena-folder', 'BombArena.exe');
+  assert.equal(filesystem.getFile(archiveId)?.status, 'complete');
+  assert.equal(filesystem.getFile(virtualFileId('downloads', 'BombArena'))?.directory, true);
+  assert.equal(filesystem.getFile(executableId)?.virtualApp, 'bomb-arena');
+  listener(event);
+  assert.equal(Object.values(progression.data.files).filter((file) => file.extractable === 'bomb-arena').length, 1);
+  assert.equal(Object.keys(filesystem.state.added).filter((id) => id === executableId).length, 1);
+
+  progression.newGame();
+  const resetFilesystem = new VirtualFilesystem(progression);
+  assert.equal(resetFilesystem.exists(archiveId), false);
+  assert.equal(resetFilesystem.exists('downloads/bombarena'), false);
+  assert.equal(resetFilesystem.exists(executableId), false);
+
+  remove();
 });

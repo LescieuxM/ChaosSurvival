@@ -367,7 +367,11 @@ export class NarrativeOrchestrator {
     delete this.flags.superPlombierHumorWizzesComplete;
     delete this.flags.superPlombierHumorWizzesStarted;
     delete this.flags.superPlombierNextWizzAt;
-    this.progression.save();
+    this.progression.deferMiniGameReaction(
+      'flashzone:super-plombier-flash',
+      'turbo-super-plombier',
+      this.now(),
+    );
     return true;
   }
 

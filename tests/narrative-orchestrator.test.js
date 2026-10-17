@@ -109,6 +109,99 @@ test('validating PixelGirl first reply saves Turb0 connection for exactly two se
   assert.equal(restored.connectionNotifications.length, 1);
 });
 
+test('a validated mini-game result delays only its next narrative reaction and survives reload', () => {
+  const originalNow = Date.now;
+  Date.now = () => 10_000;
+  try {
+    const values = new Map();
+    const progression = new Progression(story, {
+      getItem: (key) => values.get(key) ?? null,
+      setItem: (key, value) => values.set(key, value),
+    });
+    progression.data.current = 'super-mega-game';
+    assert.equal(progression.complete('super-mega-game', { won: true }), true);
+    assert.deepEqual(progression.data.pendingMiniGameReaction, {
+      runId: progression.data.runId,
+      sequenceId: 'super-mega-game',
+      storySequenceId: 'pixelgirl-smiley-win',
+      dialogueId: 'pixelgirl-smiley-victory',
+      dueAt: 12_000,
+    });
+
+    const reaction = definitions['pixelgirl-smiley-victory'];
+    const unrelated = structuredClone(reaction);
+    unrelated.id = 'unrelated-message';
+    unrelated.start = 'start';
+    unrelated.nodes = {
+      start: { messages: [{ speaker: 'contact', text: 'independent', delayMs: 0, typingMs: 0 }], end: true },
+    };
+    const thread = new ConversationThread('pixelgirl', progression, () => [reaction, unrelated]);
+    thread.schedule(reaction, 10_000);
+    thread.schedule(unrelated, 10_000);
+    assert.deepEqual(thread.receive(10_000), [unrelated], 'unrelated MSN events remain immediate');
+    assert.deepEqual(thread.receive(11_999), []);
+
+    const restored = new Progression(story, {
+      getItem: (key) => values.get(key) ?? null,
+      setItem: (key, value) => values.set(key, value),
+    });
+    const restoredThread = new ConversationThread('pixelgirl', restored, () => [reaction]);
+    assert.deepEqual(restoredThread.receive(11_999), []);
+    assert.deepEqual(restoredThread.receive(12_000), [reaction]);
+    assert.equal(restoredThread.state.history.at(-1).text, reaction.nodes.s1.messages[0].text);
+    assert.equal(restored.data.pendingMiniGameReaction, null);
+    assert.deepEqual(restoredThread.receive(12_000), [], 'the first reaction is delivered only once');
+    assert.deepEqual(restoredThread.receive(12_499), []);
+    assert.deepEqual(restoredThread.receive(12_500), [reaction], 'dialogue message timing continues normally');
+
+    const resetValues = new Map();
+    const pendingGame = new Progression(story, {
+      getItem: (key) => resetValues.get(key) ?? null,
+      setItem: (key, value) => resetValues.set(key, value),
+    });
+    pendingGame.data.current = 'super-mega-game';
+    pendingGame.complete('super-mega-game', { won: true });
+    const pendingThread = new ConversationThread('pixelgirl', pendingGame, () => [reaction]);
+    pendingThread.schedule(reaction, 10_000);
+    pendingGame.newGame();
+    assert.equal(pendingGame.data.pendingMiniGameReaction, null);
+    const cleanThread = new ConversationThread('pixelgirl', pendingGame, () =>
+      pendingGame.data.unlockedConversations.includes(reaction.id) ? [reaction] : [],
+    );
+    assert.deepEqual(cleanThread.receive(30_000), [], 'New Game invalidates the old reaction deadline');
+
+    const invalidated = new Progression(story, { getItem: () => null, setItem() {} });
+    invalidated.data.current = 'super-mega-game';
+    invalidated.complete('super-mega-game', { won: true });
+    const invalidatedThread = new ConversationThread('pixelgirl', invalidated, () => [reaction]);
+    invalidated.data.current = 'arcade-1';
+    assert.equal(invalidatedThread.miniGameReactionDueAt(reaction), null);
+    assert.equal(invalidated.data.pendingMiniGameReaction, null, 'an invalidated story event retires its deadline');
+  } finally {
+    Date.now = originalNow;
+  }
+});
+
+test('the existing three-second first-connection delay remains longer than the mini-game minimum', () => {
+  const originalNow = Date.now;
+  Date.now = () => 10_000;
+  try {
+    const progression = new Progression(story, { getItem: () => null, setItem() {} });
+    progression.data.current = 'arcade-1';
+    progression.complete('arcade-1', { score: 100, closed: 4, newRecord: false });
+    const intro = definitions['pixelgirl-intro'];
+    const first = intro.nodes[intro.start].messages[0];
+    const firstDuration = first.delayMs + first.typingMs + (first.typingPauseMs ?? 0);
+    const thread = new ConversationThread('pixelgirl', progression, () => [intro]);
+    thread.schedule(intro, 10_000 + 3000 - firstDuration);
+    assert.equal(progression.data.dialogues[intro.id].receiveDueAt, 13_000);
+    assert.deepEqual(thread.receive(12_999), []);
+    assert.deepEqual(thread.receive(13_000), [intro]);
+  } finally {
+    Date.now = originalNow;
+  }
+});
+
 test('Turb0 message notification is tied to receiving a new message, not a saved timer', () => {
   const context = fixture();
   const { progression, orchestrator } = context;

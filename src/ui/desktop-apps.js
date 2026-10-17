@@ -46,6 +46,14 @@ export function localPicture(path) {
   return typeof path === 'string' && /^\.\/(?:wallpaper\.svg|covers\/[a-z0-9-]+\.svg)$/.test(path);
 }
 
+function isTextEntry(target) {
+  return Boolean(
+    target &&
+      (target.isContentEditable ||
+        /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName ?? '')),
+  );
+}
+
 export class DesktopApplications {
   constructor(
     manager,
@@ -384,7 +392,33 @@ export class DesktopApplications {
       if (!menu.contains?.(event.target)) menu.hidden = true;
     };
     document.addEventListener('click', closeOutside);
-    instance.disposeExplorer = () => document.removeEventListener('click', closeOutside);
+    const deleteShortcut = (event) => {
+      const active = this.manager.isActive
+        ? this.manager.isActive(instance.element)
+        : this.manager.activeWindow?.() === instance.element;
+      if (
+        event.key !== 'Delete' ||
+        event.repeat ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.shiftKey ||
+        !active ||
+        isTextEntry(event.target) ||
+        isTextEntry(document.activeElement) ||
+        !instance.explorerConfirmation.hidden ||
+        !instance.explorerProperties.hidden
+      ) return;
+      const item = instance.selectedItem;
+      if (!item?.fileId || !this.virtualFilesystem?.canDelete(item.fileId)) return;
+      event.preventDefault();
+      this.askDelete(instance, item);
+    };
+    document.addEventListener('keydown', deleteShortcut);
+    instance.disposeExplorer = () => {
+      document.removeEventListener('click', closeOutside);
+      document.removeEventListener('keydown', deleteShortcut);
+    };
     menu.addEventListener('click', (event) => {
       event.stopPropagation();
       const action = event.target.closest?.('[data-explorer-action]')?.dataset.explorerAction;

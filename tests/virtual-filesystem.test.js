@@ -490,11 +490,20 @@ test('explorer selects files, provides XP properties and confirmation, and refre
     createElement: (tag) => Object.assign(new FakeElement(), { tagName: tag.toUpperCase() }),
     addEventListener(_type, callback) { listeners.add(callback); },
     removeEventListener(_type, callback) { listeners.delete(callback); },
+    activeElement: null,
   };
   t.after(() => {
     if (oldDocument === undefined) delete globalThis.document;
     else globalThis.document = oldDocument;
   });
+  const dispatchDelete = (target = globalThis.document.activeElement, options = {}) => {
+    let prevented = false;
+    const event = {
+      key: 'Delete', target, preventDefault() { prevented = true; }, ...options,
+    };
+    for (const listener of listeners) listener(event);
+    return prevented;
+  };
   const progression = new Progression(story, memory());
   const transfer = progression.receiveFile({
     id: 'super-mega-game',
@@ -522,7 +531,10 @@ test('explorer selects files, provides XP properties and confirmation, and refre
   desktopFiles.render();
   const desktopButton = desktopItems.children[0];
   assert.equal(desktopButton.dataset.fileId, virtualFileId('downloads', 'SUPER_MEGA_GAME.exe'));
-  const app = new DesktopApplications({ windows: new Map(), close() {} }, null, () => {}, null,
+  let activeWindow = null;
+  const app = new DesktopApplications({
+    windows: new Map(), close() {}, isActive: (element) => activeWindow === element,
+  }, null, () => {}, null,
     new VirtualTextFiles(progression, filesystem), filesystem,
     () => desktopFiles.render(), recordDesktopOpen);
   const makeExplorer = () => {
@@ -541,8 +553,25 @@ test('explorer selects files, provides XP properties and confirmation, and refre
   };
   const first = makeExplorer();
   const second = makeExplorer();
+  activeWindow = first.element;
   app.instances.set('downloads:first', first);
   app.instances.set('downloads:second', second);
+  assert.equal(dispatchDelete(), false, 'Delete does nothing without a selected file');
+  assert.equal(first.explorerConfirmation.hidden, true);
+  const input = Object.assign(new FakeElement(), { tagName: 'INPUT' });
+  globalThis.document.activeElement = input;
+  first.selectedItem = { fileId: virtualFileId('downloads', 'smileys_pack_2009.zip') };
+  assert.equal(dispatchDelete(input), false, 'Delete remains ordinary text editing in input fields');
+  assert.equal(first.explorerConfirmation.hidden, true);
+  const textarea = Object.assign(new FakeElement(), { tagName: 'TEXTAREA' });
+  globalThis.document.activeElement = textarea;
+  assert.equal(dispatchDelete(textarea), false, 'Delete remains ordinary text editing in textareas such as MSN');
+  assert.equal(first.explorerConfirmation.hidden, true);
+  globalThis.document.activeElement = null;
+  activeWindow = second.element;
+  assert.equal(dispatchDelete(second.element), false, 'a background Explorer cannot delete its selection');
+  assert.equal(second.explorerConfirmation.hidden, true);
+  activeWindow = first.element;
   const fileId = virtualFileId('downloads', 'smileys_pack_2009.zip');
   const row = first.element.querySelector('.explorer-items').children.find(
     (item) => item.dataset.fileId === fileId,
@@ -577,10 +606,9 @@ test('explorer selects files, provides XP properties and confirmation, and refre
   const receivedRow = first.element.querySelector('.explorer-items').children.find(
     (item) => item.dataset.fileId === receivedId,
   );
-  receivedRow.handlers.contextmenu({ clientX: 45, clientY: 60, preventDefault() {} });
-  const receivedDelete = first.explorerMenu.children.find((item) => item.dataset.explorerAction === 'delete');
-  assert.equal(receivedDelete.disabled, false);
-  first.explorerMenu.handlers.click({ target: receivedDelete, stopPropagation() {} });
+  receivedRow.handlers.click();
+  globalThis.document.activeElement = receivedRow;
+  assert.equal(dispatchDelete(receivedRow), true, 'Delete opens the existing confirmation for the selected file');
   first.explorerConfirmation.querySelector('[data-delete-answer="yes"]').handlers.click();
   assert.equal(filesystem.exists(receivedId), false);
   assert.equal(desktopItems.children.length, 0, 'Explorer deletion refreshes the desktop from the same transfer state');
@@ -621,7 +649,15 @@ test('explorer selects files, provides XP properties and confirmation, and refre
   assert.equal(filesystem.extractBombArena(archiveId).ok, true);
   desktopFiles.render();
   assert.equal(bombArenaShortcut().length, 1, 'extracting again restores only one shortcut');
-  assert.equal(filesystem.deleteFile(archiveId).ok, true);
+  app.render(first, filesystem.getLocation('downloads'));
+  const currentArchiveRow = first.element.querySelector('.explorer-items').children.find(
+    (item) => item.dataset.fileId === archiveId,
+  );
+  currentArchiveRow.handlers.click();
+  globalThis.document.activeElement = currentArchiveRow;
+  assert.equal(dispatchDelete(currentArchiveRow), true, 'the same shortcut works for BombArena.zip');
+  first.explorerConfirmation.querySelector('[data-delete-answer="yes"]').handlers.click();
+  assert.equal(filesystem.exists(archiveId), false);
   desktopFiles.render();
   assert.equal(bombArenaShortcut().length, 1, 'the shortcut remains when only the archive is deleted');
   const protectedFile = filesystem.getLocation('windows').items.find((item) => item.name === 'win.ini');
@@ -635,6 +671,11 @@ test('explorer selects files, provides XP properties and confirmation, and refre
     systemExplorer.explorerMenu.children.find((item) => item.dataset.explorerAction === 'delete').disabled,
     true,
   );
+  protectedRow.handlers.click();
+  activeWindow = systemExplorer.element;
+  globalThis.document.activeElement = protectedRow;
+  assert.equal(dispatchDelete(protectedRow), false, 'Delete cannot bypass protected-file permissions');
+  assert.equal(filesystem.exists(protectedFile.fileId), true);
   for (const instance of [first, second, systemExplorer]) app.teardownExplorer(instance);
   assert.equal(listeners.size, 0);
 });

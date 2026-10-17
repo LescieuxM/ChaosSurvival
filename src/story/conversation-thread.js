@@ -139,11 +139,46 @@ export class ConversationThread {
     const session = new DialogueSession(definition, this.progression);
     const message = session.nextMessage();
     if (!message) return;
-    if (!Number.isFinite(session.state.receiveDueAt)) {
-      session.state.receiveDueAt =
-        now + message.delayMs + message.typingMs + (message.typingPauseMs ?? 0);
+    const reactionDueAt = this.miniGameReactionDueAt(definition);
+    const dueAt = Number.isFinite(session.state.receiveDueAt)
+      ? Math.max(session.state.receiveDueAt, reactionDueAt ?? -Infinity)
+      : Math.max(
+          now + message.delayMs + message.typingMs + (message.typingPauseMs ?? 0),
+          reactionDueAt ?? -Infinity,
+        );
+    if (session.state.receiveDueAt !== dueAt) {
+      session.state.receiveDueAt = dueAt;
       session.persist();
     }
+  }
+  miniGameReactionDueAt(definition) {
+    const reaction = this.progression.data.pendingMiniGameReaction;
+    if (reaction?.dialogueId === definition.id) {
+      const saved = this.progression.data.dialogues[definition.id];
+      const source = this.progression.story.sequences.find(
+        (sequence) => sequence.id === reaction.sequenceId,
+      );
+      const target = reaction.storySequenceId
+        ? this.progression.story.sequences.find(
+            (sequence) => sequence.id === reaction.storySequenceId,
+          )
+        : null;
+      if (
+        reaction.runId === this.progression.data.runId &&
+        (!reaction.storySequenceId ||
+          (this.progression.data.completed.includes(reaction.sequenceId) &&
+            source?.next === target?.id &&
+            target?.type === 'conversation' &&
+            target.dialogue === definition.id &&
+            this.progression.data.current === target.id)) &&
+        !saved?.transcript?.length &&
+        !(Number.isInteger(saved?.cursor) && saved.cursor > 0)
+      )
+        return reaction.dueAt;
+      this.progression.consumeMiniGameReaction(definition.id);
+      this.progression.save();
+    }
+    return null;
   }
   typingContacts(now = Date.now()) {
     const active = new Map();
@@ -190,9 +225,15 @@ export class ConversationThread {
     const state = this.progression.data.dialogues[definition.id];
     if (!Number.isFinite(state?.receiveDueAt)) return false;
     const session = new DialogueSession(definition, this.progression);
-    let dueAt = state.receiveDueAt;
+    let dueAt = Math.max(state.receiveDueAt, this.miniGameReactionDueAt(definition) ?? -Infinity);
+    if (dueAt !== state.receiveDueAt) {
+      state.receiveDueAt = dueAt;
+      session.persist();
+    }
     let delivered = false;
     while (session.nextMessage() && dueAt <= now) {
+      if (session.state.cursor === 0)
+        this.progression.consumeMiniGameReaction(definition.id);
       session.deliver();
       delivered = true;
       let transitions = 0;
@@ -269,8 +310,11 @@ export class ConversationThread {
                 total + message.delayMs + message.typingMs + (message.typingPauseMs ?? 0),
               0,
             );
+      dueAt = Math.max(dueAt, this.miniGameReactionDueAt(event) ?? -Infinity);
       let delivered = false;
       while (session.nextMessage() && dueAt <= now) {
+        if (session.state.cursor === 0)
+          this.progression.consumeMiniGameReaction(event.id);
         session.deliver();
         delivered = true;
         const next = session.nextMessage();

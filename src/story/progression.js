@@ -2,6 +2,7 @@ import { replaceGameStorage } from './reset-game.js';
 import { normalizeVirtualFilesystemState } from './virtual-filesystem.js';
 const TYPES = ['arcade', 'conversation', 'minigame'];
 const STORAGE_KEY = 'chaos-survival-story-v1';
+export const MINIGAME_REACTION_DELAY_MS = 2000;
 export const HISTORY_KEY = 'chaos-survival-history-v1';
 const record = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 const runId = () => globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
@@ -25,6 +26,7 @@ function freshData(story) {
     unlockedConversations: [],
     level1Launches: 0,
     replayReactions: [],
+    pendingMiniGameReaction: null,
     tutorials: {},
   };
 }
@@ -153,6 +155,15 @@ function normalizeSaved(saved, story) {
         typeof event.template === 'string' && Number.isFinite(event.dueAt) && typeof event.ready === 'boolean',
     );
   }
+  const reaction = saved.pendingMiniGameReaction;
+  if (
+    reaction !== undefined &&
+    reaction !== null &&
+    (!record(reaction) || typeof reaction.runId !== 'string' ||
+      typeof reaction.sequenceId !== 'string' || typeof reaction.dialogueId !== 'string' ||
+      (reaction.storySequenceId !== undefined && typeof reaction.storySequenceId !== 'string') ||
+      !Number.isFinite(reaction.dueAt))
+  ) saved.pendingMiniGameReaction = null;
   return saved;
 }
 
@@ -201,6 +212,20 @@ export class Progression {
     this.data.anomalies ??= {};
     this.data.dialogueArchives ??= {};
     this.data.runId ??= runId();
+    const pendingReaction = this.data.pendingMiniGameReaction;
+    if (pendingReaction) {
+      const sourceSequence = story.sequences.find((item) => item.id === pendingReaction.sequenceId);
+      const reactionSequence = story.sequences.find((item) => item.id === pendingReaction.storySequenceId);
+      if (
+        pendingReaction.runId !== this.data.runId ||
+        (pendingReaction.storySequenceId !== undefined &&
+          (!this.data.completed.includes(pendingReaction.sequenceId) ||
+            sourceSequence?.next !== reactionSequence?.id ||
+            reactionSequence?.type !== 'conversation' ||
+            reactionSequence.dialogue !== pendingReaction.dialogueId ||
+            this.data.current !== reactionSequence.id))
+      ) this.data.pendingMiniGameReaction = null;
+    }
     this.data.started ??= Boolean(
       this.data.completed.length ||
       this.data.choices.length ||
@@ -267,16 +292,38 @@ export class Progression {
     await handler(sequence, this);
     return sequence;
   }
-  complete(id, result = {}) {
+  complete(id, result = {}, completedAt = Date.now()) {
     if (this.data.completed.includes(id)) return false;
     if (this.data.current !== id) throw new Error('Cette séquence n’est pas la séquence active.');
+    const completedSequence = this.current;
     this.data.completed.push(id);
     this.data.results[id] = result;
     this.data.current = this.current.next;
     const next = this.current;
+    this.data.pendingMiniGameReaction = null;
+    if (['arcade', 'minigame'].includes(completedSequence?.type) && next?.type === 'conversation')
+      this.deferMiniGameReaction(id, next.dialogue, completedAt, next.id);
     if (next?.type === 'conversation' && !this.data.unlockedConversations.includes(next.dialogue))
       this.data.unlockedConversations.push(next.dialogue);
     this.data.started = true;
+    this.save();
+    return true;
+  }
+  consumeMiniGameReaction(dialogueId) {
+    if (this.data.pendingMiniGameReaction?.dialogueId !== dialogueId) return false;
+    this.data.pendingMiniGameReaction = null;
+    return true;
+  }
+  deferMiniGameReaction(sourceId, dialogueId, completedAt = Date.now(), storySequenceId) {
+    if (typeof sourceId !== 'string' || typeof dialogueId !== 'string' || !Number.isFinite(completedAt))
+      return false;
+    this.data.pendingMiniGameReaction = {
+      runId: this.data.runId,
+      sequenceId: sourceId,
+      ...(typeof storySequenceId === 'string' ? { storySequenceId } : {}),
+      dialogueId,
+      dueAt: completedAt + MINIGAME_REACTION_DELAY_MS,
+    };
     this.save();
     return true;
   }

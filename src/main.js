@@ -1193,9 +1193,22 @@ arcadeShortcut.title = `${arcadeLauncher.name}\nDouble-cliquer pour jouer / rejo
 // Vite removes this entire import and handler from production builds.
 if (import.meta.env.DEV) {
   import('./dev/finish-shortcut.js').then((shortcuts) => {
-    const { installDevelopmentVictoryShortcut, installDevelopmentConversationShortcut } = shortcuts;
+    const {
+      installDevelopmentVictoryShortcut,
+      installDevelopmentConversationShortcut,
+      prepareBombArenaForDevelopment,
+    } = shortcuts;
+    const foregroundGroupConversation = () => {
+      if (phase !== 'desktop') return null;
+      const topWindow = [...manager.windows.values()]
+        .filter(({ element }) => element.isConnected && !element.hidden)
+        .sort((a, b) => Number(b.element.style.zIndex) - Number(a.element.style.zIndex))[0];
+      if (topWindow?.element.dataset.messengerContact !== 'plumber-group') return null;
+      return messenger.conversations.get('plumber-group') ?? null;
+    };
     installDevelopmentVictoryShortcut(document, () => {
       if (rules.active) return null;
+      if (foregroundGroupConversation()) return null;
       if (['playing', 'paused'].includes(phase)) return { finish: () => finishGame(true) };
       const game = miniGameLauncher.active;
       if (phase === 'desktop' && game?.element?.isConnected && !game.finished) return game;
@@ -1217,6 +1230,23 @@ if (import.meta.env.DEV) {
           !view.offlineContact,
       );
     });
+    installDevelopmentConversationShortcut(
+      document,
+      foregroundGroupConversation,
+      () => {
+        if (
+          prepareBombArenaForDevelopment(
+            progression,
+            virtualFilesystem,
+            dialogues['pixelgirl-super-plombier-group'],
+          )
+        ) {
+          renderDesktopFiles();
+          desktopApplications.refreshExplorers();
+        }
+      },
+      'd',
+    );
   });
 }
 

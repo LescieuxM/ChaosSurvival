@@ -83,7 +83,7 @@ test('the unlocked first PixelGirl message is scheduled automatically on the des
   assert.deepEqual(reactions.flush(1000), []);
   assert.equal(progression.data.dialogues['pixelgirl-intro'], undefined);
 
-  progression.complete('arcade-1', { score: 100, closed: 4 });
+  progression.complete('arcade-1', { score: 100, closed: 4 }, 5000);
   assert.ok(progression.data.unlockedConversations.includes('pixelgirl-intro'));
   assert.deepEqual(reactions.flush(5000, { canReceive: false }), []);
   assert.equal(progression.data.dialogues['pixelgirl-intro'], undefined);

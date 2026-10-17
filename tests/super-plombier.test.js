@@ -18,6 +18,7 @@ import { Progression } from '../src/story/progression.js';
 import { DialogueSession, validateDialogue } from '../src/story/dialogue.js';
 import { DialogueEvents } from '../src/story/dialogue-events.js';
 import { ConversationThread } from '../src/story/conversation-thread.js';
+import { NarrativeOrchestrator } from '../src/story/narrative-orchestrator.js';
 import { ConversationWindow } from '../src/ui/conversation.js';
 import { visibleContacts } from '../src/ui/contacts.js';
 import { renderSuperPlombierFlash } from '../src/browser/sites/flashzone/super-plombier-flash.js';
@@ -418,15 +419,38 @@ test('FlashZone game starts from its button, captures movement keys and removes 
     if (previous.Audio === undefined) delete globalThis.Audio;
     else globalThis.Audio = previous.Audio;
   });
-  const { progression } = fixture();
+  const { progression, storage } = fixture();
   let narrativeVictories = 0;
+  const reactionNow = 10_000;
+  const turboThread = new ConversationThread('turbo', progression, () => [
+    definitions['turbo-super-plombier'],
+  ]);
+  let narrative;
+  const dialogueEvents = new DialogueEvents(
+    progression,
+    definitions,
+    (id) => narrative.onContactConnected(id),
+  );
+  narrative = new NarrativeOrchestrator({
+    progression,
+    definitions,
+    dialogueEvents,
+    getContact: (id) => id === 'turbo' ? { id: 'turbo', available: true, online: true } : null,
+    prepareContact: () => ({ thread: turboThread }),
+    getTurboThread: () => turboThread,
+    showConnectionNotification: () => {},
+    now: () => reactionNow,
+  });
   let resume;
   const root = renderSuperPlombierFlash(
     {
       progression,
       onDispose: (fn) => (cleanup = fn),
       onResume: (callback) => (resume = callback),
-      onVictory: () => narrativeVictories++,
+      onVictory: () => {
+        narrativeVictories++;
+        narrative.onSuperPlombierVictory();
+      },
     },
     game,
   );
@@ -486,6 +510,18 @@ test('FlashZone game starts from its button, captures movement keys and removes 
   assert.equal(progression.data.flags.superPlombierFirstCompletion, true);
   assert.deepEqual(progression.data.results, {});
   assert.equal(narrativeVictories, 1);
+  assert.equal(progression.data.pendingMiniGameReaction.dueAt, reactionNow + 2000);
+  narrative.update(reactionNow);
+  const restoredProgression = new Progression(story, storage);
+  const restoredTurboThread = new ConversationThread('turbo', restoredProgression, () => [
+    definitions['turbo-super-plombier'],
+  ]);
+  assert.deepEqual(restoredTurboThread.receive(reactionNow + 1999), []);
+  const received = restoredTurboThread.receive(reactionNow + 2000);
+  assert.equal(received.length, 1);
+  assert.equal(restoredTurboThread.state.history[0].text, 'alors noob ta fini ? xD');
+  assert.equal(restoredProgression.data.pendingMiniGameReaction, null);
+  assert.deepEqual(restoredTurboThread.receive(reactionNow + 2000), []);
   keydown(developerFinish);
   assert.equal(narrativeVictories, 1);
   assert.equal(preventedShortcut, 1);

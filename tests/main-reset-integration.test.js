@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { Progression } from '../src/story/progression.js';
 import { resetGameToInitialState as resetSession } from '../src/story/reset-game.js';
+import { createMusicToggle } from '../src/ui/music-toggle.js';
 
 const story = JSON.parse(readFileSync(new URL('../src/config/story.json', import.meta.url)));
 const mainSource = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
@@ -40,6 +41,20 @@ test('the complete New Game reset rebuilds systems and launches level 1 without 
       calls.push(`audio.muted:${value}`);
     },
   };
+  const previousDocument = globalThis.document;
+  globalThis.document = {
+    createElement: () => ({
+      addEventListener() {},
+      setAttribute() {},
+    }),
+  };
+  let musicToggle;
+  try {
+    musicToggle = createMusicToggle({ querySelector: () => ({ append() {} }) }, audio);
+  } finally {
+    if (previousDocument === undefined) delete globalThis.document;
+    else globalThis.document = previousDocument;
+  }
   const context = {
     resettingGame: false,
     resetSession,
@@ -50,7 +65,12 @@ test('the complete New Game reset rebuilds systems and launches level 1 without 
     frame: 1,
     cancelAnimationFrame() {},
     audio,
-    musicToggle: { render: () => calls.push('music-toggle.render') },
+    musicToggle: {
+      render: () => {
+        musicToggle.render();
+        calls.push('music-toggle.render');
+      },
+    },
     menuMusic: { stop: () => calls.push('music.stop'), start: () => calls.push('music.start') },
     cancelVictory() {},
     rules: { hide() {} },
